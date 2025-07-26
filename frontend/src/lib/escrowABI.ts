@@ -201,9 +201,14 @@ export interface GiftReturnedEvent {
   timestamp: bigint;
 }
 
-// Contract address constant
-export const ESCROW_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS || process.env.ESCROW_CONTRACT_ADDRESS;
+// Contract address constant - TEMPORARY HARDCODED FIX for Vercel env var issue
+export const ESCROW_CONTRACT_ADDRESS = "0xAC398A1da4E7b198f82e6D68d5355e84FF976e01";
 
-if (!ESCROW_CONTRACT_ADDRESS) {
-  console.warn('⚠️ ESCROW_CONTRACT_ADDRESS not found in environment variables');
+// Backup environment variable fallback
+const ENV_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS || process.env.ESCROW_CONTRACT_ADDRESS;
+
+if (!ENV_CONTRACT_ADDRESS) {
+  console.warn('⚠️ ESCROW_CONTRACT_ADDRESS not found in environment variables - using hardcoded address');
+} else if (ENV_CONTRACT_ADDRESS !== ESCROW_CONTRACT_ADDRESS) {
+  console.warn(`⚠️ Environment contract address (${ENV_CONTRACT_ADDRESS}) differs from hardcoded (${ESCROW_CONTRACT_ADDRESS})`);
 }
