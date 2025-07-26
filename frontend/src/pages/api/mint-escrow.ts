@@ -326,6 +326,9 @@ async function mintNFTEscrowGasless(
       console.log('🔍 DEBUG: Using escrow contract address:', ESCROW_CONTRACT_ADDRESS);
       console.log('🔍 DEBUG: Environment escrow address:', process.env.ESCROW_CONTRACT_ADDRESS);
       console.log('🔍 DEBUG: Public environment escrow address:', process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS);
+      console.log('🔍 DEBUG: Token ID extracted from mint:', tokenId);
+      console.log('🔍 DEBUG: Token ID type:', typeof tokenId);
+      console.log('🔍 DEBUG: NFT contract address:', process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
       
       const createGiftTransaction = prepareCreateGiftCall(
         tokenId,
