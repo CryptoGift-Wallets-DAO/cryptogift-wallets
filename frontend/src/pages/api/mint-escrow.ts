@@ -234,14 +234,14 @@ async function mintNFTEscrowGasless(
     });
     
     // Step 8: Prepare mint transaction for gasless execution
-    // For escrow flow, mint to backend deployer first, then transfer to escrow
-    const mintTarget = creatorAddress; // Backend deployer address
-    console.log(`🎨 Preparing gasless mint NFT to backend: ${mintTarget}...`);
-    console.log(`🔍 Final recipient will be: ${to}`);
+    // Mint DIRECTLY to escrow contract - no intermediate steps needed
+    console.log(`🎨 Preparing gasless mint NFT DIRECTLY to escrow contract: ${ESCROW_CONTRACT_ADDRESS}...`);
+    console.log(`🔍 Original recipient: ${to}`);
+    console.log(`🔍 Backend deployer: ${creatorAddress}`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [mintTarget, tokenURI] // Mint to backend deployer for escrow flow
+      params: [ESCROW_CONTRACT_ADDRESS!, tokenURI] // Mint DIRECTLY to escrow
     });
     
     // Step 9: Execute gasless mint transaction through Biconomy
@@ -324,10 +324,10 @@ async function mintNFTEscrowGasless(
     const isEscrowMint = !!password;
     
     if (isEscrowMint) {
-      // ESCROW MINT: NFT is with creator, need to transfer to escrow via createGift
-      console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
+      // ESCROW MINT: NFT already minted to escrow, just need to register the gift
+      console.log('🔒 ESCROW MINT: NFT already in escrow, registering gift metadata...');
       
-      // Create the escrow gift (this will transfer NFT from creator to escrow contract)
+      // Create the escrow gift record (NFT is already in escrow contract)
       console.log('🔍 DEBUG: Using escrow contract address:', ESCROW_CONTRACT_ADDRESS);
       console.log('🔍 DEBUG: Environment escrow address:', process.env.ESCROW_CONTRACT_ADDRESS);
       console.log('🔍 DEBUG: Public environment escrow address:', process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS);
@@ -344,7 +344,7 @@ async function mintNFTEscrowGasless(
         giftMessage
       );
       
-      console.log('🚀 Executing gasless escrow gift creation (transfers NFT to escrow)...');
+      console.log('🚀 Executing gasless escrow gift registration (no transfer needed)...');
       const escrowResult = await sendGaslessTransaction(smartAccount, createGiftTransaction);
       
       const escrowReceipt = await waitForReceipt({
@@ -657,14 +657,14 @@ async function mintNFTEscrowGasPaid(
     });
     
     // Step 7: Prepare mint transaction (regular transaction with gas)
-    // For escrow flow, mint to backend deployer first, then transfer to escrow
-    const mintTarget = creatorAddress; // Backend deployer address
-    console.log(`🎨 Preparing gas-paid mint NFT to backend: ${mintTarget}...`);
-    console.log(`🔍 Final recipient will be: ${to}`);
+    // Mint DIRECTLY to escrow contract - no intermediate steps needed
+    console.log(`🎨 Preparing gas-paid mint NFT DIRECTLY to escrow contract: ${ESCROW_CONTRACT_ADDRESS}...`);
+    console.log(`🔍 Original recipient: ${to}`);
+    console.log(`🔍 Backend deployer: ${creatorAddress}`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [mintTarget, tokenURI] // Mint to backend deployer for escrow flow
+      params: [ESCROW_CONTRACT_ADDRESS!, tokenURI] // Mint DIRECTLY to escrow
     });
     
     // Step 8: Execute gas-paid mint transaction using deployer account
