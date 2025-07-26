@@ -234,11 +234,14 @@ async function mintNFTEscrowGasless(
     });
     
     // Step 8: Prepare mint transaction for gasless execution
-    console.log(`🎨 Preparing gasless mint NFT to: ${to}...`);
+    // For escrow flow, mint to backend deployer first, then transfer to escrow
+    const mintTarget = creatorAddress; // Backend deployer address
+    console.log(`🎨 Preparing gasless mint NFT to backend: ${mintTarget}...`);
+    console.log(`🔍 Final recipient will be: ${to}`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [to, tokenURI] // ← FIX: Use the actual 'to' parameter
+      params: [mintTarget, tokenURI] // Mint to backend deployer for escrow flow
     });
     
     // Step 9: Execute gasless mint transaction through Biconomy
@@ -654,11 +657,14 @@ async function mintNFTEscrowGasPaid(
     });
     
     // Step 7: Prepare mint transaction (regular transaction with gas)
-    console.log(`🎨 Preparing gas-paid mint NFT to: ${to}...`);
+    // For escrow flow, mint to backend deployer first, then transfer to escrow
+    const mintTarget = creatorAddress; // Backend deployer address
+    console.log(`🎨 Preparing gas-paid mint NFT to backend: ${mintTarget}...`);
+    console.log(`🔍 Final recipient will be: ${to}`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [to, tokenURI]
+      params: [mintTarget, tokenURI] // Mint to backend deployer for escrow flow
     });
     
     // Step 8: Execute gas-paid mint transaction using deployer account
