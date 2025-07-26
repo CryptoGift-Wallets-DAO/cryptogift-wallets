@@ -260,6 +260,8 @@ async function mintNFTEscrowGasless(
     }
     
     console.log('✅ Mint transaction confirmed successful');
+    console.log('🔍 FORCED DEBUG: About to extract token ID - checking deployment');
+    console.log('🔍 FORCED DEBUG: Mint result hash:', mintResult.transactionHash);
     let tokenId: string | null = null;
     
     // Parse Transfer event to get exact token ID from mint transaction
@@ -681,6 +683,8 @@ async function mintNFTEscrowGasPaid(
     }
     
     console.log('✅ Mint transaction confirmed successful');
+    console.log('🔍 FORCED DEBUG: About to extract token ID - checking deployment');
+    console.log('🔍 FORCED DEBUG: Mint result hash:', mintResult.transactionHash);
     let tokenId: string | null = null;
     
     // Parse Transfer event to get exact token ID from mint transaction
