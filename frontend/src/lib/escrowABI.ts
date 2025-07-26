@@ -2,6 +2,7 @@
  * CRYPTOGIFT ESCROW CONTRACT ABI
  * Contract: 0xAC398A1da4E7b198f82e6D68d5355e84FF976e01
  * Network: Base Sepolia
+ * Updated: 2025-07-26 - Force Vercel rebuild
  */
 
 export const ESCROW_ABI = [

@@ -323,6 +323,10 @@ async function mintNFTEscrowGasless(
       console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
       
       // Create the escrow gift (this will transfer NFT from creator to escrow contract)
+      console.log('🔍 DEBUG: Using escrow contract address:', ESCROW_CONTRACT_ADDRESS);
+      console.log('🔍 DEBUG: Environment escrow address:', process.env.ESCROW_CONTRACT_ADDRESS);
+      console.log('🔍 DEBUG: Public environment escrow address:', process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS);
+      
       const createGiftTransaction = prepareCreateGiftCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
