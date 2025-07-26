@@ -127,6 +127,32 @@ export function prepareCreateGiftCall(
   });
 }
 
+export function prepareRegisterGiftMintedCall(
+  tokenId: string | number,
+  nftContract: string,
+  password: string,
+  salt: string,
+  timeframeDays: number,
+  giftMessage: string,
+  gate: string = '0x0000000000000000000000000000000000000000'
+) {
+  const contract = getEscrowContract();
+  
+  return prepareContractCall({
+    contract,
+    method: "registerGiftMinted",
+    params: [
+      BigInt(tokenId),
+      nftContract,
+      password,
+      salt as `0x${string}`,
+      BigInt(timeframeDays),
+      giftMessage,
+      gate
+    ]
+  });
+}
+
 export function prepareClaimGiftCall(
   tokenId: string | number,
   password: string,
