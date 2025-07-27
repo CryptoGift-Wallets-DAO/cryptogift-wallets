@@ -341,6 +341,51 @@ async function mintNFTEscrowGasless(
       console.log('🔍 DEBUG: Creator address:', creatorAddress ? 'Set' : 'Missing');
       console.log('✅ V2: Using registerGiftMinted for zero-custody escrow');
       
+      // CRITICAL: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
+      console.log('🔍 PRE-CHECK: Verifying NFT is owned by escrow before registration...');
+      const providerGasless = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const nftContractABIGasless = ["function ownerOf(uint256 tokenId) view returns (address)"];
+      const nftContractCheckGasless = new ethers.Contract(
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        nftContractABIGasless,
+        providerGasless
+      );
+      
+      // Wait for blockchain state to settle with retries
+      let attempts = 0;
+      let currentOwner: string;
+      const maxAttempts = 5;
+      const delayMs = 1000; // 1 second delay between attempts
+      
+      while (attempts < maxAttempts) {
+        try {
+          currentOwner = await nftContractCheckGasless.ownerOf(tokenId);
+          console.log(`🔍 Attempt ${attempts + 1}: NFT owner is ${currentOwner}`);
+          console.log(`🔍 Expected owner: ${ESCROW_CONTRACT_ADDRESS}`);
+          
+          if (currentOwner.toLowerCase() === ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+            console.log('✅ NFT ownership confirmed - proceeding with registerGiftMinted');
+            break;
+          } else {
+            console.log(`⏳ NFT not yet transferred to escrow (attempt ${attempts + 1}/${maxAttempts})`);
+            if (attempts < maxAttempts - 1) {
+              await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+          }
+        } catch (error) {
+          console.log(`❌ Error checking NFT ownership (attempt ${attempts + 1}): ${error.message}`);
+          if (attempts < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          }
+        }
+        attempts++;
+      }
+      
+      // Final ownership verification
+      if (currentOwner!.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+        throw new Error(`CRITICAL: NFT was not transferred to escrow contract after ${maxAttempts} attempts. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${currentOwner}`);
+      }
+      
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -369,15 +414,15 @@ async function mintNFTEscrowGasless(
       
       // Step 11: Verify NFT is in escrow contract (should already be there from direct mint)
       console.log('🔍 Verifying NFT is in escrow contract (V2 direct mint)...');
-      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-      const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
-      const nftContractCheck = new ethers.Contract(
+      const providerPostGasless = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const nftContractABIPostGasless = ["function ownerOf(uint256 tokenId) view returns (address)"];
+      const nftContractCheckPostGasless = new ethers.Contract(
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-        nftContractABI,
-        provider
+        nftContractABIPostGasless,
+        providerPostGasless
       );
       
-      const actualOwner = await nftContractCheck.ownerOf(tokenId);
+      const actualOwner = await nftContractCheckPostGasless.ownerOf(tokenId);
       console.log('🔍 Actual NFT owner after escrow creation:', actualOwner);
       console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
       
@@ -765,6 +810,51 @@ async function mintNFTEscrowGasPaid(
       // ESCROW MINT V2: NFT minted directly to escrow, register gift with registerGiftMinted
       console.log('🔒 ESCROW MINT V2: NFT minted directly to escrow, registering gift...');
       
+      // CRITICAL: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
+      console.log('🔍 PRE-CHECK: Verifying NFT is owned by escrow before registration...');
+      const providerGasPaid = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const nftContractABIGasPaid = ["function ownerOf(uint256 tokenId) view returns (address)"];
+      const nftContractCheckGasPaid = new ethers.Contract(
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        nftContractABIGasPaid,
+        providerGasPaid
+      );
+      
+      // Wait for blockchain state to settle with retries
+      let attempts = 0;
+      let currentOwner: string;
+      const maxAttempts = 5;
+      const delayMs = 1000; // 1 second delay between attempts
+      
+      while (attempts < maxAttempts) {
+        try {
+          currentOwner = await nftContractCheckGasPaid.ownerOf(tokenId);
+          console.log(`🔍 Attempt ${attempts + 1}: NFT owner is ${currentOwner}`);
+          console.log(`🔍 Expected owner: ${ESCROW_CONTRACT_ADDRESS}`);
+          
+          if (currentOwner.toLowerCase() === ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+            console.log('✅ NFT ownership confirmed - proceeding with registerGiftMinted');
+            break;
+          } else {
+            console.log(`⏳ NFT not yet transferred to escrow (attempt ${attempts + 1}/${maxAttempts})`);
+            if (attempts < maxAttempts - 1) {
+              await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+          }
+        } catch (error) {
+          console.log(`❌ Error checking NFT ownership (attempt ${attempts + 1}): ${error.message}`);
+          if (attempts < maxAttempts - 1) {
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          }
+        }
+        attempts++;
+      }
+      
+      // Final ownership verification
+      if (currentOwner!.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+        throw new Error(`CRITICAL: NFT was not transferred to escrow contract after ${maxAttempts} attempts. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${currentOwner}`);
+      }
+      
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
       console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
@@ -798,15 +888,15 @@ async function mintNFTEscrowGasPaid(
       
       // Step: Verify NFT is in escrow contract (should already be there from direct mint)
       console.log('🔍 Verifying NFT is in escrow contract (V2 direct mint)...');
-      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-      const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
-      const nftContractCheck = new ethers.Contract(
+      const providerPostGasPaid = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+      const nftContractABIPostGasPaid = ["function ownerOf(uint256 tokenId) view returns (address)"];
+      const nftContractCheckPostGasPaid = new ethers.Contract(
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-        nftContractABI,
-        provider
+        nftContractABIPostGasPaid,
+        providerPostGasPaid
       );
       
-      const actualOwner = await nftContractCheck.ownerOf(tokenId);
+      const actualOwner = await nftContractCheckPostGasPaid.ownerOf(tokenId);
       console.log('🔍 Actual NFT owner after gift registration:', actualOwner);
       console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
       
