@@ -78,11 +78,25 @@ export function getEscrowContract() {
 }
 
 /**
- * CRITICAL FIX: Map tokenId to giftId using contract events
+ * Cache for tokenId to giftId mappings to avoid repeated RPC calls
+ */
+const tokenIdToGiftIdCache = new Map<string, number>();
+
+/**
+ * CRITICAL FIX: Map tokenId to giftId using contract events with caching
  * The escrow contract uses an independent giftCounter, so tokenId ≠ giftId
  * We need to query GiftRegisteredFromMint events to find the correct giftId
  */
 export async function getGiftIdFromTokenId(tokenId: string | number): Promise<number | null> {
+  const tokenIdStr = tokenId.toString();
+  
+  // Check cache first
+  if (tokenIdToGiftIdCache.has(tokenIdStr)) {
+    const cachedGiftId = tokenIdToGiftIdCache.get(tokenIdStr)!;
+    console.log(`🎯 MAPPING CACHE HIT: tokenId ${tokenId} → giftId ${cachedGiftId}`);
+    return cachedGiftId;
+  }
+  
   try {
     console.log('🔍 MAPPING: Finding giftId for tokenId', tokenId);
     
@@ -93,17 +107,28 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     const eventSignature = "GiftRegisteredFromMint(uint256,address,address,uint256,uint40,address,string,address)";
     const eventTopic = ethers.id(eventSignature);
     
-    // Query events from escrow contract
+    // Query events from escrow contract with safe block range
+    const currentBlock = await provider.getBlockNumber();
+    const deploymentBlock = 28915000; // V2 contract deployment block
+    const maxBlocks = 3000; // Increased safe range for RPC limits
+    
+    // Search in chunks if needed, but start with recent blocks
+    const startBlock = Math.max(deploymentBlock, currentBlock - maxBlocks);
+    
+    console.log(`🔍 MAPPING: Searching blocks ${startBlock} to ${currentBlock} for events`);
+    
     const logs = await provider.getLogs({
       address: ESCROW_CONTRACT_ADDRESS,
       topics: [eventTopic],
-      fromBlock: 0, // Start from beginning - could optimize this
+      fromBlock: startBlock,
       toBlock: 'latest'
     });
     
     console.log(`🔍 MAPPING: Found ${logs.length} GiftRegisteredFromMint events`);
     
-    // Parse events to find matching tokenId
+    // Parse ALL events and cache them for future use
+    const mappings = new Map<string, number>();
+    
     for (const log of logs) {
       try {
         // Event structure: GiftRegisteredFromMint(uint256 indexed giftId, address indexed creator, address indexed nftContract, uint256 tokenId, uint40 expiresAt, address gate, string giftMessage, address registeredBy)
@@ -120,17 +145,26 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
         );
         const eventTokenId = decoded[0].toString(); // tokenId is first in data
         
-        console.log(`🔍 MAPPING: Event giftId=${giftId}, tokenId=${eventTokenId}`);
+        // Cache this mapping
+        mappings.set(eventTokenId, parseInt(giftId));
         
-        // Check if this matches our target tokenId
-        if (eventTokenId === tokenId.toString()) {
-          console.log(`✅ MAPPING: Found match! tokenId ${tokenId} → giftId ${giftId}`);
-          return parseInt(giftId);
-        }
+        console.log(`🔍 MAPPING: Event giftId=${giftId}, tokenId=${eventTokenId}`);
       } catch (decodeError) {
         console.warn('⚠️ MAPPING: Failed to decode event:', decodeError.message);
         continue;
       }
+    }
+    
+    // Update cache with all found mappings
+    for (const [tId, gId] of mappings) {
+      tokenIdToGiftIdCache.set(tId, gId);
+    }
+    
+    // Look for our specific tokenId
+    const giftId = mappings.get(tokenIdStr);
+    if (giftId) {
+      console.log(`✅ MAPPING: Found match! tokenId ${tokenId} → giftId ${giftId}`);
+      return giftId;
     }
     
     console.log(`❌ MAPPING: No giftId found for tokenId ${tokenId}`);
@@ -140,6 +174,55 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     console.error('❌ MAPPING ERROR:', error);
     return null;
   }
+}
+
+/**
+ * HELPER: Reusable NFT ownership verification with retries
+ * Consolidates the duplicated ownership check logic
+ */
+export async function verifyNFTOwnership(
+  nftContract: string,
+  tokenId: string | number,
+  expectedOwner: string,
+  maxAttempts: number = 5,
+  delayMs: number = 1000
+): Promise<{ success: boolean; actualOwner?: string; error?: string }> {
+  let attempts = 0;
+  let currentOwner: string | undefined;
+  
+  const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL!);
+  const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
+  const nftContractCheck = new ethers.Contract(nftContract, nftContractABI, provider);
+  
+  while (attempts < maxAttempts) {
+    try {
+      currentOwner = await nftContractCheck.ownerOf(tokenId);
+      console.log(`🔍 Ownership Check (attempt ${attempts + 1}): NFT owner is ${currentOwner}`);
+      console.log(`🔍 Expected owner: ${expectedOwner}`);
+      
+      if (currentOwner.toLowerCase() === expectedOwner.toLowerCase()) {
+        console.log('✅ NFT ownership confirmed');
+        return { success: true, actualOwner: currentOwner };
+      } else {
+        console.log(`⏳ NFT not yet transferred to expected owner (attempt ${attempts + 1}/${maxAttempts})`);
+        if (attempts < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    } catch (error: any) {
+      console.log(`❌ Error checking NFT ownership (attempt ${attempts + 1}): ${error.message}`);
+      if (attempts < maxAttempts - 1) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+    attempts++;
+  }
+  
+  return { 
+    success: false, 
+    actualOwner: currentOwner,
+    error: `NFT ownership verification failed after ${maxAttempts} attempts. Expected: ${expectedOwner}, Got: ${currentOwner || 'unknown'}`
+  };
 }
 
 /**
