@@ -318,7 +318,7 @@ export async function parseGiftEventWithRetry(
         return result;
       }
       
-      lastError = result.error;
+      lastError = result.success === false ? result.error : 'Unknown error';
       
       if (attempt < maxRetries) {
         // Exponential backoff: 1s, 2s, 4s
