@@ -258,7 +258,7 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
     const receipt = await sendGaslessTransaction(smartAccount, mintTransaction);
     console.log("✅ GASLESS MINT Step 3e SUCCESS: Gasless transaction completed", { 
       transactionHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber 
+      blockNumber: receipt.receipt?.blockNumber || 'unknown'
     });
     
     // CRITICAL FIX: Extract REAL token ID from Transfer event (gasless)
@@ -268,11 +268,11 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
     try {
       // Parse Transfer event from gasless transaction receipt
       console.log("🎯 GASLESS: Parsing Transfer event for exact tokenId...");
-      console.log("📜 Receipt logs:", receipt.logs?.length || 0, "logs found");
+      console.log("📜 Receipt logs:", receipt.receipt?.logs?.length || 0, "logs found");
       
       let gaslessTokenIdFromEvent = null;
       
-      for (const log of receipt.logs || []) {
+      for (const log of receipt.receipt?.logs || []) {
         // Check if this log is from our NFT contract
         if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
           console.log("✅ GASLESS: Found log from NFT contract");
@@ -333,7 +333,7 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
       success: true,
       tokenId: realTokenId,
       transactionHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber,
+      blockNumber: receipt.receipt?.blockNumber || 'unknown',
       gasless: true
     };
   } catch (error) {
