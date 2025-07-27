@@ -33,8 +33,6 @@ import {
 } from '../../lib/gaslessValidation';
 import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
-import { storeGiftMapping } from '../../lib/giftMappingStore';
-import { getEscrowContract } from '../../lib/escrowUtils';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 

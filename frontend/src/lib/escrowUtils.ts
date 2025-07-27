@@ -191,9 +191,9 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     }
     
     // Update cache with all found mappings
-    for (const [tId, gId] of mappings) {
+    mappings.forEach((gId, tId) => {
       tokenIdToGiftIdCache.set(tId, gId);
-    }
+    });
     
     // Look for our specific tokenId
     const giftId = mappings.get(tokenIdStr);
