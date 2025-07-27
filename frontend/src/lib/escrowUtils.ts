@@ -150,25 +150,8 @@ export function prepareClaimGiftCall(
   });
 }
 
-export function prepareClaimGiftForCall(
-  tokenId: string | number,
-  password: string,
-  salt: string,
-  recipient: string
-) {
-  const contract = getEscrowContract();
-  
-  return prepareContractCall({
-    contract,
-    method: "claimGiftFor",
-    params: [
-      BigInt(tokenId),
-      password,
-      salt,
-      recipient
-    ]
-  });
-}
+// REMOVED: prepareClaimGiftForCall - function does not exist in deployed contract
+// Use prepareClaimGiftCall instead
 
 export function prepareReturnExpiredGiftCall(tokenId: string | number) {
   const contract = getEscrowContract();
