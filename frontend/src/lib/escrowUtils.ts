@@ -80,22 +80,21 @@ export function getEscrowContract() {
  * ThirdWeb v5 Return Type Information
  * 
  * ✅ CONFIRMED BEHAVIOR IN THIRDWEB v5:
- * Contract functions that return tuples are automatically converted to structured objects
- * with named properties based on the ABI component names.
+ * Contract functions that return tuples are returned as readonly arrays.
+ * Access return values by array indices based on the ABI return order.
  * 
  * EXAMPLES:
- * - getGift() returns: { creator: "0x...", expirationTime: 123n, nftContract: "0x...", ... }
+ * - getGift() returns: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
  * - canClaimGift() returns: [true, 86400n] (tuple format)
  * 
- * This provides excellent developer experience as you can access properties by name
- * rather than array indices. No additional parsing helpers are needed.
+ * Access return values using array indices: giftData[0], giftData[1], etc.
  * 
  * USAGE PATTERN:
  * ```typescript
  * const giftData = await readContract({ contract, method: "getGift", params: [tokenId] });
  * const gift: EscrowGift = {
- *   creator: giftData.creator,
- *   expirationTime: giftData.expirationTime,
+ *   creator: giftData[0],
+ *   expirationTime: giftData[1],
  *   // ... etc
  * };
  * ```

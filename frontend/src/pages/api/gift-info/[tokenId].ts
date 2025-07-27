@@ -69,14 +69,14 @@ async function getGiftInfo(tokenId: string): Promise<{
       })
     ]);
     
-    // ThirdWeb v5 already returns structured objects with named properties
+    // getGift returns: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
     const gift: EscrowGift = {
-      creator: giftData.creator,
-      expirationTime: giftData.expirationTime,
-      nftContract: giftData.nftContract,
-      tokenId: giftData.tokenId,
-      passwordHash: giftData.passwordHash,
-      status: giftData.status
+      creator: giftData[0],
+      expirationTime: giftData[1],
+      nftContract: giftData[2],
+      tokenId: giftData[3],
+      passwordHash: giftData[4],
+      status: giftData[5]
     };
     
     // Handle ThirdWeb v5 tuple return format for canClaimGift
