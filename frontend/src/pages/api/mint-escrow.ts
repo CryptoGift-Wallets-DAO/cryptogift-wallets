@@ -31,6 +31,8 @@ import {
   verifyGaslessTransaction,
   checkRateLimit
 } from '../../lib/gaslessValidation';
+import { parseGiftEventWithRetry } from '../../lib/eventParser';
+import { validateMappingWithRetry } from '../../lib/mappingValidator';
 import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
@@ -344,15 +346,6 @@ async function mintNFTEscrowGasless(
       console.log('🔍 DEBUG: Creator address:', creatorAddress ? 'Set' : 'Missing');
       console.log('✅ V2: Using registerGiftMinted for zero-custody escrow');
       
-      // CRITICAL: Get giftCounter BEFORE creating gift to avoid race conditions
-      const preCreateGiftCounter = await readContract({
-        contract: getEscrowContract(),
-        method: "giftCounter",
-        params: []
-      });
-      const expectedGiftId = Number(preCreateGiftCounter);
-      console.log(`🔍 PRE-CREATE: giftCounter is ${Number(preCreateGiftCounter)}, expected giftId will be ${expectedGiftId}`);
-      
       // CRITICAL: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
       console.log('🔍 PRE-CHECK: Verifying NFT is owned by escrow before registration...');
       
@@ -392,13 +385,45 @@ async function mintNFTEscrowGasless(
       
       console.log('✅ Gift registered successfully in escrow V2 contract');
       
-      // CRITICAL: Store tokenId → giftId mapping using pre-determined giftId to avoid race conditions
+      // DETERMINISTIC SOLUTION: Parse giftId from transaction receipt events
+      console.log('🔍 PARSING: Extracting giftId from transaction receipt...');
+      const eventResult = await parseGiftEventWithRetry(
+        escrowReceipt,
+        tokenId,
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+      );
+      
+      if (!eventResult.success) {
+        console.error('❌ EVENT PARSE FAILED:', eventResult.error);
+        throw new Error(`Failed to extract giftId from transaction: ${eventResult.error}`);
+      }
+      
+      const actualGiftId = eventResult.giftId;
+      console.log(`✅ DETERMINISTIC: tokenId ${tokenId} → giftId ${actualGiftId} (from event)`);
+      
+      // Store the mapping deterministically
       try {
-        // Use the expectedGiftId we calculated BEFORE creating the gift
-        await storeGiftMapping(tokenId, expectedGiftId);
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${expectedGiftId} (pre-calculated)`);
+        await storeGiftMapping(tokenId, actualGiftId);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (deterministic)`);
+        
+        // VALIDATION: Verify the mapping is correct
+        const validation = await validateMappingWithRetry(
+          tokenId,
+          actualGiftId,
+          creatorAddress,
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+        );
+        
+        if (!validation.valid) {
+          console.error('❌ MAPPING VALIDATION FAILED:', validation.error);
+          throw new Error(`Mapping validation failed: ${validation.error}`);
+        }
+        
+        console.log('✅ MAPPING VALIDATED: Contract data confirms correct mapping');
+        
       } catch (mappingError) {
-        console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
+        console.error('❌ Failed to store/validate gift mapping:', mappingError);
+        throw new Error(`Critical mapping error: ${(mappingError as Error).message}`);
       }
       
       // Step 11: Verify NFT is in escrow contract (should already be there from direct mint)
@@ -815,15 +840,6 @@ async function mintNFTEscrowGasPaid(
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
       console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
       
-      // CRITICAL: Get giftCounter BEFORE creating gift to avoid race conditions (gas-paid flow)
-      const preCreateGiftCounterGasPaid = await readContract({
-        contract: getEscrowContract(),
-        method: "giftCounter",
-        params: []
-      });
-      const expectedGiftIdGasPaid = Number(preCreateGiftCounterGasPaid);
-      console.log(`🔍 PRE-CREATE (GAS-PAID): giftCounter is ${Number(preCreateGiftCounterGasPaid)}, expected giftId will be ${expectedGiftIdGasPaid}`);
-      
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -873,13 +889,45 @@ async function mintNFTEscrowGasPaid(
       
       console.log('✅ VERIFIED: NFT successfully in escrow contract (V2 zero-custody)');
       
-      // CRITICAL: Store tokenId → giftId mapping using pre-determined giftId to avoid race conditions (gas-paid)
+      // DETERMINISTIC SOLUTION: Parse giftId from transaction receipt events (gas-paid)
+      console.log('🔍 PARSING (GAS-PAID): Extracting giftId from transaction receipt...');
+      const eventResultGasPaid = await parseGiftEventWithRetry(
+        escrowReceipt,
+        tokenId,
+        process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+      );
+      
+      if (!eventResultGasPaid.success) {
+        console.error('❌ EVENT PARSE FAILED (GAS-PAID):', eventResultGasPaid.error);
+        throw new Error(`Failed to extract giftId from gas-paid transaction: ${eventResultGasPaid.error}`);
+      }
+      
+      const actualGiftIdGasPaid = eventResultGasPaid.giftId;
+      console.log(`✅ DETERMINISTIC (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (from event)`);
+      
+      // Store the mapping deterministically (gas-paid)
       try {
-        // Use the expectedGiftIdGasPaid we calculated BEFORE creating the gift
-        await storeGiftMapping(tokenId, expectedGiftIdGasPaid);
-        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${expectedGiftIdGasPaid} (pre-calculated)`);
+        await storeGiftMapping(tokenId, actualGiftIdGasPaid);
+        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (deterministic)`);
+        
+        // VALIDATION: Verify the mapping is correct (gas-paid)
+        const validationGasPaid = await validateMappingWithRetry(
+          tokenId,
+          actualGiftIdGasPaid,
+          creatorAddress,
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+        );
+        
+        if (!validationGasPaid.valid) {
+          console.error('❌ MAPPING VALIDATION FAILED (GAS-PAID):', validationGasPaid.error);
+          throw new Error(`Gas-paid mapping validation failed: ${validationGasPaid.error}`);
+        }
+        
+        console.log('✅ MAPPING VALIDATED (GAS-PAID): Contract data confirms correct mapping');
+        
       } catch (mappingError) {
-        console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
+        console.error('❌ Failed to store/validate gift mapping (gas-paid):', mappingError);
+        throw new Error(`Critical gas-paid mapping error: ${(mappingError as Error).message}`);
       }
       
       // Set escrow transaction hash for response
