@@ -404,8 +404,8 @@ async function mintNFTEscrowGasless(
       );
       
       if (!eventResult.success) {
-        console.error('❌ EVENT PARSE FAILED:', eventResult.error);
-        throw new Error(`Failed to extract giftId from transaction: ${eventResult.error}`);
+        console.error('❌ EVENT PARSE FAILED:', eventResult.success === false ? eventResult.error : 'Unknown error');
+        throw new Error(`Failed to extract giftId from transaction: ${eventResult.success === false ? eventResult.error : 'Unknown error'}`);
       }
       
       const actualGiftId = eventResult.giftId;
@@ -901,15 +901,29 @@ async function mintNFTEscrowGasPaid(
       
       // DETERMINISTIC SOLUTION: Parse giftId from transaction receipt events (gas-paid)
       console.log('🔍 PARSING (GAS-PAID): Extracting giftId from transaction receipt...');
+      
+      // Normalize the ThirdWeb receipt to our parser format
+      const normalizedGasPaidReceipt = {
+        transactionHash: escrowReceipt.transactionHash,
+        status: escrowReceipt.status,
+        blockNumber: Number(escrowReceipt.blockNumber),
+        gasUsed: escrowReceipt.gasUsed,
+        logs: escrowReceipt.logs.map((log: any) => ({
+          topics: log.topics || [],
+          data: log.data || '0x',
+          address: log.address
+        }))
+      };
+      
       const eventResultGasPaid = await parseGiftEventWithRetry(
-        escrowReceipt,
+        normalizedGasPaidReceipt,
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
       );
       
       if (!eventResultGasPaid.success) {
-        console.error('❌ EVENT PARSE FAILED (GAS-PAID):', eventResultGasPaid.error);
-        throw new Error(`Failed to extract giftId from gas-paid transaction: ${eventResultGasPaid.error}`);
+        console.error('❌ EVENT PARSE FAILED (GAS-PAID):', eventResultGasPaid.success === false ? eventResultGasPaid.error : 'Unknown error');
+        throw new Error(`Failed to extract giftId from gas-paid transaction: ${eventResultGasPaid.success === false ? eventResultGasPaid.error : 'Unknown error'}`);
       }
       
       const actualGiftIdGasPaid = eventResultGasPaid.giftId;

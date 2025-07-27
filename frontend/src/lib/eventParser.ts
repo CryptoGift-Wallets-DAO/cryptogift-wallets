@@ -272,7 +272,7 @@ export async function parseGiftRegisteredFromMintEvent(
         return fallbackResult;
       }
       
-      console.log('❌ FALLBACK FAILED:', fallbackResult.error);
+      console.log('❌ FALLBACK FAILED:', fallbackResult.success === false ? fallbackResult.error : 'Unknown error');
     } catch (fallbackError) {
       console.error('❌ FALLBACK ERROR:', fallbackError);
     }
