@@ -563,27 +563,9 @@ async function mintNFTDirectly(
         }
       }
     } catch (error) {
-      console.warn('Failed to parse Transfer events for direct mint, trying totalSupply fallback:', error);
-    }
-    
-    // Fallback to totalSupply if needed
-    if (!tokenId) {
-      try {
-        const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-        const nftContractABI = ["function totalSupply() public view returns (uint256)"];
-        const nftContract = new ethers.Contract(
-          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-          nftContractABI,
-          provider
-        );
-        
-        const totalSupply = await nftContract.totalSupply();
-        tokenId = totalSupply.toString();
-        console.log('🎯 Token ID extracted from totalSupply (direct fallback):', tokenId);
-      } catch (error) {
-        console.error('Both Transfer event parsing and totalSupply failed for direct mint:', error);
-        throw new Error('Failed to extract token ID from direct mint transaction');
-      }
+      console.error('❌ Transfer event extraction failed for direct mint:', error);
+      // NO FALLBACK - Fail fast and clear
+      throw new Error(`Token ID extraction failed for direct mint: ${error.message}. This prevents double minting and ensures data integrity.`);
     }
     
     if (!tokenId) {
