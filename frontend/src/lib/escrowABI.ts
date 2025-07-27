@@ -6,8 +6,20 @@
  * Updated: 2025-07-27 - NEW V2 WITH registerGiftMinted FOR ZERO CUSTODY
  */
 
-// Import V2 ABI
-export { ESCROW_ABI_V2 as ESCROW_ABI, ESCROW_CONTRACT_ADDRESS_V2 as ESCROW_CONTRACT_ADDRESS, EscrowGiftV2 as EscrowGift, GiftRegisteredFromMintEvent } from './escrowABIV2';
+// Import V2 ABI and exports
+export { 
+  ESCROW_ABI_V2 as ESCROW_ABI, 
+  ESCROW_CONTRACT_ADDRESS_V2 as ESCROW_CONTRACT_ADDRESS 
+} from './escrowABIV2';
+
+export type { 
+  EscrowGift,
+  EscrowGiftV2,
+  GiftRegisteredFromMintEvent,
+  GiftCreatedEvent,
+  GiftClaimedEvent,
+  GiftReturnedEvent
+} from './escrowABIV2';
 
 // Legacy V1 ABI for backward compatibility (DEPRECATED)
 export const ESCROW_ABI_V1 = [

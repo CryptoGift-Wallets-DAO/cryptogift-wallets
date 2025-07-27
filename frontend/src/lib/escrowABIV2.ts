@@ -846,5 +846,38 @@ export interface GiftRegisteredFromMintEvent {
   registeredBy: string;
 }
 
-// Export legacy for compatibility
-export { ESCROW_ABI_V2 as ESCROW_ABI, ESCROW_CONTRACT_ADDRESS_V2 as ESCROW_CONTRACT_ADDRESS };
+// Backward compatibility with V1 interface structure
+export interface EscrowGift {
+  creator: string;
+  expirationTime: bigint;
+  nftContract: string;
+  tokenId: bigint;
+  passwordHash: string;
+  status: number; // 0=Active, 1=Claimed, 2=Returned
+}
+
+// Event interfaces for type safety
+export interface GiftCreatedEvent {
+  giftId: bigint;
+  creator: string;
+  nftContract: string;
+  tokenId: bigint;
+  expiresAt: bigint;
+  gate: string;
+  giftMessage: string;
+}
+
+export interface GiftClaimedEvent {
+  giftId: bigint;
+  claimer: string;
+  recipient: string;
+  gate: string;
+  gateReason: string;
+}
+
+export interface GiftReturnedEvent {
+  giftId: bigint;
+  creator: string;
+  returnedBy: string;
+  timestamp: bigint;
+}

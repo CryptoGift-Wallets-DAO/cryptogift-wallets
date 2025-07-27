@@ -1,26 +1,53 @@
 # 📜 Deployment History - GiftEscrow Enterprise
 
-## 🎯 DEPLOYMENT ACTUAL
+## 🎯 DEPLOYMENT ACTUAL - ZERO CUSTODY V2
 
-### ✅ GiftEscrow Enterprise v1.0.0 (ACTUAL)
+### ✅ GiftEscrow Enterprise V2.0.0 (ACTUAL - ZERO CUSTODY)
+- **Dirección**: `0x46175CfC233500DA803841DEef7f2816e7A129E0`
+- **Red**: Base Sepolia (84532)
+- **Fecha**: 2025-07-27
+- **Estado**: ✅ Desplegado y verificado
+- **BaseScan**: https://sepolia.basescan.org/address/0x46175CfC233500DA803841DEef7f2816e7A129E0
+- **🔥 NUEVA CARACTERÍSTICA**: `registerGiftMinted` para arquitectura zero-custody
+
+### ✅ ERC2771Forwarder V2 (ACTUAL)
+- **Dirección**: `0x51363999497B813063eBe367f1f2875569a1ef4E`
+- **Red**: Base Sepolia (84532)
+- **Fecha**: 2025-07-27
+- **Estado**: ✅ Desplegado y verificación en progreso
+- **BaseScan**: https://sepolia.basescan.org/address/0x51363999497B813063eBe367f1f2875569a1ef4E
+- **Verificación GUID**: `wqhumjqryw7jcpzn5bnelnujqnvtkiwwencxms87fdfalfwis4`
+
+### ❌ GiftEscrow Enterprise v1.0.0 (ANTERIOR - DEPRECATED)
 - **Dirección**: `0xAC398A1da4E7b198f82e6D68d5355e84FF976e01`
 - **Red**: Base Sepolia (84532)
 - **Fecha**: 2025-01-26
-- **Estado**: ✅ Desplegado y verificado
+- **Estado**: ❌ Deprecated - Tenía problemas de custodia
 - **BaseScan**: https://sepolia.basescan.org/address/0xAC398A1da4E7b198f82e6D68d5355e84FF976e01
 
 ### ❌ GiftEscrow Enterprise v1.0.0 (ANTERIOR - PROBLEMAS)
 - **Dirección**: `0x8b5182b0072f6A7e956FD22D61Ef0Fa6cB937086`
 - **Estado**: ❌ Descartado por problemas de implementación
 
-#### Características
+#### Características V2.0.0 (ZERO CUSTODY)
+- ✅ **registerGiftMinted** - Nueva función para mint directo a escrow
+- ✅ **MINTER_ROLE** - Control de acceso para backend relayers
+- ✅ **Zero Custody Architecture** - NFTs nunca son propiedad del deployer
 - ✅ **ERC2771Context** para meta-transacciones
-- ✅ **AccessControl** con roles de seguridad
+- ✅ **AccessControl** con roles de seguridad expandidos
 - ✅ **Pausable** para control de emergencia
 - ✅ **IGate System** para verificación modular
 - ✅ **Anti-brute force** con cooldown exponencial
 - ✅ **ReentrancyGuard** para protección
 - ✅ **ERC721/ERC1155 Receiver** compatibilidad completa
+
+#### Mejoras V2 vs V1
+- ❌ **V1**: Mintea al creator, luego transfiere a escrow (custodial)
+- ✅ **V2**: Mintea directo a escrow, registra gift (zero-custody)
+- ❌ **V1**: Deployer temporalmente posee NFTs del usuario
+- ✅ **V2**: Deployer NUNCA posee NFTs del usuario
+- ❌ **V1**: Riesgo de custody en proceso de transferencia
+- ✅ **V2**: Cero riesgo custodial, atomic mint-to-escrow
 
 #### Constructor Parameters
 - **trustedForwarder**: `0x69015912AA33720b842dCD6aC059Ed623F28d9f7`
