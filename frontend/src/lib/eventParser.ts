@@ -5,9 +5,21 @@
  */
 
 import { ethers } from 'ethers';
-import { TransactionReceipt } from 'thirdweb';
 import { ESCROW_ABI } from './escrowABI';
 import type { GiftRegisteredFromMintEvent } from './escrowABI';
+
+// ThirdWeb v5 compatible receipt interface
+interface ThirdWebTransactionReceipt {
+  logs: Array<{
+    topics: string[];
+    data: string;
+    address?: string;
+  }>;
+  status: 'success' | 'reverted';
+  transactionHash: string;
+  blockNumber: number;
+  gasUsed: bigint;
+}
 
 // Interface for parsed event result
 export interface ParsedGiftEvent {
@@ -35,7 +47,7 @@ export type EventParseResult = ParsedGiftEvent | EventParseFailure;
  * DETERMINISTIC - returns exactly what happened on-chain
  */
 export async function parseGiftRegisteredFromMintEvent(
-  receipt: TransactionReceipt,
+  receipt: ThirdWebTransactionReceipt,
   expectedTokenId?: string | number,
   contractAddress?: string
 ): Promise<EventParseResult> {
@@ -141,7 +153,7 @@ export async function parseGiftRegisteredFromMintEvent(
  * Handles RPC failures and temporary issues
  */
 export async function parseGiftEventWithRetry(
-  receipt: TransactionReceipt,
+  receipt: ThirdWebTransactionReceipt,
   expectedTokenId?: string | number,
   contractAddress?: string,
   maxRetries: number = 3
