@@ -1,8 +1,19 @@
-# 🔐 SECURITY ROTATION NOTES
+# 🔐 SECURITY ROTATION NOTES - UPDATED JULY 27, 2025
+
+**STATUS**: ✅ **SECURITY AUDIT COMPLETED** - Additional keys identified for rotation
 
 ## CRITICAL: Keys to Rotate Before Production
 
 ⚠️ **DO NOT DEPLOY TO PRODUCTION WITHOUT ROTATING THESE KEYS FIRST**
+
+## 🚨 NEW SECURITY FINDINGS (July 27, 2025)
+
+### CRITICAL ADDITIONAL KEYS FOR PRODUCTION ROTATION:
+- **Biconomy API Keys**: Now server-side only, still need rotation
+- **CRON_SECRET**: Required for automated operations security
+- **ADMIN_API_TOKEN**: Required for debug endpoint protection
+- **JWT_SECRET**: Required for authentication systems
+- **EMERGENCY_ADMIN_KEY**: Required for recovery scenarios
 
 ### 1. Private Keys Exposed in Development
 - **Current Deploy Key**: `870c27f0bc97330a7b2fdfd6ddf41930e721e37a372aa67de6ee38f9fe82760f`
@@ -25,6 +36,15 @@
 - [ ] Test deployment with new keys on testnet first
 - [ ] Transfer any test funds from old deployer wallet
 - [ ] Document new addresses in deployment docs
+
+### 4. NEW SECURITY VARIABLES (Added July 27, 2025)
+- **BICONOMY_MEE_API_KEY**: Server-side only (was NEXT_PUBLIC_)
+- **BICONOMY_PROJECT_ID**: Server-side only (was NEXT_PUBLIC_)  
+- **BICONOMY_PAYMASTER_API_KEY**: Server-side only paymaster key
+- **CRON_SECRET**: Authentication for automated CRON operations
+- **ADMIN_API_TOKEN**: Authentication for admin/debug endpoints
+- **JWT_SECRET**: 32+ character secret for JWT authentication
+- **EMERGENCY_ADMIN_KEY**: Recovery access key (optional but recommended)
 
 #### Environment Variables to Set in Production:
 ```bash
