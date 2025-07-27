@@ -14,7 +14,6 @@ export {
 
 export type { 
   EscrowGift,
-  EscrowGiftV2,
   GiftRegisteredFromMintEvent,
   GiftCreatedEvent,
   GiftClaimedEvent,

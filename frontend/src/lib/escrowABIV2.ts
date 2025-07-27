@@ -825,8 +825,8 @@ export const ESCROW_ABI_V2 = [
 // Contract address constant
 export const ESCROW_CONTRACT_ADDRESS_V2 = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS || process.env.ESCROW_CONTRACT_ADDRESS;
 
-// Type definitions for V2
-export interface EscrowGiftV2 {
+// Unified type definition for V2 (backward compatible)
+export interface EscrowGift {
   creator: string;
   expirationTime: bigint;
   nftContract: string;
@@ -844,16 +844,6 @@ export interface GiftRegisteredFromMintEvent {
   gate: string;
   giftMessage: string;
   registeredBy: string;
-}
-
-// Backward compatibility with V1 interface structure
-export interface EscrowGift {
-  creator: string;
-  expirationTime: bigint;
-  nftContract: string;
-  tokenId: bigint;
-  passwordHash: string;
-  status: number; // 0=Active, 1=Claimed, 2=Returned
 }
 
 // Event interfaces for type safety
