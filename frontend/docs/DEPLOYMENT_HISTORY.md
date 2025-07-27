@@ -2,12 +2,16 @@
 
 ## 🎯 DEPLOYMENT ACTUAL
 
-### ✅ GiftEscrow Enterprise v1.0.0
-- **Dirección**: `0x8b5182b0072f6A7e956FD22D61Ef0Fa6cB937086`
+### ✅ GiftEscrow Enterprise v1.0.0 (ACTUAL)
+- **Dirección**: `0xAC398A1da4E7b198f82e6D68d5355e84FF976e01`
 - **Red**: Base Sepolia (84532)
 - **Fecha**: 2025-01-26
 - **Estado**: ✅ Desplegado y verificado
-- **BaseScan**: https://sepolia.basescan.org/address/0x8b5182b0072f6a7e956fd22d61ef0fa6cb937086
+- **BaseScan**: https://sepolia.basescan.org/address/0xAC398A1da4E7b198f82e6D68d5355e84FF976e01
+
+### ❌ GiftEscrow Enterprise v1.0.0 (ANTERIOR - PROBLEMAS)
+- **Dirección**: `0x8b5182b0072f6A7e956FD22D61Ef0Fa6cB937086`
+- **Estado**: ❌ Descartado por problemas de implementación
 
 #### Características
 - ✅ **ERC2771Context** para meta-transacciones

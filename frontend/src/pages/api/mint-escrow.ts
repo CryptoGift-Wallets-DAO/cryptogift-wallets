@@ -15,6 +15,7 @@ import {
   generateSalt,
   getEscrowContract,
   prepareCreateGiftCall,
+  prepareRegisterGiftMintedCall,
   validatePassword,
   validateGiftMessage,
   sanitizeGiftMessage,
@@ -332,26 +333,27 @@ async function mintNFTEscrowGasless(
     const isEscrowMint = !!password;
     
     if (isEscrowMint) {
-      // ESCROW MINT: NFT minted to creator, need to transfer to escrow via createGift
-      console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
+      // V2 ZERO CUSTODY: NFT minted directly to escrow, register gift with registerGiftMinted
+      console.log('🔒 ESCROW MINT V2: NFT minted directly to escrow, registering gift with registerGiftMinted...');
       
-      // HOTFIX: Usar createGift ya que registerGiftMinted no existe en contrato
-      console.log('🔍 DEBUG: Using escrow contract address:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
+      console.log('🔍 DEBUG: Using escrow contract address V2:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
       console.log('🔍 DEBUG: Token ID extracted from mint:', tokenId);
       console.log('🔍 DEBUG: Token ID type:', typeof tokenId);
-      console.log('⚠️ HOTFIX: Using createGift because registerGiftMinted does not exist in deployed contract');
+      console.log('🔍 DEBUG: Creator address:', creatorAddress ? 'Set' : 'Missing');
+      console.log('✅ V2: Using registerGiftMinted for zero-custody escrow');
       
-      const createGiftTransaction = prepareCreateGiftCall(
+      const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        creatorAddress, // ← NEW: Pass original creator address
         password,
         salt,
         timeframeDays,
         giftMessage
       );
       
-      console.log('🚀 Executing gasless escrow gift creation...');
-      const escrowResult = await sendGaslessTransaction(smartAccount, createGiftTransaction);
+      console.log('🚀 Executing gasless gift registration...');
+      const escrowResult = await sendGaslessTransaction(smartAccount, registerGiftTransaction);
       
       const escrowReceipt = await waitForReceipt({
         client,
@@ -359,15 +361,15 @@ async function mintNFTEscrowGasless(
         transactionHash: escrowResult.transactionHash as `0x${string}`
       });
       
-      // CRITICAL: Verify escrow creation succeeded
+      // CRITICAL: Verify gift registration succeeded
       if (escrowReceipt.status !== 'success') {
-        throw new Error(`Escrow gift creation failed with status: ${escrowReceipt.status}`);
+        throw new Error(`Gift registration failed with status: ${escrowReceipt.status}`);
       }
       
-      console.log('✅ Escrow gift created successfully, NFT transferred to escrow contract');
+      console.log('✅ Gift registered successfully in escrow V2 contract');
       
-      // Step 11: Verify NFT was transferred to escrow contract
-      console.log('🔍 Verifying NFT was transferred to escrow contract...');
+      // Step 11: Verify NFT is in escrow contract (should already be there from direct mint)
+      console.log('🔍 Verifying NFT is in escrow contract (V2 direct mint)...');
       const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
       const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
       const nftContractCheck = new ethers.Contract(
@@ -378,7 +380,7 @@ async function mintNFTEscrowGasless(
       
       const actualOwner = await nftContractCheck.ownerOf(tokenId);
       console.log('🔍 Actual NFT owner after escrow creation:', actualOwner);
-      console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS);
+      console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
       
       if (actualOwner.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
         throw new Error(`CRITICAL: NFT was not transferred to escrow contract. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
@@ -495,7 +497,7 @@ async function mintNFTDirectly(
 }> {
   try {
     console.log('🎯 DIRECT MINT: Starting direct mint to creator wallet (skip escrow)');
-    console.log('🎯 Target address:', to);
+    console.log('🎯 Target address:', to ? 'Set' : 'Missing');
     
     // Validate Biconomy configuration for gasless
     if (!validateBiconomyConfig()) {
@@ -564,8 +566,8 @@ async function mintNFTDirectly(
       }
     } catch (error) {
       console.error('❌ Transfer event extraction failed for direct mint:', error);
-      // NO FALLBACK - Fail fast and clear
-      throw new Error(`Token ID extraction failed for direct mint: ${error.message}. This prevents double minting and ensures data integrity.`);
+      // NO FALLBACK - Fail fast and clear to prevent double minting
+      throw new Error(`Token ID extraction failed: ${error.message}. This prevents double minting and ensures data integrity.`);
     }
     
     if (!tokenId) {
@@ -657,14 +659,19 @@ async function mintNFTEscrowGasPaid(
       address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
     });
     
-    // Step 7: HOTFIX - Mint to target address (creator for escrow, direct recipient for direct mints)
-    console.log(`🎨 Preparing gas-paid mint NFT to target: ${to}...`);
-    console.log(`🔍 Target recipient: ${to}`);
+    // Determine if this is an escrow mint (password provided) or direct mint (no password)
+    const isEscrowMint = !!password;
+    
+    // Step 7: V2 ZERO CUSTODY - Mint directly to escrow contract for escrow mints
+    const targetAddress = isEscrowMint ? ESCROW_CONTRACT_ADDRESS! : to;
+    console.log(`🎨 Preparing gas-paid mint NFT with V2 zero-custody architecture...`);
+    console.log(`🔍 Target recipient: ${targetAddress}`);
+    console.log(`🔍 Is escrow mint: ${isEscrowMint}`);
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [to, tokenURI] // HOTFIX: Mint to target address
+      params: [targetAddress, tokenURI] // V2: Direct mint to escrow or creator
     });
     
     // Step 8: Execute gas-paid mint transaction using deployer account
@@ -755,27 +762,25 @@ async function mintNFTEscrowGasPaid(
     // Initialize escrow transaction hash variable
     let escrowTransactionHash: string | undefined;
     
-    // Check if this is an escrow mint (password provided) or direct mint (no password)
-    const isEscrowMint = !!password;
-    
     if (isEscrowMint) {
-      // ESCROW MINT: NFT minted to creator, need to transfer to escrow via createGift
-      console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
+      // ESCROW MINT V2: NFT minted directly to escrow, register gift with registerGiftMinted
+      console.log('🔒 ESCROW MINT V2: NFT minted directly to escrow, registering gift...');
       
-      // HOTFIX: Usar createGift ya que registerGiftMinted no existe en contrato
-      console.log('⚠️ HOTFIX: Using createGift because registerGiftMinted does not exist in deployed contract');
-      const createGiftTransaction = prepareCreateGiftCall(
+      // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
+      console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
+      const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        creatorAddress, // Original creator
         password,
         salt,
         timeframeDays,
         giftMessage
       );
       
-      console.log('🚀 Executing gas-paid escrow gift creation...');
+      console.log('🚀 Executing gas-paid gift registration...');
       const escrowResult = await sendTransaction({
-        transaction: createGiftTransaction,
+        transaction: registerGiftTransaction,
         account: deployerAccount
       });
       
@@ -790,10 +795,10 @@ async function mintNFTEscrowGasPaid(
         throw new Error(`Escrow gift creation failed with status: ${escrowReceipt.status}`);
       }
       
-      console.log('✅ Escrow gift created successfully with gas-paid transaction');
+      console.log('✅ Gift registered successfully in escrow V2 contract with gas-paid transaction');
       
-      // Step: Verify NFT was transferred to escrow contract
-      console.log('🔍 Verifying NFT was transferred to escrow contract...');
+      // Step: Verify NFT is in escrow contract (should already be there from direct mint)
+      console.log('🔍 Verifying NFT is in escrow contract (V2 direct mint)...');
       const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
       const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
       const nftContractCheck = new ethers.Contract(
@@ -803,14 +808,14 @@ async function mintNFTEscrowGasPaid(
       );
       
       const actualOwner = await nftContractCheck.ownerOf(tokenId);
-      console.log('🔍 Actual NFT owner after escrow creation:', actualOwner);
-      console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS);
+      console.log('🔍 Actual NFT owner after gift registration:', actualOwner);
+      console.log('🔍 Expected escrow address:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
       
       if (actualOwner.toLowerCase() !== ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
         throw new Error(`CRITICAL: NFT was not transferred to escrow contract. Expected: ${ESCROW_CONTRACT_ADDRESS}, Got: ${actualOwner}`);
       }
       
-      console.log('✅ VERIFIED: NFT successfully transferred to escrow contract');
+      console.log('✅ VERIFIED: NFT successfully in escrow contract (V2 zero-custody)');
       
       // Set escrow transaction hash for response
       escrowTransactionHash = escrowResult.transactionHash;
@@ -1008,16 +1013,15 @@ export default async function handler(
       timeframeIndex = undefined; // No timeframe needed for direct mints
       console.log('🎯 DIRECT MINT TARGET:', targetAddress.slice(0, 10) + '...');
     } else {
-      // HOTFIX: Escrow mint should go to CREATOR first, then transfer with createGift
-      // Using createGift because registerGiftMinted does not exist in deployed contract
-      targetAddress = creatorAddress; // ← HOTFIX: Mint to creator, then transfer with createGift
+      // V2 ZERO CUSTODY: Mint directly to escrow contract, use registerGiftMinted
+      targetAddress = ESCROW_CONTRACT_ADDRESS || '';
       timeframeIndex = TIMEFRAME_OPTIONS[timeframeDays];
-      console.log('🔒 ESCROW MINT TARGET (HOTFIX - mint to creator, transfer with createGift):', targetAddress.slice(0, 10) + '...');
+      console.log('🔒 ESCROW MINT TARGET (V2 ZERO CUSTODY - direct to escrow):', targetAddress.slice(0, 10) + '...');
       
       if (!ESCROW_CONTRACT_ADDRESS) {
         throw new Error('ESCROW_CONTRACT_ADDRESS not configured');
       }
-      console.log('✅ ESCROW CONTRACT ADDRESS:', ESCROW_CONTRACT_ADDRESS);
+      console.log('✅ ESCROW CONTRACT ADDRESS V2:', ESCROW_CONTRACT_ADDRESS);
     }
     
     console.log('🎁 MINT ESCROW REQUEST:', {

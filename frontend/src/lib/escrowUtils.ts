@@ -126,8 +126,37 @@ export function prepareCreateGiftCall(
   });
 }
 
-// REMOVED: prepareRegisterGiftMintedCall - function does not exist in deployed contract
-// Use prepareCreateGiftCall instead
+/**
+ * ZERO CUSTODY FUNCTION: Prepare registerGiftMinted call for V2 contract
+ * This function allows direct mint-to-escrow without requiring deployer ownership
+ */
+export function prepareRegisterGiftMintedCall(
+  tokenId: string | number,
+  nftContract: string,
+  creator: string,
+  password: string,
+  salt: string,
+  timeframeDays: number,
+  giftMessage: string,
+  gate: string = '0x0000000000000000000000000000000000000000'
+) {
+  const contract = getEscrowContract();
+  
+  return prepareContractCall({
+    contract,
+    method: "registerGiftMinted",
+    params: [
+      BigInt(tokenId),
+      nftContract,
+      creator,               // ← NEW: Original creator address
+      password,              // ← Password as string, not hash
+      salt as `0x${string}`, // ← Salt with type assertion
+      BigInt(timeframeDays),
+      giftMessage,
+      gate                   // ← Gate parameter (defaults to zero address)
+    ]
+  });
+}
 
 export function prepareClaimGiftCall(
   tokenId: string | number,

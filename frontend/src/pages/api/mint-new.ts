@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Custom chain con RPC
     const customChain = {
       ...baseSepolia,
-      rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
+      rpc: process.env.NEXT_PUBLIC_RPC_URL!
     };
 
     // OPCIÓN 1: Usar el contrato Factory existente como NFT Collection

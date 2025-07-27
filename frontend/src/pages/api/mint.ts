@@ -230,7 +230,7 @@ async function mintNFTGasless(to: string, tokenURI: string, client: any) {
     
     const customChain = {
       ...baseSepolia,
-      rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
+      rpc: process.env.NEXT_PUBLIC_RPC_URL!
     };
     
     const nftContract = getContract({
@@ -713,7 +713,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Get NFT contract
       const customChain = {
         ...baseSepolia,
-        rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
+        rpc: process.env.NEXT_PUBLIC_RPC_URL!
       };
 
       console.log("🎯 MINTING TRANSACTION SETUP ===========================================");
@@ -817,9 +817,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               if (log.address && log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS?.toLowerCase()) {
                 console.log("✅ Found log from NFT contract:", log);
                 
-                // Try to extract tokenId from log data or use alternative approach
-                // For now, fall back to totalSupply since log parsing may be complex
-                console.log("📝 Will use totalSupply fallback for reliable tokenId");
+                // Try to extract tokenId from log data
+                console.log("📝 Attempting to extract tokenId from Transfer event...");
                 break;
               }
             }
@@ -872,21 +871,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
           
         } catch (eventParseError) {
-          console.log("⚠️ Transfer event parsing failed:", eventParseError.message);
-          console.log("🔄 FALLBACK: Using corrected totalSupply method...");
-          
-          // Last resort fallback to totalSupply method (corrected version)
-          const totalSupply = await readContract({
-            contract: cryptoGiftNFTContract,
-            method: "function totalSupply() view returns (uint256)",
-            params: []
-          });
-          
-          // CRITICAL FIX: CryptoGiftNFT starts at tokenID=1, so totalSupply IS the latest tokenID
-          actualTokenId = totalSupply.toString();
-          console.log("🔄 FALLBACK TOKEN ID (FIXED for contract starting at 1):");
-          console.log("  📊 Total supply:", totalSupply.toString());
-          console.log("  🎯 Token ID (totalSupply directly):", actualTokenId);
+          console.error("❌ Transfer event parsing failed:", eventParseError.message);
+          // NO FALLBACK - Fail fast and clear to prevent double minting
+          throw new Error(`Token ID extraction failed: ${eventParseError.message}. This prevents double minting and ensures data integrity.`);
         }
         
         // TEMPORARY: Skip token ID prediction validation (using deployer address)

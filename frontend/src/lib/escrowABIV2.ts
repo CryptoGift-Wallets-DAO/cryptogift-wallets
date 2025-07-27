@@ -3,14 +3,10 @@
  * Contract: 0x46175CfC233500DA803841DEef7f2816e7A129E0
  * Network: Base Sepolia
  * Version: 2.0.0
- * Updated: 2025-07-27 - NEW V2 WITH registerGiftMinted FOR ZERO CUSTODY
+ * Updated: 2025-07-27 - NEW DEPLOYMENT WITH registerGiftMinted
  */
 
-// Import V2 ABI
-export { ESCROW_ABI_V2 as ESCROW_ABI, ESCROW_CONTRACT_ADDRESS_V2 as ESCROW_CONTRACT_ADDRESS, EscrowGiftV2 as EscrowGift, GiftRegisteredFromMintEvent } from './escrowABIV2';
-
-// Legacy V1 ABI for backward compatibility (DEPRECATED)
-export const ESCROW_ABI_V1 = [
+export const ESCROW_ABI_V2 = [
   {
     "type": "constructor",
     "inputs": [{"name": "trustedForwarder", "type": "address", "internalType": "address"}],
@@ -135,6 +131,13 @@ export const ESCROW_ABI_V1 = [
     "name": "MAX_INCENTIVE_PER_TX",
     "inputs": [],
     "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MINTER_ROLE",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "bytes32", "internalType": "bytes32"}],
     "stateMutability": "view"
   },
   {
@@ -364,7 +367,7 @@ export const ESCROW_ABI_V1 = [
     "inputs": [
       {"name": "", "type": "address", "internalType": "address"},
       {"name": "", "type": "address", "internalType": "address"},
-      {"name": "tokenIds", "type": "uint256[]", "internalType": "uint256[]"},
+      {"name": "", "type": "uint256[]", "internalType": "uint256[]"},
       {"name": "", "type": "uint256[]", "internalType": "uint256[]"},
       {"name": "", "type": "bytes", "internalType": "bytes"}
     ],
@@ -428,6 +431,22 @@ export const ESCROW_ABI_V1 = [
     "inputs": [],
     "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "registerGiftMinted",
+    "inputs": [
+      {"name": "tokenId", "type": "uint256", "internalType": "uint256"},
+      {"name": "nftContract", "type": "address", "internalType": "address"},
+      {"name": "creator", "type": "address", "internalType": "address"},
+      {"name": "password", "type": "string", "internalType": "string"},
+      {"name": "salt", "type": "bytes32", "internalType": "bytes32"},
+      {"name": "timeframe", "type": "uint256", "internalType": "uint256"},
+      {"name": "giftMessage", "type": "string", "internalType": "string"},
+      {"name": "gate", "type": "address", "internalType": "address"}
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -513,6 +532,16 @@ export const ESCROW_ABI_V1 = [
   },
   {
     "type": "event",
+    "name": "GateStatusChanged",
+    "inputs": [
+      {"name": "gate", "type": "address", "indexed": true, "internalType": "address"},
+      {"name": "disabled", "type": "bool", "indexed": false, "internalType": "bool"},
+      {"name": "manager", "type": "address", "indexed": true, "internalType": "address"}
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "GiftClaimed",
     "inputs": [
       {"name": "giftId", "type": "uint256", "indexed": true, "internalType": "uint256"},
@@ -550,22 +579,27 @@ export const ESCROW_ABI_V1 = [
   },
   {
     "type": "event",
+    "name": "GiftRegisteredFromMint",
+    "inputs": [
+      {"name": "giftId", "type": "uint256", "indexed": true, "internalType": "uint256"},
+      {"name": "creator", "type": "address", "indexed": true, "internalType": "address"},
+      {"name": "nftContract", "type": "address", "indexed": true, "internalType": "address"},
+      {"name": "tokenId", "type": "uint256", "indexed": false, "internalType": "uint256"},
+      {"name": "expiresAt", "type": "uint40", "indexed": false, "internalType": "uint40"},
+      {"name": "gate", "type": "address", "indexed": false, "internalType": "address"},
+      {"name": "giftMessage", "type": "string", "indexed": false, "internalType": "string"},
+      {"name": "registeredBy", "type": "address", "indexed": false, "internalType": "address"}
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "GiftReturned",
     "inputs": [
       {"name": "giftId", "type": "uint256", "indexed": true, "internalType": "uint256"},
       {"name": "creator", "type": "address", "indexed": true, "internalType": "address"},
       {"name": "returnedBy", "type": "address", "indexed": true, "internalType": "address"},
       {"name": "timestamp", "type": "uint256", "indexed": false, "internalType": "uint256"}
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "GateStatusChanged",
-    "inputs": [
-      {"name": "gate", "type": "address", "indexed": true, "internalType": "address"},
-      {"name": "disabled", "type": "bool", "indexed": false, "internalType": "bool"},
-      {"name": "manager", "type": "address", "indexed": true, "internalType": "address"}
     ],
     "anonymous": false
   },
@@ -710,6 +744,11 @@ export const ESCROW_ABI_V1 = [
   },
   {
     "type": "error",
+    "name": "InvalidCreator",
+    "inputs": [{"name": "creator", "type": "address", "internalType": "address"}]
+  },
+  {
+    "type": "error",
     "name": "InvalidGiftMessage",
     "inputs": [{"name": "message", "type": "string", "internalType": "string"}]
   },
@@ -727,6 +766,14 @@ export const ESCROW_ABI_V1 = [
     "type": "error",
     "name": "InvalidTimeframe",
     "inputs": [{"name": "timeframe", "type": "uint256", "internalType": "uint256"}]
+  },
+  {
+    "type": "error",
+    "name": "NFTNotOwnedByEscrow",
+    "inputs": [
+      {"name": "nftContract", "type": "address", "internalType": "address"},
+      {"name": "tokenId", "type": "uint256", "internalType": "uint256"}
+    ]
   },
   {
     "type": "error",
@@ -775,8 +822,11 @@ export const ESCROW_ABI_V1 = [
   }
 ] as const;
 
-// Type definitions for better TypeScript support
-export interface EscrowGift {
+// Contract address constant
+export const ESCROW_CONTRACT_ADDRESS_V2 = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS || process.env.ESCROW_CONTRACT_ADDRESS;
+
+// Type definitions for V2
+export interface EscrowGiftV2 {
   creator: string;
   expirationTime: bigint;
   nftContract: string;
@@ -785,7 +835,7 @@ export interface EscrowGift {
   status: number; // 0=Active, 1=Claimed, 2=Returned
 }
 
-export interface GiftCreatedEvent {
+export interface GiftRegisteredFromMintEvent {
   giftId: bigint;
   creator: string;
   nftContract: string;
@@ -793,24 +843,8 @@ export interface GiftCreatedEvent {
   expiresAt: bigint;
   gate: string;
   giftMessage: string;
+  registeredBy: string;
 }
 
-export interface GiftClaimedEvent {
-  giftId: bigint;
-  claimer: string;
-  recipient: string;
-  gate: string;
-  gateReason: string;
-}
-
-export interface GiftReturnedEvent {
-  giftId: bigint;
-  creator: string;
-  returnedBy: string;
-  timestamp: bigint;
-}
-
-// Legacy V1 address for reference
-export const ESCROW_CONTRACT_ADDRESS_V1 = '0xAC398A1da4E7b198f82e6D68d5355e84FF976e01';
-
-// Note: Main exports are from escrowABIV2.ts
+// Export legacy for compatibility
+export { ESCROW_ABI_V2 as ESCROW_ABI, ESCROW_CONTRACT_ADDRESS_V2 as ESCROW_CONTRACT_ADDRESS };

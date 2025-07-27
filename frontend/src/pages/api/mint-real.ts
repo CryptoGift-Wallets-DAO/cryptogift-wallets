@@ -202,7 +202,7 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
     // Get NFT contract with custom RPC
     const customChain = {
       ...baseSepolia,
-      rpc: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e"
+      rpc: process.env.NEXT_PUBLIC_RPC_URL!
     };
     
     const contract = getContract({
@@ -279,20 +279,10 @@ async function mintNFTReal(to: string, metadataUri: string): Promise<{
       }
       
     } catch (eventParseError) {
-      console.log("⚠️ MINT-REAL: Transfer event parsing failed, using totalSupply fallback");
-      addMintLog('WARN', 'TRANSFER_PARSE_FAILED', { error: eventParseError.message });
-      
-      // Fallback to totalSupply method
-      const totalSupply = await readContract({
-        contract,
-        method: "function totalSupply() view returns (uint256)",
-        params: []
-      });
-      
-      // CRITICAL FIX: CryptoGiftNFT starts at tokenID=1, so totalSupply IS the latest tokenID
-      actualTokenId = totalSupply.toString();
-      console.log("🔄 MINT-REAL: Fallback tokenId from totalSupply (FIXED):", actualTokenId);
-      addMintLog('SUCCESS', 'TOKEN_ID_EXTRACTED', { tokenId: actualTokenId, method: 'totalsupply_fixed_fallback' });
+      console.error("❌ MINT-REAL: Transfer event parsing failed:", eventParseError.message);
+      addMintLog('ERROR', 'TRANSFER_PARSE_FAILED', { error: eventParseError.message });
+      // NO FALLBACK - Fail fast and clear to prevent double minting
+      throw new Error(`Token ID extraction failed: ${eventParseError.message}. This prevents double minting and ensures data integrity.`);
     }
 
     const tokenId = actualTokenId;
