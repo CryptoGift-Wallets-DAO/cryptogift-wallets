@@ -16,7 +16,8 @@ import {
   isGiftExpired,
   generateGiftLink,
   parseEscrowError,
-  validateTokenId
+  validateTokenId,
+  getGiftIdFromTokenId
 } from '../../../lib/escrowUtils';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../../lib/escrowABI';
 
@@ -55,17 +56,30 @@ async function getGiftInfo(tokenId: string): Promise<{
     
     console.log('🔍 GIFT INFO: Fetching data for token', tokenId);
     
-    // Get gift data and claim status in parallel using ThirdWeb readContract
+    // CRITICAL FIX: Map tokenId to giftId first
+    const giftId = await getGiftIdFromTokenId(tokenId);
+    
+    if (giftId === null) {
+      console.log('❌ GIFT INFO: No giftId found for tokenId', tokenId);
+      return {
+        success: false,
+        error: 'Gift not found - this NFT is not registered in escrow'
+      };
+    }
+    
+    console.log(`✅ GIFT INFO: Mapped tokenId ${tokenId} → giftId ${giftId}`);
+    
+    // Get gift data and claim status using correct giftId
     const [giftData, claimStatus] = await Promise.all([
       readContract({
         contract: escrowContract,
         method: "getGift",
-        params: [BigInt(tokenId)]
+        params: [BigInt(giftId)]
       }),
       readContract({
         contract: escrowContract,
         method: "canClaimGift",
-        params: [BigInt(tokenId)]
+        params: [BigInt(giftId)]
       })
     ]);
     

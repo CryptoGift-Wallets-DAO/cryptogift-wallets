@@ -4,7 +4,8 @@
  */
 
 import { ethers } from 'ethers';
-import { createThirdwebClient, getContract, prepareContractCall, readContract } from 'thirdweb';
+import { createThirdwebClient, getContract, prepareContractCall, readContract, sendTransaction, waitForReceipt } from 'thirdweb';
+import { privateKeyToAccount } from 'thirdweb/wallets';
 import { baseSepolia } from 'thirdweb/chains';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from './escrowABI';
 
@@ -74,6 +75,71 @@ export function getEscrowContract() {
     address: ESCROW_CONTRACT_ADDRESS,
     abi: ESCROW_ABI
   });
+}
+
+/**
+ * CRITICAL FIX: Map tokenId to giftId using contract events
+ * The escrow contract uses an independent giftCounter, so tokenId ≠ giftId
+ * We need to query GiftRegisteredFromMint events to find the correct giftId
+ */
+export async function getGiftIdFromTokenId(tokenId: string | number): Promise<number | null> {
+  try {
+    console.log('🔍 MAPPING: Finding giftId for tokenId', tokenId);
+    
+    // Use ethers for event querying (more reliable than ThirdWeb for this)
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL!);
+    
+    // Event signature for GiftRegisteredFromMint
+    const eventSignature = "GiftRegisteredFromMint(uint256,address,address,uint256,uint40,address,string,address)";
+    const eventTopic = ethers.id(eventSignature);
+    
+    // Query events from escrow contract
+    const logs = await provider.getLogs({
+      address: ESCROW_CONTRACT_ADDRESS,
+      topics: [eventTopic],
+      fromBlock: 0, // Start from beginning - could optimize this
+      toBlock: 'latest'
+    });
+    
+    console.log(`🔍 MAPPING: Found ${logs.length} GiftRegisteredFromMint events`);
+    
+    // Parse events to find matching tokenId
+    for (const log of logs) {
+      try {
+        // Event structure: GiftRegisteredFromMint(uint256 indexed giftId, address indexed creator, address indexed nftContract, uint256 tokenId, uint40 expiresAt, address gate, string giftMessage, address registeredBy)
+        // Indexed: giftId (topics[1]), creator (topics[2]), nftContract (topics[3])
+        // Non-indexed: tokenId, expiresAt, gate, giftMessage, registeredBy
+        
+        const giftId = BigInt(log.topics[1]).toString(); // First indexed parameter (giftId)
+        
+        // Parse the non-indexed data from log.data
+        const abiCoder = new ethers.AbiCoder();
+        const decoded = abiCoder.decode(
+          ['uint256', 'uint40', 'address', 'string', 'address'], // tokenId, expiresAt, gate, giftMessage, registeredBy
+          log.data
+        );
+        const eventTokenId = decoded[0].toString(); // tokenId is first in data
+        
+        console.log(`🔍 MAPPING: Event giftId=${giftId}, tokenId=${eventTokenId}`);
+        
+        // Check if this matches our target tokenId
+        if (eventTokenId === tokenId.toString()) {
+          console.log(`✅ MAPPING: Found match! tokenId ${tokenId} → giftId ${giftId}`);
+          return parseInt(giftId);
+        }
+      } catch (decodeError) {
+        console.warn('⚠️ MAPPING: Failed to decode event:', decodeError.message);
+        continue;
+      }
+    }
+    
+    console.log(`❌ MAPPING: No giftId found for tokenId ${tokenId}`);
+    return null;
+    
+  } catch (error) {
+    console.error('❌ MAPPING ERROR:', error);
+    return null;
+  }
 }
 
 /**
@@ -153,6 +219,30 @@ export function prepareClaimGiftCall(
   });
 }
 
+/**
+ * CRITICAL FIX: Prepare claim call using giftId (not tokenId)
+ * Use this for the corrected escrow claim flow
+ */
+export function prepareClaimGiftByIdCall(
+  giftId: string | number,
+  password: string,
+  salt: string,
+  gateData: string = '0x'
+) {
+  const contract = getEscrowContract();
+  
+  return prepareContractCall({
+    contract,
+    method: "claimGift",
+    params: [
+      BigInt(giftId),
+      password,
+      salt as `0x${string}`,
+      gateData as `0x${string}`
+    ]
+  });
+}
+
 // REMOVED: prepareClaimGiftForCall - function does not exist in deployed contract
 // Use prepareClaimGiftCall instead
 
@@ -164,6 +254,112 @@ export function prepareReturnExpiredGiftCall(tokenId: string | number) {
     method: "returnExpiredGift",
     params: [BigInt(tokenId)]
   });
+}
+
+/**
+ * CRITICAL FIX: Prepare return expired gift call using giftId (not tokenId)
+ */
+export function prepareReturnExpiredGiftByIdCall(giftId: string | number) {
+  const contract = getEscrowContract();
+  
+  return prepareContractCall({
+    contract,
+    method: "returnExpiredGift",
+    params: [BigInt(giftId)]
+  });
+}
+
+/**
+ * Check for expired gifts and return them to creators
+ * This solves the issue where NFTs get stuck in escrow after expiration
+ */
+export async function returnExpiredGifts(): Promise<{
+  success: boolean;
+  returned: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let returned = 0;
+  
+  try {
+    // Get the current giftCounter
+    const escrowContract = getEscrowContract();
+    const counter = await readContract({
+      contract: escrowContract,
+      method: "giftCounter",
+      params: []
+    });
+    
+    console.log(`🔍 RETURN EXPIRED: Checking ${counter} gifts for expiration`);
+    
+    // Check each gift
+    for (let giftId = 1; giftId <= Number(counter); giftId++) {
+      try {
+        const [giftData, canClaim] = await Promise.all([
+          readContract({
+            contract: escrowContract,
+            method: "getGift",
+            params: [BigInt(giftId)]
+          }),
+          readContract({
+            contract: escrowContract,
+            method: "canClaimGift",
+            params: [BigInt(giftId)]
+          })
+        ]);
+        
+        // Check if gift is expired and still active (status = 0)
+        const status = giftData[5]; // status field
+        const timeRemaining = Number((canClaim as any)[1]);
+        
+        if (status === 0 && timeRemaining === 0) {
+          console.log(`🔄 RETURN EXPIRED: Gift ${giftId} is expired, attempting return...`);
+          
+          // Prepare return transaction
+          const returnTx = prepareReturnExpiredGiftByIdCall(giftId);
+          
+          // Execute return (using deployer account for now)
+          const deployerAccount = privateKeyToAccount({
+            client: createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! }),
+            privateKey: process.env.PRIVATE_KEY_DEPLOY!
+          });
+          
+          const result = await sendTransaction({
+            transaction: returnTx,
+            account: deployerAccount
+          });
+          
+          await waitForReceipt({
+            client: createThirdwebClient({ clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID! }),
+            chain: baseSepolia,
+            transactionHash: result.transactionHash
+          });
+          
+          console.log(`✅ RETURN EXPIRED: Gift ${giftId} returned successfully`);
+          returned++;
+        }
+      } catch (error) {
+        const errorMsg = `Failed to return gift ${giftId}: ${error.message}`;
+        console.error('❌ RETURN EXPIRED:', errorMsg);
+        errors.push(errorMsg);
+      }
+    }
+    
+    return {
+      success: true,
+      returned,
+      errors
+    };
+    
+  } catch (error) {
+    const errorMsg = `Failed to check expired gifts: ${error.message}`;
+    console.error('❌ RETURN EXPIRED:', errorMsg);
+    return {
+      success: false,
+      returned,
+      errors: [errorMsg, ...errors]
+    };
+  }
 }
 
 /**

@@ -15,11 +15,13 @@ import {
   generatePasswordHash,
   getEscrowContract,
   prepareClaimGiftCall,
+  prepareClaimGiftByIdCall,
   validatePassword,
   validateAddress,
   validateTokenId,
   parseEscrowError,
-  isGiftExpired
+  isGiftExpired,
+  getGiftIdFromTokenId
 } from '../../lib/escrowUtils';
 import {
   validateTransactionAttempt,
@@ -109,10 +111,20 @@ async function getGiftInfo(tokenId: string): Promise<EscrowGift | null> {
   try {
     const escrowContract = getEscrowContract();
     
+    // CRITICAL FIX: Map tokenId to giftId first
+    const giftId = await getGiftIdFromTokenId(tokenId);
+    
+    if (giftId === null) {
+      console.log('❌ CLAIM: No giftId found for tokenId', tokenId);
+      return null;
+    }
+    
+    console.log(`✅ CLAIM: Mapped tokenId ${tokenId} → giftId ${giftId}`);
+    
     const giftData = await readContract({
       contract: escrowContract,
       method: "getGift",
-      params: [BigInt(tokenId)]
+      params: [BigInt(giftId)]
     });
     
     // getGift returns: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
@@ -222,8 +234,16 @@ async function claimEscrowGasless(
       privateKey: process.env.PRIVATE_KEY_DEPLOY!
     });
     
-    // Step 5: Prepare claim transaction (only claimGift exists in deployed contract)
-    const claimTransaction = prepareClaimGiftCall(tokenId, password, salt);
+    // Step 5: Map tokenId to giftId for correct claim
+    const giftId = await getGiftIdFromTokenId(tokenId);
+    if (giftId === null) {
+      throw new Error('Gift not found - this NFT is not registered in escrow');
+    }
+    
+    console.log(`✅ CLAIM: Using giftId ${giftId} for tokenId ${tokenId}`);
+    
+    // Step 6: Prepare claim transaction using correct giftId
+    const claimTransaction = prepareClaimGiftByIdCall(giftId, password, salt);
     
     console.log('📝 Executing claim transaction...');
     const result = await sendTransaction({
@@ -323,8 +343,16 @@ async function claimEscrowGasPaid(
     
     console.log('🔑 Using deployer account for gas-paid claim:', deployerAccount.address.slice(0, 10) + '...');
     
-    // Step 5: Prepare claim transaction (only claimGift exists in deployed contract)
-    const claimTransaction = prepareClaimGiftCall(tokenId, password, salt);
+    // Step 5: Map tokenId to giftId for correct claim
+    const giftId = await getGiftIdFromTokenId(tokenId);
+    if (giftId === null) {
+      throw new Error('Gift not found - this NFT is not registered in escrow');
+    }
+    
+    console.log(`✅ CLAIM GAS-PAID: Using giftId ${giftId} for tokenId ${tokenId}`);
+    
+    // Step 6: Prepare claim transaction using correct giftId
+    const claimTransaction = prepareClaimGiftByIdCall(giftId, password, salt);
     
     console.log('📝 Executing gas-paid claim transaction...');
     const result = await sendTransaction({
