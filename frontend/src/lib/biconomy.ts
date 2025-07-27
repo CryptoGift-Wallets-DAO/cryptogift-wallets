@@ -3,19 +3,19 @@ import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-// Biconomy configuration for Base Sepolia - ALL FROM ENVIRONMENT VARIABLES
+// Biconomy configuration for Base Sepolia - SERVER-SIDE ONLY
 export const biconomyConfig = {
   chainId: 84532, // Base Sepolia
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL,
   
-  // MEE CONFIGURATION - Modular Execution Environment (Sponsored)
-  meeApiKey: process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY,
-  projectId: process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID,
+  // MEE CONFIGURATION - SERVER ONLY (NEVER EXPOSE TO CLIENT)
+  meeApiKey: process.env.BICONOMY_MEE_API_KEY,
+  projectId: process.env.BICONOMY_PROJECT_ID,
   
-  // LEGACY PAYMASTER FALLBACK
-  paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY,
-  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL,
-  paymasterUrl: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL,
+  // LEGACY PAYMASTER FALLBACK - SERVER ONLY
+  paymasterApiKey: process.env.BICONOMY_PAYMASTER_API_KEY,
+  bundlerUrl: process.env.BICONOMY_BUNDLER_URL,
+  paymasterUrl: process.env.BICONOMY_PAYMASTER_URL,
 };
 
 // Create Biconomy Smart Account
@@ -23,12 +23,12 @@ export async function createBiconomySmartAccount(privateKey: string) {
   try {
     console.log('🔧 BICONOMY CONFIG - MEE 2025 SPONSORED TRANSACTIONS:', {
       chainId: biconomyConfig.chainId,
-      rpcUrl: biconomyConfig.rpcUrl,
-      meeApiKey: biconomyConfig.meeApiKey.substring(0, 10) + '...',
-      projectId: biconomyConfig.projectId,
-      paymasterApiKey: biconomyConfig.paymasterApiKey.substring(0, 10) + '... (fallback)',
-      bundlerUrl: biconomyConfig.bundlerUrl,
-      paymasterUrl: biconomyConfig.paymasterUrl,
+      rpcUrl: biconomyConfig.rpcUrl ? 'CONFIGURED' : 'MISSING',
+      meeApiKey: biconomyConfig.meeApiKey ? 'CONFIGURED' : 'MISSING',
+      projectId: biconomyConfig.projectId ? 'CONFIGURED' : 'MISSING',
+      paymasterApiKey: biconomyConfig.paymasterApiKey ? 'CONFIGURED (fallback)' : 'MISSING',
+      bundlerUrl: biconomyConfig.bundlerUrl ? 'CONFIGURED' : 'MISSING',
+      paymasterUrl: biconomyConfig.paymasterUrl ? 'CONFIGURED' : 'MISSING',
       architecture: 'MEE (Modular Execution Environment) + Paymaster Fallback',
     });
     // Ensure private key has 0x prefix and is properly formatted
@@ -37,10 +37,9 @@ export async function createBiconomySmartAccount(privateKey: string) {
       : `0x${privateKey}` as `0x${string}`;
     
     console.log('🔍 Private key format check:', {
-      original: privateKey.substring(0, 10) + '...',
-      formatted: formattedPrivateKey.substring(0, 10) + '...',
       hasPrefix: privateKey.startsWith('0x'),
-      length: privateKey.length
+      length: privateKey.length,
+      isValid: privateKey.length === 64 || privateKey.length === 66
     });
     
     // Create EOA from private key
@@ -146,9 +145,23 @@ export async function sendGaslessTransaction(
     // Wait for transaction to be mined
     const receipt = await userOpResponse.wait();
     
-    console.log("Gasless transaction successful:", receipt.userOpHash);
+    console.log("🔍 GASLESS RESULT:", {
+      userOpHash: receipt.userOpHash,
+      realTxHash: receipt.receipt?.transactionHash || receipt.receipt?.hash,
+      blockNumber: receipt.receipt?.blockNumber,
+      status: receipt.receipt?.status
+    });
+    
+    // CRITICAL FIX: Return the REAL blockchain transaction hash, not userOpHash
+    const realTransactionHash = receipt.receipt?.transactionHash || receipt.receipt?.hash || receipt.userOpHash;
+    
+    if (!realTransactionHash) {
+      throw new Error('No transaction hash received from gasless operation');
+    }
+    
+    console.log("✅ Gasless transaction successful:", realTransactionHash);
     return {
-      transactionHash: receipt.userOpHash,
+      transactionHash: realTransactionHash,
       blockNumber: receipt.receipt?.blockNumber || 0,
       logs: receipt.receipt?.logs || [],
       receipt: receipt.receipt
@@ -159,31 +172,36 @@ export async function sendGaslessTransaction(
   }
 }
 
-// Check if Biconomy configuration is complete - ALL FROM ENVIRONMENT VARIABLES ONLY
+// Check if Biconomy configuration is complete - SERVER-SIDE VARIABLES ONLY
 export function validateBiconomyConfig() {
-  const meeApiKey = process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY;
-  const projectId = process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID;
-  const paymasterKey = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY;
-  const bundlerUrl = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL;
-  const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL;
+  const meeApiKey = process.env.BICONOMY_MEE_API_KEY;
+  const projectId = process.env.BICONOMY_PROJECT_ID;
+  const paymasterKey = process.env.BICONOMY_PAYMASTER_API_KEY;
+  const bundlerUrl = process.env.BICONOMY_BUNDLER_URL;
+  const paymasterUrl = process.env.BICONOMY_PAYMASTER_URL;
   
-  // FAST VALIDATION: Check environment first
-  const isValidConfig = (meeApiKey && projectId) || (paymasterKey && bundlerUrl && paymasterUrl);
-  
-  if (!isValidConfig) {
-    console.error('❌ No valid Biconomy configuration found');
-    return false;
-  }
+  console.log('🔍 BICONOMY CONFIG VALIDATION:', {
+    meeApiKey: meeApiKey ? `${meeApiKey.substring(0, 8)}...` : 'MISSING',
+    projectId: projectId ? `${projectId.substring(0, 8)}...` : 'MISSING',
+    paymasterKey: paymasterKey ? `${paymasterKey.substring(0, 8)}...` : 'MISSING',
+    bundlerUrl: bundlerUrl ? 'SET' : 'MISSING',
+    paymasterUrl: paymasterUrl ? 'SET' : 'MISSING'
+  });
   
   // PRIORITY 1: MEE Configuration (SPONSORED TRANSACTIONS)
   if (meeApiKey && projectId) {
-    console.log('✅ Fast MEE validation passed');
+    console.log('✅ MEE configuration is complete (preferred)');
     return true;
   }
   
   // FALLBACK: Legacy Paymaster Configuration
-  console.log('⚠️ Fast Paymaster validation passed');
-  return true;
+  if (paymasterKey && bundlerUrl && paymasterUrl) {
+    console.log('✅ Legacy Paymaster configuration is complete');
+    return true;
+  }
+  
+  console.error('❌ No valid Biconomy configuration found - need either MEE or Paymaster config');
+  return false;
 }
 
 // PERFORMANCE: Fast gasless availability check (no network calls)

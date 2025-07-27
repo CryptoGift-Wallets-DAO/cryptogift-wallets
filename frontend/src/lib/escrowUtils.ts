@@ -8,6 +8,7 @@ import { createThirdwebClient, getContract, prepareContractCall, readContract, s
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { baseSepolia } from 'thirdweb/chains';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from './escrowABI';
+import { getGiftIdFromMapping, storeGiftMapping } from './giftMappingStore';
 
 // Initialize ThirdWeb client
 const client = createThirdwebClient({
@@ -83,22 +84,32 @@ export function getEscrowContract() {
 const tokenIdToGiftIdCache = new Map<string, number>();
 
 /**
- * CRITICAL FIX: Map tokenId to giftId using contract events with caching
+ * OPTIMIZED: Map tokenId to giftId using persistent storage first, fallback to events
  * The escrow contract uses an independent giftCounter, so tokenId ≠ giftId
- * We need to query GiftRegisteredFromMint events to find the correct giftId
+ * Priority: Redis/KV lookup → Memory cache → Event querying (last resort)
  */
 export async function getGiftIdFromTokenId(tokenId: string | number): Promise<number | null> {
   const tokenIdStr = tokenId.toString();
   
-  // Check cache first
+  // Check memory cache first (fastest)
   if (tokenIdToGiftIdCache.has(tokenIdStr)) {
     const cachedGiftId = tokenIdToGiftIdCache.get(tokenIdStr)!;
-    console.log(`🎯 MAPPING CACHE HIT: tokenId ${tokenId} → giftId ${cachedGiftId}`);
+    console.log(`🎯 MAPPING MEMORY CACHE HIT: tokenId ${tokenId} → giftId ${cachedGiftId}`);
     return cachedGiftId;
+  }
+
+  // Check persistent storage (Redis/KV) - avoids RPC calls
+  const persistentGiftId = await getGiftIdFromMapping(tokenId);
+  if (persistentGiftId !== null) {
+    // Cache in memory for future requests
+    tokenIdToGiftIdCache.set(tokenIdStr, persistentGiftId);
+    console.log(`🎯 MAPPING PERSISTENT HIT: tokenId ${tokenId} → giftId ${persistentGiftId}`);
+    return persistentGiftId;
   }
   
   try {
-    console.log('🔍 MAPPING: Finding giftId for tokenId', tokenId);
+    console.log('🔍 MAPPING FALLBACK: Using RPC events as last resort for tokenId', tokenId);
+    console.warn('⚠️ Consider calling storeGiftMapping() after registerGiftMinted to avoid this expensive lookup');
     
     // Use ethers for event querying (more reliable than ThirdWeb for this)
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL!);
@@ -107,29 +118,50 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     const eventSignature = "GiftRegisteredFromMint(uint256,address,address,uint256,uint40,address,string,address)";
     const eventTopic = ethers.id(eventSignature);
     
-    // Query events from escrow contract with safe block range
+    // Query events from escrow contract with RPC-safe chunking
     const currentBlock = await provider.getBlockNumber();
     const deploymentBlock = 28915000; // V2 contract deployment block
-    const maxBlocks = 3000; // Increased safe range for RPC limits
+    const maxRpcBlocks = 500; // Safe RPC limit for Alchemy
+    const searchRange = 10000; // Total range to search for the mapping
     
-    // Search in chunks if needed, but start with recent blocks
-    const startBlock = Math.max(deploymentBlock, currentBlock - maxBlocks);
+    // Start with recent blocks, most gifts will be recent
+    const searchStartBlock = Math.max(deploymentBlock, currentBlock - searchRange);
     
-    console.log(`🔍 MAPPING: Searching blocks ${startBlock} to ${currentBlock} for events`);
+    console.log(`🔍 MAPPING: Searching blocks ${searchStartBlock} to ${currentBlock} in chunks of ${maxRpcBlocks}`);
     
-    const logs = await provider.getLogs({
-      address: ESCROW_CONTRACT_ADDRESS,
-      topics: [eventTopic],
-      fromBlock: startBlock,
-      toBlock: 'latest'
-    });
+    const allLogs: any[] = [];
     
-    console.log(`🔍 MAPPING: Found ${logs.length} GiftRegisteredFromMint events`);
+    // Query in safe chunks
+    for (let fromBlock = searchStartBlock; fromBlock <= currentBlock; fromBlock += maxRpcBlocks) {
+      const toBlock = Math.min(fromBlock + maxRpcBlocks - 1, currentBlock);
+      
+      try {
+        console.log(`🔍 MAPPING: Querying chunk ${fromBlock} to ${toBlock}`);
+        const chunkLogs = await provider.getLogs({
+          address: ESCROW_CONTRACT_ADDRESS,
+          topics: [eventTopic],
+          fromBlock: fromBlock,
+          toBlock: toBlock
+        });
+        allLogs.push(...chunkLogs);
+        
+        // If we found logs in this chunk, we might not need to search further back
+        if (chunkLogs.length > 0) {
+          console.log(`🔍 MAPPING: Found ${chunkLogs.length} events in chunk ${fromBlock}-${toBlock}`);
+        }
+      } catch (error: any) {
+        console.warn(`⚠️ MAPPING: Failed to query chunk ${fromBlock}-${toBlock}:`, error.message);
+        // Continue with next chunk instead of failing completely
+        continue;
+      }
+    }
+    
+    console.log(`🔍 MAPPING: Found ${allLogs.length} total GiftRegisteredFromMint events`);
     
     // Parse ALL events and cache them for future use
     const mappings = new Map<string, number>();
     
-    for (const log of logs) {
+    for (const log of allLogs) {
       try {
         // Event structure: GiftRegisteredFromMint(uint256 indexed giftId, address indexed creator, address indexed nftContract, uint256 tokenId, uint40 expiresAt, address gate, string giftMessage, address registeredBy)
         // Indexed: giftId (topics[1]), creator (topics[2]), nftContract (topics[3])
@@ -145,10 +177,13 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
         );
         const eventTokenId = decoded[0].toString(); // tokenId is first in data
         
-        // Cache this mapping
+        // Cache this mapping in memory and persist it
         mappings.set(eventTokenId, parseInt(giftId));
         
-        console.log(`🔍 MAPPING: Event giftId=${giftId}, tokenId=${eventTokenId}`);
+        // Persist to Redis/KV for future lookups
+        await storeGiftMapping(eventTokenId, parseInt(giftId));
+        
+        console.log(`🔍 MAPPING: Event giftId=${giftId}, tokenId=${eventTokenId} (stored persistently)`);
       } catch (decodeError) {
         console.warn('⚠️ MAPPING: Failed to decode event:', decodeError.message);
         continue;

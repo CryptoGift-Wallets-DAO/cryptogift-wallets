@@ -21,6 +21,8 @@ import {
   verifyNFTOwnership,
   TIMEFRAME_OPTIONS
 } from '../../lib/escrowUtils';
+import { storeGiftMapping } from '../../lib/giftMappingStore';
+import { readContract } from 'thirdweb';
 import {
   validateTransactionAttempt,
   registerTransactionAttempt,
@@ -31,6 +33,8 @@ import {
 } from '../../lib/gaslessValidation';
 import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
+import { storeGiftMapping } from '../../lib/giftMappingStore';
+import { getEscrowContract } from '../../lib/escrowUtils';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 
@@ -215,8 +219,8 @@ async function mintNFTEscrowGasless(
     const salt = generateSalt();
     const passwordHash = generatePasswordHash(password, salt);
     
-    console.log('🔐 Password hash generated:', passwordHash.slice(0, 10) + '...');
-    console.log('🧂 Salt generated:', salt.slice(0, 10) + '...');
+    // Secure logging - never expose actual crypto values
+    console.log('🔐 Cryptographic data generated successfully');
     
     // Step 5: Validate Biconomy configuration for gasless
     if (!validateBiconomyConfig()) {
@@ -380,6 +384,24 @@ async function mintNFTEscrowGasless(
       }
       
       console.log('✅ Gift registered successfully in escrow V2 contract');
+      
+      // CRITICAL: Store tokenId → giftId mapping persistently to avoid RPC calls
+      // The giftId is the next counter value from the contract
+      try {
+        // Query contract to get the latest giftId
+        const giftCounter = await readContract({
+          contract: getEscrowContract(),
+          method: "giftCounter",
+          params: []
+        });
+        const currentGiftId = Number(giftCounter);
+        
+        // Store the mapping persistently
+        await storeGiftMapping(tokenId, currentGiftId);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${currentGiftId}`);
+      } catch (mappingError) {
+        console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
+      }
       
       // Step 11: Verify NFT is in escrow contract (should already be there from direct mint)
       console.log('🔍 Verifying NFT is in escrow contract (V2 direct mint)...');
@@ -654,8 +676,8 @@ async function mintNFTEscrowGasPaid(
     const salt = generateSalt();
     const passwordHash = generatePasswordHash(password, salt);
     
-    console.log('🔐 Password hash generated:', passwordHash.slice(0, 10) + '...');
-    console.log('🧂 Salt generated:', salt.slice(0, 10) + '...');
+    // Secure logging - never expose actual crypto values
+    console.log('🔐 Cryptographic data generated successfully');
     
     // Step 5: Create deployer account for gas-paid transactions
     const deployerAccount = privateKeyToAccount({
@@ -842,6 +864,24 @@ async function mintNFTEscrowGasPaid(
       }
       
       console.log('✅ VERIFIED: NFT successfully in escrow contract (V2 zero-custody)');
+      
+      // CRITICAL: Store tokenId → giftId mapping persistently to avoid RPC calls
+      // The giftId is the next counter value from the contract
+      try {
+        // Query contract to get the latest giftId
+        const giftCounter = await readContract({
+          contract: getEscrowContract(),
+          method: "giftCounter",
+          params: []
+        });
+        const currentGiftId = Number(giftCounter);
+        
+        // Store the mapping persistently
+        await storeGiftMapping(tokenId, currentGiftId);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${currentGiftId}`);
+      } catch (mappingError) {
+        console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
+      }
       
       // Set escrow transaction hash for response
       escrowTransactionHash = escrowResult.transactionHash;

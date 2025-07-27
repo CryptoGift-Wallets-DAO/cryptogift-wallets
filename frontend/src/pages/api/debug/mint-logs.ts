@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { withDebugAuth } from '../../../lib/debugAuth';
 
 // In-memory log storage for debugging (temporary solution)
 let mintLogs: Array<{
@@ -27,7 +28,7 @@ export function addMintLog(level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN', step: s
   console.log(`🔍 MINT LOG [${level}] ${step}:`, data);
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Handle POST for manual test logging
   if (req.method === 'POST') {
     const { level, step, data } = req.body;
@@ -73,3 +74,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   });
 }
+// Export with debug authentication
+export default withDebugAuth(handler);

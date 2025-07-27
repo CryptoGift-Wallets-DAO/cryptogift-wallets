@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { getNFTMetadata } from '../../../lib/nftMetadataStore';
 import { promises as fsPromises } from 'fs';
+import { withDebugAuth } from '../../../lib/debugAuth';
 
 // In-memory storage for production (simple fallback)
 let inMemoryTraces: any[] = [];
@@ -370,7 +371,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
 }
 
 // Flow trace persistence and retrieval
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Check if this is an NFT metadata diagnostic request
   if (req.method === 'POST' && req.body.contractAddress && req.body.tokenId) {
     return handleNFTFlowDiagnostic(req, res);
@@ -571,3 +572,5 @@ function analyzeTrace(trace: any) {
 
   return analysis;
 }
+// Export with debug authentication
+export default withDebugAuth(handler);

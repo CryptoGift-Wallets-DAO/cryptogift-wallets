@@ -27,6 +27,23 @@ export default async function handler(
     });
   }
 
+  // Admin Authentication - Check for admin token
+  const adminToken = process.env.ADMIN_API_TOKEN;
+  const providedToken = req.headers['x-admin-token'] || req.body.adminToken;
+  
+  if (adminToken && providedToken !== adminToken) {
+    return res.status(401).json({ 
+      success: false,
+      returned: 0,
+      message: 'Unauthorized - Valid admin token required. Set ADMIN_API_TOKEN environment variable and provide it via X-Admin-Token header or adminToken body field.'
+    });
+  }
+
+  // Development fallback - if no admin token configured, allow with warning
+  if (!adminToken) {
+    console.warn('⚠️ ADMIN: No ADMIN_API_TOKEN configured - endpoint accessible without authentication in development');
+  }
+
   try {
     console.log('🔄 ADMIN: Starting expired gifts return process...');
     

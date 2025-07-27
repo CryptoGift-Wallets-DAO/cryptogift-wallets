@@ -720,7 +720,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("🔍 CONTRACT CONFIGURATION:");
       console.log("  📝 CryptoGift NFT Address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
       console.log("  📝 Chain ID:", process.env.NEXT_PUBLIC_CHAIN_ID);
-      console.log("  📝 RPC URL:", process.env.NEXT_PUBLIC_RPC_URL?.substring(0, 50) + "...");
+      console.log("  📝 RPC URL:", process.env.NEXT_PUBLIC_RPC_URL ? 'CONFIGURED' : 'MISSING');
       console.log("🎯 TRANSACTION PARAMETERS:");
       console.log("  📮 Recipient:", to);
       console.log("  📄 Metadata URI:", metadataUri?.substring(0, 100) + "...");
