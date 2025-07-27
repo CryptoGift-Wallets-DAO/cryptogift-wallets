@@ -14,7 +14,6 @@ import {
   generatePasswordHash,
   generateSalt,
   getEscrowContract,
-  prepareCreateGiftCall,
   prepareRegisterGiftMintedCall,
   validatePassword,
   validateGiftMessage,
