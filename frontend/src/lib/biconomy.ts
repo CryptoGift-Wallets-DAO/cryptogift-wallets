@@ -160,11 +160,32 @@ export async function sendGaslessTransaction(
     }
     
     console.log("✅ Gasless transaction successful:", realTransactionHash);
-    return {
+    
+    // NORMALIZE RECEIPT: Ensure compatibility with event parser
+    const normalizedReceipt = {
       transactionHash: realTransactionHash,
       blockNumber: receipt.receipt?.blockNumber || 0,
-      logs: receipt.receipt?.logs || [],
-      receipt: receipt.receipt
+      gasUsed: receipt.receipt?.gasUsed || BigInt(0),
+      status: receipt.receipt?.status === 1 ? 'success' as const : 'reverted' as const,
+      logs: (receipt.receipt?.logs || []).map((log: any) => ({
+        topics: log.topics || [],
+        data: log.data || '0x',
+        address: log.address
+      }))
+    };
+    
+    console.log('🔧 NORMALIZED GASLESS RECEIPT:', {
+      transactionHash: normalizedReceipt.transactionHash,
+      blockNumber: normalizedReceipt.blockNumber,
+      logsCount: normalizedReceipt.logs.length,
+      status: normalizedReceipt.status
+    });
+    
+    return {
+      transactionHash: realTransactionHash,
+      receipt: normalizedReceipt,
+      userOpHash: receipt.userOpHash,
+      rawReceipt: receipt.receipt // Keep original for debugging
     };
   } catch (error) {
     console.error("Error sending gasless transaction:", error);

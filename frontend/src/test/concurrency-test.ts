@@ -8,8 +8,10 @@ import { ethers } from 'ethers';
 
 // Test configuration
 const CONCURRENT_MINTS = 3;
-const TEST_ENDPOINT = 'http://localhost:3000/api/mint-escrow'; // Change to Vercel URL for production test
-const TEST_JWT_TOKEN = 'your_test_jwt_token_here'; // Set this for actual testing
+const TEST_ENDPOINT = process.env.NEXT_PUBLIC_APP_URL ? 
+  `${process.env.NEXT_PUBLIC_APP_URL}/api/mint-escrow` : 
+  'http://localhost:3000/api/mint-escrow';
+const TEST_JWT_TOKEN = process.env.TEST_JWT_TOKEN || 'your_test_jwt_token_here';
 
 interface ConcurrentMintResult {
   mintId: number;
@@ -64,7 +66,9 @@ async function executeMint(mintId: number): Promise<ConcurrentMintResult> {
     const result = await response.json();
     
     console.log(`✅ MINT ${mintId}: Success in ${duration}ms`);
-    console.log(`   TokenId: ${result.tokenId}, GiftId: extracted from logs`);
+    console.log(`   TokenId: ${result.tokenId}`);
+    console.log(`   TxHash: ${result.transactionHash?.slice(0, 20)}...`);
+    console.log(`   Gasless: ${result.gasless ? 'YES' : 'NO'}`);
     
     return {
       mintId,

@@ -387,8 +387,18 @@ async function mintNFTEscrowGasless(
       
       // DETERMINISTIC SOLUTION: Parse giftId from transaction receipt events
       console.log('🔍 PARSING: Extracting giftId from transaction receipt...');
+      
+      // Handle gasless vs gas-paid receipt formats
+      const receiptForParsing = escrowResult.receipt || escrowReceipt;
+      console.log('🔧 RECEIPT TYPE:', {
+        hasNormalizedReceipt: !!escrowResult.receipt,
+        userOpHash: escrowResult.userOpHash?.slice(0, 20) + '...' || 'N/A',
+        realTxHash: receiptForParsing.transactionHash?.slice(0, 20) + '...',
+        logsCount: receiptForParsing.logs?.length || 0
+      });
+      
       const eventResult = await parseGiftEventWithRetry(
-        escrowReceipt,
+        receiptForParsing,
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
       );

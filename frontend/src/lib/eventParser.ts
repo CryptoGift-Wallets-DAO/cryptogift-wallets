@@ -43,6 +43,112 @@ export interface EventParseFailure {
 export type EventParseResult = ParsedGiftEvent | EventParseFailure;
 
 /**
+ * FALLBACK: Get logs by block when receipt logs are empty/corrupt
+ * Uses provider.getLogs to scan the specific block for our event
+ */
+async function fallbackGetLogsByBlock(
+  transactionHash: string,
+  blockNumber: number,
+  expectedTokenId?: string | number,
+  contractAddress?: string
+): Promise<EventParseResult> {
+  try {
+    console.log(`🔍 FALLBACK: Scanning block ${blockNumber} for GiftRegisteredFromMint event...`);
+    
+    // Create provider for direct RPC access
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+    
+    // Create event filter for GiftRegisteredFromMint
+    const escrowAddress = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS;
+    if (!escrowAddress) {
+      return {
+        success: false,
+        error: 'ESCROW_CONTRACT_ADDRESS not configured for fallback',
+        logsFound: 0
+      };
+    }
+    
+    const iface = new ethers.Interface(ESCROW_ABI);
+    const eventFragment = iface.getEvent('GiftRegisteredFromMint');
+    const eventTopic = iface.getEventTopic(eventFragment);
+    
+    console.log('🔍 FALLBACK: Event topic:', eventTopic);
+    
+    // Get logs for this specific block
+    const logs = await provider.getLogs({
+      address: escrowAddress,
+      fromBlock: blockNumber,
+      toBlock: blockNumber,
+      topics: [eventTopic]
+    });
+    
+    console.log(`📋 FALLBACK: Found ${logs.length} GiftRegisteredFromMint events in block ${blockNumber}`);
+    
+    // Parse each log to find our specific transaction
+    for (const log of logs) {
+      try {
+        const parsed = iface.parseLog({
+          topics: log.topics,
+          data: log.data
+        });
+        
+        if (!parsed || parsed.name !== 'GiftRegisteredFromMint') continue;
+        
+        // Check if this log belongs to our transaction
+        if (log.transactionHash.toLowerCase() !== transactionHash.toLowerCase()) {
+          console.log(`⚠️ FALLBACK: Skipping event from different tx: ${log.transactionHash}`);
+          continue;
+        }
+        
+        const args = parsed.args;
+        const eventData: ParsedGiftEvent = {
+          success: true,
+          giftId: Number(args.giftId),
+          tokenId: Number(args.tokenId),
+          creator: args.creator,
+          nftContract: args.nftContract,
+          expiresAt: Number(args.expiresAt),
+          giftMessage: args.giftMessage || '',
+          registeredBy: args.registeredBy
+        };
+        
+        // Apply same strict filters as main parser
+        if (expectedTokenId !== undefined && eventData.tokenId !== Number(expectedTokenId)) {
+          console.warn(`⚠️ FALLBACK FILTER: TokenId mismatch. Expected ${expectedTokenId}, got ${eventData.tokenId}`);
+          continue;
+        }
+        
+        if (contractAddress && eventData.nftContract.toLowerCase() !== contractAddress.toLowerCase()) {
+          console.warn(`⚠️ FALLBACK FILTER: Contract mismatch. Expected ${contractAddress}, got ${eventData.nftContract}`);
+          continue;
+        }
+        
+        console.log('✅ FALLBACK SUCCESS: Found matching event in block logs');
+        return eventData;
+        
+      } catch (parseError) {
+        console.warn('⚠️ FALLBACK: Failed to parse log:', (parseError as Error).message);
+        continue;
+      }
+    }
+    
+    return {
+      success: false,
+      error: `No matching GiftRegisteredFromMint event found in block ${blockNumber} for tx ${transactionHash}`,
+      logsFound: logs.length
+    };
+    
+  } catch (error) {
+    console.error('❌ FALLBACK ERROR:', error);
+    return {
+      success: false,
+      error: `Fallback getLogs failed: ${(error as Error).message}`,
+      logsFound: 0
+    };
+  }
+}
+
+/**
  * Parse GiftRegisteredFromMint event from transaction receipt
  * DETERMINISTIC - returns exactly what happened on-chain
  */
@@ -81,9 +187,18 @@ export async function parseGiftRegisteredFromMintEvent(
         
         console.log(`📋 Log ${i}: Parsed event '${parsed.name}'`);
         
-        // Check if this is our target event
+        // STRICT FILTERING: Check if this is our target event with all validations
         if (parsed.name === 'GiftRegisteredFromMint') {
           const args = parsed.args;
+          
+          // FILTER 1: Event name ✅ (already checked)
+          console.log(`📋 Log ${i}: Found GiftRegisteredFromMint event, applying strict filters...`);
+          
+          // FILTER 2: Contract address must match escrow contract
+          if (log.address && log.address.toLowerCase() !== process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS?.toLowerCase()) {
+            console.warn(`⚠️ FILTER REJECT: Wrong contract address. Expected ${process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS}, got ${log.address}`);
+            continue;
+          }
           
           const eventData: ParsedGiftEvent = {
             success: true,
@@ -96,30 +211,41 @@ export async function parseGiftRegisteredFromMintEvent(
             registeredBy: args.registeredBy
           };
           
-          console.log('✅ FOUND GiftRegisteredFromMint:', {
-            giftId: eventData.giftId,
-            tokenId: eventData.tokenId,
-            creator: eventData.creator.slice(0, 10) + '...',
-            nftContract: eventData.nftContract.slice(0, 10) + '...'
-          });
-          
-          // Validate against expected tokenId if provided
+          // FILTER 3: TokenId must match expected (if provided)
           if (expectedTokenId !== undefined) {
             const expectedNum = Number(expectedTokenId);
             if (eventData.tokenId !== expectedNum) {
-              console.warn(`⚠️ TokenId mismatch: expected ${expectedNum}, got ${eventData.tokenId}`);
-              // Continue searching for the correct event
+              console.warn(`⚠️ FILTER REJECT: TokenId mismatch. Expected ${expectedNum}, got ${eventData.tokenId}`);
               continue;
             }
           }
           
-          // Validate contract address if provided
+          // FILTER 4: NFT contract must match expected (if provided)
           if (contractAddress && eventData.nftContract.toLowerCase() !== contractAddress.toLowerCase()) {
-            console.warn(`⚠️ Contract mismatch: expected ${contractAddress}, got ${eventData.nftContract}`);
+            console.warn(`⚠️ FILTER REJECT: NFT contract mismatch. Expected ${contractAddress}, got ${eventData.nftContract}`);
             continue;
           }
           
-          console.log('🎯 DETERMINISTIC RESULT: Event parsing successful');
+          // FILTER 5: Basic data validation
+          if (eventData.giftId < 0 || eventData.tokenId < 0) {
+            console.warn(`⚠️ FILTER REJECT: Invalid IDs. GiftId: ${eventData.giftId}, TokenId: ${eventData.tokenId}`);
+            continue;
+          }
+          
+          if (!ethers.isAddress(eventData.creator) || !ethers.isAddress(eventData.nftContract)) {
+            console.warn(`⚠️ FILTER REJECT: Invalid addresses. Creator: ${eventData.creator}, NFT: ${eventData.nftContract}`);
+            continue;
+          }
+          
+          console.log('✅ STRICT FILTERS PASSED:', {
+            giftId: eventData.giftId,
+            tokenId: eventData.tokenId,
+            creator: eventData.creator.slice(0, 10) + '...',
+            nftContract: eventData.nftContract.slice(0, 10) + '...',
+            logAddress: log.address?.slice(0, 10) + '...'
+          });
+          
+          console.log('🎯 DETERMINISTIC RESULT: Event parsing successful with strict validation');
           return eventData;
         }
         
@@ -130,10 +256,31 @@ export async function parseGiftRegisteredFromMintEvent(
       }
     }
     
-    // No matching event found
+    // FALLBACK: No matching event found in receipt, try getLogs by block
+    console.log('⚠️ No event found in receipt, attempting fallback getLogs by block...');
+    
+    try {
+      const fallbackResult = await fallbackGetLogsByBlock(
+        receipt.transactionHash,
+        receipt.blockNumber,
+        expectedTokenId,
+        contractAddress
+      );
+      
+      if (fallbackResult.success) {
+        console.log('✅ FALLBACK SUCCESS: Found event via getLogs');
+        return fallbackResult;
+      }
+      
+      console.log('❌ FALLBACK FAILED:', fallbackResult.error);
+    } catch (fallbackError) {
+      console.error('❌ FALLBACK ERROR:', fallbackError);
+    }
+    
+    // Final failure
     return {
       success: false,
-      error: 'GiftRegisteredFromMint event not found in transaction logs',
+      error: 'GiftRegisteredFromMint event not found in receipt logs or block fallback',
       logsFound: receipt.logs.length,
       contractAddress
     };
