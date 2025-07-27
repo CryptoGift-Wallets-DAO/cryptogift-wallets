@@ -15,7 +15,6 @@ import {
   generateSalt,
   getEscrowContract,
   prepareCreateGiftCall,
-  prepareRegisterGiftMintedCall,
   validatePassword,
   validateGiftMessage,
   sanitizeGiftMessage,
@@ -267,50 +266,59 @@ async function mintNFTEscrowGasless(
     console.log('🔍 FORCED DEBUG: Mint result hash:', mintResult.transactionHash);
     let tokenId: string | null = null;
     
-    // Parse Transfer event to get exact token ID from mint transaction
+    // ROBUST TOKEN ID EXTRACTION - NO SILENT FAILURES
     const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
     
-    // Try to parse Transfer events using ethers for precise tokenId extraction
+    console.log('🔍 Starting robust token ID extraction...');
+    
     try {
       const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
       const receipt = await provider.getTransactionReceipt(mintResult.transactionHash);
       
-      if (receipt) {
-        for (const log of receipt.logs) {
-          if (
-            log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.toLowerCase() &&
-            log.topics[0] === transferEventSignature &&
-            log.topics.length >= 4
-          ) {
-            // Third topic (index 3) contains the tokenId for Transfer(from, to, tokenId)
-            tokenId = BigInt(log.topics[3]).toString();
-            console.log('🎯 Token ID extracted from Transfer event:', tokenId);
-            break;
-          }
-        }
+      if (!receipt) {
+        throw new Error(`No transaction receipt found for hash: ${mintResult.transactionHash}`);
       }
-    } catch (error) {
-      console.warn('Failed to parse Transfer events, trying totalSupply fallback:', error);
-    }
-    
-    // Fallback to totalSupply if Transfer event parsing failed
-    if (!tokenId) {
-      try {
-        const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-        const nftContractABI = ["function totalSupply() public view returns (uint256)"];
-        const nftContract = new ethers.Contract(
-          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-          nftContractABI,
-          provider
-        );
+      
+      console.log(`🔍 Examining ${receipt.logs.length} logs for Transfer event...`);
+      
+      // Find Transfer event with strict validation
+      const transferLog = receipt.logs.find(log => {
+        const isCorrectContract = log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.toLowerCase();
+        const isTransferEvent = log.topics[0] === transferEventSignature;
+        const hasEnoughTopics = log.topics.length >= 4;
         
-        const totalSupply = await nftContract.totalSupply();
-        tokenId = totalSupply.toString();
-        console.log('🎯 Token ID extracted from totalSupply (fallback):', tokenId);
-      } catch (error) {
-        console.error('Both Transfer event parsing and totalSupply failed:', error);
-        throw new Error('Failed to extract token ID from mint transaction');
+        console.log(`🔍 Log check - Contract: ${isCorrectContract}, Event: ${isTransferEvent}, Topics: ${hasEnoughTopics} (${log.topics.length})`);
+        
+        return isCorrectContract && isTransferEvent && hasEnoughTopics;
+      });
+      
+      if (!transferLog) {
+        throw new Error(`No valid Transfer event found in transaction ${mintResult.transactionHash}. Found ${receipt.logs.length} logs but none matched Transfer pattern.`);
       }
+      
+      // Extract and validate token ID
+      if (!transferLog.topics[3]) {
+        throw new Error(`Transfer event found but topics[3] is undefined. Topics length: ${transferLog.topics.length}`);
+      }
+      
+      try {
+        tokenId = BigInt(transferLog.topics[3]).toString();
+        console.log('✅ Token ID successfully extracted from Transfer event:', tokenId);
+        
+        // Validate token ID is reasonable
+        const tokenIdNum = parseInt(tokenId);
+        if (isNaN(tokenIdNum) || tokenIdNum <= 0) {
+          throw new Error(`Invalid token ID extracted: ${tokenId}`);
+        }
+        
+      } catch (bigintError) {
+        throw new Error(`Failed to convert topics[3] to BigInt: ${transferLog.topics[3]}. Error: ${bigintError.message}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Transfer event extraction failed:', error);
+      // NO FALLBACK - Fail fast and clear
+      throw new Error(`Token ID extraction failed: ${error.message}. This prevents double minting and ensures data integrity.`);
     }
     
     if (!tokenId) {
@@ -328,12 +336,9 @@ async function mintNFTEscrowGasless(
       console.log('🔒 ESCROW MINT: NFT minted to creator, creating escrow gift (will transfer to escrow)...');
       
       // HOTFIX: Usar createGift ya que registerGiftMinted no existe en contrato
-      console.log('🔍 DEBUG: Using escrow contract address:', ESCROW_CONTRACT_ADDRESS);
-      console.log('🔍 DEBUG: Environment escrow address:', process.env.ESCROW_CONTRACT_ADDRESS);
-      console.log('🔍 DEBUG: Public environment escrow address:', process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS);
+      console.log('🔍 DEBUG: Using escrow contract address:', ESCROW_CONTRACT_ADDRESS ? 'Set' : 'Missing');
       console.log('🔍 DEBUG: Token ID extracted from mint:', tokenId);
       console.log('🔍 DEBUG: Token ID type:', typeof tokenId);
-      console.log('🔍 DEBUG: NFT contract address:', process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
       console.log('⚠️ HOTFIX: Using createGift because registerGiftMinted does not exist in deployed contract');
       
       const createGiftTransaction = prepareCreateGiftCall(
@@ -451,6 +456,19 @@ async function mintNFTEscrowGasless(
     // Mark transaction as failed if nonce was generated
     if (transactionNonce) {
       await markTransactionFailed(transactionNonce, error.message);
+    }
+    
+    // CLEANUP: Release any locks on failure
+    try {
+      const requestIdKey = `request:${transactionNonce}`;
+      const requestId = await redis?.get(requestIdKey);
+      if (requestId) {
+        await redis?.del(`mint_lock:${requestId}`);
+        await redis?.del(requestIdKey);
+        console.log('🧹 Cleaned up locks for failed gasless transaction');
+      }
+    } catch (cleanupError) {
+      console.warn('⚠️ Failed to cleanup locks:', cleanupError);
     }
     
     return {
@@ -693,50 +711,59 @@ async function mintNFTEscrowGasPaid(
     console.log('🔍 FORCED DEBUG: Mint result hash:', mintResult.transactionHash);
     let tokenId: string | null = null;
     
-    // Parse Transfer event to get exact token ID from mint transaction
+    // ROBUST TOKEN ID EXTRACTION - NO SILENT FAILURES
     const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
     
-    // Try to parse Transfer events using ethers for precise tokenId extraction
+    console.log('🔍 Starting robust token ID extraction...');
+    
     try {
       const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
       const receipt = await provider.getTransactionReceipt(mintResult.transactionHash);
       
-      if (receipt) {
-        for (const log of receipt.logs) {
-          if (
-            log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.toLowerCase() &&
-            log.topics[0] === transferEventSignature &&
-            log.topics.length >= 4
-          ) {
-            // Third topic (index 3) contains the tokenId for Transfer(from, to, tokenId)
-            tokenId = BigInt(log.topics[3]).toString();
-            console.log('🎯 Token ID extracted from Transfer event:', tokenId);
-            break;
-          }
-        }
+      if (!receipt) {
+        throw new Error(`No transaction receipt found for hash: ${mintResult.transactionHash}`);
       }
-    } catch (error) {
-      console.warn('Failed to parse Transfer events, trying totalSupply fallback:', error);
-    }
-    
-    // Fallback to totalSupply if Transfer event parsing failed
-    if (!tokenId) {
-      try {
-        const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-        const nftContractABI = ["function totalSupply() public view returns (uint256)"];
-        const nftContract = new ethers.Contract(
-          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-          nftContractABI,
-          provider
-        );
+      
+      console.log(`🔍 Examining ${receipt.logs.length} logs for Transfer event...`);
+      
+      // Find Transfer event with strict validation
+      const transferLog = receipt.logs.find(log => {
+        const isCorrectContract = log.address.toLowerCase() === process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.toLowerCase();
+        const isTransferEvent = log.topics[0] === transferEventSignature;
+        const hasEnoughTopics = log.topics.length >= 4;
         
-        const totalSupply = await nftContract.totalSupply();
-        tokenId = totalSupply.toString();
-        console.log('🎯 Token ID extracted from totalSupply (fallback):', tokenId);
-      } catch (error) {
-        console.error('Both Transfer event parsing and totalSupply failed:', error);
-        throw new Error('Failed to extract token ID from mint transaction');
+        console.log(`🔍 Log check - Contract: ${isCorrectContract}, Event: ${isTransferEvent}, Topics: ${hasEnoughTopics} (${log.topics.length})`);
+        
+        return isCorrectContract && isTransferEvent && hasEnoughTopics;
+      });
+      
+      if (!transferLog) {
+        throw new Error(`No valid Transfer event found in transaction ${mintResult.transactionHash}. Found ${receipt.logs.length} logs but none matched Transfer pattern.`);
       }
+      
+      // Extract and validate token ID
+      if (!transferLog.topics[3]) {
+        throw new Error(`Transfer event found but topics[3] is undefined. Topics length: ${transferLog.topics.length}`);
+      }
+      
+      try {
+        tokenId = BigInt(transferLog.topics[3]).toString();
+        console.log('✅ Token ID successfully extracted from Transfer event:', tokenId);
+        
+        // Validate token ID is reasonable
+        const tokenIdNum = parseInt(tokenId);
+        if (isNaN(tokenIdNum) || tokenIdNum <= 0) {
+          throw new Error(`Invalid token ID extracted: ${tokenId}`);
+        }
+        
+      } catch (bigintError) {
+        throw new Error(`Failed to convert topics[3] to BigInt: ${transferLog.topics[3]}. Error: ${bigintError.message}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Transfer event extraction failed:', error);
+      // NO FALLBACK - Fail fast and clear
+      throw new Error(`Token ID extraction failed: ${error.message}. This prevents double minting and ensures data integrity.`);
     }
     
     if (!tokenId) {
@@ -900,7 +927,7 @@ export default async function handler(
       NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS: !!process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS,
       NEXT_PUBLIC_RPC_URL: !!process.env.NEXT_PUBLIC_RPC_URL,
       NEXT_PUBLIC_TW_CLIENT_ID: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
-      actualEscrowAddress: ESCROW_CONTRACT_ADDRESS?.substring(0, 10) + '...'
+      configStatus: 'Environment variables loaded'
     });
     
     const missingVars = Object.entries(requiredEnvVars)

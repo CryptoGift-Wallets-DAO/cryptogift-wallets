@@ -3,19 +3,19 @@ import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-// Biconomy configuration for Base Sepolia - MEE 2025 SPONSORED TRANSACTIONS
+// Biconomy configuration for Base Sepolia - ALL FROM ENVIRONMENT VARIABLES
 export const biconomyConfig = {
   chainId: 84532, // Base Sepolia
-  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e",
+  rpcUrl: process.env.NEXT_PUBLIC_RPC_URL,
   
   // MEE CONFIGURATION - Modular Execution Environment (Sponsored)
-  meeApiKey: process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY || "mee_3Zg7AQUc3eSEaVPSdyNc8ZW6",
-  projectId: process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID || "865ffbac-2fc7-47c0-9ef6-ac3317a1ef40",
+  meeApiKey: process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY,
+  projectId: process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID,
   
   // LEGACY PAYMASTER FALLBACK
-  paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || "l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
-  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || "https://bundler.biconomy.io/api/v2/84532/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44",
-  paymasterUrl: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || "https://paymaster.biconomy.io/api/v2/84532/l0I7KBcia.2e5af1b9-52f2-43d8-aaad-bb5c8275d1a7",
+  paymasterApiKey: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY,
+  bundlerUrl: process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL,
+  paymasterUrl: process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL,
 };
 
 // Create Biconomy Smart Account
@@ -159,14 +159,13 @@ export async function sendGaslessTransaction(
   }
 }
 
-// Check if Biconomy configuration is complete - PRIORITIZES MEE OVER PAYMASTER  
-// OPTIMIZED: Fast validation for better gasless detection speed
+// Check if Biconomy configuration is complete - ALL FROM ENVIRONMENT VARIABLES ONLY
 export function validateBiconomyConfig() {
-  const meeApiKey = process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY || biconomyConfig.meeApiKey;
-  const projectId = process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID || biconomyConfig.projectId;
-  const paymasterKey = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY || biconomyConfig.paymasterApiKey;
-  const bundlerUrl = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL || biconomyConfig.bundlerUrl;
-  const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL || biconomyConfig.paymasterUrl;
+  const meeApiKey = process.env.NEXT_PUBLIC_BICONOMY_MEE_API_KEY;
+  const projectId = process.env.NEXT_PUBLIC_BICONOMY_PROJECT_ID;
+  const paymasterKey = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_API_KEY;
+  const bundlerUrl = process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL;
+  const paymasterUrl = process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL;
   
   // FAST VALIDATION: Check environment first
   const isValidConfig = (meeApiKey && projectId) || (paymasterKey && bundlerUrl && paymasterUrl);
