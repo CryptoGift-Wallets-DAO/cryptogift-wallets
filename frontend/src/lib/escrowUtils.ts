@@ -100,31 +100,6 @@ export function getEscrowContract() {
  * ```
  */
 
-export function prepareCreateGiftCall(
-  tokenId: string | number,
-  nftContract: string,
-  password: string,
-  salt: string,
-  timeframeDays: number,
-  giftMessage: string,
-  gate: string = '0x0000000000000000000000000000000000000000'
-) {
-  const contract = getEscrowContract();
-  
-  return prepareContractCall({
-    contract,
-    method: "createGift",
-    params: [
-      BigInt(tokenId),
-      nftContract,
-      password,           // ← FIX: Password as string, not hash
-      salt as `0x${string}`,  // ← FIX: Type assertion for salt parameter
-      BigInt(timeframeDays),
-      giftMessage,
-      gate                // ← FIX: Add gate parameter (defaults to zero address)
-    ]
-  });
-}
 
 /**
  * ZERO CUSTODY FUNCTION: Prepare registerGiftMinted call for V2 contract
