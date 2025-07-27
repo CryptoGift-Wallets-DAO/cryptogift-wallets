@@ -70,7 +70,7 @@ async function fallbackGetLogsByBlock(
     
     const iface = new ethers.Interface(ESCROW_ABI);
     const eventFragment = iface.getEvent('GiftRegisteredFromMint');
-    const eventTopic = iface.getEventTopic(eventFragment);
+    const eventTopic = eventFragment.topicHash;
     
     console.log('🔍 FALLBACK: Event topic:', eventTopic);
     
