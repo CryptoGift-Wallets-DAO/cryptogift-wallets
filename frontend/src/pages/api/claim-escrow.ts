@@ -1,7 +1,7 @@
 /**
  * CLAIM ESCROW API
  * Claim escrow gift with password validation
- * Supports both claimGift and claimGiftFor functions
+ * Uses claimGift function from deployed contract
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -15,7 +15,6 @@ import {
   generatePasswordHash,
   getEscrowContract,
   prepareClaimGiftCall,
-  prepareClaimGiftForCall,
   validatePassword,
   validateAddress,
   validateTokenId,
@@ -38,7 +37,6 @@ interface ClaimEscrowRequest {
   tokenId: string;
   password: string;
   salt: string;
-  recipientAddress?: string; // If provided, uses claimGiftFor
   claimerAddress: string; // Who is initiating the claim
   gasless?: boolean;
 }
@@ -182,8 +180,7 @@ async function claimEscrowGasless(
   tokenId: string,
   password: string,
   salt: string,
-  claimerAddress: string,
-  recipientAddress?: string
+  claimerAddress: string
 ): Promise<{
   success: boolean;
   transactionHash?: string;
@@ -204,7 +201,7 @@ async function claimEscrowGasless(
     console.log('✅ Claim rate limit check passed. Remaining:', rateLimit.remaining);
     
     // Step 2: Anti-double claiming validation
-    const claimConfig = { tokenId, password, recipient: recipientAddress };
+    const claimConfig = { tokenId, password };
     const validation = await validateTransactionAttempt(claimerAddress, `claim_${tokenId}`, 0, claimConfig);
     
     if (!validation.valid) {
@@ -224,10 +221,8 @@ async function claimEscrowGasless(
       privateKey: process.env.PRIVATE_KEY_DEPLOY!
     });
     
-    // Step 5: Prepare claim transaction
-    const claimTransaction = recipientAddress 
-      ? prepareClaimGiftForCall(tokenId, password, salt, recipientAddress)
-      : prepareClaimGiftCall(tokenId, password, salt);
+    // Step 5: Prepare claim transaction (only claimGift exists in deployed contract)
+    const claimTransaction = prepareClaimGiftCall(tokenId, password, salt);
     
     console.log('📝 Executing claim transaction...');
     const result = await sendTransaction({
@@ -285,8 +280,7 @@ async function claimEscrowGasPaid(
   tokenId: string,
   password: string,
   salt: string,
-  claimerAddress: string,
-  recipientAddress?: string
+  claimerAddress: string
 ): Promise<{
   success: boolean;
   transactionHash?: string;
@@ -307,7 +301,7 @@ async function claimEscrowGasPaid(
     console.log('✅ Claim rate limit check passed. Remaining:', rateLimit.remaining);
     
     // Step 2: Anti-double claiming validation
-    const claimConfig = { tokenId, password, recipient: recipientAddress };
+    const claimConfig = { tokenId, password };
     const validation = await validateTransactionAttempt(claimerAddress, `claim_${tokenId}`, 0, claimConfig);
     
     if (!validation.valid) {
@@ -328,10 +322,8 @@ async function claimEscrowGasPaid(
     
     console.log('🔑 Using deployer account for gas-paid claim:', deployerAccount.address.slice(0, 10) + '...');
     
-    // Step 5: Prepare claim transaction (regular transaction with gas)
-    const claimTransaction = recipientAddress 
-      ? prepareClaimGiftForCall(tokenId, password, salt, recipientAddress)
-      : prepareClaimGiftCall(tokenId, password, salt);
+    // Step 5: Prepare claim transaction (only claimGift exists in deployed contract)
+    const claimTransaction = prepareClaimGiftCall(tokenId, password, salt);
     
     console.log('📝 Executing gas-paid claim transaction...');
     const result = await sendTransaction({
@@ -428,7 +420,6 @@ export default async function handler(
       tokenId,
       password,
       salt,
-      recipientAddress,
       claimerAddress,
       gasless = true
     }: ClaimEscrowRequest = req.body;
@@ -465,20 +456,10 @@ export default async function handler(
       });
     }
     
-    if (recipientAddress) {
-      const addressValidation = validateAddress(recipientAddress);
-      if (!addressValidation.valid) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Invalid recipient address' 
-        });
-      }
-    }
     
     console.log('🎁 CLAIM ESCROW REQUEST:', {
       tokenId,
       gasless,
-      hasRecipient: !!recipientAddress,
       claimerAddress: claimerAddress.slice(0, 10) + '...'
     });
     
@@ -499,19 +480,19 @@ export default async function handler(
     
     if (gasless) {
       console.log('🚀 Attempting enhanced gasless claim...');
-      result = await claimEscrowGasless(tokenId, password, salt, claimerAddress, recipientAddress);
+      result = await claimEscrowGasless(tokenId, password, salt, claimerAddress);
       
       // If gasless fails, fallback to gas-paid
       if (!result.success) {
         console.log('⚠️ Gasless failed, attempting gas-paid fallback...');
-        result = await claimEscrowGasPaid(tokenId, password, salt, claimerAddress, recipientAddress);
+        result = await claimEscrowGasPaid(tokenId, password, salt, claimerAddress);
         result.gasless = false;
       } else {
         result.gasless = true;
       }
     } else {
       console.log('💰 Attempting gas-paid claim...');
-      result = await claimEscrowGasPaid(tokenId, password, salt, claimerAddress, recipientAddress);
+      result = await claimEscrowGasPaid(tokenId, password, salt, claimerAddress);
       result.gasless = false;
     }
     
@@ -522,8 +503,8 @@ export default async function handler(
       });
     }
     
-    // Determine final recipient
-    const finalRecipient = recipientAddress || claimerAddress;
+    // Final recipient is always the claimer (no claimGiftFor in contract)
+    const finalRecipient = claimerAddress;
     
     // Get final rate limit status
     const finalRateLimit = checkRateLimit(claimerAddress);
