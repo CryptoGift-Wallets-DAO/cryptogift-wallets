@@ -384,19 +384,20 @@ async function mintNFTEscrowGasless(
       console.log('✅ Gift registered successfully in escrow V2 contract');
       
       // CRITICAL: Store tokenId → giftId mapping persistently to avoid RPC calls
-      // The giftId is the next counter value from the contract
+      // The giftId is the CURRENT counter value minus 1 (since counter increments after creation)
       try {
-        // Query contract to get the latest giftId
+        // Query contract to get the latest giftCounter
         const giftCounter = await readContract({
           contract: getEscrowContract(),
           method: "giftCounter",
           params: []
         });
-        const currentGiftId = Number(giftCounter);
+        // CRITICAL FIX: The actual giftId is counter - 1 (since counter increments after gift creation)
+        const actualGiftId = Number(giftCounter) - 1;
         
         // Store the mapping persistently
-        await storeGiftMapping(tokenId, currentGiftId);
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${currentGiftId}`);
+        await storeGiftMapping(tokenId, actualGiftId);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (counter: ${Number(giftCounter)})`);
       } catch (mappingError) {
         console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
       }
@@ -864,19 +865,20 @@ async function mintNFTEscrowGasPaid(
       console.log('✅ VERIFIED: NFT successfully in escrow contract (V2 zero-custody)');
       
       // CRITICAL: Store tokenId → giftId mapping persistently to avoid RPC calls
-      // The giftId is the next counter value from the contract
+      // The giftId is the CURRENT counter value minus 1 (since counter increments after creation)
       try {
-        // Query contract to get the latest giftId
+        // Query contract to get the latest giftCounter
         const giftCounter = await readContract({
           contract: getEscrowContract(),
           method: "giftCounter",
           params: []
         });
-        const currentGiftId = Number(giftCounter);
+        // CRITICAL FIX: The actual giftId is counter - 1 (since counter increments after gift creation)
+        const actualGiftId = Number(giftCounter) - 1;
         
         // Store the mapping persistently
-        await storeGiftMapping(tokenId, currentGiftId);
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${currentGiftId}`);
+        await storeGiftMapping(tokenId, actualGiftId);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (counter: ${Number(giftCounter)})`);
       } catch (mappingError) {
         console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
       }
