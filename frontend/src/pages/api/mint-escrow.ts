@@ -344,6 +344,15 @@ async function mintNFTEscrowGasless(
       console.log('🔍 DEBUG: Creator address:', creatorAddress ? 'Set' : 'Missing');
       console.log('✅ V2: Using registerGiftMinted for zero-custody escrow');
       
+      // CRITICAL: Get giftCounter BEFORE creating gift to avoid race conditions
+      const preCreateGiftCounter = await readContract({
+        contract: getEscrowContract(),
+        method: "giftCounter",
+        params: []
+      });
+      const expectedGiftId = Number(preCreateGiftCounter);
+      console.log(`🔍 PRE-CREATE: giftCounter is ${Number(preCreateGiftCounter)}, expected giftId will be ${expectedGiftId}`);
+      
       // CRITICAL: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
       console.log('🔍 PRE-CHECK: Verifying NFT is owned by escrow before registration...');
       
@@ -383,21 +392,11 @@ async function mintNFTEscrowGasless(
       
       console.log('✅ Gift registered successfully in escrow V2 contract');
       
-      // CRITICAL: Store tokenId → giftId mapping persistently to avoid RPC calls
-      // The giftId is the CURRENT counter value minus 1 (since counter increments after creation)
+      // CRITICAL: Store tokenId → giftId mapping using pre-determined giftId to avoid race conditions
       try {
-        // Query contract to get the latest giftCounter
-        const giftCounter = await readContract({
-          contract: getEscrowContract(),
-          method: "giftCounter",
-          params: []
-        });
-        // CRITICAL FIX: The actual giftId is counter - 1 (since counter increments after gift creation)
-        const actualGiftId = Number(giftCounter) - 1;
-        
-        // Store the mapping persistently
-        await storeGiftMapping(tokenId, actualGiftId);
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (counter: ${Number(giftCounter)})`);
+        // Use the expectedGiftId we calculated BEFORE creating the gift
+        await storeGiftMapping(tokenId, expectedGiftId);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${expectedGiftId} (pre-calculated)`);
       } catch (mappingError) {
         console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
       }
@@ -815,6 +814,16 @@ async function mintNFTEscrowGasPaid(
       
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
       console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
+      
+      // CRITICAL: Get giftCounter BEFORE creating gift to avoid race conditions (gas-paid flow)
+      const preCreateGiftCounterGasPaid = await readContract({
+        contract: getEscrowContract(),
+        method: "giftCounter",
+        params: []
+      });
+      const expectedGiftIdGasPaid = Number(preCreateGiftCounterGasPaid);
+      console.log(`🔍 PRE-CREATE (GAS-PAID): giftCounter is ${Number(preCreateGiftCounterGasPaid)}, expected giftId will be ${expectedGiftIdGasPaid}`);
+      
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -864,21 +873,11 @@ async function mintNFTEscrowGasPaid(
       
       console.log('✅ VERIFIED: NFT successfully in escrow contract (V2 zero-custody)');
       
-      // CRITICAL: Store tokenId → giftId mapping persistently to avoid RPC calls
-      // The giftId is the CURRENT counter value minus 1 (since counter increments after creation)
+      // CRITICAL: Store tokenId → giftId mapping using pre-determined giftId to avoid race conditions (gas-paid)
       try {
-        // Query contract to get the latest giftCounter
-        const giftCounter = await readContract({
-          contract: getEscrowContract(),
-          method: "giftCounter",
-          params: []
-        });
-        // CRITICAL FIX: The actual giftId is counter - 1 (since counter increments after gift creation)
-        const actualGiftId = Number(giftCounter) - 1;
-        
-        // Store the mapping persistently
-        await storeGiftMapping(tokenId, actualGiftId);
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (counter: ${Number(giftCounter)})`);
+        // Use the expectedGiftIdGasPaid we calculated BEFORE creating the gift
+        await storeGiftMapping(tokenId, expectedGiftIdGasPaid);
+        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${expectedGiftIdGasPaid} (pre-calculated)`);
       } catch (mappingError) {
         console.warn('⚠️ Failed to store gift mapping (non-critical):', mappingError);
       }
