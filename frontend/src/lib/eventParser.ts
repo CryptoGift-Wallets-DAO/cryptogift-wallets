@@ -18,7 +18,7 @@ interface ThirdWebTransactionReceipt {
   }>;
   status: 'success' | 'reverted';
   transactionHash: string;
-  blockNumber: number;
+  blockNumber: bigint;
   gasUsed: bigint;
 }
 
@@ -620,7 +620,7 @@ export async function parseGiftRegisteredFromMintEvent(
     try {
       const fallbackResult = await fallbackGetLogsByBlock(
         normalizedReceipt.transactionHash,
-        normalizedReceipt.blockNumber,
+        Number(normalizedReceipt.blockNumber),
         expectedTokenId,
         contractAddress
       );
