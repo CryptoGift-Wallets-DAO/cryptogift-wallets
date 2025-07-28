@@ -35,7 +35,7 @@ export interface GasPaidTransactionResult {
   nonce?: string;
   error?: string;
   gasUsed?: bigint;
-  blockNumber?: number;
+  blockNumber?: bigint;
 }
 
 export interface TransactionOptions {

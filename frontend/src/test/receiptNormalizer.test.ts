@@ -29,7 +29,7 @@ describe('Receipt Normalizer', () => {
   
   const mockRealReceipt = {
     hash: validTxHash,
-    blockNumber: 1000,
+    blockNumber: BigInt(1000),
     status: 1,
     gasUsed: BigInt(21000),
     logs: [
@@ -87,7 +87,7 @@ describe('Receipt Normalizer', () => {
     test('Should detect missing logs receipt', () => {
       const incompleteReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 1000
+        blockNumber: BigInt(1000)
         // Missing logs
       };
 
@@ -97,7 +97,7 @@ describe('Receipt Normalizer', () => {
     test('Should NOT normalize direct receipt with logs', () => {
       const directReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success',
         gasUsed: BigInt(21000),
         logs: [
@@ -119,7 +119,7 @@ describe('Receipt Normalizer', () => {
         userOpHash: '0xuser123',
         receipt: {
           transactionHash: validTxHash,
-          blockNumber: 1000,
+          blockNumber: BigInt(1000),
           status: 1,
           logs: [],
           gasUsed: '21000'
@@ -142,7 +142,7 @@ describe('Receipt Normalizer', () => {
       const gaslessReceipt = {
         receipt: {
           transactionHash: validTxHash,
-          blockNumber: 1000,
+          blockNumber: BigInt(1000),
           logs: []
         }
       };
@@ -161,7 +161,7 @@ describe('Receipt Normalizer', () => {
       const thirdWebReceipt = {
         result: {
           transactionHash: validTxHash,
-          blockNumber: 1000
+          blockNumber: BigInt(1000)
         }
       };
 
@@ -177,7 +177,7 @@ describe('Receipt Normalizer', () => {
     test('Should handle direct receipt without normalization', async () => {
       const directReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success',
         gasUsed: BigInt(21000),
         logs: [
@@ -250,7 +250,7 @@ describe('Receipt Normalizer', () => {
     test('Should validate correct receipt', () => {
       const validReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success' as const,
         gasUsed: BigInt(21000),
         logs: [
@@ -270,7 +270,7 @@ describe('Receipt Normalizer', () => {
 
     test('Should detect missing transaction hash', () => {
       const invalidReceipt = {
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success' as const,
         gasUsed: BigInt(21000),
         logs: []
@@ -285,7 +285,7 @@ describe('Receipt Normalizer', () => {
     test('Should detect invalid transaction hash format', () => {
       const invalidReceipt = {
         transactionHash: '0xinvalid',
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success' as const,
         gasUsed: BigInt(21000),
         logs: []
@@ -300,7 +300,7 @@ describe('Receipt Normalizer', () => {
     test('Should detect missing logs', () => {
       const invalidReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success' as const,
         gasUsed: BigInt(21000)
       } as any;
@@ -314,7 +314,7 @@ describe('Receipt Normalizer', () => {
     test('Should detect invalid block number', () => {
       const invalidReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 0,
+        blockNumber: BigInt(0),
         status: 'success' as const,
         gasUsed: BigInt(21000),
         logs: []
@@ -329,7 +329,7 @@ describe('Receipt Normalizer', () => {
     test('Should detect invalid log format', () => {
       const invalidReceipt = {
         transactionHash: validTxHash,
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 'success' as const,
         gasUsed: BigInt(21000),
         logs: [
@@ -353,7 +353,7 @@ describe('Receipt Normalizer', () => {
       const userOpReceipt = {
         receipt: {
           transactionHash: validTxHash,
-          blockNumber: 1000
+          blockNumber: BigInt(1000)
         }
       };
 
@@ -371,7 +371,7 @@ describe('Receipt Normalizer', () => {
       const mockProvider = new ethers.JsonRpcProvider(mockRpcUrl);
       (mockProvider.getTransactionReceipt as jest.Mock).mockResolvedValue({
         hash: 'invalid', // Invalid hash format
-        blockNumber: 1000,
+        blockNumber: BigInt(1000),
         status: 1,
         gasUsed: BigInt(21000),
         logs: []
@@ -449,7 +449,7 @@ describe('Receipt Normalizer', () => {
     test('Should extract hash from alternative properties', async () => {
       const alternativeReceipt = {
         hash: validTxHash, // Alternative property name
-        blockNumber: 1000
+        blockNumber: BigInt(1000)
       };
 
       const result = await normalizeReceipt(alternativeReceipt);

@@ -15,7 +15,7 @@ interface ThirdWebTransactionReceipt {
   }>;
   status: 'success' | 'reverted';
   transactionHash: string;
-  blockNumber: number;
+  blockNumber: bigint;
   gasUsed: bigint;
 }
 
@@ -23,7 +23,7 @@ interface BiconomyUserOpReceipt {
   userOpHash: string;
   receipt: {
     transactionHash: string;
-    blockNumber: number;
+    blockNumber: bigint;
     status: number;
     logs: any[];
     gasUsed: string;

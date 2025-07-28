@@ -62,7 +62,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
     // Setup successful transaction response
     require('thirdweb').sendTransaction.mockResolvedValue({
       transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-      blockNumber: 12345,
+      blockNumber: BigInt(12345),
       status: 'success',
       logs: [
         {
@@ -96,7 +96,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
       
       if (result.success) {
         expect(result.transactionHash).toBeDefined();
-        expect(result.blockNumber).toBe(12345);
+        expect(result.blockNumber).toBe(BigInt(12345));
         expect(result.tokenId).toBe('1');
         expect(result.tokenId).not.toBe('0'); // CRITICAL: Nunca debe ser 0
         expect(result.metadata.operationType).toBe('mint');
@@ -108,7 +108,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
       // Mock transaction que devuelve tokenId=0
       require('thirdweb').sendTransaction.mockResolvedValue({
         transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-        blockNumber: 12345,
+        blockNumber: BigInt(12345),
         status: 'success',
         logs: [
           {
@@ -152,7 +152,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
         }
         return Promise.resolve({
           transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-          blockNumber: 12345,
+          blockNumber: BigInt(12345),
           status: 'success',
           logs: []
         });
@@ -204,7 +204,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
       // Mock successful register transaction
       require('thirdweb').sendTransaction.mockResolvedValue({
         transactionHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-        blockNumber: 12346,
+        blockNumber: BigInt(12346),
         status: 'success',
         logs: [
           {
@@ -247,7 +247,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
       // Mock successful claim with Transfer event
       require('thirdweb').sendTransaction.mockResolvedValue({
         transactionHash: '0xdcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
-        blockNumber: 12347,
+        blockNumber: BigInt(12347),
         status: 'success',
         logs: [
           {
@@ -511,7 +511,7 @@ describe('Gas-Paid Transactions E2E Tests', () => {
         }
         return Promise.resolve({
           transactionHash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-          blockNumber: 12345,
+          blockNumber: BigInt(12345),
           status: 'success',
           logs: []
         });
