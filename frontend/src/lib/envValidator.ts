@@ -417,7 +417,10 @@ export function diagnoseEnvironmentIssues(): void {
  * Export de todas las funciones principales
  */
 export {
-  ENV_VALIDATION_RULES,
+  ENV_VALIDATION_RULES
+};
+
+export type {
   ValidationResult,
   ValidationSummary
 };
