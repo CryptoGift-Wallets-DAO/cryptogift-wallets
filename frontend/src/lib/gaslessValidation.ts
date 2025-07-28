@@ -23,32 +23,8 @@ interface TransactionAttempt {
   transactionHash?: string;
 }
 
-// Redis integration for persistent anti-double minting
-import { Redis } from '@upstash/redis';
-
-// SECURITY ENHANCEMENT: Redis is now MANDATORY for anti-double minting
-let redis: any = null;
-let gaslessRedisStatus: 'connected' | 'error' = 'error';
-
-try {
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      enableAutoPipelining: false, // Disable pipelining to prevent hanging in Vercel
-      retry: false, // CRITICAL: Disable retry to prevent hanging in serverless functions
-    });
-    gaslessRedisStatus = 'connected';
-    console.log('✅ Redis client initialized for anti-double minting (MANDATORY)');
-  } else {
-    gaslessRedisStatus = 'error';
-    throw new Error('SECURITY CRITICAL: Redis configuration missing. Anti-double minting requires Redis for production security.');
-  }
-} catch (error) {
-  gaslessRedisStatus = 'error';
-  console.error('❌ SECURITY CRITICAL: Redis initialization failed for gasless validation:', error);
-  throw new Error(`Redis is MANDATORY for anti-double minting security: ${error.message}`);
-}
+// MANDATORY Redis integration for anti-double minting security
+import { validateRedisForCriticalOps, getRedisStatus } from './redisConfig';
 
 // Helper function to wrap Redis operations with timeout protection
 async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 3000): Promise<T> {
@@ -66,7 +42,9 @@ async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 30
  * Get Redis connection status for gasless validation monitoring
  */
 export function getGaslessRedisStatus(): { status: string; message: string; hasRedis: boolean } {
-  switch (gaslessRedisStatus) {
+  const redisStatus = getRedisStatus();
+  
+  switch (redisStatus.status) {
     case 'connected':
       return {
         status: 'connected',
@@ -74,6 +52,7 @@ export function getGaslessRedisStatus(): { status: string; message: string; hasR
         hasRedis: true
       };
     case 'error':
+    case 'missing':
       return {
         status: 'error',
         message: 'SECURITY CRITICAL: Redis connection failed - anti-double minting disabled',
@@ -92,9 +71,7 @@ export function getGaslessRedisStatus(): { status: string; message: string; hasR
  * Generate unique transaction nonce for user (Redis-based for persistence)
  */
 export async function generateUserNonce(userAddress: string): Promise<`0x${string}`> {
-  if (!redis) {
-    throw new Error('SECURITY CRITICAL: Redis required for nonce generation');
-  }
+  const redis = validateRedisForCriticalOps('Nonce generation');
   
   const userKey = `user_nonce:${userAddress.toLowerCase()}`;
   
@@ -141,7 +118,7 @@ export function generateMetadataHash(
 }
 
 /**
- * Validate transaction attempt against double-minting (Redis + fallback)
+ * Validate transaction attempt against double-minting (Redis MANDATORY)
  */
 export async function validateTransactionAttempt(
   userAddress: string,
@@ -154,9 +131,7 @@ export async function validateTransactionAttempt(
   reason?: string;
   existingTxHash?: string;
 }> {
-  if (!redis) {
-    throw new Error('SECURITY CRITICAL: Redis required for transaction validation');
-  }
+  const redis = validateRedisForCriticalOps('Transaction validation');
   
   const metadataHash = generateMetadataHash(userAddress, metadataUri, amount, escrowConfig);
   
@@ -211,9 +186,7 @@ export async function registerTransactionAttempt(
   amount: number,
   escrowConfig?: any
 ): Promise<void> {
-  if (!redis) {
-    throw new Error('SECURITY CRITICAL: Redis required for transaction registration');
-  }
+  const redis = validateRedisForCriticalOps('Transaction registration');
   
   const metadataHash = generateMetadataHash(userAddress, metadataUri, amount, escrowConfig);
   
@@ -249,9 +222,7 @@ export async function markTransactionCompleted(
   nonce: string,
   transactionHash: string
 ): Promise<void> {
-  if (!redis) {
-    throw new Error('SECURITY CRITICAL: Redis required for transaction completion tracking');
-  }
+  const redis = validateRedisForCriticalOps('Transaction completion tracking');
   
   try {
     // Store completion record with nonce mapping
@@ -281,9 +252,7 @@ export async function markTransactionCompleted(
  * Mark transaction as failed (Redis MANDATORY)
  */
 export async function markTransactionFailed(nonce: string, reason?: string): Promise<void> {
-  if (!redis) {
-    throw new Error('SECURITY CRITICAL: Redis required for transaction failure tracking');
-  }
+  const redis = validateRedisForCriticalOps('Transaction failure tracking');
   
   try {
     // Store failure record with nonce mapping
@@ -313,15 +282,12 @@ export async function markTransactionFailed(nonce: string, reason?: string): Pro
  * Clean up old transaction attempts (Redis-based, run periodically)
  */
 export async function cleanupOldTransactions(): Promise<void> {
-  if (!redis) {
-    console.warn('⚠️ Cannot cleanup: Redis required for transaction cleanup');
-    return;
-  }
-  
   try {
+    const redis = validateRedisForCriticalOps('Transaction cleanup');
     // Note: Redis TTL handles automatic cleanup, this is for manual cleanup if needed
     console.log('🧹 Redis TTL handles automatic cleanup of old transactions');
   } catch (error) {
+    console.warn('⚠️ Cannot cleanup: Redis required for transaction cleanup');
     console.error('❌ Transaction cleanup failed:', error);
   }
 }

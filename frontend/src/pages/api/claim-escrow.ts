@@ -1,15 +1,17 @@
 /**
  * CLAIM ESCROW API
  * Claim escrow gift with password validation
- * Uses claimGift function from deployed contract
+ * 
+ * 🚨 TEMPORARY STATUS: Gasless transactions temporarily disabled
+ * Reason: Focusing on robust gas-paid implementation before re-enabling gasless
+ * Status: All claims use gas-paid method (deployer covers gas costs)
+ * To re-enable: Set gaslessTemporarilyDisabled = false in handler function
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 import { createThirdwebClient, getContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
-import { privateKeyToAccount } from 'thirdweb/wallets';
-import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { readContract } from 'thirdweb';
 import { 
   generatePasswordHash,
@@ -33,6 +35,7 @@ import {
 } from '../../lib/gaslessValidation';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
+import { executeClaimTransaction } from '../../lib/gasPaidTransactions';
 
 // Types
 interface ClaimEscrowRequest {
@@ -319,7 +322,7 @@ async function claimEscrowGasless(
   }
 }
 
-// Execute gas-paid claim - Real implementation without Biconomy
+// Execute gas-paid claim using unified gas-paid system
 async function claimEscrowGasPaid(
   tokenId: string,
   password: string,
@@ -331,42 +334,10 @@ async function claimEscrowGasPaid(
   nonce?: string;
   error?: string;
 }> {
-  let transactionNonce = '';
-  
   try {
-    console.log('💰 CLAIM ESCROW GAS-PAID: Starting gas-paid claim process (deployer pays)');
+    console.log('💰 CLAIM ESCROW GAS-PAID: Starting unified gas-paid claim process');
     
-    // Step 1: Rate limiting check
-    const rateLimit = checkRateLimit(claimerAddress);
-    if (!rateLimit.allowed) {
-      throw new Error(`Rate limit exceeded. Try again in ${Math.ceil((rateLimit.resetTime - Date.now()) / 1000)} seconds.`);
-    }
-    
-    console.log('✅ Claim rate limit check passed. Remaining:', rateLimit.remaining);
-    
-    // Step 2: Anti-double claiming validation
-    const claimConfig = { tokenId, password };
-    const validation = await validateTransactionAttempt(claimerAddress, `claim_${tokenId}`, 0, claimConfig);
-    
-    if (!validation.valid) {
-      throw new Error(validation.reason || 'Claim validation failed');
-    }
-    
-    transactionNonce = validation.nonce;
-    console.log('✅ Anti-double claiming validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
-    
-    // Step 3: Register claim attempt
-    await registerTransactionAttempt(claimerAddress, transactionNonce, `claim_${tokenId}`, 0, claimConfig);
-    
-    // Step 4: Get deployer account for gas-paid transactions
-    const deployerAccount = privateKeyToAccount({
-      client,
-      privateKey: process.env.PRIVATE_KEY_DEPLOY!
-    });
-    
-    console.log('🔑 Using deployer account for gas-paid claim:', deployerAccount.address.slice(0, 10) + '...');
-    
-    // Step 5: Map tokenId to giftId for correct claim
+    // Step 1: Map tokenId to giftId for correct claim
     const giftId = await getGiftIdFromTokenId(tokenId);
     if (giftId === null) {
       throw new Error('Gift not found - this NFT is not registered in escrow');
@@ -374,62 +345,39 @@ async function claimEscrowGasPaid(
     
     console.log(`✅ CLAIM GAS-PAID: Using giftId ${giftId} for tokenId ${tokenId}`);
     
-    // Step 6: Prepare claim transaction using correct giftId
+    // Step 2: Prepare claim transaction using correct giftId
     const claimTransaction = prepareClaimGiftByIdCall(giftId, password, salt);
     
-    console.log('📝 Executing gas-paid claim transaction...');
-    const result = await sendTransaction({
-      transaction: claimTransaction,
-      account: deployerAccount
-    });
-    
-    const receipt = await waitForReceipt({
-      client,
-      chain: baseSepolia,
-      transactionHash: result.transactionHash
-    });
-    
-    // CRITICAL: Verify transaction succeeded
-    if (receipt.status !== 'success') {
-      throw new Error(`Claim transaction failed with status: ${receipt.status}`);
-    }
-    
-    console.log('✅ Gas-paid claim successful, transaction hash:', result.transactionHash);
-    
-    // Step 6: Verify transaction on-chain
-    const verification = await verifyGaslessTransaction(
-      result.transactionHash,
+    // Step 3: Execute using unified gas-paid system
+    const result = await executeClaimTransaction(
+      claimTransaction,
       claimerAddress,
-      tokenId
+      tokenId,
+      password
     );
     
-    if (!verification.verified) {
-      console.warn('⚠️ Transaction verification failed but claim succeeded:', verification.error);
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Unified claim transaction failed',
+        nonce: result.nonce
+      };
     }
     
-    // Step 7: Mark transaction as completed
-    await markTransactionCompleted(transactionNonce, result.transactionHash);
-    
-    console.log('🎉 Gas-paid claim completed successfully');
+    console.log('🎉 Unified gas-paid claim completed successfully');
     
     return {
       success: true,
-      transactionHash: result.transactionHash,
-      nonce: transactionNonce
+      transactionHash: result.transactionHash!,
+      nonce: result.nonce
     };
     
   } catch (error: any) {
-    console.error('❌ Gas-paid claim failed:', error);
-    
-    // Mark transaction as failed if nonce was generated
-    if (transactionNonce) {
-      await markTransactionFailed(transactionNonce, error.message);
-    }
+    console.error('❌ Unified gas-paid claim failed:', error);
     
     return {
       success: false,
-      error: parseEscrowError(error),
-      nonce: transactionNonce
+      error: parseEscrowError(error)
     };
   }
 }
@@ -473,8 +421,17 @@ export default async function handler(
       password,
       salt,
       claimerAddress,
-      gasless = true
+      gasless = false // 🚨 TEMPORARILY DISABLED: Gasless flow disabled to focus on robust gas-paid implementation
     }: ClaimEscrowRequest = req.body;
+    
+    // 🚨 TEMPORARY GASLESS DISABLE: Force gas-paid for system robustness
+    const gaslessTemporarilyDisabled = true;
+    const finalGasless = gaslessTemporarilyDisabled ? false : gasless;
+    
+    if (gasless && gaslessTemporarilyDisabled) {
+      console.log('⚠️ GASLESS TEMPORARILY DISABLED: Redirecting to robust gas-paid claiming');
+      console.log('📋 Reason: Focusing on gas-paid robustness before re-enabling gasless features');
+    }
     
     // Basic validation
     if (!tokenId || !password || !salt || !claimerAddress) {
@@ -527,10 +484,10 @@ export default async function handler(
     
     const gift = validation.gift!;
     
-    // Attempt claim based on gasless preference
+    // Attempt claim based on finalGasless (which respects temporary disable)
     let result;
     
-    if (gasless) {
+    if (finalGasless && !gaslessTemporarilyDisabled) {
       console.log('🚀 Attempting enhanced gasless claim...');
       result = await claimEscrowGasless(tokenId, password, salt, claimerAddress);
       
@@ -543,7 +500,12 @@ export default async function handler(
         result.gasless = true;
       }
     } else {
-      console.log('💰 Attempting gas-paid claim...');
+      // Either gasless was not requested OR gasless is temporarily disabled
+      const reason = gaslessTemporarilyDisabled ? 
+        'GASLESS TEMPORARILY DISABLED for system robustness - using gas-paid' : 
+        'Gas-paid claim requested by user';
+      console.log(`💰 ${reason}`);
+      
       result = await claimEscrowGasPaid(tokenId, password, salt, claimerAddress);
       result.gasless = false;
     }
@@ -570,7 +532,7 @@ export default async function handler(
       rateLimit: finalRateLimit
     });
     
-    return res.status(200).json({
+    const responseData: any = {
       success: true,
       transactionHash: result.transactionHash,
       recipientAddress: finalRecipient,
@@ -584,7 +546,15 @@ export default async function handler(
         resetTime: finalRateLimit.resetTime
       },
       gasless: result.gasless
-    });
+    };
+    
+    // Add gasless status message if user requested gasless but it was disabled
+    if (gasless && gaslessTemporarilyDisabled && !result.gasless) {
+      responseData.gaslessDisabledMessage = "⚠️ Gasless transactions are temporarily disabled to ensure system robustness. Your claim was processed using gas-paid method (deployer covers gas costs).";
+      responseData.gaslessStatus = "temporarily_disabled";
+    }
+    
+    return res.status(200).json(responseData);
     
   } catch (error: any) {
     console.error('💥 CLAIM ESCROW API ERROR:', error);

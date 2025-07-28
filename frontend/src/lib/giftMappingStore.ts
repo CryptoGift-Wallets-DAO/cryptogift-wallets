@@ -1,33 +1,10 @@
 /**
- * GIFT MAPPING PERSISTENT STORE
+ * GIFT MAPPING PERSISTENT STORE - MANDATORY REDIS
  * Stores tokenId → giftId mappings to avoid RPC calls
- * Uses Redis/KV for persistence across serverless invocations
+ * NO FALLBACKS - Redis is mandatory for production security
  */
 
-import { Redis } from '@upstash/redis';
-
-// Initialize Redis client
-let redis: any = null;
-
-try {
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-    redis = new Redis({
-      url: process.env.KV_REST_API_URL,
-      token: process.env.KV_REST_API_TOKEN,
-    });
-    console.log('✅ Gift mapping store using Vercel KV with Upstash backend');
-  } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-    console.log('✅ Gift mapping store using direct Upstash Redis');
-  } else {
-    console.warn('⚠️ No Redis configuration found - gift mappings will use fallback');
-  }
-} catch (error) {
-  console.error('❌ Failed to initialize Redis for gift mappings:', error);
-}
+import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
 
 // Cache keys
 const MAPPING_KEY_PREFIX = 'gift_mapping:';
@@ -42,10 +19,8 @@ export async function storeGiftMapping(tokenId: string | number, giftId: string 
   const giftIdStr = giftId.toString();
   
   try {
-    if (!redis) {
-      console.warn('⚠️ No Redis client - cannot persist gift mapping');
-      return false;
-    }
+    // MANDATORY: Redis is required for mapping storage  
+    const redis = validateRedisForCriticalOps('Gift mapping storage');
 
     const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
     const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
@@ -56,11 +31,12 @@ export async function storeGiftMapping(tokenId: string | number, giftId: string 
       redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 365 })
     ]);
     
-    console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${giftId}`);
+    console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${giftId} (Redis)`);
     return true;
   } catch (error) {
-    console.error('❌ Failed to store gift mapping:', error);
-    return false;
+    console.error('❌ CRITICAL: Failed to store gift mapping:', error);
+    console.error('📊 Redis status:', getRedisStatus());
+    throw new Error(`Gift mapping storage failed: ${(error as Error).message}. This is critical for system security.`);
   }
 }
 
@@ -72,25 +48,24 @@ export async function getGiftIdFromMapping(tokenId: string | number): Promise<nu
   const tokenIdStr = tokenId.toString();
   
   try {
-    if (!redis) {
-      console.warn('⚠️ No Redis client - cannot lookup gift mapping');
-      return null;
-    }
+    // MANDATORY: Redis is required for mapping lookups
+    const redis = validateRedisForCriticalOps('Gift mapping lookup');
 
     const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
     const giftIdStr = await redis.get(mappingKey);
     
     if (giftIdStr) {
       const giftId = parseInt(giftIdStr);
-      console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId}`);
+      console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId} (Redis)`);
       return giftId;
     }
     
-    console.log(`❌ MAPPING NOT FOUND: tokenId ${tokenId}`);
+    console.log(`❌ MAPPING NOT FOUND: tokenId ${tokenId} (check if mapping was stored)`);
     return null;
   } catch (error) {
-    console.error('❌ Failed to lookup gift mapping:', error);
-    return null;
+    console.error('❌ CRITICAL: Failed to lookup gift mapping:', error);
+    console.error('📊 Redis status:', getRedisStatus());
+    throw new Error(`Gift mapping lookup failed: ${(error as Error).message}. Cannot proceed without mapping data.`);
   }
 }
 
@@ -101,9 +76,8 @@ export async function getTokenIdFromMapping(giftId: string | number): Promise<nu
   const giftIdStr = giftId.toString();
   
   try {
-    if (!redis) {
-      return null;
-    }
+    // MANDATORY: Redis is required for reverse mapping lookups
+    const redis = validateRedisForCriticalOps('Reverse gift mapping lookup');
 
     const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
     const tokenIdStr = await redis.get(reverseMappingKey);
@@ -114,10 +88,12 @@ export async function getTokenIdFromMapping(giftId: string | number): Promise<nu
       return tokenId;
     }
     
+    console.log(`❌ REVERSE MAPPING NOT FOUND: giftId ${giftId}`);
     return null;
   } catch (error) {
-    console.error('❌ Failed to lookup reverse gift mapping:', error);
-    return null;
+    console.error('❌ CRITICAL: Failed to lookup reverse gift mapping:', error);
+    console.error('📊 Redis status:', getRedisStatus());
+    throw new Error(`Reverse gift mapping lookup failed: ${(error as Error).message}. Cannot proceed without mapping data.`);
   }
 }
 
@@ -125,30 +101,34 @@ export async function getTokenIdFromMapping(giftId: string | number): Promise<nu
  * Batch store multiple mappings (for migration or bulk operations)
  */
 export async function batchStoreGiftMappings(mappings: Array<{ tokenId: string | number; giftId: string | number }>): Promise<number> {
-  if (!redis) {
-    return 0;
-  }
+  try {
+    // MANDATORY: Redis is required for batch mapping operations
+    validateRedisForCriticalOps('Batch gift mapping storage');
 
-  let stored = 0;
-  
-  for (const mapping of mappings) {
-    const success = await storeGiftMapping(mapping.tokenId, mapping.giftId);
-    if (success) stored++;
+    let stored = 0;
+    
+    for (const mapping of mappings) {
+      const success = await storeGiftMapping(mapping.tokenId, mapping.giftId);
+      if (success) stored++;
+    }
+    
+    console.log(`✅ BATCH STORED: ${stored}/${mappings.length} gift mappings`);
+    return stored;
+  } catch (error) {
+    console.error('❌ CRITICAL: Batch mapping storage failed:', error);
+    console.error('📊 Redis status:', getRedisStatus());
+    throw new Error(`Batch gift mapping storage failed: ${(error as Error).message}. This is critical for system security.`);
   }
-  
-  console.log(`✅ BATCH STORED: ${stored}/${mappings.length} gift mappings`);
-  return stored;
 }
 
 /**
  * Clear all gift mappings (admin operation)
  */
 export async function clearAllGiftMappings(): Promise<number> {
-  if (!redis) {
-    return 0;
-  }
-
   try {
+    // MANDATORY: Redis is required for clearing mappings
+    const redis = validateRedisForCriticalOps('Clear all gift mappings');
+
     const mappingKeys = await redis.keys(`${MAPPING_KEY_PREFIX}*`);
     const reverseMappingKeys = await redis.keys(`${REVERSE_MAPPING_KEY_PREFIX}*`);
     const allKeys = [...mappingKeys, ...reverseMappingKeys];
@@ -160,7 +140,8 @@ export async function clearAllGiftMappings(): Promise<number> {
     console.log(`✅ CLEARED ${allKeys.length} gift mapping entries`);
     return allKeys.length;
   } catch (error) {
-    console.error('❌ Failed to clear gift mappings:', error);
-    return 0;
+    console.error('❌ CRITICAL: Failed to clear gift mappings:', error);
+    console.error('📊 Redis status:', getRedisStatus());
+    throw new Error(`Clear gift mappings failed: ${(error as Error).message}. This operation requires Redis for data integrity.`);
   }
 }

@@ -1,49 +1,10 @@
 // NFT Metadata Storage System - ENHANCED with Redis Persistence
+// Uses centralized Redis configuration for consistency and security
 // Migrated from ephemeral /tmp/ to persistent Redis storage
 // Fixes image caching issues by wallet
 
-import { Redis } from '@upstash/redis';
 import { NFTMetadata } from './clientMetadataStore';
-
-// Initialize Redis client with same logic as referrals
-let redis: any;
-
-try {
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-    redis = new Redis({
-      url: process.env.KV_REST_API_URL,
-      token: process.env.KV_REST_API_TOKEN,
-    });
-    console.log('🟢 NFT Metadata using Vercel KV with Upstash backend');
-  } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-    console.log('🟢 NFT Metadata using direct Upstash Redis');
-  } else {
-    // Fallback to legacy or mock
-    try {
-      const { kv } = require('@vercel/kv');
-      redis = kv;
-      console.log('🟡 NFT Metadata using legacy Vercel KV');
-    } catch (kvError) {
-      // Mock client for development
-      redis = {
-        hset: async () => ({}),
-        hgetall: async () => null,
-        sadd: async () => 1,
-        smembers: async () => [],
-        set: async () => 'OK',
-        get: async () => null,
-        del: async () => 1
-      };
-      console.log('⚠️ NFT Metadata using mock Redis client for development');
-    }
-  }
-} catch (error) {
-  console.error('❌ Failed to initialize NFT Metadata Redis client:', error);
-}
+import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
 
 // Redis storage functions with cache-busting
 function getMetadataKey(contractAddress: string, tokenId: string): string {
@@ -56,6 +17,9 @@ function getWalletNFTsKey(walletAddress: string): string {
 
 export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
   try {
+    // MANDATORY: Redis is required for NFT metadata persistence
+    const redis = validateRedisForCriticalOps('NFT metadata storage');
+    
     // Add unique metadata ID to prevent cache conflicts
     const enhancedMetadata: NFTMetadata = {
       ...metadata,
@@ -118,6 +82,7 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
 
 export async function getNFTMetadata(contractAddress: string, tokenId: string): Promise<NFTMetadata | null> {
   try {
+    const redis = validateRedisForCriticalOps('NFT metadata retrieval');
     const key = getMetadataKey(contractAddress, tokenId);
     
     console.log(`🔍 Looking for NFT metadata: ${key}`);
@@ -174,6 +139,7 @@ export async function updateNFTMetadata(
       lastModified: new Date().toISOString()
     };
     
+    const redis = validateRedisForCriticalOps('NFT metadata update');
     const key = getMetadataKey(contractAddress, tokenId);
     await redis.hset(key, updated);
     console.log(`✅ Updated metadata for ${contractAddress}:${tokenId}`);
@@ -201,6 +167,7 @@ export async function listAllNFTMetadata(): Promise<NFTMetadata[]> {
 // NEW: Get NFTs by wallet address
 export async function getNFTsByWallet(walletAddress: string): Promise<string[]> {
   try {
+    const redis = validateRedisForCriticalOps('NFT wallet lookup');
     const walletKey = getWalletNFTsKey(walletAddress);
     const nftIds = await redis.smembers(walletKey);
     

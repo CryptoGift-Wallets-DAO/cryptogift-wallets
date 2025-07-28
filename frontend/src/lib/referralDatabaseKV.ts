@@ -1,52 +1,8 @@
 // Redis-based referral database for production persistence
-// Supports both Vercel KV (legacy) and Upstash Redis (current)
+// Uses centralized Redis configuration for consistency and security
 // Replaces file-based system to ensure data survives server restarts
 
-import { Redis } from '@upstash/redis';
-
-// Initialize Redis client with fallback strategy
-let redis: any;
-
-try {
-  // Try to detect which Redis/KV setup is available
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-    // Vercel KV with Upstash backend (current standard setup)
-    redis = new Redis({
-      url: process.env.KV_REST_API_URL,
-      token: process.env.KV_REST_API_TOKEN,
-    });
-    console.log('🟢 Using Vercel KV with Upstash backend for referral database');
-  } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    // Direct Upstash Redis (alternative setup)
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-    console.log('🟢 Using direct Upstash Redis for referral database');
-  } else {
-    // Fallback to legacy Vercel KV (if available)
-    try {
-      const { kv } = require('@vercel/kv');
-      redis = kv;
-      console.log('🟡 Using legacy Vercel KV for referral database');
-    } catch (kvError) {
-      throw new Error('No Redis/KV configuration found');
-    }
-  }
-} catch (error) {
-  console.error('❌ Failed to initialize Redis client:', error);
-  // Mock client for development without Redis
-  redis = {
-    hset: async () => ({}),
-    hgetall: async () => null,
-    sadd: async () => 1,
-    smembers: async () => [],
-    set: async () => 'OK',
-    get: async () => null,
-    srem: async () => 1
-  };
-  console.log('⚠️ Using mock Redis client for development');
-}
+import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
 
 export interface ReferralRecord {
   id: string;
@@ -113,6 +69,9 @@ export class VercelKVReferralDatabase {
   async saveReferral(referral: ReferralRecord): Promise<void> {
     console.log('💾 Saving referral to Redis:', referral.id);
     
+    // MANDATORY: Redis is required for referral persistence
+    const redis = validateRedisForCriticalOps('Referral data persistence');
+    
     // Save the referral record
     await redis.hset(`referral:${referral.id}`, referral);
     
@@ -133,11 +92,13 @@ export class VercelKVReferralDatabase {
   }
   
   async getReferral(referralId: string): Promise<ReferralRecord | null> {
+    const redis = validateRedisForCriticalOps('Referral data retrieval');
     const referral = await redis.hgetall(`referral:${referralId}`);
     return referral ? (referral as ReferralRecord) : null;
   }
   
   async getUserReferrals(userAddress: string): Promise<ReferralRecord[]> {
+    const redis = validateRedisForCriticalOps('User referrals retrieval');
     const referralIds = await redis.smembers(`user_referrals:${userAddress.toLowerCase()}`);
     
     if (!referralIds || referralIds.length === 0) {
@@ -157,6 +118,7 @@ export class VercelKVReferralDatabase {
   // ==================== USER PROFILE MANAGEMENT ====================
   
   async createOrUpdateUserProfile(address: string, data: Partial<UserProfile>): Promise<UserProfile> {
+    const redis = validateRedisForCriticalOps('User profile management');
     const existing = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
     
     const profile: UserProfile = {
@@ -180,6 +142,7 @@ export class VercelKVReferralDatabase {
   }
   
   async getUserProfile(address: string): Promise<UserProfile | null> {
+    const redis = validateRedisForCriticalOps('User profile retrieval');
     const profile = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
     return profile ? (profile as UserProfile) : null;
   }
@@ -197,6 +160,9 @@ export class VercelKVReferralDatabase {
     source?: string
   ): Promise<string> {
     console.log('🔗 Tracking referral click (KV):', { referrerAddress, referredData, source });
+    
+    // MANDATORY: Redis is required for referral tracking
+    const redis = validateRedisForCriticalOps('Referral click tracking');
     
     const { address, email, ip, userAgent } = referredData;
     
@@ -289,6 +255,9 @@ export class VercelKVReferralDatabase {
     }
   ): Promise<boolean> {
     console.log('🎁 Tracking referral activation (KV):', { referrerAddress, referredData, giftData });
+    
+    // MANDATORY: Redis is required for referral activation tracking
+    const redis = validateRedisForCriticalOps('Referral activation tracking');
     
     // Find referral by multiple criteria
     let referral: ReferralRecord | null = null;
@@ -448,6 +417,7 @@ export class VercelKVReferralDatabase {
   // ==================== REAL-TIME FEATURES ====================
   
   async getRecentActivations(limit: number = 10): Promise<any[]> {
+    const redis = validateRedisForCriticalOps('Recent activations retrieval');
     const activations = await redis.smembers('recent_activations');
     return activations
       .map(a => JSON.parse(a))
@@ -456,6 +426,7 @@ export class VercelKVReferralDatabase {
   }
   
   async cleanupOldActivations(): Promise<void> {
+    const redis = validateRedisForCriticalOps('Referral data cleanup');
     // Clean activations older than 24 hours
     const activations = await redis.smembers('recent_activations');
     const cutoff = Date.now() - (24 * 60 * 60 * 1000);

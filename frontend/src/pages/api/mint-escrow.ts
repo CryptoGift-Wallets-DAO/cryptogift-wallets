@@ -1,15 +1,17 @@
 /**
  * MINT ESCROW API
  * Mint NFT + Create Escrow Gift in one atomic operation
- * Supports gasless transactions with anti-double minting
+ * 
+ * 🚨 TEMPORARY STATUS: Gasless transactions temporarily disabled
+ * Reason: Focusing on robust gas-paid implementation before re-enabling gasless
+ * Status: All transactions use gas-paid method (deployer covers gas costs)
+ * To re-enable: Set gaslessTemporarilyDisabled = false in handler function
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 import { createThirdwebClient, getContract, prepareContractCall } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
-import { privateKeyToAccount } from 'thirdweb/wallets';
-import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { 
   generateSalt,
   getEscrowContract,
@@ -34,8 +36,16 @@ import { parseGiftEventWithRetry } from '../../lib/eventParser';
 import { validateMappingWithRetry } from '../../lib/mappingValidator';
 import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
+import { 
+  extractTokenIdFromTransferEvent, 
+  validateTokenId, 
+  diagnoseTokenIdZeroIssue,
+  TokenIdZeroError,
+  assertValidTokenId
+} from '../../lib/tokenIdValidator';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
+import { executeMintTransaction } from '../../lib/gasPaidTransactions';
 
 // Types
 interface MintEscrowRequest {
@@ -300,24 +310,30 @@ async function mintNFTEscrowGasless(
         throw new Error(`No valid Transfer event found in transaction ${mintResult.transactionHash}. Found ${receipt.logs.length} logs but none matched Transfer pattern.`);
       }
       
-      // Extract and validate token ID
-      if (!transferLog.topics[3]) {
-        throw new Error(`Transfer event found but topics[3] is undefined. Topics length: ${transferLog.topics.length}`);
+      // Use enhanced tokenId extraction with comprehensive validation
+      const tokenIdValidation = extractTokenIdFromTransferEvent(transferLog);
+      
+      if (!tokenIdValidation.success) {
+        console.error('❌ ENHANCED TOKEN ID EXTRACTION FAILED:', tokenIdValidation.error);
+        
+        // Run diagnostic to understand the issue
+        const diagnostic = await diagnoseTokenIdZeroIssue(
+          mintResult.receipt?.logs || [],
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+        );
+        
+        console.error('🔍 DIAGNOSTIC RESULTS:', diagnostic);
+        
+        throw new TokenIdZeroError(
+          `Enhanced tokenId extraction failed: ${tokenIdValidation.error}`,
+          tokenIdValidation.source,
+          tokenIdValidation.rawValue,
+          diagnostic
+        );
       }
       
-      try {
-        tokenId = BigInt(transferLog.topics[3]).toString();
-        console.log('✅ Token ID successfully extracted from Transfer event:', tokenId);
-        
-        // Validate token ID is reasonable
-        const tokenIdNum = parseInt(tokenId);
-        if (isNaN(tokenIdNum) || tokenIdNum <= 0) {
-          throw new Error(`Invalid token ID extracted: ${tokenId}`);
-        }
-        
-      } catch (bigintError) {
-        throw new Error(`Failed to convert topics[3] to BigInt: ${transferLog.topics[3]}. Error: ${bigintError.message}`);
-      }
+      tokenId = tokenIdValidation.tokenId!;
+      console.log('✅ ENHANCED TOKEN ID EXTRACTION SUCCESS:', tokenId);
       
     } catch (error) {
       console.error('❌ Transfer event extraction failed:', error);
@@ -797,24 +813,30 @@ async function mintNFTEscrowGasPaid(
         throw new Error(`No valid Transfer event found in transaction ${mintResult.transactionHash}. Found ${receipt.logs.length} logs but none matched Transfer pattern.`);
       }
       
-      // Extract and validate token ID
-      if (!transferLog.topics[3]) {
-        throw new Error(`Transfer event found but topics[3] is undefined. Topics length: ${transferLog.topics.length}`);
+      // Use enhanced tokenId extraction with comprehensive validation
+      const tokenIdValidation = extractTokenIdFromTransferEvent(transferLog);
+      
+      if (!tokenIdValidation.success) {
+        console.error('❌ ENHANCED TOKEN ID EXTRACTION FAILED:', tokenIdValidation.error);
+        
+        // Run diagnostic to understand the issue
+        const diagnostic = await diagnoseTokenIdZeroIssue(
+          mintResult.receipt?.logs || [],
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+        );
+        
+        console.error('🔍 DIAGNOSTIC RESULTS:', diagnostic);
+        
+        throw new TokenIdZeroError(
+          `Enhanced tokenId extraction failed: ${tokenIdValidation.error}`,
+          tokenIdValidation.source,
+          tokenIdValidation.rawValue,
+          diagnostic
+        );
       }
       
-      try {
-        tokenId = BigInt(transferLog.topics[3]).toString();
-        console.log('✅ Token ID successfully extracted from Transfer event:', tokenId);
-        
-        // Validate token ID is reasonable
-        const tokenIdNum = parseInt(tokenId);
-        if (isNaN(tokenIdNum) || tokenIdNum <= 0) {
-          throw new Error(`Invalid token ID extracted: ${tokenId}`);
-        }
-        
-      } catch (bigintError) {
-        throw new Error(`Failed to convert topics[3] to BigInt: ${transferLog.topics[3]}. Error: ${bigintError.message}`);
-      }
+      tokenId = tokenIdValidation.tokenId!;
+      console.log('✅ ENHANCED TOKEN ID EXTRACTION SUCCESS:', tokenId);
       
     } catch (error) {
       console.error('❌ Transfer event extraction failed:', error);
@@ -1075,8 +1097,17 @@ export default async function handler(
       timeframeDays,
       giftMessage,
       creatorAddress,
-      gasless = true
+      gasless = false // 🚨 TEMPORARILY DISABLED: Gasless flow disabled to focus on robust gas-paid implementation
     }: MintEscrowRequest = req.body;
+    
+    // 🚨 TEMPORARY GASLESS DISABLE: Force gas-paid for system robustness
+    const gaslessTemporarilyDisabled = true;
+    const finalGasless = gaslessTemporarilyDisabled ? false : gasless;
+    
+    if (gasless && gaslessTemporarilyDisabled) {
+      console.log('⚠️ GASLESS TEMPORARILY DISABLED: Redirecting to robust gas-paid implementation');
+      console.log('📋 Reason: Focusing on gas-paid robustness before re-enabling gasless features');
+    }
     
     // Validation - password is optional for direct minting (skip escrow)
     if (!metadataUri || !giftMessage || !creatorAddress) {
@@ -1162,7 +1193,9 @@ export default async function handler(
     
     console.log('🎁 MINT ESCROW REQUEST:', {
       timeframe: timeframeDays,
-      gasless,
+      requestedGasless: gasless,
+      finalGasless: finalGasless,
+      gaslessStatus: gaslessTemporarilyDisabled ? 'DISABLED_FOR_ROBUSTNESS' : 'ENABLED',
       recipientAddress: targetAddress.slice(0, 10) + '...',
       messageLength: giftMessage.length,
       escrowContract: ESCROW_CONTRACT_ADDRESS?.slice(0, 10) + '...',
@@ -1184,8 +1217,8 @@ export default async function handler(
       // Direct mints are always gasless from user perspective (deployer pays)
       result.gasless = true;
     } else {
-      // Escrow mint - attempt based on gasless preference
-      if (gasless) {
+      // Escrow mint - use finalGasless (which respects temporary disable)
+      if (finalGasless && !gaslessTemporarilyDisabled) {
         console.log('🚀 Attempting gasless escrow mint...');
         result = await mintNFTEscrowGasless(
           targetAddress,
@@ -1212,7 +1245,12 @@ export default async function handler(
           result.gasless = true;
         }
       } else {
-        console.log('💰 Attempting gas-paid escrow mint...');
+        // Either gasless was not requested OR gasless is temporarily disabled
+        const reason = gaslessTemporarilyDisabled ? 
+          'GASLESS TEMPORARILY DISABLED for system robustness - using gas-paid' : 
+          'Gas-paid mint requested by user';
+        console.log(`💰 ${reason}`);
+        
         result = await mintNFTEscrowGasPaid(
           targetAddress,
           metadataUri,
@@ -1282,6 +1320,12 @@ export default async function handler(
         resetTime: finalRateLimit.resetTime
       }
     };
+    
+    // Add gasless status message if user requested gasless but it was disabled
+    if (gasless && gaslessTemporarilyDisabled && !result.gasless) {
+      responseData.gaslessDisabledMessage = "⚠️ Gasless transactions are temporarily disabled to ensure system robustness. Your transaction was processed using gas-paid method (deployer covers gas costs).";
+      responseData.gaslessStatus = "temporarily_disabled";
+    }
     
     if (isEscrowMint) {
       // Add escrow-specific fields

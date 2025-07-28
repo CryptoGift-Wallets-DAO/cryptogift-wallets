@@ -1,64 +1,287 @@
-// Error types for better error handling
+/**
+ * ERROR HANDLER - ENHANCED FAIL-FAST & ROBUST ERROR MANAGEMENT
+ * Sistema unificado con categorización, fail-fast patterns y recovery automático
+ */
+
+import { securityAudit, blockchainSecureLogger } from './secureLogger';
+
+// Error types for better error handling (enhanced)
 export enum ErrorType {
+  // Critical errors - application must fail
+  CRITICAL_SYSTEM = 'critical_system',
+  CRITICAL_SECURITY = 'critical_security',
+  CRITICAL_DATA = 'critical_data',
+  
+  // Blockchain errors - auto retry
+  BLOCKCHAIN_RPC = 'blockchain_rpc',
+  BLOCKCHAIN_CONTRACT = 'blockchain_contract', 
+  BLOCKCHAIN_TRANSACTION = 'blockchain_transaction',
+  
+  // Network errors - retry with backoff
   NETWORK = 'network',
+  EXTERNAL_SERVICE = 'external_service',
+  
+  // User errors - show friendly message
   VALIDATION = 'validation',
+  USER_INPUT = 'user_input',
+  USER_AUTH = 'user_auth',
+  
+  // System errors
   RATE_LIMIT = 'rate_limit',
   API_KEY = 'api_key',
   CONTRACT = 'contract',
+  CONFIGURATION = 'configuration',
   UNKNOWN = 'unknown'
 }
 
+export enum ErrorSeverity {
+  FATAL = 'FATAL',     // Application cannot continue
+  HIGH = 'HIGH',       // Critical functionality affected
+  MEDIUM = 'MEDIUM',   // Partial functionality affected
+  LOW = 'LOW',         // Minor functionality affected
+  INFO = 'INFO'        // Informational only
+}
+
 export interface AppError {
+  id: string;
   type: ErrorType;
+  severity: ErrorSeverity;
   message: string;
+  userMessage: string;
   code?: string;
   details?: any;
-  userMessage?: string;
+  context: {
+    operation: string;
+    userAddress?: string;
+    tokenId?: string;
+    transactionHash?: string;
+    timestamp: string;
+    environment: string;
+  };
+  recoveryActions: string[];
+  shouldRetry: boolean;
+  maxRetries: number;
+  retryDelay: number;
 }
 
 export class CryptoGiftError extends Error {
+  id: string;
   type: ErrorType;
+  severity: ErrorSeverity;
+  userMessage: string;
   code?: string;
   details?: any;
-  userMessage?: string;
+  context: AppError['context'];
+  recoveryActions: string[];
+  shouldRetry: boolean;
+  maxRetries: number;
+  retryDelay: number;
 
-  constructor(type: ErrorType, message: string, options?: {
-    code?: string;
-    details?: any;
-    userMessage?: string;
-  }) {
+  constructor(
+    type: ErrorType, 
+    message: string, 
+    options?: {
+      severity?: ErrorSeverity;
+      code?: string;
+      details?: any;
+      userMessage?: string;
+      context?: Partial<AppError['context']>;
+      originalError?: Error;
+    }
+  ) {
     super(message);
     this.name = 'CryptoGiftError';
+    this.id = this.generateErrorId();
     this.type = type;
+    this.severity = options?.severity || this.getDefaultSeverity(type);
     this.code = options?.code;
     this.details = options?.details;
     this.userMessage = options?.userMessage || this.getDefaultUserMessage(type);
+    
+    this.context = {
+      operation: options?.context?.operation || 'unknown',
+      userAddress: options?.context?.userAddress,
+      tokenId: options?.context?.tokenId,
+      transactionHash: options?.context?.transactionHash,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'unknown'
+    };
+    
+    this.recoveryActions = this.getRecoveryActions(type);
+    this.shouldRetry = this.getShouldRetry(type);
+    this.maxRetries = this.getMaxRetries(type);
+    this.retryDelay = this.getRetryDelay(type);
+    
+    // Preserve stack trace from original error
+    if (options?.originalError && options.originalError.stack) {
+      this.stack = options.originalError.stack;
+    }
+  }
+
+  private generateErrorId(): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 8);
+    return `ERR_${timestamp}_${random}`.toUpperCase();
+  }
+
+  private getDefaultSeverity(type: ErrorType): ErrorSeverity {
+    const severityMap: Record<ErrorType, ErrorSeverity> = {
+      [ErrorType.CRITICAL_SYSTEM]: ErrorSeverity.FATAL,
+      [ErrorType.CRITICAL_SECURITY]: ErrorSeverity.FATAL,
+      [ErrorType.CRITICAL_DATA]: ErrorSeverity.HIGH,
+      [ErrorType.BLOCKCHAIN_RPC]: ErrorSeverity.HIGH,
+      [ErrorType.BLOCKCHAIN_CONTRACT]: ErrorSeverity.HIGH,
+      [ErrorType.BLOCKCHAIN_TRANSACTION]: ErrorSeverity.MEDIUM,
+      [ErrorType.NETWORK]: ErrorSeverity.MEDIUM,
+      [ErrorType.EXTERNAL_SERVICE]: ErrorSeverity.MEDIUM,
+      [ErrorType.VALIDATION]: ErrorSeverity.LOW,
+      [ErrorType.USER_INPUT]: ErrorSeverity.LOW,
+      [ErrorType.USER_AUTH]: ErrorSeverity.MEDIUM,
+      [ErrorType.RATE_LIMIT]: ErrorSeverity.LOW,
+      [ErrorType.API_KEY]: ErrorSeverity.HIGH,
+      [ErrorType.CONTRACT]: ErrorSeverity.HIGH,
+      [ErrorType.CONFIGURATION]: ErrorSeverity.HIGH,
+      [ErrorType.UNKNOWN]: ErrorSeverity.MEDIUM
+    };
+    
+    return severityMap[type] || ErrorSeverity.MEDIUM;
   }
 
   private getDefaultUserMessage(type: ErrorType): string {
-    switch (type) {
-      case ErrorType.NETWORK:
-        return 'Network connection issue. Please check your internet connection and try again.';
-      case ErrorType.VALIDATION:
-        return 'Invalid input provided. Please check your data and try again.';
-      case ErrorType.RATE_LIMIT:
-        return 'Too many requests. Please wait a moment before trying again.';
-      case ErrorType.API_KEY:
-        return 'Service temporarily unavailable. Please try again later.';
-      case ErrorType.CONTRACT:
-        return 'Blockchain transaction failed. Please try again.';
-      default:
-        return 'An unexpected error occurred. Please try again.';
+    const messageMap: Record<ErrorType, string> = {
+      [ErrorType.CRITICAL_SYSTEM]: 'Sistema experimentando problemas críticos. Contacte soporte inmediatamente.',
+      [ErrorType.CRITICAL_SECURITY]: 'Error de seguridad detectado. Operación cancelada por protección.',
+      [ErrorType.CRITICAL_DATA]: 'Error crítico en validación de datos. Verifique la información.',
+      [ErrorType.BLOCKCHAIN_RPC]: 'Problemas de conectividad con blockchain. Reintentando automáticamente...',
+      [ErrorType.BLOCKCHAIN_CONTRACT]: 'Error en contrato inteligente. Verifique los parámetros y balance.',
+      [ErrorType.BLOCKCHAIN_TRANSACTION]: 'Transacción falló. Revise balance y configuración de gas.',
+      [ErrorType.NETWORK]: 'Problema de conectividad. Verifique su conexión a internet.',
+      [ErrorType.EXTERNAL_SERVICE]: 'Servicio externo no disponible temporalmente. Reintente más tarde.',
+      [ErrorType.VALIDATION]: 'Datos ingresados no válidos. Verifique la información.',
+      [ErrorType.USER_INPUT]: 'Entrada de usuario no válida. Corrija los datos ingresados.',
+      [ErrorType.USER_AUTH]: 'Error de autenticación. Inicie sesión nuevamente.',
+      [ErrorType.RATE_LIMIT]: 'Demasiadas solicitudes. Espere un momento antes de reintentar.',
+      [ErrorType.API_KEY]: 'Servicio temporalmente no disponible. Reintente más tarde.',
+      [ErrorType.CONTRACT]: 'Transacción blockchain falló. Verifique balance y parámetros.',
+      [ErrorType.CONFIGURATION]: 'Error de configuración del sistema. Contacte administrador.',
+      [ErrorType.UNKNOWN]: 'Error inesperado. Contacte soporte si el problema persiste.'
+    };
+    
+    return messageMap[type] || 'Error inesperado. Contacte soporte si persiste.';
+  }
+
+  private getRecoveryActions(type: ErrorType): string[] {
+    const actionsMap: Record<ErrorType, string[]> = {
+      [ErrorType.CRITICAL_SYSTEM]: ['Reiniciar aplicación', 'Contactar soporte técnico urgente'],
+      [ErrorType.CRITICAL_SECURITY]: ['Cerrar sesión inmediatamente', 'Reportar incidente de seguridad'],
+      [ErrorType.CRITICAL_DATA]: ['Validar datos de entrada', 'Revisar formato requerido'],
+      [ErrorType.BLOCKCHAIN_RPC]: ['Reintentar automáticamente', 'Verificar conectividad'],
+      [ErrorType.BLOCKCHAIN_CONTRACT]: ['Verificar balance', 'Revisar parámetros de transacción'],
+      [ErrorType.BLOCKCHAIN_TRANSACTION]: ['Verificar balance de gas', 'Ajustar límite de gas'],
+      [ErrorType.NETWORK]: ['Verificar conexión a internet', 'Reintentar operación'],
+      [ErrorType.EXTERNAL_SERVICE]: ['Esperar y reintentar', 'Usar funcionalidad alternativa'],
+      [ErrorType.VALIDATION]: ['Corregir datos ingresados', 'Consultar formato requerido'],
+      [ErrorType.USER_INPUT]: ['Revisar información ingresada', 'Verificar formato'],
+      [ErrorType.USER_AUTH]: ['Iniciar sesión nuevamente', 'Verificar credenciales'],
+      [ErrorType.RATE_LIMIT]: ['Esperar antes de reintentar', 'Reducir frecuencia de solicitudes'],
+      [ErrorType.API_KEY]: ['Esperar y reintentar', 'Verificar configuración'],
+      [ErrorType.CONTRACT]: ['Verificar balance', 'Revisar estado del contrato'],
+      [ErrorType.CONFIGURATION]: ['Verificar configuración', 'Contactar administrador'],
+      [ErrorType.UNKNOWN]: ['Reintentar operación', 'Contactar soporte técnico']
+    };
+    
+    return actionsMap[type] || ['Reintentar operación', 'Contactar soporte'];
+  }
+
+  private getShouldRetry(type: ErrorType): boolean {
+    const retryableTypes = [
+      ErrorType.BLOCKCHAIN_RPC,
+      ErrorType.NETWORK,
+      ErrorType.EXTERNAL_SERVICE,
+      ErrorType.RATE_LIMIT
+    ];
+    
+    return retryableTypes.includes(type);
+  }
+
+  private getMaxRetries(type: ErrorType): number {
+    const retriesMap: Partial<Record<ErrorType, number>> = {
+      [ErrorType.BLOCKCHAIN_RPC]: 3,
+      [ErrorType.BLOCKCHAIN_CONTRACT]: 2,
+      [ErrorType.BLOCKCHAIN_TRANSACTION]: 1,
+      [ErrorType.NETWORK]: 3,
+      [ErrorType.EXTERNAL_SERVICE]: 2,
+      [ErrorType.RATE_LIMIT]: 5
+    };
+    
+    return retriesMap[type] || 0;
+  }
+
+  private getRetryDelay(type: ErrorType): number {
+    const delayMap: Partial<Record<ErrorType, number>> = {
+      [ErrorType.BLOCKCHAIN_RPC]: 2000,
+      [ErrorType.BLOCKCHAIN_CONTRACT]: 1000,
+      [ErrorType.BLOCKCHAIN_TRANSACTION]: 3000,
+      [ErrorType.NETWORK]: 1000,
+      [ErrorType.EXTERNAL_SERVICE]: 1500,
+      [ErrorType.RATE_LIMIT]: 5000
+    };
+    
+    return delayMap[type] || 1000;
+  }
+
+  /**
+   * Handle the error with appropriate action based on severity
+   */
+  handle(): void {
+    // Log error securely
+    blockchainSecureLogger.error('STRUCTURED ERROR', {
+      errorId: this.id,
+      type: this.type,
+      severity: this.severity,
+      message: this.message,
+      context: this.context
+    });
+
+    // Security audit for critical errors
+    if (this.severity === ErrorSeverity.FATAL || this.type.includes('CRITICAL')) {
+      securityAudit.securityViolation(
+        `${this.severity} error: ${this.message}`,
+        this.context.userAddress,
+        {
+          errorId: this.id,
+          type: this.type,
+          operation: this.context.operation
+        }
+      );
+    }
+
+    // Fail-fast for fatal errors
+    if (this.severity === ErrorSeverity.FATAL) {
+      console.error(`🚨 FATAL ERROR (${this.id}): ${this.message}`);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.error('💥 Full error details:', this.toJSON());
+      }
+      
+      throw new Error(`FATAL: ${this.userMessage} (Error ID: ${this.id})`);
     }
   }
 
   toJSON(): AppError {
     return {
+      id: this.id,
       type: this.type,
+      severity: this.severity,
       message: this.message,
+      userMessage: this.userMessage,
       code: this.code,
       details: this.details,
-      userMessage: this.userMessage,
+      context: this.context,
+      recoveryActions: this.recoveryActions,
+      shouldRetry: this.shouldRetry,
+      maxRetries: this.maxRetries,
+      retryDelay: this.retryDelay
     };
   }
 }

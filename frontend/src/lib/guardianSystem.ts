@@ -1,43 +1,9 @@
 // Guardian System - SECURITY EXTREME for TBA Wallet Recovery
 // Implements multi-signature social recovery with cryptographic verification
+// Uses centralized Redis configuration for consistency and security
 
-import { Redis } from '@upstash/redis';
 import { ethers } from 'ethers';
-
-// Initialize Redis client (same as other systems)
-let redis: any;
-
-try {
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-    redis = new Redis({
-      url: process.env.KV_REST_API_URL,
-      token: process.env.KV_REST_API_TOKEN,
-    });
-    console.log('🟢 Guardian System using Vercel KV with Upstash backend');
-  } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-    console.log('🟢 Guardian System using direct Upstash Redis');
-  } else {
-    // Mock client for development
-    redis = {
-      hset: async () => ({}),
-      hgetall: async () => null,
-      sadd: async () => 1,
-      smembers: async () => [],
-      set: async () => 'OK',
-      get: async () => null,
-      del: async () => 1,
-      incr: async () => 1,
-      expire: async () => 1
-    };
-    console.log('⚠️ Guardian System using mock Redis client for development');
-  }
-} catch (error) {
-  console.error('❌ Failed to initialize Guardian System Redis client:', error);
-}
+import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
 
 export interface Guardian {
   address: string;
@@ -138,6 +104,9 @@ export class GuardianSecuritySystem {
         status: 'configuring'
       };
       
+      // MANDATORY: Redis is required for guardian system security
+      const redis = validateRedisForCriticalOps('Guardian system setup');
+      
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
       await redis.hset(setupKey, setup);
       
@@ -178,6 +147,9 @@ export class GuardianSecuritySystem {
   ): Promise<{ success: boolean; message: string }> {
     try {
       console.log(`🔐 Verifying guardian ${guardianAddress.slice(0, 10)}... for wallet ${walletAddress.slice(0, 10)}...`);
+      
+      // MANDATORY: Redis is required for guardian verification
+      const redis = validateRedisForCriticalOps('Guardian verification');
       
       const guardianKey = `guardian_verification:${guardianAddress.toLowerCase()}:${walletAddress.toLowerCase()}`;
       const verification = await redis.hgetall(guardianKey);
@@ -240,6 +212,9 @@ export class GuardianSecuritySystem {
   ): Promise<{ success: boolean; recoveryId: string; message: string }> {
     try {
       console.log(`🚨 Recovery initiated for wallet ${originalWallet.slice(0, 10)}... by guardian ${initiatingGuardian.slice(0, 10)}...`);
+      
+      // MANDATORY: Redis is required for recovery operations
+      const redis = validateRedisForCriticalOps('Recovery initiation');
       
       const setupKey = `guardian_setup:${originalWallet.toLowerCase()}`;
       const setup = await redis.hgetall(setupKey) as GuardianSetup;
@@ -313,6 +288,9 @@ export class GuardianSecuritySystem {
     try {
       console.log(`✍️ Guardian ${guardianAddress.slice(0, 10)}... signing recovery ${recoveryId}`);
       
+      // MANDATORY: Redis is required for recovery signing
+      const redis = validateRedisForCriticalOps('Recovery signing');
+      
       const recoveryKey = `recovery_request:${recoveryId}`;
       const recovery = await redis.hgetall(recoveryKey) as RecoveryRequest;
       
@@ -372,6 +350,7 @@ export class GuardianSecuritySystem {
   
   async getGuardianSetup(walletAddress: string): Promise<GuardianSetup | null> {
     try {
+      const redis = validateRedisForCriticalOps('Guardian setup retrieval');
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
       const setup = await redis.hgetall(setupKey);
       
@@ -388,6 +367,7 @@ export class GuardianSecuritySystem {
   
   async getRecoveryRequest(recoveryId: string): Promise<RecoveryRequest | null> {
     try {
+      const redis = validateRedisForCriticalOps('Recovery request retrieval');
       const recoveryKey = `recovery_request:${recoveryId}`;
       const recovery = await redis.hgetall(recoveryKey);
       
@@ -423,6 +403,7 @@ export class GuardianSecuritySystem {
   
   async suspendGuardianSystem(walletAddress: string, reason: string): Promise<boolean> {
     try {
+      const redis = validateRedisForCriticalOps('Guardian system suspension');
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
       const setup = await redis.hgetall(setupKey) as GuardianSetup;
       
@@ -457,6 +438,7 @@ export class GuardianSecuritySystem {
     }
     
     try {
+      const redis = validateRedisForCriticalOps('Emergency recovery override');
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
       const setup = await redis.hgetall(setupKey) as GuardianSetup;
       
