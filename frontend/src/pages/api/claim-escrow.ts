@@ -171,11 +171,34 @@ async function validateClaimRequest(
       return { valid: false, error: 'Gift has expired and cannot be claimed' };
     }
     
-    // Validate password
-    const providedPasswordHash = generatePasswordHash(password, salt);
+    // CRITICAL FIX: Get giftId for proper password hashing
+    const giftId = await getGiftIdFromTokenId(tokenId);
+    if (giftId === null) {
+      return { valid: false, error: 'Unable to determine gift ID for password validation' };
+    }
+    
+    // CRITICAL FIX: Generate password hash EXACTLY as contract does
+    // Contract: keccak256(abi.encodePacked(password, salt, giftId, address(this), block.chainid))
+    const contractAddress = ESCROW_CONTRACT_ADDRESS;
+    const chainId = 84532; // Base Sepolia
+    const providedPasswordHash = generatePasswordHash(password, salt, giftId, contractAddress, chainId);
+    
+    console.log('🔐 PASSWORD VALIDATION:', {
+      tokenId,
+      giftId,
+      contractAddress: contractAddress.slice(0, 10) + '...',
+      chainId,
+      providedHash: providedPasswordHash.slice(0, 10) + '...',
+      contractHash: gift.passwordHash.slice(0, 10) + '...',
+      matches: providedPasswordHash.toLowerCase() === gift.passwordHash.toLowerCase()
+    });
+    
     if (providedPasswordHash.toLowerCase() !== gift.passwordHash.toLowerCase()) {
+      console.log('❌ PASSWORD MISMATCH: Provided hash does not match contract hash');
       return { valid: false, error: 'Invalid password' };
     }
+    
+    console.log('✅ PASSWORD VALIDATION: Hash matches - claim authorized');
     
     return { valid: true, gift };
     

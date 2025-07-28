@@ -11,7 +11,6 @@ import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { sendTransaction, waitForReceipt } from 'thirdweb/transaction';
 import { 
-  generatePasswordHash,
   generateSalt,
   getEscrowContract,
   prepareRegisterGiftMintedCall,
@@ -215,9 +214,9 @@ async function mintNFTEscrowGasless(
     // Step 3: Register transaction attempt
     await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
     
-    // Step 4: Generate salt and password hash
+    // Step 4: Generate salt (password passed directly to contract)
     const salt = generateSalt();
-    const passwordHash = generatePasswordHash(password, salt);
+    // NOTE: Contract generates hash internally with all parameters (password, salt, giftId, address, chainId)
     
     // Secure logging - never expose actual crypto values
     console.log('🔐 Cryptographic data generated successfully');
@@ -705,9 +704,9 @@ async function mintNFTEscrowGasPaid(
     // Step 3: Register transaction attempt
     await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
     
-    // Step 4: Generate salt and password hash
+    // Step 4: Generate salt (password passed directly to contract)
     const salt = generateSalt();
-    const passwordHash = generatePasswordHash(password, salt);
+    // NOTE: Contract generates hash internally with all parameters (password, salt, giftId, address, chainId)
     
     // Secure logging - never expose actual crypto values
     console.log('🔐 Cryptographic data generated successfully');

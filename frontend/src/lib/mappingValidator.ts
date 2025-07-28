@@ -25,26 +25,91 @@ export interface ValidationResult {
 }
 
 /**
- * Validate stored mapping against on-chain contract data
+ * Validate stored mapping against on-chain contract data with retry
  * CRITICAL: Ensures mapping integrity before proceeding
  */
 export async function validateStoredMapping(
   tokenId: string | number,
   giftId: string | number,
   expectedCreator?: string,
+  expectedNftContract?: string,
+  maxRetries: number = 3
+): Promise<ValidationResult> {
+  const tokenIdNum = Number(tokenId);
+  const giftIdNum = Number(giftId);
+  
+  console.log(`🔍 VALIDATING: tokenId ${tokenIdNum} → giftId ${giftIdNum}`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 VALIDATION ATTEMPT ${attempt}/${maxRetries}`);
+      
+      const result = await performValidation(tokenIdNum, giftIdNum, expectedCreator, expectedNftContract);
+      
+      if (result.valid) {
+        console.log(`✅ Validation successful on attempt ${attempt}`);
+        return result;
+      }
+      
+      // If it's a tokenId mismatch and we have retries left, wait and try again
+      if (result.error?.includes('TokenId mismatch') && attempt < maxRetries) {
+        const delay = attempt * 1000; // 1s, 2s, 3s
+        console.log(`⏳ TokenId mismatch on attempt ${attempt}, waiting ${delay}ms for contract state to propagate...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      return result;
+      
+    } catch (error) {
+      console.error(`❌ Validation attempt ${attempt} failed:`, (error as Error).message);
+      
+      if (attempt < maxRetries) {
+        const delay = attempt * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      return {
+        valid: false,
+        error: `All ${maxRetries} validation attempts failed. Last error: ${(error as Error).message}`
+      };
+    }
+  }
+  
+  return {
+    valid: false,
+    error: `Validation failed after ${maxRetries} attempts`
+  };
+}
+
+/**
+ * Perform a single validation attempt
+ */
+async function performValidation(
+  tokenIdNum: number,
+  giftIdNum: number,
+  expectedCreator?: string,
   expectedNftContract?: string
 ): Promise<ValidationResult> {
   try {
-    const tokenIdNum = Number(tokenId);
-    const giftIdNum = Number(giftId);
-    
-    console.log(`🔍 VALIDATING: tokenId ${tokenIdNum} → giftId ${giftIdNum}`);
     
     // Get gift data from contract
     const giftData = await readContract({
       contract: getEscrowContract(),
       method: "getGift",
       params: [BigInt(giftIdNum)]
+    });
+    
+    // CRITICAL DEBUG: Log raw contract response
+    console.log('🔍 RAW CONTRACT RESPONSE for giftId', giftIdNum, ':', {
+      raw: giftData,
+      creator: giftData[0],
+      expirationTime: giftData[1],
+      nftContract: giftData[2],
+      tokenId: giftData[3],
+      passwordHash: giftData[4] ? giftData[4].toString().slice(0, 10) + '...' : 'null',
+      status: giftData[5]
     });
     
     // Parse contract response: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
@@ -70,9 +135,24 @@ export async function validateStoredMapping(
     
     // CRITICAL VALIDATION: TokenId must match
     if (contractData.tokenId !== tokenIdNum) {
+      console.error('❌ VALIDATION FAILED: TokenId mismatch detected!');
+      console.error('📊 MISMATCH DETAILS:', {
+        expectedTokenId: tokenIdNum,
+        contractTokenId: contractData.tokenId,
+        giftId: giftIdNum,
+        contractStatus: contractData.status,
+        contractCreator: contractData.creator.slice(0, 10) + '...',
+        possibleCauses: [
+          'Contract registerGiftMinted failed to set tokenId correctly',
+          'Wrong giftId used in mapping',
+          'Contract state corruption',
+          'Race condition in gift creation'
+        ]
+      });
+      
       return {
         valid: false,
-        error: `TokenId mismatch: contract has ${contractData.tokenId}, mapping expects ${tokenIdNum}`,
+        error: `TokenId mismatch: contract has ${contractData.tokenId}, mapping expects ${tokenIdNum}. This suggests registerGiftMinted failed to store tokenId correctly.`,
         contractData,
         storedMapping
       };

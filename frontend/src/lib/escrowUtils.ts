@@ -22,7 +22,36 @@ export function generateSalt(): `0x${string}` {
   return ethers.hexlify(ethers.randomBytes(32)) as `0x${string}`;
 }
 
-export function generatePasswordHash(password: string, salt: string): `0x${string}` {
+/**
+ * CRITICAL FIX: Generate password hash EXACTLY as Solidity contract does
+ * Contract: keccak256(abi.encodePacked(password, salt, giftId, address(this), block.chainid))
+ * 
+ * @param password - User provided password
+ * @param salt - 32-byte salt  
+ * @param giftId - Gift ID from contract
+ * @param contractAddress - Escrow contract address
+ * @param chainId - Blockchain chain ID (84532 for Base Sepolia)
+ */
+export function generatePasswordHash(
+  password: string, 
+  salt: string, 
+  giftId: number | string | bigint,
+  contractAddress: string,
+  chainId: number = 84532
+): `0x${string}` {
+  // Use solidityPackedKeccak256 to replicate abi.encodePacked exactly
+  return ethers.solidityPackedKeccak256(
+    ['string', 'bytes32', 'uint256', 'address', 'uint256'],
+    [password, salt, BigInt(giftId), contractAddress, BigInt(chainId)]
+  ) as `0x${string}`;
+}
+
+/**
+ * DEPRECATED: Legacy password hash function (INSECURE - doesn't match contract)
+ * Keep temporarily for migration purposes only
+ * @deprecated Use generatePasswordHash with all parameters instead
+ */
+export function generatePasswordHashLegacy(password: string, salt: string): `0x${string}` {
   return ethers.keccak256(ethers.toUtf8Bytes(password + salt)) as `0x${string}`;
 }
 
@@ -301,16 +330,39 @@ export function prepareRegisterGiftMintedCall(
 ) {
   const contract = getEscrowContract();
   
+  // CRITICAL DEBUG: Log all parameters before calling contract
+  const tokenIdBigInt = BigInt(tokenId);
+  const timeframeBigInt = BigInt(timeframeDays);
+  
+  console.log('🔍 REGISTER_GIFT_MINTED PARAMS:', {
+    tokenId: tokenId.toString(),
+    tokenIdBigInt: tokenIdBigInt.toString(),
+    nftContract: nftContract.slice(0, 10) + '...',
+    creator: creator.slice(0, 10) + '...',
+    passwordLength: password.length,
+    saltLength: salt.length,
+    timeframeDays,
+    timeframeBigInt: timeframeBigInt.toString(),
+    giftMessageLength: giftMessage.length,
+    gate: gate.slice(0, 10) + '...'
+  });
+  
+  // VALIDATION: Ensure tokenId is not 0
+  if (tokenIdBigInt === 0n) {
+    console.error('❌ CRITICAL: tokenId is 0, this will cause mapping validation to fail!');
+    throw new Error(`Invalid tokenId: ${tokenId} - cannot be 0`);
+  }
+  
   return prepareContractCall({
     contract,
     method: "registerGiftMinted",
     params: [
-      BigInt(tokenId),
+      tokenIdBigInt,
       nftContract,
       creator,               // ← NEW: Original creator address
       password,              // ← Password as string, not hash
       salt as `0x${string}`, // ← Salt with type assertion
-      BigInt(timeframeDays),
+      timeframeBigInt,
       giftMessage,
       gate                   // ← Gate parameter (defaults to zero address)
     ]
