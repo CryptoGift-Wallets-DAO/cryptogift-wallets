@@ -351,8 +351,12 @@ export async function getAllStoredMetadata(contractAddress: string): Promise<NFT
     // Update the tracking set for future use
     if (metadataList.length > 0) {
       const tokenIds = metadataList.map(m => m.tokenId);
-      await redis.sadd(contractKey, ...tokenIds);
-      console.log(`✅ Updated tracking set for contract ${contractAddress}`);
+      if (tokenIds.length > 0) {
+        for (const tokenId of tokenIds) {
+          await redis.sadd(contractKey, tokenId);
+        }
+        console.log(`✅ Updated tracking set for contract ${contractAddress} with ${tokenIds.length} tokens`);
+      }
     }
     
     return metadataList;
