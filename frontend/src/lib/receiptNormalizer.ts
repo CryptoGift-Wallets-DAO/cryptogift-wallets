@@ -176,8 +176,8 @@ async function loadRealReceipt(txHash: string): Promise<ThirdWebTransactionRecei
       })),
       status: receipt.status === 1 ? 'success' : 'reverted',
       transactionHash: receipt.hash,
-      blockNumber: receipt.blockNumber,
-      gasUsed: receipt.gasUsed
+      blockNumber: BigInt(receipt.blockNumber),
+      gasUsed: receipt.gasUsed // gasUsed is already bigint in ethers
     };
     
     return normalizedReceipt;
