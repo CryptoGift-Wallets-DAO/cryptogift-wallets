@@ -77,10 +77,7 @@ async function calculateTBAAddress(tokenId: string, nftContract: string): Promis
     const CHAIN_ID = parseInt(chainIdStr);
     if (isNaN(CHAIN_ID)) {
       console.error(`❌ INVALID CHAIN_ID: "${chainIdStr}"`);
-      return res.status(500).json({ 
-        success: false, 
-        error: "Invalid chain configuration" 
-      });
+      throw new Error(`Invalid chain configuration: "${chainIdStr}"`);
     }
     
     // Security: Input validation and sanitization

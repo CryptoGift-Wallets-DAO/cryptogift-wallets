@@ -233,19 +233,22 @@ export class VercelKVReferralDatabase {
     const redis = validateRedisForCriticalOps('User profile management');
     const existing = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
     
+    // Parse existing profile using our parser function
+    const existingProfile = parseUserProfileFromRedis(existing);
+    
     const profile: UserProfile = {
       address: address.toLowerCase(),
-      registrationDate: existing?.registrationDate || new Date().toISOString(),
+      registrationDate: existingProfile?.registrationDate || new Date().toISOString(),
       lastActivity: new Date().toISOString(),
-      referralStats: existing?.referralStats || {
+      referralStats: existingProfile?.referralStats || {
         totalReferrals: 0,
         activeReferrals: 0,
         totalEarnings: 0,
         pendingRewards: 0,
         conversionRate: 0
       },
-      sessionHistory: existing?.sessionHistory || [],
-      ipHistory: existing?.ipHistory || [],
+      sessionHistory: existingProfile?.sessionHistory || [],
+      ipHistory: existingProfile?.ipHistory || [],
       ...data
     };
     

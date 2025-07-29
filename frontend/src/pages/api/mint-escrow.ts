@@ -10,10 +10,12 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
-import { createThirdwebClient, getContract, prepareContractCall } from 'thirdweb';
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
+import { privateKeyToAccount } from 'thirdweb/wallets';
 import { 
   generateSalt,
+  generatePasswordHash,
   getEscrowContract,
   prepareRegisterGiftMintedCall,
   validatePassword,
@@ -198,6 +200,7 @@ async function mintNFTEscrowGasless(
   details?: string;
 }> {
   let transactionNonce = '';
+  let passwordHash: string | undefined;
   
   try {
     console.log('🚀 MINT ESCROW GASLESS: Starting atomic operation with anti-double minting');
@@ -318,7 +321,7 @@ async function mintNFTEscrowGasless(
         
         // Run diagnostic to understand the issue
         const diagnostic = await diagnoseTokenIdZeroIssue(
-          mintResult.receipt?.logs || [],
+          Array.from(receipt.logs || []),
           process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
         );
         
@@ -425,6 +428,15 @@ async function mintNFTEscrowGasless(
       
       const actualGiftId = eventResult.giftId;
       console.log(`✅ DETERMINISTIC: tokenId ${tokenId} → giftId ${actualGiftId} (from event)`);
+      
+      // Generate password hash now that we have the giftId
+      passwordHash = generatePasswordHash(
+        password,
+        salt,
+        actualGiftId,
+        ESCROW_CONTRACT_ADDRESS!,
+        84532 // Base Sepolia chain ID
+      );
       
       // Store the mapping deterministically
       try {
@@ -694,6 +706,7 @@ async function mintNFTEscrowGasPaid(
   details?: string;
 }> {
   let transactionNonce = '';
+  let passwordHash: string | undefined;
   
   try {
     console.log('💰 MINT ESCROW GAS-PAID: Starting atomic operation (deployer pays gas)');
@@ -821,7 +834,7 @@ async function mintNFTEscrowGasPaid(
         
         // Run diagnostic to understand the issue
         const diagnostic = await diagnoseTokenIdZeroIssue(
-          mintResult.receipt?.logs || [],
+          Array.from(receipt.logs || []),
           process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
         );
         
@@ -949,6 +962,15 @@ async function mintNFTEscrowGasPaid(
       
       const actualGiftIdGasPaid = eventResultGasPaid.giftId;
       console.log(`✅ DETERMINISTIC (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (from event)`);
+      
+      // Generate password hash now that we have the giftId
+      passwordHash = generatePasswordHash(
+        password,
+        salt,
+        actualGiftIdGasPaid,
+        ESCROW_CONTRACT_ADDRESS!,
+        84532 // Base Sepolia chain ID
+      );
       
       // Store the mapping deterministically (gas-paid)
       try {
