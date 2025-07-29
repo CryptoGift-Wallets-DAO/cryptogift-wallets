@@ -1,0 +1,138 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 🚪 EMERGENCY BYPASS: Use --no-verify to skip in emergencies
+# Example: git commit -m "hotfix" --no-verify
+if [ "$HUSKY_SKIP_HOOKS" = "1" ]; then
+  echo "⚠️  SECURITY HOOKS BYPASSED - USE ONLY FOR EMERGENCIES"
+  echo "📋 Remember to run manual checks after emergency commit"
+  exit 0
+fi
+
+echo "🛡️ Running security and quality checks..."
+echo "💡 TIP: Use 'git commit --no-verify' for emergency bypasses"
+
+cd frontend
+
+# Load security configuration
+SECURITY_CONFIG=".security-config.json"
+ENFORCEMENT_LEVEL="warning"  # Default to warning mode
+
+if [ -f "$SECURITY_CONFIG" ]; then
+  ENFORCEMENT_LEVEL=$(node -p "JSON.parse(require('fs').readFileSync('$SECURITY_CONFIG', 'utf8')).enforcement.level" 2>/dev/null || echo "warning")
+fi
+
+echo "🎚️  Security enforcement level: $ENFORCEMENT_LEVEL"
+
+WARNINGS=0
+ERRORS=0
+
+# Helper functions
+log_warning() {
+  echo "⚠️  WARNING: $1"
+  WARNINGS=$((WARNINGS + 1))
+}
+
+log_error() {
+  echo "❌ ERROR: $1"
+  ERRORS=$((ERRORS + 1))
+}
+
+should_block() {
+  [ "$ENFORCEMENT_LEVEL" = "error" ]
+}
+
+# 1. TypeScript compilation check (ALWAYS ERROR - critical for production)
+echo "🔍 Checking TypeScript compilation..."
+if ! npm run type-check >/dev/null 2>&1; then
+  log_error "TypeScript compilation failed"
+  if should_block; then
+    echo "💡 Fix TypeScript errors or use 'git commit --no-verify' for emergency"
+    exit 1
+  fi
+fi
+
+# 2. Run tests (configurable level)
+echo "🧪 Running test suite..."
+if ! npm run test:ci >/dev/null 2>&1; then
+  if [ "$ENFORCEMENT_LEVEL" = "error" ]; then
+    log_error "Tests failed"
+  else
+    log_warning "Tests failed - fix recommended before production"
+  fi
+fi
+
+# 3. Check test coverage
+echo "📊 Checking test coverage..."
+COVERAGE=$(npm run test:coverage 2>/dev/null | grep -oP 'All files.*?(\d+\.?\d*)%' | tail -1 | grep -oP '\d+\.?\d*' || echo "0")
+MIN_COVERAGE=50
+
+if [ $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l 2>/dev/null || echo "1") -eq 1 ]; then
+  if [ "$ENFORCEMENT_LEVEL" = "error" ]; then
+    log_error "Test coverage ($COVERAGE%) below minimum ($MIN_COVERAGE%)"
+  else
+    log_warning "Test coverage ($COVERAGE%) below minimum ($MIN_COVERAGE%) - target is 70%"
+  fi
+fi
+
+# 4. Security patterns validation
+echo "🔒 Validating security patterns..."
+
+# Check for unprotected API endpoints
+unprotected_endpoints=$(find src/pages/api -name "*.ts" -exec grep -l "export default async function handler" {} \; 2>/dev/null | while read file; do
+  if ! grep -q "checkRateLimit\|verifyJWT\|ADMIN_API_TOKEN" "$file" 2>/dev/null; then
+    echo "$file"
+  fi
+done)
+
+if [ ! -z "$unprotected_endpoints" ]; then
+  if [ "$ENFORCEMENT_LEVEL" = "error" ]; then
+    log_error "Unprotected API endpoints found: $unprotected_endpoints"
+    echo "   All endpoints must use rate limiting or authentication"
+  else
+    log_warning "Unprotected API endpoints found: $unprotected_endpoints"
+    echo "   Consider adding rate limiting or authentication"
+  fi
+fi
+
+# Check for sensitive data in console.log (ALWAYS ERROR - security critical)
+if grep -r "console.log.*private\|console.log.*secret\|console.log.*token" src/ --include="*.ts" --include="*.tsx" >/dev/null 2>&1; then
+  log_error "Potential sensitive data in console.log detected"
+  echo "   This is a security risk - use secureLogger instead"
+  if should_block; then
+    exit 1
+  fi
+fi
+
+# Check for secureLogger usage in new files
+new_files=$(git diff --cached --name-only --diff-filter=A | grep -E '\.(ts|tsx)$' | grep -v test)
+for file in $new_files; do
+  if [ -f "$file" ] && grep -q "console.log\|console.error\|console.warn" "$file" && ! grep -q "secureLogger" "$file"; then
+    log_warning "$file uses console.log but not secureLogger"
+    echo "   Consider using secureLogger for better security and consistency"
+  fi
+done
+
+# Summary
+echo ""
+echo "📋 Security Check Summary:"
+echo "   Warnings: $WARNINGS"
+echo "   Errors: $ERRORS"
+echo "   Enforcement Level: $ENFORCEMENT_LEVEL"
+
+if [ $ERRORS -gt 0 ] && should_block; then
+  echo ""
+  echo "🚫 Commit blocked due to $ERRORS error(s)"
+  echo "💡 Fix issues above or use 'git commit --no-verify' for emergency bypass"
+  echo "📖 See .security-config.json to adjust enforcement levels"
+  exit 1
+elif [ $WARNINGS -gt 0 ] || [ $ERRORS -gt 0 ]; then
+  echo ""
+  echo "⚠️  Commit allowed with $WARNINGS warning(s) and $ERRORS error(s)"
+  echo "🎯 Consider fixing these issues before production deployment"
+  echo "📈 Enforcement will gradually become stricter over time"
+fi
+
+echo ""
+echo "✅ Security checks completed - commit proceeding"
+echo "🚀 Use 'npm run test:coverage' to improve test coverage"

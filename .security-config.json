@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "description": "Security enforcement configuration - can be adjusted gradually",
+  "enforcement": {
+    "level": "warning",
+    "comment": "Options: 'warning' (logs issues but allows commit) | 'error' (blocks commit) | 'disabled'"
+  },
+  "rules": {
+    "typescript_compilation": {
+      "enabled": true,
+      "level": "error",
+      "description": "TypeScript must compile without errors"
+    },
+    "test_coverage": {
+      "enabled": true,
+      "level": "warning",
+      "minimum": 50,
+      "target": 70,
+      "description": "Start with 50% minimum, gradually increase to 70%"
+    },
+    "unprotected_endpoints": {
+      "enabled": true,
+      "level": "warning",
+      "description": "API endpoints should have rate limiting or auth"
+    },
+    "sensitive_data_logging": {
+      "enabled": true,
+      "level": "error",
+      "description": "Never log sensitive data like private keys"
+    },
+    "secure_logger_usage": {
+      "enabled": true,
+      "level": "warning",
+      "description": "Prefer secureLogger over console.log"
+    }
+  },
+  "bypass": {
+    "emergency_mode": true,
+    "description": "Allow --no-verify for emergency commits",
+    "requires_justification": true
+  },
+  "performance": {
+    "max_hook_time_seconds": 30,
+    "use_cache": true,
+    "parallel_execution": true
+  },
+  "escalation_schedule": {
+    "week_1_4": "All rules at 'warning' level - learn the system",
+    "week_5_8": "Critical rules become 'error' (typescript, sensitive_data)",
+    "week_9_12": "All rules become 'error' - full enforcement",
+    "ongoing": "Regular review and adjustment based on team feedback"
+  }
+}
