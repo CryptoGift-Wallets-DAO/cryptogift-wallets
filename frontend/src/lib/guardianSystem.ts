@@ -94,6 +94,55 @@ function serializeGuardianSetupForRedis(setup: GuardianSetup): Record<string, st
   };
 }
 
+// Helper function to safely parse RecoveryRequest from Redis
+function parseRecoveryRequestFromRedis(redisData: Record<string, unknown>): RecoveryRequest | null {
+  try {
+    if (!redisData || Object.keys(redisData).length === 0) {
+      return null;
+    }
+
+    // Parse JSON fields that are stored as strings in Redis
+    const signatures = redisData.signatures ? JSON.parse(redisData.signatures as string) : [];
+    const securityChecks = redisData.securityChecks ? JSON.parse(redisData.securityChecks as string) : {
+      ipVerification: false,
+      timeDelayMet: false,
+      signatureThresholdMet: false
+    };
+    
+    const recovery: RecoveryRequest = {
+      id: redisData.id as string,
+      walletAddress: redisData.walletAddress as string,
+      newWalletAddress: redisData.newWalletAddress as string,
+      requestedBy: redisData.requestedBy as string,
+      signatures: signatures,
+      createdAt: redisData.createdAt as string,
+      expiresAt: redisData.expiresAt as string,
+      status: (redisData.status as string) as 'pending' | 'approved' | 'rejected' | 'expired' | 'completed',
+      securityChecks: securityChecks
+    };
+
+    return recovery;
+  } catch (error) {
+    console.error('❌ Failed to parse RecoveryRequest from Redis:', error);
+    return null;
+  }
+}
+
+// Helper function to serialize RecoveryRequest for Redis storage
+function serializeRecoveryRequestForRedis(recovery: RecoveryRequest): Record<string, string> {
+  return {
+    id: recovery.id,
+    walletAddress: recovery.walletAddress,
+    newWalletAddress: recovery.newWalletAddress,
+    requestedBy: recovery.requestedBy,
+    signatures: JSON.stringify(recovery.signatures),
+    createdAt: recovery.createdAt,
+    expiresAt: recovery.expiresAt,
+    status: recovery.status,
+    securityChecks: JSON.stringify(recovery.securityChecks)
+  };
+}
+
 export class GuardianSecuritySystem {
   
   // ==================== SETUP FUNCTIONS ====================
@@ -336,7 +385,8 @@ export class GuardianSecuritySystem {
       const redis = validateRedisForCriticalOps('Recovery signing');
       
       const recoveryKey = `recovery_request:${recoveryId}`;
-      const recovery = await redis.hgetall(recoveryKey) as RecoveryRequest;
+      const redisData = await redis.hgetall(recoveryKey);
+      const recovery = parseRecoveryRequestFromRedis(redisData);
       
       if (!recovery || recovery.status !== 'pending') {
         return { success: false, message: 'Recovery request not found or no longer pending' };
@@ -414,10 +464,10 @@ export class GuardianSecuritySystem {
     try {
       const redis = validateRedisForCriticalOps('Recovery request retrieval');
       const recoveryKey = `recovery_request:${recoveryId}`;
-      const recovery = await redis.hgetall(recoveryKey);
+      const redisData = await redis.hgetall(recoveryKey);
       
-      if (recovery && Object.keys(recovery).length > 0) {
-        return recovery as RecoveryRequest;
+      if (redisData && Object.keys(redisData).length > 0) {
+        return parseRecoveryRequestFromRedis(redisData);
       }
       
       return null;

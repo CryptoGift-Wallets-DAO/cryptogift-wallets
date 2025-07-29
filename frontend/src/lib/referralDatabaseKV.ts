@@ -55,6 +55,68 @@ export interface UserProfile {
   ipHistory: string[];
 }
 
+// Helper function to safely parse ReferralRecord from Redis
+function parseReferralRecordFromRedis(redisData: Record<string, unknown>): ReferralRecord | null {
+  try {
+    if (!redisData || Object.keys(redisData).length === 0) {
+      return null;
+    }
+
+    const record: ReferralRecord = {
+      id: redisData.id as string,
+      referrerAddress: redisData.referrerAddress as string,
+      referredAddress: redisData.referredAddress as string | undefined,
+      referredEmail: redisData.referredEmail as string | undefined,
+      referredIP: redisData.referredIP as string | undefined,
+      referredUserDisplay: redisData.referredUserDisplay as string,
+      registrationDate: redisData.registrationDate as string,
+      status: (redisData.status as string) as 'registered' | 'activated' | 'active',
+      source: redisData.source as string | undefined,
+      lastActivity: redisData.lastActivity as string
+    };
+
+    return record;
+  } catch (error) {
+    console.error('❌ Failed to parse ReferralRecord from Redis:', error);
+    return null;
+  }
+}
+
+// Helper function to safely parse UserProfile from Redis
+function parseUserProfileFromRedis(redisData: Record<string, unknown>): UserProfile | null {
+  try {
+    if (!redisData || Object.keys(redisData).length === 0) {
+      return null;
+    }
+
+    // Parse JSON fields that are stored as strings in Redis
+    const referralStats = redisData.referralStats ? JSON.parse(redisData.referralStats as string) : {
+      totalReferrals: 0,
+      activeReferrals: 0,
+      totalEarnings: 0,
+      pendingRewards: 0,
+      conversionRate: 0
+    };
+    const sessionHistory = redisData.sessionHistory ? JSON.parse(redisData.sessionHistory as string) : [];
+    const ipHistory = redisData.ipHistory ? JSON.parse(redisData.ipHistory as string) : [];
+
+    const profile: UserProfile = {
+      address: redisData.address as string,
+      email: redisData.email as string | undefined,
+      registrationDate: redisData.registrationDate as string,
+      lastActivity: redisData.lastActivity as string,
+      referralStats: referralStats,
+      sessionHistory: sessionHistory,
+      ipHistory: ipHistory
+    };
+
+    return profile;
+  } catch (error) {
+    console.error('❌ Failed to parse UserProfile from Redis:', error);
+    return null;
+  }
+}
+
 // KV Keys Structure:
 // referral:{id} -> ReferralRecord
 // user_referrals:{address} -> Set<referral_id>
@@ -93,8 +155,8 @@ export class VercelKVReferralDatabase {
   
   async getReferral(referralId: string): Promise<ReferralRecord | null> {
     const redis = validateRedisForCriticalOps('Referral data retrieval');
-    const referral = await redis.hgetall(`referral:${referralId}`);
-    return referral ? (referral as ReferralRecord) : null;
+    const redisData = await redis.hgetall(`referral:${referralId}`);
+    return parseReferralRecordFromRedis(redisData);
   }
   
   async getUserReferrals(userAddress: string): Promise<ReferralRecord[]> {
@@ -107,12 +169,12 @@ export class VercelKVReferralDatabase {
     
     const referrals = await Promise.all(
       referralIds.map(async (id) => {
-        const referral = await redis.hgetall(`referral:${id}`);
-        return referral as ReferralRecord;
+        const redisData = await redis.hgetall(`referral:${id}`);
+        return parseReferralRecordFromRedis(redisData);
       })
     );
     
-    return referrals.filter(Boolean);
+    return referrals.filter((referral): referral is ReferralRecord => referral !== null);
   }
   
   // ==================== USER PROFILE MANAGEMENT ====================
@@ -143,8 +205,8 @@ export class VercelKVReferralDatabase {
   
   async getUserProfile(address: string): Promise<UserProfile | null> {
     const redis = validateRedisForCriticalOps('User profile retrieval');
-    const profile = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
-    return profile ? (profile as UserProfile) : null;
+    const redisData = await redis.hgetall(`user_profile:${address.toLowerCase()}`);
+    return parseUserProfileFromRedis(redisData);
   }
   
   // ==================== ENHANCED TRACKING FUNCTIONS ====================
