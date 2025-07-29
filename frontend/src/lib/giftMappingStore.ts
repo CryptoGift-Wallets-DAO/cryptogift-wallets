@@ -54,7 +54,7 @@ export async function getGiftIdFromMapping(tokenId: string | number): Promise<nu
     const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
     const giftIdStr = await redis.get(mappingKey);
     
-    if (giftIdStr) {
+    if (giftIdStr && typeof giftIdStr === 'string') {
       const giftId = parseInt(giftIdStr);
       console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId} (Redis)`);
       return giftId;
@@ -82,7 +82,7 @@ export async function getTokenIdFromMapping(giftId: string | number): Promise<nu
     const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
     const tokenIdStr = await redis.get(reverseMappingKey);
     
-    if (tokenIdStr) {
+    if (tokenIdStr && typeof tokenIdStr === 'string') {
       const tokenId = parseInt(tokenIdStr);
       console.log(`✅ REVERSE MAPPING FOUND: giftId ${giftId} → tokenId ${tokenId}`);
       return tokenId;
