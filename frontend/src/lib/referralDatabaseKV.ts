@@ -62,6 +62,11 @@ function parseReferralRecordFromRedis(redisData: Record<string, unknown>): Refer
       return null;
     }
 
+    // Parse JSON fields that may be stored as strings in Redis
+    const gifts = redisData.gifts ? 
+      (typeof redisData.gifts === 'string' ? 
+        JSON.parse(redisData.gifts) : redisData.gifts) : [];
+
     const record: ReferralRecord = {
       id: redisData.id as string,
       referrerAddress: redisData.referrerAddress as string,
@@ -72,7 +77,13 @@ function parseReferralRecordFromRedis(redisData: Record<string, unknown>): Refer
       registrationDate: redisData.registrationDate as string,
       status: (redisData.status as string) as 'registered' | 'activated' | 'active',
       source: redisData.source as string | undefined,
-      lastActivity: redisData.lastActivity as string
+      lastActivity: redisData.lastActivity as string,
+      gifts: gifts,
+      totalEarnings: parseFloat(redisData.totalEarnings as string) || 0,
+      isIPBased: redisData.isIPBased === 'true',
+      sessionId: redisData.sessionId as string | undefined,
+      userAgent: redisData.userAgent as string | undefined,
+      upgradedFromIP: redisData.upgradedFromIP === 'true'
     };
 
     return record;
