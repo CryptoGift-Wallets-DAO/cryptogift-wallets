@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { checkRateLimit } from '../../lib/rateLimiting';
 import { verifyJWT } from '../../lib/siweAuth';
 import { secureLogger } from '../../lib/secureLogger';
-import { isValidEthereumAddress } from '../../lib/utils';
+import { isValidEthereumAddress } from '../../lib/siweAuth';
 
 interface WalletRecoveryRequest {
   // Define your request interface here

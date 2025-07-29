@@ -52,7 +52,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { checkRateLimit } from '../../lib/rateLimiting';
 import { verifyJWT } from '../../lib/siweAuth';
 import { secureLogger } from '../../lib/secureLogger';
-import { isValidEthereumAddress } from '../../lib/utils';
+import { isValidEthereumAddress } from '../../lib/siweAuth';
 
 interface [FEATURE_NAME_PASCAL]Request {
   // Define your request interface here
