@@ -385,8 +385,8 @@ export class GuardianSecuritySystem {
       const redis = validateRedisForCriticalOps('Recovery signing');
       
       const recoveryKey = `recovery_request:${recoveryId}`;
-      const redisData = await redis.hgetall(recoveryKey);
-      const recovery = parseRecoveryRequestFromRedis(redisData);
+      const recoveryRedisData = await redis.hgetall(recoveryKey);
+      const recovery = parseRecoveryRequestFromRedis(recoveryRedisData);
       
       if (!recovery || recovery.status !== 'pending') {
         return { success: false, message: 'Recovery request not found or no longer pending' };
@@ -400,8 +400,8 @@ export class GuardianSecuritySystem {
       
       // Verify guardian is authorized for this wallet
       const setupKey = `guardian_setup:${recovery.walletAddress}`;
-      const redisData = await redis.hgetall(setupKey);
-      const setup = parseGuardianSetupFromRedis(redisData);
+      const setupRedisData = await redis.hgetall(setupKey);
+      const setup = parseGuardianSetupFromRedis(setupRedisData);
       
       const guardian = setup?.guardians?.find(g => g.address.toLowerCase() === guardianAddress.toLowerCase());
       if (!guardian || guardian.status !== 'verified') {
