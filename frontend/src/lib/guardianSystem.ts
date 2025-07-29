@@ -108,7 +108,7 @@ export class GuardianSecuritySystem {
       const redis = validateRedisForCriticalOps('Guardian system setup');
       
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
-      await redis.hset(setupKey, setup);
+      await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
       
       // Store individual guardian verifications
       for (const guardian of processedGuardians) {
@@ -182,7 +182,7 @@ export class GuardianSecuritySystem {
             console.log('🎉 All guardians verified - Guardian system is now ACTIVE');
           }
           
-          await redis.hset(setupKey, setup);
+          await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
         }
       }
       
@@ -260,7 +260,7 @@ export class GuardianSecuritySystem {
       };
       
       const recoveryKey = `recovery_request:${recoveryId}`;
-      await redis.hset(recoveryKey, recoveryRequest);
+      await redis.hset(recoveryKey, recoveryRequest as unknown as Record<string, unknown>);
       
       // Set expiration
       await redis.expire(recoveryKey, setup.recoveryThreshold * 60 * 60);
@@ -332,7 +332,7 @@ export class GuardianSecuritySystem {
         console.log(`🎉 Recovery approved! ${signatureCount}/${setup.requiredSignatures} signatures collected`);
       }
       
-      await redis.hset(recoveryKey, recovery);
+      await redis.hset(recoveryKey, recovery as unknown as Record<string, unknown>);
       
       return {
         success: true,
@@ -410,7 +410,7 @@ export class GuardianSecuritySystem {
       if (setup) {
         setup.status = 'suspended';
         setup.lastModified = new Date().toISOString();
-        await redis.hset(setupKey, setup);
+        await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
         
         console.log(`🚫 Guardian system suspended for wallet ${walletAddress.slice(0, 10)}... Reason: ${reason}`);
         return true;
@@ -445,7 +445,7 @@ export class GuardianSecuritySystem {
       if (setup) {
         setup.status = 'suspended';
         setup.lastModified = new Date().toISOString();
-        await redis.hset(setupKey, setup);
+        await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
         
         // Log emergency action
         const emergencyLogKey = `emergency_log:${Date.now()}`;
