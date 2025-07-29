@@ -107,7 +107,7 @@ export function getRedisConnection(): Redis {
  * Check if Redis is properly configured (non-throwing)
  */
 export function isRedisConfigured(): boolean {
-  return (
+  return !!(
     (REQUIRED_REDIS_VARS.KV_REST_API_URL && REQUIRED_REDIS_VARS.KV_REST_API_TOKEN) ||
     (REQUIRED_REDIS_VARS.UPSTASH_REDIS_REST_URL && REQUIRED_REDIS_VARS.UPSTASH_REDIS_REST_TOKEN)
   );
