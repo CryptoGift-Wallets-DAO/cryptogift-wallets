@@ -4,8 +4,19 @@
 # 🚪 EMERGENCY BYPASS: Use --no-verify to skip in emergencies
 # Example: git commit -m "hotfix" --no-verify
 if [ "$HUSKY_SKIP_HOOKS" = "1" ]; then
-  echo "⚠️  SECURITY HOOKS BYPASSED - USE ONLY FOR EMERGENCIES"
-  echo "📋 Remember to run manual checks after emergency commit"
+  # Log bypass usage for security auditing
+  TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  USER=$(git config user.name || echo "unknown")
+  COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1 || echo "unknown")
+  BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+  COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "pending")
+  
+  echo "[$TIMESTAMP] [$USER] [BYPASS] \"$COMMIT_MSG\" $COMMIT_HASH $BRANCH" >> .security-audit.log
+  
+  echo "⚠️  SECURITY HOOKS BYPASSED - LOGGED FOR AUDIT"
+  echo "📋 Bypass recorded in .security-audit.log"
+  echo "🔍 User: $USER | Time: $TIMESTAMP"
+  echo "📝 Remember to run manual checks after emergency commit"
   exit 0
 fi
 

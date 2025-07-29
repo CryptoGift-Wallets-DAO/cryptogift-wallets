@@ -1,0 +1,11 @@
+# Template Security Review Requirements
+# All changes to secure feature templates require security team review
+
+# Secure feature templates
+/templates/secure-features/ @security-team @senior-developers
+
+# Template generator script
+/templates/secure-features/create-secure-feature.sh @security-team @senior-developers
+
+# Template changelog and versioning
+/templates/secure-features/TEMPLATE_CHANGELOG.md @security-team

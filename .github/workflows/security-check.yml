@@ -137,34 +137,79 @@ jobs:
         echo ""
         echo "🛡️ Code is ready for deployment!"
 
-  security-summary:
-    name: 📋 Security Summary
+  security-metrics:
+    name: 📊 Security Metrics & Dashboard
     runs-on: ubuntu-latest
     needs: security-quality-check
     if: always()
     
     steps:
-    - name: 📊 Generate Security Report
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: 📊 Generate Security Metrics
       run: |
-        echo "## 🛡️ Security & Quality Report" >> $GITHUB_STEP_SUMMARY
+        cd frontend
+        
+        # Get test results and coverage
+        COVERAGE=$(npm run test:coverage 2>/dev/null | grep -oP 'All files.*?(\d+\.?\d*)%' | tail -1 | grep -oP '\d+\.?\d*' || echo "0")
+        TEST_RESULTS=$(npm test 2>&1 | grep -oP '\d+ passed' || echo "0 passed")
+        
+        # Check for security patterns
+        UNPROTECTED_ENDPOINTS=$(find src/pages/api -name "*.ts" -type f 2>/dev/null | wc -l || echo "0")
+        PROTECTED_ENDPOINTS=$(find src/pages/api -name "*.ts" -type f -exec grep -l "checkRateLimit\|verifyJWT\|ADMIN_API_TOKEN" {} \; 2>/dev/null | wc -l || echo "0")
+        
+        # Analyze bypass usage
+        BYPASS_COUNT=$(grep -c "\[BYPASS\]" ../.security-audit.log 2>/dev/null || echo "0")
+        LAST_WEEK_BYPASSES=$(grep "\[BYPASS\]" ../.security-audit.log 2>/dev/null | tail -7 | wc -l || echo "0")
+        
+        # Current enforcement level
+        ENFORCEMENT_LEVEL=$(node -p "JSON.parse(require('fs').readFileSync('../.security-config.json', 'utf8')).enforcement.level" 2>/dev/null || echo "warning")
+        
+        echo "## 🛡️ Security & Quality Dashboard" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ✅ Automated Checks Completed:" >> $GITHUB_STEP_SUMMARY
-        echo "- TypeScript compilation validation" >> $GITHUB_STEP_SUMMARY
-        echo "- ESLint security rules enforcement" >> $GITHUB_STEP_SUMMARY
-        echo "- Test coverage minimum 70% threshold" >> $GITHUB_STEP_SUMMARY
-        echo "- API endpoint security pattern validation" >> $GITHUB_STEP_SUMMARY
-        echo "- Sensitive data leak prevention" >> $GITHUB_STEP_SUMMARY
-        echo "- Production build verification" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        echo "| 📊 Test Coverage | ${COVERAGE}% | $([ $(echo "$COVERAGE > 70" | bc -l 2>/dev/null || echo 0) -eq 1 ] && echo "✅ Excellent" || echo "⚠️ Needs Improvement") |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🧪 Test Results | $TEST_RESULTS | $(echo "$TEST_RESULTS" | grep -q "0 passed" && echo "❌ Failed" || echo "✅ Passing") |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🔒 Protected Endpoints | $PROTECTED_ENDPOINTS/$UNPROTECTED_ENDPOINTS | $([ $PROTECTED_ENDPOINTS -eq $UNPROTECTED_ENDPOINTS ] && echo "✅ All Secure" || echo "⚠️ Some Unprotected") |" >> $GITHUB_STEP_SUMMARY
+        echo "| 🚪 Total Bypasses | $BYPASS_COUNT | $([ $BYPASS_COUNT -lt 5 ] && echo "✅ Low Usage" || echo "⚠️ High Usage") |" >> $GITHUB_STEP_SUMMARY
+        echo "| 📅 Week Bypasses | $LAST_WEEK_BYPASSES | $([ $LAST_WEEK_BYPASSES -lt 2 ] && echo "✅ Acceptable" || echo "⚠️ Review Needed") |" >> $GITHUB_STEP_SUMMARY
+        echo "| ⚙️ Enforcement Level | $ENFORCEMENT_LEVEL | $([ "$ENFORCEMENT_LEVEL" = "error" ] && echo "🔒 Strict" || echo "⚠️ Learning") |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🎯 Security Standards Enforced:" >> $GITHUB_STEP_SUMMARY 
-        echo "- Rate limiting on API endpoints" >> $GITHUB_STEP_SUMMARY
-        echo "- Authentication where required" >> $GITHUB_STEP_SUMMARY
-        echo "- Secure logging patterns" >> $GITHUB_STEP_SUMMARY
-        echo "- Input validation" >> $GITHUB_STEP_SUMMARY
-        echo "- Error handling" >> $GITHUB_STEP_SUMMARY
+        
+        # Compliance score calculation
+        COMPLIANCE_SCORE=$((100 - LAST_WEEK_BYPASSES * 20))
+        COMPLIANCE_SCORE=$([ $COMPLIANCE_SCORE -lt 0 ] && echo "0" || echo "$COMPLIANCE_SCORE")
+        
+        echo "### 📈 Overall Compliance Score: ${COMPLIANCE_SCORE}%" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        if [ "${{ needs.security-quality-check.result }}" == "success" ]; then
-          echo "🚀 **STATUS: READY FOR DEPLOYMENT**" >> $GITHUB_STEP_SUMMARY
+        
+        if [ $COMPLIANCE_SCORE -gt 90 ]; then
+          echo "🎉 **EXCELLENT SECURITY COMPLIANCE** - Team following best practices!" >> $GITHUB_STEP_SUMMARY
+        elif [ $COMPLIANCE_SCORE -gt 70 ]; then
+          echo "✅ **GOOD SECURITY COMPLIANCE** - Minor improvements recommended" >> $GITHUB_STEP_SUMMARY
         else
-          echo "🚨 **STATUS: SECURITY ISSUES DETECTED - DEPLOYMENT BLOCKED**" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **SECURITY COMPLIANCE NEEDS ATTENTION** - Review patterns and reduce bypasses" >> $GITHUB_STEP_SUMMARY
         fi
+        
+    - name: 🔄 Auto-Escalate Security Enforcement
+      run: |
+        node scripts/auto-escalate-security.js
+        
+    - name: 📋 Final Status
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎯 Deployment Status" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.security-quality-check.result }}" == "success" ]; then
+          echo "🚀 **READY FOR DEPLOYMENT** - All security checks passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "🚨 **DEPLOYMENT BLOCKED** - Security issues must be resolved" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "_Security dashboard updated: $(date -u)_" >> $GITHUB_STEP_SUMMARY
