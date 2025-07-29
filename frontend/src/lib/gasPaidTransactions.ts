@@ -424,9 +424,12 @@ export async function estimateGasPaidTransaction(
     const deployerAccount = getDeployerAccount();
     
     // This would need to be implemented based on ThirdWeb's gas estimation
-    // For now, return reasonable defaults
-    const gasLimit = BigInt(500000); // 500k gas limit
-    const gasPrice = BigInt(20000000000); // 20 gwei
+    // For now, return reasonable defaults with environment variable support
+    const defaultGasLimit = process.env.NEXT_PUBLIC_DEFAULT_GAS_LIMIT || "500000";
+    const defaultGasPrice = process.env.NEXT_PUBLIC_DEFAULT_GAS_PRICE || "20000000000"; // 20 gwei
+    
+    const gasLimit = BigInt(defaultGasLimit);
+    const gasPrice = BigInt(defaultGasPrice);
     const estimatedCost = gasLimit * gasPrice;
     
     console.log('⛽ Gas estimation:', {
@@ -443,10 +446,14 @@ export async function estimateGasPaidTransaction(
     
   } catch (error) {
     console.error('❌ Gas estimation failed:', error);
+    const fallbackGasLimit = process.env.NEXT_PUBLIC_DEFAULT_GAS_LIMIT || "500000";
+    const fallbackGasPrice = process.env.NEXT_PUBLIC_DEFAULT_GAS_PRICE || "20000000000";
+    const fallbackEstimatedCost = process.env.NEXT_PUBLIC_FALLBACK_ESTIMATED_COST || "10000000000000000"; // 0.01 ETH
+    
     return {
-      gasLimit: BigInt(500000),
-      gasPrice: BigInt(20000000000),
-      estimatedCost: BigInt(10000000000000000), // 0.01 ETH fallback
+      gasLimit: BigInt(fallbackGasLimit),
+      gasPrice: BigInt(fallbackGasPrice),
+      estimatedCost: BigInt(fallbackEstimatedCost),
       error: (error as Error).message
     };
   }

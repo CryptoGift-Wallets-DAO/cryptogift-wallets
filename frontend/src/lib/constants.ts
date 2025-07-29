@@ -24,8 +24,13 @@ export const NFT_DROP_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS |
 export const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || '0x000000006551c19487814612e58FE06813775758';
 export const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || '0x2d25602551487c3f3354dd80d76d54383a243358';
 
-// Chain Configuration - With fallback
-export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
+// Chain Configuration - With fallback and validation
+const chainIdStr = process.env.NEXT_PUBLIC_CHAIN_ID || '84532';
+const parsedChainId = parseInt(chainIdStr);
+if (isNaN(parsedChainId)) {
+  throw new Error(`Invalid CHAIN_ID configuration: "${chainIdStr}"`);
+}
+export const CHAIN_ID = parsedChainId;
 
 // OPTIONAL Environment Variables - With reasonable fallbacks
 export const CHAIN_NAME = getOptionalEnvVar('NEXT_PUBLIC_CHAIN_NAME', 'base-sepolia');

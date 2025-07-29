@@ -56,6 +56,10 @@ export async function getGiftIdFromMapping(tokenId: string | number): Promise<nu
     
     if (giftIdStr && typeof giftIdStr === 'string') {
       const giftId = parseInt(giftIdStr);
+      if (isNaN(giftId)) {
+        console.error(`❌ INVALID GIFT ID: tokenId ${tokenId} has invalid giftId "${giftIdStr}"`);
+        return null;
+      }
       console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId} (Redis)`);
       return giftId;
     }
@@ -84,6 +88,10 @@ export async function getTokenIdFromMapping(giftId: string | number): Promise<nu
     
     if (tokenIdStr && typeof tokenIdStr === 'string') {
       const tokenId = parseInt(tokenIdStr);
+      if (isNaN(tokenId)) {
+        console.error(`❌ INVALID TOKEN ID: giftId ${giftId} has invalid tokenId "${tokenIdStr}"`);
+        return null;
+      }
       console.log(`✅ REVERSE MAPPING FOUND: giftId ${giftId} → tokenId ${tokenId}`);
       return tokenId;
     }

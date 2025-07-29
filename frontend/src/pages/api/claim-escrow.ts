@@ -538,7 +538,14 @@ export default async function handler(
       recipientAddress: finalRecipient,
       giftInfo: {
         creator: gift.creator,
-        expirationTime: Number(gift.expirationTime)
+        expirationTime: (() => {
+          const expTime = Number(gift.expirationTime);
+          if (isNaN(expTime)) {
+            console.error(`❌ Invalid expirationTime: ${gift.expirationTime}`);
+            return 0;
+          }
+          return expTime;
+        })()
       },
       nonce: result.nonce,
       rateLimit: {

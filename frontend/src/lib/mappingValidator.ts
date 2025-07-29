@@ -201,8 +201,8 @@ async function performValidation(
       valid: false,
       error: `Validation failed: ${(error as Error).message}`,
       storedMapping: {
-        tokenId: Number(tokenId),
-        giftId: Number(giftId)
+        tokenId: tokenIdNum,
+        giftId: giftIdNum
       }
     };
   }

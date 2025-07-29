@@ -73,7 +73,15 @@ async function calculateTBAAddress(tokenId: string, nftContract: string): Promis
     // CRITICAL FIX: Use environment variables instead of hard-coded addresses  
     const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
     const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
-    const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
+    const chainIdStr = process.env.NEXT_PUBLIC_CHAIN_ID || "84532";
+    const CHAIN_ID = parseInt(chainIdStr);
+    if (isNaN(CHAIN_ID)) {
+      console.error(`❌ INVALID CHAIN_ID: "${chainIdStr}"`);
+      return res.status(500).json({ 
+        success: false, 
+        error: "Invalid chain configuration" 
+      });
+    }
     
     // Security: Input validation and sanitization
     if (!ethers.isAddress(nftContract)) {
