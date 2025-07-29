@@ -306,6 +306,8 @@ export async function getAllStoredMetadata(contractAddress: string): Promise<NFT
   try {
     console.log(`🔍 Searching for all metadata for contract: ${contractAddress}`);
     
+    const redis = validateRedisForCriticalOps('NFT metadata bulk retrieval');
+    
     // Since Redis doesn't have built-in pattern search in Upstash,
     // we'll use a different approach: maintain a set of all NFT keys
     const contractKey = `contract_nfts:${contractAddress.toLowerCase()}`;
@@ -366,6 +368,8 @@ export async function getAllStoredMetadata(contractAddress: string): Promise<NFT
  */
 export async function deleteNFTMetadata(contractAddress: string, tokenId: string): Promise<boolean> {
   try {
+    const redis = validateRedisForCriticalOps('NFT metadata deletion');
+    
     const key = getMetadataKey(contractAddress, tokenId);
     const walletKey = getWalletNFTsKey(contractAddress); // Wallet tracking key
     const contractKey = `contract_nfts:${contractAddress.toLowerCase()}`;
