@@ -36,11 +36,11 @@ export async function createBiconomySmartAccount(privateKey: string) {
       ? privateKey as `0x${string}`
       : `0x${privateKey}` as `0x${string}`;
     
-    console.log('🔍 Private key format check:', {
-      hasPrefix: privateKey.startsWith('0x'),
-      length: privateKey.length,
-      isValid: privateKey.length === 64 || privateKey.length === 66
-    });
+    // SECURITY: Validate private key format without exposing sensitive data
+    const isValidFormat = privateKey && (privateKey.length === 64 || privateKey.length === 66);
+    if (!isValidFormat) {
+      throw new Error('Invalid private key format');
+    }
     
     // Create EOA from private key
     const account = privateKeyToAccount(formattedPrivateKey);
@@ -201,12 +201,13 @@ export function validateBiconomyConfig() {
   const bundlerUrl = process.env.BICONOMY_BUNDLER_URL;
   const paymasterUrl = process.env.BICONOMY_PAYMASTER_URL;
   
+  // SECURITY: Log configuration status without exposing sensitive data
   console.log('🔍 BICONOMY CONFIG VALIDATION:', {
-    meeApiKey: meeApiKey ? `${meeApiKey.substring(0, 8)}...` : 'MISSING',
-    projectId: projectId ? `${projectId.substring(0, 8)}...` : 'MISSING',
-    paymasterKey: paymasterKey ? `${paymasterKey.substring(0, 8)}...` : 'MISSING',
-    bundlerUrl: bundlerUrl ? 'SET' : 'MISSING',
-    paymasterUrl: paymasterUrl ? 'SET' : 'MISSING'
+    meeApiKey: meeApiKey ? 'CONFIGURED' : 'MISSING',
+    projectId: projectId ? 'CONFIGURED' : 'MISSING',
+    paymasterKey: paymasterKey ? 'CONFIGURED' : 'MISSING',
+    bundlerUrl: bundlerUrl ? 'CONFIGURED' : 'MISSING',
+    paymasterUrl: paymasterUrl ? 'CONFIGURED' : 'MISSING'
   });
   
   // PRIORITY 1: MEE Configuration (SPONSORED TRANSACTIONS)

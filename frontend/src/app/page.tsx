@@ -47,7 +47,7 @@ export default function Home() {
   }, [searchParams]);
 
   // Enhanced function to track referral clicks with wallet data  
-  const trackReferralClick = async (referrerAddress: string) => {
+  const trackReferralClick = useCallback(async (referrerAddress: string) => {
     try {
       console.log('🔗 Tracking referral click for:', referrerAddress);
       
@@ -74,7 +74,7 @@ export default function Home() {
       console.error('❌ Error tracking referral click:', error);
       // Don't throw error to avoid disrupting user experience
     }
-  };
+  }, [account?.address]); // Dependencies: account address
 
   // Auto-upgrade IP-based account when user connects wallet
   useEffect(() => {

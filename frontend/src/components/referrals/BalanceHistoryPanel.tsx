@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface BalanceTransaction {
   id: string;
@@ -28,13 +28,7 @@ export const BalanceHistoryPanel: React.FC<BalanceHistoryPanelProps> = ({
   const [filter, setFilter] = useState<'all' | 'earning' | 'withdrawal'>('all');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
-  useEffect(() => {
-    if (isOpen && userAddress) {
-      loadTransactionHistory();
-    }
-  }, [isOpen, userAddress, dateRange]);
-
-  const loadTransactionHistory = async () => {
+  const loadTransactionHistory = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/referrals/balance-history', {
@@ -56,7 +50,13 @@ export const BalanceHistoryPanel: React.FC<BalanceHistoryPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userAddress, dateRange]); // Dependencies: userAddress and dateRange
+
+  useEffect(() => {
+    if (isOpen && userAddress) {
+      loadTransactionHistory();
+    }
+  }, [isOpen, loadTransactionHistory]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

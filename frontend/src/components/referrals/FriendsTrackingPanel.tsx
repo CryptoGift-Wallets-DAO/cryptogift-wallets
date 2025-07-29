@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface ReferredFriend {
   id: string;
@@ -36,24 +36,7 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
   const [filter, setFilter] = useState<'all' | 'registered' | 'activated' | 'active'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'earnings' | 'activity'>('date');
 
-  useEffect(() => {
-    if (isOpen && userAddress) {
-      loadFriendsData();
-    }
-  }, [isOpen, userAddress, filter, sortBy]);
-
-  // Real-time updates every 30 seconds
-  useEffect(() => {
-    if (isOpen) {
-      const interval = setInterval(() => {
-        loadFriendsData();
-      }, 30000); // Update every 30 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [isOpen]);
-
-  const loadFriendsData = async () => {
+  const loadFriendsData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/referrals/friends-tracking', {
@@ -75,7 +58,24 @@ export const FriendsTrackingPanel: React.FC<FriendsTrackingPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userAddress, filter, sortBy]); // Dependencies: userAddress, filter, sortBy
+
+  useEffect(() => {
+    if (isOpen && userAddress) {
+      loadFriendsData();
+    }
+  }, [isOpen, loadFriendsData]);
+
+  // Real-time updates every 30 seconds
+  useEffect(() => {
+    if (isOpen && loadFriendsData) {
+      const interval = setInterval(() => {
+        loadFriendsData();
+      }, 30000); // Update every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, loadFriendsData]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

@@ -4,6 +4,44 @@
 
 import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
 
+// Helper function to serialize ReferralRecord for Redis storage
+function serializeReferralRecordForRedis(referral: ReferralRecord): Record<string, string> {
+  const serialized: Record<string, string> = {};
+  
+  Object.entries(referral).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      if (typeof value === 'object') {
+        // Convert arrays and objects to JSON strings
+        serialized[key] = JSON.stringify(value);
+      } else {
+        // Convert all other types to strings
+        serialized[key] = String(value);
+      }
+    }
+  });
+  
+  return serialized;
+}
+
+// Helper function to serialize UserProfile for Redis storage
+function serializeUserProfileForRedis(profile: UserProfile): Record<string, string> {
+  const serialized: Record<string, string> = {};
+  
+  Object.entries(profile).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      if (typeof value === 'object') {
+        // Convert arrays and objects to JSON strings
+        serialized[key] = JSON.stringify(value);
+      } else {
+        // Convert all other types to strings
+        serialized[key] = String(value);
+      }
+    }
+  });
+  
+  return serialized;
+}
+
 export interface ReferralRecord {
   id: string;
   referrerAddress: string;
@@ -146,7 +184,8 @@ export class VercelKVReferralDatabase {
     const redis = validateRedisForCriticalOps('Referral data persistence');
     
     // Save the referral record
-    await redis.hset(`referral:${referral.id}`, referral);
+    const serializedReferral = serializeReferralRecordForRedis(referral);
+    await redis.hset(`referral:${referral.id}`, serializedReferral);
     
     // Add to user's referral set
     await redis.sadd(`user_referrals:${referral.referrerAddress.toLowerCase()}`, referral.id);
@@ -210,7 +249,8 @@ export class VercelKVReferralDatabase {
       ...data
     };
     
-    await redis.hset(`user_profile:${address.toLowerCase()}`, profile);
+    const serializedProfile = serializeUserProfileForRedis(profile);
+    await redis.hset(`user_profile:${address.toLowerCase()}`, serializedProfile);
     return profile;
   }
   

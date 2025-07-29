@@ -186,14 +186,13 @@ async function validateClaimRequest(
     const chainId = 84532; // Base Sepolia
     const providedPasswordHash = generatePasswordHash(password, salt, giftId, contractAddress, chainId);
     
+    // SECURITY: Log validation status without exposing hash data
     console.log('🔐 PASSWORD VALIDATION:', {
       tokenId,
       giftId,
       contractAddress: contractAddress.slice(0, 10) + '...',
       chainId,
-      providedHash: providedPasswordHash.slice(0, 10) + '...',
-      contractHash: gift.passwordHash.slice(0, 10) + '...',
-      matches: providedPasswordHash.toLowerCase() === gift.passwordHash.toLowerCase()
+      hashValidation: providedPasswordHash.toLowerCase() === gift.passwordHash.toLowerCase() ? 'VALID' : 'INVALID'
     });
     
     if (providedPasswordHash.toLowerCase() !== gift.passwordHash.toLowerCase()) {

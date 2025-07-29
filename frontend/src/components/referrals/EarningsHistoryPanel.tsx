@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface EarningRecord {
   id: string;
@@ -30,13 +30,7 @@ export const EarningsHistoryPanel: React.FC<EarningsHistoryPanelProps> = ({
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
 
-  useEffect(() => {
-    if (isOpen && userAddress) {
-      loadEarningsHistory();
-    }
-  }, [isOpen, userAddress, dateRange, sortBy]);
-
-  const loadEarningsHistory = async () => {
+  const loadEarningsHistory = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/referrals/earnings-history', {
@@ -58,7 +52,13 @@ export const EarningsHistoryPanel: React.FC<EarningsHistoryPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userAddress, dateRange, sortBy]); // Dependencies: userAddress, dateRange, sortBy
+
+  useEffect(() => {
+    if (isOpen && userAddress) {
+      loadEarningsHistory();
+    }
+  }, [isOpen, loadEarningsHistory]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

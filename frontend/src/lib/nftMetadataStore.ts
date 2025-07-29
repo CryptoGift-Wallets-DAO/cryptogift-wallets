@@ -166,7 +166,21 @@ export async function updateNFTMetadata(
     
     const redis = validateRedisForCriticalOps('NFT metadata update');
     const key = getMetadataKey(contractAddress, tokenId);
-    await redis.hset(key, updated);
+    
+    // Convert updated object to Redis-compatible format
+    const updatedData: Record<string, string> = {};
+    Object.entries(updated).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) {
+        // Convert arrays and objects to JSON strings for Redis storage
+        if (typeof v === 'object' && v !== null) {
+          updatedData[k] = JSON.stringify(v);
+        } else {
+          updatedData[k] = String(v); // Redis expects string values
+        }
+      }
+    });
+    
+    await redis.hset(key, updatedData);
     console.log(`✅ Updated metadata for ${contractAddress}:${tokenId}`);
   } catch (error) {
     console.error('❌ Error updating NFT metadata:', error);

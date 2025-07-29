@@ -120,10 +120,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ? rawPrivateKey as `0x${string}`
         : `0x${rawPrivateKey}` as `0x${string}`;
       
-      console.log('🔍 Private key format check:', {
-        hasPrefix: rawPrivateKey.startsWith('0x'),
-        length: rawPrivateKey.length
-      });
+      // SECURITY: Validate private key format without exposing sensitive data
+      const isValidFormat = rawPrivateKey && (rawPrivateKey.length === 64 || rawPrivateKey.length === 66);
+      if (!isValidFormat) {
+        throw new Error('Invalid private key format in environment variable');
+      }
       
       const deployerAccount = privateKeyToAccount({
         client,

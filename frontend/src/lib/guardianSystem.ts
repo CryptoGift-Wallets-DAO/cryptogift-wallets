@@ -353,7 +353,7 @@ export class GuardianSecuritySystem {
       };
       
       const recoveryKey = `recovery_request:${recoveryId}`;
-      await redis.hset(recoveryKey, recoveryRequest as unknown as Record<string, unknown>);
+      await redis.hset(recoveryKey, serializeRecoveryRequestForRedis(recoveryRequest));
       
       // Set expiration
       await redis.expire(recoveryKey, setup.recoveryThreshold * 60 * 60);
@@ -427,7 +427,7 @@ export class GuardianSecuritySystem {
         console.log(`🎉 Recovery approved! ${signatureCount}/${setup.requiredSignatures} signatures collected`);
       }
       
-      await redis.hset(recoveryKey, recovery as unknown as Record<string, unknown>);
+      await redis.hset(recoveryKey, serializeRecoveryRequestForRedis(recovery));
       
       return {
         success: true,

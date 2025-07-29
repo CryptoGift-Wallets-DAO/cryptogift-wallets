@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface PendingReward {
   id: string;
@@ -31,13 +31,7 @@ export const PendingRewardsPanel: React.FC<PendingRewardsPanelProps> = ({
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'this_week' | 'this_month'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
 
-  useEffect(() => {
-    if (isOpen && userAddress) {
-      loadPendingRewards();
-    }
-  }, [isOpen, userAddress, dateFilter, sortBy]);
-
-  const loadPendingRewards = async () => {
+  const loadPendingRewards = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/referrals/pending-rewards', {
@@ -59,7 +53,13 @@ export const PendingRewardsPanel: React.FC<PendingRewardsPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userAddress, dateFilter, sortBy]); // Dependencies: userAddress, dateFilter, sortBy
+
+  useEffect(() => {
+    if (isOpen && userAddress) {
+      loadPendingRewards();
+    }
+  }, [isOpen, loadPendingRewards]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
