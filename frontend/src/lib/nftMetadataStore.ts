@@ -6,6 +6,43 @@
 import { NFTMetadata } from './clientMetadataStore';
 import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
 
+// Helper function to safely parse NFTMetadata from Redis
+function parseNFTMetadataFromRedis(redisData: Record<string, unknown>): NFTMetadata | null {
+  try {
+    if (!redisData || Object.keys(redisData).length === 0) {
+      return null;
+    }
+
+    // Parse JSON fields that are stored as strings in Redis
+    const attributes = redisData.attributes ? 
+      (typeof redisData.attributes === 'string' ? 
+        JSON.parse(redisData.attributes) : redisData.attributes) : [];
+
+    const metadata: NFTMetadata = {
+      contractAddress: redisData.contractAddress as string,
+      tokenId: redisData.tokenId as string,
+      name: redisData.name as string,
+      description: redisData.description as string,
+      image: redisData.image as string,
+      imageIpfsCid: redisData.imageIpfsCid as string | undefined,
+      metadataIpfsCid: redisData.metadataIpfsCid as string | undefined,
+      attributes: attributes,
+      createdAt: redisData.createdAt as string,
+      mintTransactionHash: redisData.mintTransactionHash as string | undefined,
+      owner: redisData.owner as string | undefined,
+      uniqueCreationId: redisData.uniqueCreationId as string | undefined,
+      creatorWallet: redisData.creatorWallet as string | undefined,
+      crossWalletAccess: redisData.crossWalletAccess === 'true',
+      sourceWallet: redisData.sourceWallet as string | undefined
+    };
+
+    return metadata;
+  } catch (error) {
+    console.error('❌ Failed to parse NFTMetadata from Redis:', error);
+    return null;
+  }
+}
+
 // Redis storage functions with cache-busting
 function getMetadataKey(contractAddress: string, tokenId: string): string {
   return `nft_metadata:${contractAddress.toLowerCase()}:${tokenId}`;
@@ -93,20 +130,8 @@ export async function getNFTMetadata(contractAddress: string, tokenId: string): 
       console.log(`✅ Found stored metadata for ${contractAddress}:${tokenId}`);
       console.log(`🆔 Unique ID: ${metadata.uniqueCreationId || 'legacy'}`);
       
-      // CRITICAL FIX: Parse JSON strings back to objects for arrays/objects
-      const parsedMetadata: NFTMetadata = { ...metadata };
-      
-      // Parse attributes array if it exists
-      if (parsedMetadata.attributes && typeof parsedMetadata.attributes === 'string') {
-        try {
-          parsedMetadata.attributes = JSON.parse(parsedMetadata.attributes);
-        } catch (e) {
-          console.warn('⚠️ Failed to parse attributes:', e);
-          parsedMetadata.attributes = [];
-        }
-      }
-      
-      return parsedMetadata as NFTMetadata;
+      // Use safe parsing function instead of direct type casting
+      return parseNFTMetadataFromRedis(metadata);
     } else {
       console.log(`❌ No metadata found in Redis for ${contractAddress}:${tokenId}`);
       return null;
