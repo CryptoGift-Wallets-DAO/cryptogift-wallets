@@ -75,8 +75,8 @@ export default async function handler(
       });
     }
 
-    // Rate limiting check per address
-    const rateLimit = checkRateLimit(address);
+    // Rate limiting check per address (Redis persistent)
+    const rateLimit = await checkRateLimit(address);
     if (!rateLimit.allowed) {
       return res.status(429).json({
         success: false,

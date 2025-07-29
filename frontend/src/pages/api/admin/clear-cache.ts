@@ -36,21 +36,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Admin Authentication - Check for admin token
+  // Admin Authentication - MANDATORY for all admin endpoints
   const adminToken = process.env.ADMIN_API_TOKEN;
   const providedToken = req.headers['x-admin-token'] || req.body.adminToken;
   
-  if (adminToken && providedToken !== adminToken) {
-    return res.status(401).json({ 
-      error: 'Unauthorized',
-      message: 'Valid admin token required. Set ADMIN_API_TOKEN environment variable and provide it via X-Admin-Token header or adminToken body field.'
+  // CRITICAL SECURITY: ADMIN_API_TOKEN must be configured
+  if (!adminToken) {
+    console.error('🚨 SECURITY: ADMIN_API_TOKEN not configured - blocking admin endpoint access');
+    return res.status(500).json({ 
+      error: 'Server configuration error',
+      message: 'Admin token required. Contact administrator.'
     });
   }
-
-  // Development fallback - if no admin token configured, allow with warning
-  if (!adminToken) {
-    console.log('⚠️ WARNING: Admin endpoint accessed without ADMIN_API_TOKEN configured. Set this in production!');
+  
+  // CRITICAL SECURITY: Token must match exactly
+  if (providedToken !== adminToken) {
+    console.error('🚨 SECURITY: Invalid admin token provided');
+    return res.status(401).json({ 
+      error: 'Unauthorized',
+      message: 'Valid admin token required. Provide via X-Admin-Token header or adminToken body field.'
+    });
   }
+  
+  console.log('✅ SECURITY: Admin token validated successfully');
 
   try {
     const { action, confirm } = req.body;
