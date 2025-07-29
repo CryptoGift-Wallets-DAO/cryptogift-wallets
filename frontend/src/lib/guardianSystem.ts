@@ -447,13 +447,9 @@ export class GuardianSecuritySystem {
     try {
       const redis = validateRedisForCriticalOps('Guardian setup retrieval');
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
-      const setup = await redis.hgetall(setupKey);
+      const redisData = await redis.hgetall(setupKey);
       
-      if (setup && Object.keys(setup).length > 0) {
-        return setup as GuardianSetup;
-      }
-      
-      return null;
+      return parseGuardianSetupFromRedis(redisData);
     } catch (error) {
       console.error('❌ Error getting guardian setup:', error);
       return null;
