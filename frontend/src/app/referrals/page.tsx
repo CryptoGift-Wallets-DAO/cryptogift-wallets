@@ -83,7 +83,7 @@ export default function ReferralsPage() {
     } finally {
       if (showLoadingState) setIsLoading(false);
     }
-  }, [mounted, account]);
+  }, [mounted, account, isConnected]);
 
   const generateReferralUrl = useCallback(() => {
     if (!mounted || !account) return;

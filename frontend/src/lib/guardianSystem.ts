@@ -52,6 +52,48 @@ export interface RecoveryRequest {
   };
 }
 
+// Helper function to safely parse Guardian setup from Redis
+function parseGuardianSetupFromRedis(redisData: Record<string, unknown>): GuardianSetup | null {
+  try {
+    if (!redisData || Object.keys(redisData).length === 0) {
+      return null;
+    }
+
+    // Parse JSON fields that are stored as strings in Redis
+    const guardians = redisData.guardians ? JSON.parse(redisData.guardians as string) : [];
+    
+    const setup: GuardianSetup = {
+      walletAddress: redisData.walletAddress as string,
+      guardians: guardians,
+      requiredSignatures: parseInt(redisData.requiredSignatures as string) || 2,
+      recoveryThreshold: parseInt(redisData.recoveryThreshold as string) || 24,
+      setupDate: redisData.setupDate as string,
+      lastModified: redisData.lastModified as string,
+      recoveryLockPeriod: parseInt(redisData.recoveryLockPeriod as string) || 72,
+      status: redisData.status as 'configuring' | 'active' | 'suspended'
+    };
+
+    return setup;
+  } catch (error) {
+    console.error('❌ Failed to parse GuardianSetup from Redis:', error);
+    return null;
+  }
+}
+
+// Helper function to serialize GuardianSetup for Redis storage
+function serializeGuardianSetupForRedis(setup: GuardianSetup): Record<string, string> {
+  return {
+    walletAddress: setup.walletAddress,
+    guardians: JSON.stringify(setup.guardians),
+    requiredSignatures: setup.requiredSignatures.toString(),
+    recoveryThreshold: setup.recoveryThreshold.toString(),
+    setupDate: setup.setupDate,
+    lastModified: setup.lastModified,
+    recoveryLockPeriod: setup.recoveryLockPeriod.toString(),
+    status: setup.status
+  };
+}
+
 export class GuardianSecuritySystem {
   
   // ==================== SETUP FUNCTIONS ====================
@@ -108,7 +150,7 @@ export class GuardianSecuritySystem {
       const redis = validateRedisForCriticalOps('Guardian system setup');
       
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
-      await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
+      await redis.hset(setupKey, serializeGuardianSetupForRedis(setup));
       
       // Store individual guardian verifications
       for (const guardian of processedGuardians) {
@@ -165,7 +207,8 @@ export class GuardianSecuritySystem {
       
       // Update guardian status in main setup
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
-      const setup = await redis.hgetall(setupKey) as GuardianSetup;
+      const redisData = await redis.hgetall(setupKey);
+      const setup = parseGuardianSetupFromRedis(redisData);
       
       if (setup && setup.guardians) {
         const guardianIndex = setup.guardians.findIndex(g => g.address.toLowerCase() === guardianAddress.toLowerCase());
@@ -182,7 +225,7 @@ export class GuardianSecuritySystem {
             console.log('🎉 All guardians verified - Guardian system is now ACTIVE');
           }
           
-          await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
+          await redis.hset(setupKey, serializeGuardianSetupForRedis(setup));
         }
       }
       
@@ -217,9 +260,10 @@ export class GuardianSecuritySystem {
       const redis = validateRedisForCriticalOps('Recovery initiation');
       
       const setupKey = `guardian_setup:${originalWallet.toLowerCase()}`;
-      const setup = await redis.hgetall(setupKey) as GuardianSetup;
+      const redisData = await redis.hgetall(setupKey);
+      const setup = parseGuardianSetupFromRedis(redisData);
       
-      if (!setup || setup.status !== 'active') {
+      if (!setup || !setup.guardians || setup.status !== 'active') {
         return { success: false, recoveryId: '', message: 'Guardian system not active for this wallet' };
       }
       
@@ -306,9 +350,10 @@ export class GuardianSecuritySystem {
       
       // Verify guardian is authorized for this wallet
       const setupKey = `guardian_setup:${recovery.walletAddress}`;
-      const setup = await redis.hgetall(setupKey) as GuardianSetup;
+      const redisData = await redis.hgetall(setupKey);
+      const setup = parseGuardianSetupFromRedis(redisData);
       
-      const guardian = setup.guardians.find(g => g.address.toLowerCase() === guardianAddress.toLowerCase());
+      const guardian = setup?.guardians?.find(g => g.address.toLowerCase() === guardianAddress.toLowerCase());
       if (!guardian || guardian.status !== 'verified') {
         return { success: false, message: 'Guardian not authorized for this wallet' };
       }
@@ -405,12 +450,13 @@ export class GuardianSecuritySystem {
     try {
       const redis = validateRedisForCriticalOps('Guardian system suspension');
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
-      const setup = await redis.hgetall(setupKey) as GuardianSetup;
+      const redisData = await redis.hgetall(setupKey);
+      const setup = parseGuardianSetupFromRedis(redisData);
       
       if (setup) {
         setup.status = 'suspended';
         setup.lastModified = new Date().toISOString();
-        await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
+        await redis.hset(setupKey, serializeGuardianSetupForRedis(setup));
         
         console.log(`🚫 Guardian system suspended for wallet ${walletAddress.slice(0, 10)}... Reason: ${reason}`);
         return true;
@@ -440,12 +486,13 @@ export class GuardianSecuritySystem {
     try {
       const redis = validateRedisForCriticalOps('Emergency recovery override');
       const setupKey = `guardian_setup:${walletAddress.toLowerCase()}`;
-      const setup = await redis.hgetall(setupKey) as GuardianSetup;
+      const redisData = await redis.hgetall(setupKey);
+      const setup = parseGuardianSetupFromRedis(redisData);
       
       if (setup) {
         setup.status = 'suspended';
         setup.lastModified = new Date().toISOString();
-        await redis.hset(setupKey, setup as unknown as Record<string, unknown>);
+        await redis.hset(setupKey, serializeGuardianSetupForRedis(setup));
         
         // Log emergency action
         const emergencyLogKey = `emergency_log:${Date.now()}`;
