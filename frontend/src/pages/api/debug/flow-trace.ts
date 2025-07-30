@@ -103,8 +103,8 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
   const { contractAddress, tokenId } = req.body;
 
   debugLogger.operation("🚀 ENHANCED NFT FLOW DIAGNOSTIC STARTED ===========================================");
-  debugLogger.operation("📅 Timestamp:", new Date().toISOString());
-  debugLogger.operation("🎯 Target NFT:", { contractAddress, tokenId });
+  debugLogger.operation("📅 Timestamp", { timestamp: new Date().toISOString() });
+  debugLogger.operation("🎯 Target NFT", { contractAddress, tokenId });
 
   try {
     const trace = {
@@ -191,7 +191,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
               params: [BigInt(tokenId)],
             });
           } catch (uriError) {
-            debugLogger.operation("⚠️ TokenURI read failed:", uriError);
+            debugLogger.operation("⚠️ TokenURI read failed", { error: uriError });
           }
 
           try {
@@ -201,7 +201,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
               params: [BigInt(tokenId)],
             });
           } catch (ownerError) {
-            debugLogger.operation("⚠️ Owner read failed:", ownerError);
+            debugLogger.operation("⚠️ Owner read failed", { error: ownerError });
           }
 
           trace.checks.tokenValidation = {
@@ -274,7 +274,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
           testUrl = `https://nftstorage.link/ipfs/${cid}`;
         }
 
-        debugLogger.operation(`🔍 Testing image accessibility: ${testUrl}`);
+        debugLogger.operation(`🔍 Testing image accessibility`, { testUrl });
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
