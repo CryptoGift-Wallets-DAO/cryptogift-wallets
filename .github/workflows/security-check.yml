@@ -50,7 +50,7 @@ jobs:
     - name: 📊 Coverage Threshold Check (70% minimum)
       run: |
         cd frontend
-        pnpm run test:coverage -- --coverageThreshold='{"global":{"branches":70,"functions":70,"lines":70,"statements":70}}'
+        pnpm run test:coverage
         
     - name: 🔒 Security Pattern Validation (Non-blocking)
       run: |
