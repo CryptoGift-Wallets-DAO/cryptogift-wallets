@@ -41,35 +41,8 @@ jest.mock('@upstash/redis', () => ({
   Redis: jest.fn(() => mockRedis)
 }));
 
-// Mock ethers for blockchain operations
-jest.mock('ethers', () => ({
-  ethers: {
-    JsonRpcProvider: jest.fn(() => ({
-      getNetwork: jest.fn(() => Promise.resolve({ chainId: 84532 })),
-      getBlockNumber: jest.fn(() => Promise.resolve(12345)),
-      getBalance: jest.fn(() => Promise.resolve('1000000000000000000')),
-      waitForTransaction: jest.fn(() => Promise.resolve({
-        blockNumber: 12345,
-        transactionHash: '0xtest123',
-        gasUsed: BigInt(21000)
-      }))
-    })),
-    Contract: jest.fn(() => ({
-      balanceOf: jest.fn(() => Promise.resolve(BigInt(1))),
-      ownerOf: jest.fn(() => Promise.resolve('0x1234567890123456789012345678901234567890')),
-      tokenURI: jest.fn(() => Promise.resolve('https://test.com/metadata/1'))
-    })),
-    Wallet: jest.fn(() => ({
-      address: '0x1234567890123456789012345678901234567890',
-      signMessage: jest.fn(() => Promise.resolve('0xsignature123'))
-    })),
-    getAddress: jest.fn((addr) => addr),
-    isAddress: jest.fn(() => true),
-    verifyMessage: jest.fn(() => true),
-    parseEther: jest.fn((value) => BigInt(value) * BigInt(10**18)),
-    formatEther: jest.fn((value) => (Number(value) / 10**18).toString())
-  }
-}));
+// Don't mock ethers globally - let tests that need real ethers import it
+// Only mock specific provider instances when needed in individual tests
 
 // Mock thirdweb
 jest.mock('thirdweb', () => ({
