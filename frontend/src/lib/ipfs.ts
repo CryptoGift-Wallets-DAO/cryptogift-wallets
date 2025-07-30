@@ -16,16 +16,22 @@ export interface IPFSUploadResult {
   error?: string;
 }
 
-// Initialize clients
-const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-});
-
-// Debug: Log client configuration
-console.log('🔧 ThirdWeb client initialized:', {
-  hasClientId: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
-  clientIdPreview: process.env.NEXT_PUBLIC_TW_CLIENT_ID?.substring(0, 8) + '...'
-});
+// Initialize client lazily to avoid build-time issues
+let client: ReturnType<typeof createThirdwebClient> | null = null;
+function getThirdwebClient() {
+  if (!client) {
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    if (!clientId) throw new Error('NEXT_PUBLIC_TW_CLIENT_ID is required');
+    client = createThirdwebClient({ clientId });
+    
+    // Debug: Log client configuration
+    console.log('🔧 ThirdWeb client initialized:', {
+      hasClientId: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
+      clientIdPreview: process.env.NEXT_PUBLIC_TW_CLIENT_ID?.substring(0, 8) + '...'
+    });
+  }
+  return client;
+}
 
 // NFT.Storage client (temporarily disabled due to v3.4.0 module issues)
 const nftStorageClient = null; // process.env.NFT_STORAGE_API_KEY ? new NFTStorage({ token: process.env.NFT_STORAGE_API_KEY }) : null;
@@ -180,7 +186,7 @@ async function uploadToThirdWeb(file: File): Promise<IPFSUploadResult> {
     console.log('🔄 Uploading to ThirdWeb IPFS...');
     
     const cid = await upload({
-      client,
+      client: getThirdwebClient(),
       files: [file],
     });
     

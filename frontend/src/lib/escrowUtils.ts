@@ -10,10 +10,16 @@ import { baseSepolia } from 'thirdweb/chains';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from './escrowABI';
 import { getGiftIdFromMapping, storeGiftMapping } from './giftMappingStore';
 
-// Initialize ThirdWeb client
-const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
-});
+// Initialize ThirdWeb client lazily to avoid build-time issues
+let client: ReturnType<typeof createThirdwebClient> | null = null;
+function getThirdwebClient() {
+  if (!client) {
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    if (!clientId) throw new Error('NEXT_PUBLIC_TW_CLIENT_ID is required');
+    client = createThirdwebClient({ clientId });
+  }
+  return client;
+}
 
 /**
  * Password and Salt Management
@@ -100,7 +106,7 @@ export function getEscrowContract() {
   }
   
   return getContract({
-    client,
+    client: getThirdwebClient(),
     chain: baseSepolia,
     address: ESCROW_CONTRACT_ADDRESS,
     abi: ESCROW_ABI

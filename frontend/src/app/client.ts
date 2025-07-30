@@ -1,12 +1,26 @@
 import { createThirdwebClient } from "thirdweb";
 
-// Get client ID from environment variables
-const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+let _client: ReturnType<typeof createThirdwebClient> | null = null;
 
-if (!clientId) {
-  throw new Error("ThirdWeb client ID not found. Please set NEXT_PUBLIC_TW_CLIENT_ID in your environment variables.");
+export function getClient() {
+  if (_client) return _client;
+  
+  const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+  
+  if (!clientId) {
+    if (typeof window === 'undefined') {
+      // During build time, return null
+      return null;
+    }
+    throw new Error("ThirdWeb client ID not found. Please set NEXT_PUBLIC_TW_CLIENT_ID in your environment variables.");
+  }
+  
+  _client = createThirdwebClient({
+    clientId: clientId,
+  });
+  
+  return _client;
 }
 
-export const client = createThirdwebClient({
-  clientId: clientId,
-});
+// For backward compatibility
+export const client = typeof window === 'undefined' ? null : getClient();

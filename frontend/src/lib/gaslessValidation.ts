@@ -8,10 +8,16 @@ import { ethers } from 'ethers';
 import { createThirdwebClient } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 
-// Initialize ThirdWeb client
-const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
-});
+// Initialize ThirdWeb client lazily
+let client: ReturnType<typeof createThirdwebClient> | null = null;
+function getClient() {
+  if (!client) {
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    if (!clientId) throw new Error('NEXT_PUBLIC_TW_CLIENT_ID is required');
+    client = createThirdwebClient({ clientId });
+  }
+  return client;
+}
 
 // Transaction tracking for anti-double minting
 interface TransactionAttempt {
