@@ -28,7 +28,9 @@ jobs:
         cache-dependency-path: pnpm-lock.yaml
         
     - name: 📦 Install Dependencies
-      run: pnpm install --frozen-lockfile
+      run: |
+        pnpm install --frozen-lockfile
+        cd frontend && pnpm install
         
     - name: 🔍 TypeScript Compilation Check
       run: |
@@ -68,7 +70,7 @@ jobs:
         
         # Check for unprotected API endpoints
         echo "🔍 Checking for unprotected API endpoints..."
-        unprotected_endpoints=$(find src/pages/api -name "*.ts" -exec grep -l "export default async function handler" {} \; 2>/dev/null | while read file; do
+        unprotected_endpoints=$(find frontend/src/pages/api -name "*.ts" -exec grep -l "export default async function handler" {} \; 2>/dev/null | while read file; do
           if ! grep -q "checkRateLimit\|verifyJWT\|ADMIN_API_TOKEN" "$file" 2>/dev/null; then
             echo "$file"
           fi
@@ -83,7 +85,7 @@ jobs:
         
         # Check for sensitive data in logs (CRITICAL - always error)
         echo "🔍 Checking for sensitive data patterns..."
-        if grep -r "console.log.*private\|console.log.*secret\|console.log.*token" src/ --include="*.ts" --include="*.tsx" >/dev/null 2>&1; then
+        if grep -r "console.log.*private\|console.log.*secret\|console.log.*token" frontend/src/ --include="*.ts" --include="*.tsx" >/dev/null 2>&1; then
           echo "❌ SECURITY ERROR: Potential sensitive data in console.log"
           echo "   This is a critical security risk"
           ERRORS=$((ERRORS + 1))
@@ -92,11 +94,11 @@ jobs:
         # Check for missing test files (WARNING only)
         echo "🔍 Checking for missing test coverage..."
         missing_tests=0
-        find src/lib -name "*.ts" -type f | while read lib_file; do
+        find frontend/src/lib -name "*.ts" -type f | while read lib_file; do
           base_name=$(basename "$lib_file" .ts)
-          if [ ! -f "src/test/${base_name}.test.ts" ] && [ "$base_name" != "types" ]; then
+          if [ ! -f "frontend/src/test/${base_name}.test.ts" ] && [ "$base_name" != "types" ]; then
             echo "⚠️  Missing test file for $lib_file"
-            echo "   Expected: src/test/${base_name}.test.ts"
+            echo "   Expected: frontend/src/test/${base_name}.test.ts"
             missing_tests=$((missing_tests + 1))
           fi
         done
@@ -163,7 +165,9 @@ jobs:
         cache-dependency-path: pnpm-lock.yaml
         
     - name: 📦 Install Dependencies
-      run: pnpm install --frozen-lockfile
+      run: |
+        pnpm install --frozen-lockfile
+        cd frontend && pnpm install
         
     - name: 📊 Generate Security Metrics
       run: |
