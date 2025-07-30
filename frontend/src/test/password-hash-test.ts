@@ -29,7 +29,7 @@ function runPasswordHashTest() {
     
     console.log('✅ Hash generated successfully');
     console.log('📋 Test parameters:', {
-      password: testParams.password,
+      password: '***REDACTED***',
       salt: testParams.salt.slice(0, 10) + '...',
       giftId: testParams.giftId,
       contractAddress: testParams.contractAddress,

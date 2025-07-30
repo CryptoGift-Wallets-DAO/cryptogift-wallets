@@ -15,17 +15,17 @@ jobs:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
       
+    - name: 📦 Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+        
     - name: 🟢 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
-        
-    - name: 📦 Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
         
     - name: 📦 Install Dependencies
       run: |
@@ -152,17 +152,17 @@ jobs:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
       
+    - name: 📦 Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+        
     - name: 🟢 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
-        
-    - name: 📦 Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
         
     - name: 📊 Generate Security Metrics
       run: |

@@ -63,6 +63,7 @@ temp/
 
 # Debug files
 debug/
+!frontend/src/pages/api/debug/check-tokenid-177.ts
 logs/
 
 # Backup directories (security measure)

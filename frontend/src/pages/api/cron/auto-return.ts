@@ -196,7 +196,7 @@ async function processExpiredGifts(
     // Process batch in parallel
     const batchPromises = batch.map(async ({ tokenId, gift }) => {
       try {
-        console.log(`⏳ Returning gift ${tokenId} to creator ${gift.creator.slice(0, 10)}...`);
+        console.log(`⏳ Returning expired gift ${tokenId} to original creator...`);
         
         const result = await returnSingleGift(tokenId);
         
