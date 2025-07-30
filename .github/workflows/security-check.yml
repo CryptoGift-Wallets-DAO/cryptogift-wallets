@@ -28,9 +28,7 @@ jobs:
         cache-dependency-path: pnpm-lock.yaml
         
     - name: 📦 Install Dependencies
-      run: |
-        cd frontend
-        pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
         
     - name: 🔍 TypeScript Compilation Check
       run: |
@@ -164,13 +162,16 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
         
+    - name: 📦 Install Dependencies
+      run: pnpm install --frozen-lockfile
+        
     - name: 📊 Generate Security Metrics
       run: |
         cd frontend
         
         # Get test results and coverage
         COVERAGE=$(pnpm run test:coverage 2>/dev/null | grep -oP 'All files.*?(\d+\.?\d*)%' | tail -1 | grep -oP '\d+\.?\d*' || echo "0")
-        TEST_RESULTS=$(pnpm test 2>&1 | grep -oP '\d+ passed' || echo "0 passed")
+        TEST_RESULTS=$(pnpm run test 2>&1 | grep -oP '\d+ passed' || echo "0 passed")
         
         # Check for security patterns
         UNPROTECTED_ENDPOINTS=$(find src/pages/api -name "*.ts" -type f 2>/dev/null | wc -l || echo "0")
