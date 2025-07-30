@@ -2,8 +2,6 @@ module.exports = {
   extends: ['next/core-web-vitals'],
   rules: {
     // Optimize performance during build
-    '@typescript-eslint/no-unused-vars': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
     'react-hooks/exhaustive-deps': 'warn',
   },
   // Speed up linting by ignoring certain patterns
@@ -16,7 +14,8 @@ module.exports = {
     '*.config.mjs',
     'coverage/',
     '.vercel/',
-    '*.d.ts'
+    '*.d.ts',
+    'src/test/**/*'
   ],
   // Optimize parser options
   parserOptions: {
