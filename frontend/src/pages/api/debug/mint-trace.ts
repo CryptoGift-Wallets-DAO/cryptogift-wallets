@@ -1,4 +1,5 @@
 import { withDebugAuth } from '../../../lib/debugAuth';
+import { debugLogger } from '../../../lib/secureDebugLogger';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 // DEBUG ENDPOINT: Get detailed mint logs and trace mint process issues
@@ -82,7 +83,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       debugInfo.recentLogs = ['Could not fetch recent logs'];
     }
 
-    debugLogger.operation('🔍 DEBUG: Mint trace completed', debugInfo);
+    debugLogger.operation('🔍 DEBUG: Mint trace completed', { traceInfo: debugInfo });
 
     res.status(200).json({
       success: true,

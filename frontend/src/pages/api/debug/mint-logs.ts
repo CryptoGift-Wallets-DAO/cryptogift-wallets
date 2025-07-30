@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { withDebugAuth } from '../../../lib/debugAuth';
+import { debugLogger } from '../../../lib/secureDebugLogger';
 
 // In-memory log storage for debugging (temporary solution)
 let mintLogs: Array<{
@@ -25,7 +26,7 @@ export function addMintLog(level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN', step: s
     mintLogs = mintLogs.slice(-100);
   }
   
-  debugLogger.operation(`🔍 MINT LOG [${level}] ${step}:`, data);
+  debugLogger.operation(`🔍 MINT LOG [${level}] ${step}`, { logData: data });
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {

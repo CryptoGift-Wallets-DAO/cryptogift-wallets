@@ -59,7 +59,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         };
 
         debugLogger.operation("✅ STEP 1 SUCCESS: Metadata created");
-        debugLogger.operation("🔍 Created image field:", testMetadata.image);
+        debugLogger.operation("🔍 Created image field", { imageField: testMetadata.image });
 
         // STEP 2: Store metadata (simulate Redis storage)
         debugLogger.operation("🧪 STEP 2: Storing metadata in Redis...");
@@ -89,7 +89,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           flowResult.diagnosis.issues.push('Metadata storage/retrieval failed');
         } else {
           debugLogger.operation("✅ STEP 3 SUCCESS: Metadata retrieved from Redis");
-          debugLogger.operation("🔍 Retrieved image field:", retrievedMetadata.image);
+          debugLogger.operation("🔍 Retrieved image field", { imageField: retrievedMetadata.image });
         }
 
         // STEP 4: Compare what was stored vs what was retrieved
