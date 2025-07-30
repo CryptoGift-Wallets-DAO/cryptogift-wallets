@@ -1,6 +1,7 @@
 import { withDebugAuth } from '../../../lib/debugAuth';
 import { NextApiRequest, NextApiResponse } from "next";
 import { getNFTMetadata } from "../../../lib/nftMetadataStore";
+import { debugLogger } from '../../../lib/secureDebugLogger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -12,18 +13,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     if (contract && tokenId) {
       // Get specific NFT metadata
-      console.log(`🔍 Debug: Looking for metadata ${contract}:${tokenId}`);
+      debugLogger.operation("Token check initiated", { hasTokenId: true });
       const metadata = await getNFTMetadata(contract as string, tokenId as string);
       
       if (metadata) {
-        console.log(`✅ Debug: Found metadata for ${contract}:${tokenId}`);
+        debugLogger.operation(`✅ Debug: Found metadata for ${contract}:${tokenId}`);
         return res.status(200).json({
           success: true,
           metadata,
           query: { contract, tokenId }
         });
       } else {
-        console.log(`❌ Debug: No metadata found for ${contract}:${tokenId}`);
+        debugLogger.operation(`❌ Debug: No metadata found for ${contract}:${tokenId}`);
         return res.status(404).json({
           success: false,
           message: `No metadata found for ${contract}:${tokenId}`,
@@ -32,7 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     } else {
       // General metadata info (no bulk listing available)
-      console.log(`📋 Debug: Metadata endpoint info`);
+      debugLogger.operation(`📋 Debug: Metadata endpoint info`);
       
       return res.status(200).json({
         success: true,

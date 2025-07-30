@@ -1,6 +1,7 @@
 import { withDebugAuth } from '../../../lib/debugAuth';
 import { NextApiRequest, NextApiResponse } from "next";
 import { getNFTMetadata, storeNFTMetadata, createNFTMetadata } from "../../../lib/nftMetadataStore";
+import { debugLogger } from '../../../lib/secureDebugLogger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -20,11 +21,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const contractAddress = contract as string;
     const tokenIdStr = tokenId as string;
 
-    console.log(`🔍 IMAGE TRACE: Starting debug for ${contractAddress}:${tokenIdStr}`);
+    debugLogger.operation("Token check initiated", { hasTokenId: true });
 
     if (action === 'trace') {
       // STEP 1: Check if metadata exists in Redis
-      console.log(`🔍 STEP 1: Checking Redis for metadata...`);
+      debugLogger.operation(`🔍 STEP 1: Checking Redis for metadata...`);
       const storedMetadata = await getNFTMetadata(contractAddress, tokenIdStr);
       
       const result = {
@@ -47,10 +48,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       };
 
       if (storedMetadata) {
-        console.log(`✅ STEP 1 SUCCESS: Found metadata in Redis`);
+        debugLogger.operation(`✅ STEP 1 SUCCESS: Found metadata in Redis`);
         
         // STEP 2: Analyze the stored image
-        console.log(`🔍 STEP 2: Analyzing stored image...`);
+        debugLogger.operation(`🔍 STEP 2: Analyzing stored image...`);
         result.imageAnalysis = {
           imageField: storedMetadata.image,
           imageIpfsCid: storedMetadata.imageIpfsCid,
@@ -61,7 +62,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         };
 
         // STEP 3: Determine root cause
-        console.log(`🔍 STEP 3: Determining root cause...`);
+        debugLogger.operation(`🔍 STEP 3: Determining root cause...`);
         if (result.imageAnalysis.isPlaceholder) {
           result.diagnosis.rootCause = 'placeholder_stored_in_redis';
           result.diagnosis.recommendations = [
@@ -90,7 +91,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           ];
         }
       } else {
-        console.log(`❌ STEP 1 FAILED: No metadata found in Redis`);
+        debugLogger.operation(`❌ STEP 1 FAILED: No metadata found in Redis`);
         result.diagnosis.rootCause = 'metadata_not_stored';
         result.diagnosis.recommendations = [
           'Metadata was never stored in Redis during mint process',
@@ -100,7 +101,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         ];
       }
 
-      console.log(`✅ IMAGE TRACE COMPLETE:`, result.diagnosis);
+      debugLogger.operation(`✅ IMAGE TRACE COMPLETE:`, result.diagnosis);
       
       return res.status(200).json({
         success: true,
@@ -114,7 +115,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     } else if (action === 'test-store') {
       // TEST: Store test metadata to verify Redis storage works
-      console.log(`🧪 TEST: Storing test metadata...`);
+      debugLogger.operation(`🧪 TEST: Storing test metadata...`);
       
       const testMetadata = createNFTMetadata({
         contractAddress,

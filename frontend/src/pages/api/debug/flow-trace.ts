@@ -4,6 +4,7 @@ import path from 'path';
 import { getNFTMetadata } from '../../../lib/nftMetadataStore';
 import { promises as fsPromises } from 'fs';
 import { withDebugAuth } from '../../../lib/debugAuth';
+import { debugLogger } from '../../../lib/secureDebugLogger';
 
 // In-memory storage for production (simple fallback)
 let inMemoryTraces: any[] = [];
@@ -101,9 +102,9 @@ function handleInMemoryStorage(req: NextApiRequest, res: NextApiResponse) {
 async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse) {
   const { contractAddress, tokenId } = req.body;
 
-  console.log("🚀 ENHANCED NFT FLOW DIAGNOSTIC STARTED ===========================================");
-  console.log("📅 Timestamp:", new Date().toISOString());
-  console.log("🎯 Target NFT:", { contractAddress, tokenId });
+  debugLogger.operation("🚀 ENHANCED NFT FLOW DIAGNOSTIC STARTED ===========================================");
+  debugLogger.operation("📅 Timestamp:", new Date().toISOString());
+  debugLogger.operation("🎯 Target NFT:", { contractAddress, tokenId });
 
   try {
     const trace = {
@@ -132,7 +133,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
     };
 
     // 1. ThirdWeb Connection Test
-    console.log("🌐 TESTING THIRDWEB CONNECTION ===========================================");
+    debugLogger.operation("🌐 TESTING THIRDWEB CONNECTION ===========================================");
     try {
       const { createThirdwebClient, getContract, readContract } = await import("thirdweb");
       const { baseSepolia } = await import("thirdweb/chains");
@@ -155,7 +156,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
       };
 
       // 2. Contract Validation
-      console.log("📄 VALIDATING CONTRACT ===========================================");
+      debugLogger.operation("📄 VALIDATING CONTRACT ===========================================");
       try {
         const totalSupply = await readContract({
           contract: nftContract,
@@ -170,7 +171,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
         };
 
         // 3. Token Validation
-        console.log("🎯 VALIDATING TOKEN ===========================================");
+        debugLogger.operation("🎯 VALIDATING TOKEN ===========================================");
         if (BigInt(tokenId) >= totalSupply) {
           trace.checks.tokenValidation = {
             status: 'error',
@@ -190,7 +191,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
               params: [BigInt(tokenId)],
             });
           } catch (uriError) {
-            console.log("⚠️ TokenURI read failed:", uriError);
+            debugLogger.operation("⚠️ TokenURI read failed:", uriError);
           }
 
           try {
@@ -200,7 +201,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
               params: [BigInt(tokenId)],
             });
           } catch (ownerError) {
-            console.log("⚠️ Owner read failed:", ownerError);
+            debugLogger.operation("⚠️ Owner read failed:", ownerError);
           }
 
           trace.checks.tokenValidation = {
@@ -229,7 +230,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
     }
 
     // 4. Check server metadata storage
-    console.log("💾 CHECKING METADATA STORAGE ===========================================");
+    debugLogger.operation("💾 CHECKING METADATA STORAGE ===========================================");
     try {
       const serverMetadata = await getNFTMetadata(contractAddress, tokenId);
       trace.checks.serverMetadata = {
@@ -262,7 +263,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
     }
 
     // 5. IPFS Verification (if image exists and is not placeholder)
-    console.log("🔗 IPFS VERIFICATION ===========================================");
+    debugLogger.operation("🔗 IPFS VERIFICATION ===========================================");
     if (trace.checks.serverMetadata?.data?.image && !trace.checks.serverMetadata.isPlaceholder) {
       try {
         const imageUrl = trace.checks.serverMetadata.data.image;
@@ -273,7 +274,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
           testUrl = `https://nftstorage.link/ipfs/${cid}`;
         }
 
-        console.log(`🔍 Testing image accessibility: ${testUrl}`);
+        debugLogger.operation(`🔍 Testing image accessibility: ${testUrl}`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
@@ -359,7 +360,7 @@ async function handleNFTFlowDiagnostic(req: NextApiRequest, res: NextApiResponse
       ]
     };
 
-    console.log('✅ Enhanced NFT Flow diagnostic complete');
+    debugLogger.operation('✅ Enhanced NFT Flow diagnostic complete');
     res.status(200).json({ trace, analysis });
   } catch (error) {
     console.error('❌ Enhanced NFT Flow diagnostic error:', error);

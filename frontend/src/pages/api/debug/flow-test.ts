@@ -1,6 +1,7 @@
 import { withDebugAuth } from '../../../lib/debugAuth';
 import { NextApiRequest, NextApiResponse } from "next";
 import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from "../../../lib/nftMetadataStore";
+import { debugLogger } from '../../../lib/secureDebugLogger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,7 +12,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { action = 'full-test' } = req.query;
 
     if (action === 'full-test') {
-      console.log("🧪 FULL FLOW TEST: Starting complete image flow simulation...");
+      debugLogger.operation("🧪 FULL FLOW TEST: Starting complete image flow simulation...");
       
       const testData = {
         contractAddress: process.env.NEXT_PUBLIC_NFT_DROP_ADDRESS || '0x1234567890123456789012345678901234567890',
@@ -34,7 +35,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       try {
         // STEP 1: Create metadata (simulate what happens in /api/mint)
-        console.log("🧪 STEP 1: Creating test metadata...");
+        debugLogger.operation("🧪 STEP 1: Creating test metadata...");
         const testMetadata = createNFTMetadata({
           contractAddress: testData.contractAddress,
           tokenId: testData.tokenId,
@@ -57,11 +58,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           isPlaceholder: testMetadata.image?.includes('placeholder')
         };
 
-        console.log("✅ STEP 1 SUCCESS: Metadata created");
-        console.log("🔍 Created image field:", testMetadata.image);
+        debugLogger.operation("✅ STEP 1 SUCCESS: Metadata created");
+        debugLogger.operation("🔍 Created image field:", testMetadata.image);
 
         // STEP 2: Store metadata (simulate Redis storage)
-        console.log("🧪 STEP 2: Storing metadata in Redis...");
+        debugLogger.operation("🧪 STEP 2: Storing metadata in Redis...");
         await storeNFTMetadata(testMetadata);
         
         flowResult.step2_storeMetadata = {
@@ -69,10 +70,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           storedAt: new Date().toISOString()
         };
 
-        console.log("✅ STEP 2 SUCCESS: Metadata stored in Redis");
+        debugLogger.operation("✅ STEP 2 SUCCESS: Metadata stored in Redis");
 
         // STEP 3: Retrieve metadata (simulate what happens in /api/nft/[...params])
-        console.log("🧪 STEP 3: Retrieving metadata from Redis...");
+        debugLogger.operation("🧪 STEP 3: Retrieving metadata from Redis...");
         const retrievedMetadata = await getNFTMetadata(testData.contractAddress, testData.tokenId);
         
         flowResult.step3_retrieveMetadata = {
@@ -84,15 +85,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         };
 
         if (!retrievedMetadata) {
-          console.log("❌ STEP 3 FAILED: Could not retrieve metadata from Redis");
+          debugLogger.operation("❌ STEP 3 FAILED: Could not retrieve metadata from Redis");
           flowResult.diagnosis.issues.push('Metadata storage/retrieval failed');
         } else {
-          console.log("✅ STEP 3 SUCCESS: Metadata retrieved from Redis");
-          console.log("🔍 Retrieved image field:", retrievedMetadata.image);
+          debugLogger.operation("✅ STEP 3 SUCCESS: Metadata retrieved from Redis");
+          debugLogger.operation("🔍 Retrieved image field:", retrievedMetadata.image);
         }
 
         // STEP 4: Compare what was stored vs what was retrieved
-        console.log("🧪 STEP 4: Comparing stored vs retrieved data...");
+        debugLogger.operation("🧪 STEP 4: Comparing stored vs retrieved data...");
         flowResult.step4_comparison = {
           originalImage: testMetadata.image,
           retrievedImage: retrievedMetadata?.image,
@@ -120,7 +121,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         } else {
           flowResult.diagnosis.success = true;
           flowResult.diagnosis.rootCause = 'flow_working_correctly';
-          console.log("✅ STEP 4 SUCCESS: Full flow working correctly!");
+          debugLogger.operation("✅ STEP 4 SUCCESS: Full flow working correctly!");
         }
 
       } catch (error) {
@@ -153,7 +154,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
-      console.log(`🧪 SPECIFIC NFT TEST: Testing ${contract}:${tokenId}`);
+      debugLogger.operation(`🧪 SPECIFIC NFT TEST: Testing ${contract}:${tokenId}`);
       
       const retrievedMetadata = await getNFTMetadata(contract as string, tokenId as string);
       

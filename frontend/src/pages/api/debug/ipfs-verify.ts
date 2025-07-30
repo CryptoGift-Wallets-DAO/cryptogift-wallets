@@ -17,14 +17,14 @@ async function verifyImageAccessibility(imageCid: string): Promise<{
   const results: Array<{ gateway: string; success: boolean; error?: string }> = [];
   let workingGateway: string | undefined;
 
-  console.log(`🔍 Verifying image accessibility for CID: ${imageCid}`);
+  debugLogger.operation(`🔍 Verifying image accessibility for CID: ${imageCid}`);
 
   for (const gateway of gateways) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-      console.log(`🔍 Testing gateway: ${gateway}`);
+      debugLogger.operation(`🔍 Testing gateway: ${gateway}`);
       
       const response = await fetch(gateway, {
         method: 'HEAD', // Just check if resource exists
@@ -34,16 +34,16 @@ async function verifyImageAccessibility(imageCid: string): Promise<{
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        console.log(`✅ Gateway working: ${gateway}`);
+        debugLogger.operation(`✅ Gateway working: ${gateway}`);
         results.push({ gateway, success: true });
         if (!workingGateway) workingGateway = gateway;
       } else {
-        console.log(`❌ Gateway failed (${response.status}): ${gateway}`);
+        debugLogger.operation(`❌ Gateway failed (${response.status}): ${gateway}`);
         results.push({ gateway, success: false, error: `HTTP ${response.status}` });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.log(`❌ Gateway error: ${gateway} - ${errorMessage}`);
+      debugLogger.operation(`❌ Gateway error: ${gateway} - ${errorMessage}`);
       results.push({ gateway, success: false, error: errorMessage });
     }
   }
@@ -73,7 +73,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         });
       }
 
-      console.log(`🔍 IPFS VERIFY: Testing CID ${cid}`);
+      debugLogger.operation(`🔍 IPFS VERIFY: Testing CID ${cid}`);
       
       const startTime = Date.now();
       const verificationResult = await verifyImageAccessibility(cid);
@@ -98,7 +98,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       };
 
-      console.log(`✅ IPFS VERIFY COMPLETE: ${verificationResult.accessible ? 'ACCESSIBLE' : 'NOT ACCESSIBLE'}`);
+      debugLogger.operation(`✅ IPFS VERIFY COMPLETE: ${verificationResult.accessible ? 'ACCESSIBLE' : 'NOT ACCESSIBLE'}`);
       
       return res.status(200).json({
         success: true,
@@ -116,7 +116,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const results = [];
       
       for (const testCid of knownGoodCids) {
-        console.log(`🧪 Testing known good CID: ${testCid}`);
+        debugLogger.operation(`🧪 Testing known good CID: ${testCid}`);
         const verificationResult = await verifyImageAccessibility(testCid);
         results.push({
           cid: testCid,

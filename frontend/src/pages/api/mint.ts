@@ -11,6 +11,7 @@ import { kvReferralDB, generateUserDisplay } from "../../lib/referralDatabaseKV"
 import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
 import { generateNeutralGiftAddressServer } from "../../lib/serverConstants";
 import { verifyJWT, extractTokenFromHeaders } from "../../lib/siweAuth";
+import { debugLogger } from "../../lib/secureDebugLogger";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -645,7 +646,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           
           // Option 2: If we have gasless transaction hash, verify it directly
           if (!gaslessActuallySucceeded && gaslessTransactionHash && gaslessTransactionHash !== gaslessUserOpHash) {
-            console.log(`🔍 Checking gasless transaction hash: ${gaslessTransactionHash}`);
+            debugLogger.operation('Verifying gasless transaction', { hasTransactionHash: !!gaslessTransactionHash });
             
             try {
               const receipt = await waitForReceipt({
@@ -654,7 +655,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 transactionHash: gaslessTransactionHash as `0x${string}`
               });
               
-              console.log("🎉 GASLESS SUCCESS CONFIRMED! Transaction hash is valid");
+              debugLogger.operation('Gasless success confirmed', { transactionValid: true });
               gaslessActuallySucceeded = true;
               verifiedTransactionHash = gaslessTransactionHash;
               
@@ -667,7 +668,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               }, 'success');
               
             } catch (receiptError) {
-              console.log(`⚠️ Could not get receipt for transaction hash: ${receiptError.message}`);
+              debugLogger.error('Receipt retrieval failed', receiptError as Error);
             }
           }
           
@@ -677,7 +678,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // Set final values if gasless was recovered
         if (gaslessActuallySucceeded && verifiedTransactionHash && verifiedTokenId) {
-          console.log(`✅ GASLESS RECOVERED: Token ${verifiedTokenId} with hash ${verifiedTransactionHash}`);
+          debugLogger.operation('Gasless transaction recovered', { 
+            hasTokenId: !!verifiedTokenId, 
+            hasTransactionHash: !!verifiedTransactionHash 
+          });
           tokenId = verifiedTokenId;
           transactionHash = verifiedTransactionHash;
           gasless = true;

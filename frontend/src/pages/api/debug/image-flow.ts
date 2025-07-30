@@ -1,6 +1,7 @@
 import { withDebugAuth } from '../../../lib/debugAuth';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../lib/nftMetadataStore';
+import { debugLogger } from '../../../lib/secureDebugLogger';
 
 // DEBUG ENDPOINT: Trace image flow for specific NFT
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -18,7 +19,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     }
 
-    console.log(`🔍 DEBUG: Tracing image flow for ${contractAddress}:${tokenId}`);
+    debugLogger.operation("Token check initiated", { hasTokenId: true });
 
     const debugInfo = {
       timestamp: new Date().toISOString(),
@@ -31,7 +32,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     };
 
     // Step 1: Check stored metadata
-    console.log('STEP 1: Checking stored metadata...');
+    debugLogger.operation('STEP 1: Checking stored metadata...');
     debugInfo.steps.storedMetadata = {
       step: 'Check Redis storage',
       status: 'checking'
@@ -55,7 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       };
       
       // Step 2: Check image URL format
-      console.log('STEP 2: Analyzing image URL...');
+      debugLogger.operation('STEP 2: Analyzing image URL...');
       const imageUrl = storedMetadata.image;
       
       debugInfo.steps.imageAnalysis = {
@@ -71,7 +72,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
       // Step 3: Test IPFS accessibility if it's an IPFS URL
       if (imageUrl.startsWith('ipfs://')) {
-        console.log('STEP 3: Testing IPFS accessibility...');
+        debugLogger.operation('STEP 3: Testing IPFS accessibility...');
         const cid = imageUrl.replace('ipfs://', '');
         const gateways = [
           `https://nftstorage.link/ipfs/${cid}`,
@@ -87,7 +88,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
         for (const gateway of gateways) {
           try {
-            console.log(`Testing gateway: ${gateway}`);
+            debugLogger.operation(`Testing gateway: ${gateway}`);
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
             
@@ -137,7 +138,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // Step 4: Check what the display API would return
-    console.log('STEP 4: Simulating display API response...');
+    debugLogger.operation('STEP 4: Simulating display API response...');
     try {
       const displayResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/nft/${contractAddress}/${tokenId}`);
       const displayData = await displayResponse.json();
@@ -168,7 +169,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         'Check mint process - metadata not being stored'
     };
 
-    console.log('🔍 DEBUG: Image flow analysis completed', debugInfo);
+    debugLogger.operation('🔍 DEBUG: Image flow analysis completed', debugInfo);
 
     res.status(200).json({
       success: true,

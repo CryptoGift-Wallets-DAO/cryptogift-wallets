@@ -65,6 +65,26 @@ Co-Author: Godez22
 
 ## 📋 COMPREHENSIVE CHECKLIST FOR EVERY COMMIT
 
+### **🚨 MANDATORY PRE-COMMIT VERIFICATION SYSTEM**
+
+**⚠️ CRÍTICO: ANTES DE CADA COMMIT EJECUTAR:**
+```bash
+cd frontend
+node pre-commit-check.js
+```
+
+**🛡️ Este sistema de seguridad es OBLIGATORIO y verifica:**
+- ✅ TypeScript compilation (BLOQUEA deployment si falla)
+- ✅ Datos sensibles expuestos (CRÍTICO)
+- ✅ ESLint warnings y errores
+- ✅ Tests automatizados
+- ✅ Estándares de calidad general
+
+**📍 UBICACIÓN DEL SISTEMA:**
+- **Archivo:** `frontend/pre-commit-check.js`
+- **Configuración:** `.security-config.json`
+- **Ejecutar:** `node pre-commit-check.js` (desde directorio frontend)
+
 ### **🔒 SECURITY & ATTRIBUTION REQUIREMENTS**
 
 Before committing, verify ALL of the following:
@@ -77,12 +97,21 @@ Before committing, verify ALL of the following:
 - [ ] Both lines are included in every commit
 
 #### **🛡️ Security Standards (MANDATORY):**
+- [ ] **PRE-COMMIT CHECK EJECUTADO** (`node pre-commit-check.js`) ⚠️ OBLIGATORIO
 - [ ] **TypeScript compiles** without errors (`npm run type-check`)
 - [ ] **Tests pass** with minimum 50% coverage (target 70%)
 - [ ] **No sensitive data** in console.log (private keys, tokens, secrets)
 - [ ] **API endpoints** have rate limiting or authentication
 - [ ] **Error messages** don't expose sensitive information
 - [ ] **Input validation** implemented for user-facing functions
+
+#### **🚨 DEPLOYMENT BLOCKING ISSUES:**
+Si el deployment automático NO se activa después de `git push`, es porque:
+- ❌ **TypeScript compilation errors** (bloquea deployment)
+- ❌ **Build process timeout** (sistema de seguridad detectó problemas)
+- ❌ **GitHub Actions falló** debido a código con errores
+
+**SOLUCIÓN:** Ejecutar `node pre-commit-check.js` y corregir todos los errores antes del commit.
 
 #### **🧪 Testing Requirements:**
 - [ ] **Unit tests** written for new functions/features

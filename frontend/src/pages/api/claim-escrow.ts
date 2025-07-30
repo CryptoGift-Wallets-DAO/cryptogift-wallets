@@ -37,6 +37,7 @@ import {
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { executeClaimTransaction } from '../../lib/gasPaidTransactions';
+import { debugLogger } from '../../lib/secureDebugLogger';
 
 // Types
 interface ClaimEscrowRequest {
@@ -197,11 +198,11 @@ async function validateClaimRequest(
     });
     
     if (providedPasswordHash.toLowerCase() !== gift.passwordHash.toLowerCase()) {
-      console.log('❌ PASSWORD MISMATCH: Provided hash does not match contract hash');
+      debugLogger.operation('Password validation failed', { tokenId, giftId, result: 'INVALID' });
       return { valid: false, error: 'Invalid password' };
     }
     
-    console.log('✅ PASSWORD VALIDATION: Hash matches - claim authorized');
+    debugLogger.operation('Password validation success', { tokenId, giftId, result: 'VALID' });
     
     return { valid: true, gift };
     
@@ -282,7 +283,7 @@ async function claimEscrowGasless(
       chain: baseSepolia,
       transactionHash: result.transactionHash
     });
-    console.log('✅ Claim successful, transaction hash:', result.transactionHash);
+    debugLogger.operation('Claim successful', { success: true, hasTransactionHash: !!result.transactionHash });
     
     // Step 6: Verify transaction on-chain
     const verification = await verifyGaslessTransaction(

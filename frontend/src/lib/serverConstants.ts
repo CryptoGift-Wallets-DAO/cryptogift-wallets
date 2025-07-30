@@ -1,6 +1,8 @@
 // SERVER-SIDE ONLY CONSTANTS - DO NOT IMPORT IN CLIENT COMPONENTS
 // This file contains functions that require private keys and should only be used in API routes
 
+import { debugLogger } from './secureDebugLogger';
+
 /**
  * SERVER-ONLY: Generate neutral address for gift custodial
  * This function calculates the actual deployer address from private key
@@ -31,8 +33,11 @@ export const generateNeutralGiftAddressServer = (tokenId: string): string => {
       const neutralWallet = new ethers.Wallet(neutralPrivateKey);
       const uniqueNeutralAddress = neutralWallet.address;
       
-      console.log(`🤖 SERVER: Generated UNIQUE neutral address for token ${tokenId}: ${uniqueNeutralAddress}`);
-      console.log(`🔗 SERVER: Derived from base deployer: ${baseAddress}`);
+      debugLogger.operation('Neutral address generated', { 
+        tokenId, 
+        hasUniqueAddress: true,
+        fromBaseDeployer: true 
+      });
       return uniqueNeutralAddress;
     } else {
       // Generate deterministic fallback unique per token
@@ -41,11 +46,15 @@ export const generateNeutralGiftAddressServer = (tokenId: string): string => {
         ['FALLBACK_NEUTRAL_V1', tokenId]
       );
       const fallbackAddress = ethers.getAddress('0x' + ethers.keccak256(seed).slice(-40));
-      console.log(`🤖 SERVER: Generated deterministic fallback neutral for token ${tokenId}: ${fallbackAddress}`);
+      debugLogger.operation('Fallback neutral address generated', { 
+        tokenId, 
+        isDeterministic: true,
+        isFallback: true 
+      });
       return fallbackAddress;
     }
   } catch (error) {
-    console.warn('⚠️ SERVER: Could not generate unique neutral address, using deterministic fallback');
+    debugLogger.error('Neutral address generation', error as Error);
     const { ethers } = require("ethers");
     const seed = ethers.solidityPackedKeccak256(['string', 'uint256'], ['ERROR_FALLBACK_V1', tokenId]);
     const fallbackAddress = ethers.getAddress('0x' + ethers.keccak256(seed).slice(-40));

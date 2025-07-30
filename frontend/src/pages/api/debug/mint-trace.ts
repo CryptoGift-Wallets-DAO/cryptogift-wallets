@@ -8,7 +8,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    console.log('🔍 DEBUG: Getting mint trace information...');
+    debugLogger.operation('🔍 DEBUG: Getting mint trace information...');
 
     const debugInfo = {
       timestamp: new Date().toISOString(),
@@ -82,7 +82,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       debugInfo.recentLogs = ['Could not fetch recent logs'];
     }
 
-    console.log('🔍 DEBUG: Mint trace completed', debugInfo);
+    debugLogger.operation('🔍 DEBUG: Mint trace completed', debugInfo);
 
     res.status(200).json({
       success: true,

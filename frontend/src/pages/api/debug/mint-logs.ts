@@ -25,7 +25,7 @@ export function addMintLog(level: 'INFO' | 'ERROR' | 'SUCCESS' | 'WARN', step: s
     mintLogs = mintLogs.slice(-100);
   }
   
-  console.log(`🔍 MINT LOG [${level}] ${step}:`, data);
+  debugLogger.operation(`🔍 MINT LOG [${level}] ${step}:`, data);
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
