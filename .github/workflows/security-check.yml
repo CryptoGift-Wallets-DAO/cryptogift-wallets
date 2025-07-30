@@ -19,33 +19,38 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+        cache: 'pnpm'
+        cache-dependency-path: pnpm-lock.yaml
+        
+    - name: 📦 Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
         
     - name: 📦 Install Dependencies
       run: |
         cd frontend
-        npm ci
+        pnpm install --frozen-lockfile
         
     - name: 🔍 TypeScript Compilation Check
       run: |
         cd frontend
-        npm run type-check
+        pnpm run type-check
         
     - name: 🧹 ESLint Security Rules
       run: |
         cd frontend
-        npm run lint
+        pnpm run lint
         
     - name: 🧪 Run Test Suite
       run: |
         cd frontend
-        npm run test:ci
+        pnpm run test:ci
         
     - name: 📊 Coverage Threshold Check (70% minimum)
       run: |
         cd frontend
-        npm run test:coverage -- --coverageThreshold='{"global":{"branches":70,"functions":70,"lines":70,"statements":70}}'
+        pnpm run test:coverage -- --coverageThreshold='{"global":{"branches":70,"functions":70,"lines":70,"statements":70}}'
         
     - name: 🔒 Security Pattern Validation (Non-blocking)
       run: |
@@ -124,7 +129,7 @@ jobs:
     - name: 🏗️ Production Build Test
       run: |
         cd frontend
-        npm run build
+        pnpm run build
         
     - name: ✅ Security Gate Passed
       run: |
@@ -151,14 +156,21 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: pnpm-lock.yaml
+        
+    - name: 📦 Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
         
     - name: 📊 Generate Security Metrics
       run: |
         cd frontend
         
         # Get test results and coverage
-        COVERAGE=$(npm run test:coverage 2>/dev/null | grep -oP 'All files.*?(\d+\.?\d*)%' | tail -1 | grep -oP '\d+\.?\d*' || echo "0")
-        TEST_RESULTS=$(npm test 2>&1 | grep -oP '\d+ passed' || echo "0 passed")
+        COVERAGE=$(pnpm run test:coverage 2>/dev/null | grep -oP 'All files.*?(\d+\.?\d*)%' | tail -1 | grep -oP '\d+\.?\d*' || echo "0")
+        TEST_RESULTS=$(pnpm test 2>&1 | grep -oP '\d+ passed' || echo "0 passed")
         
         # Check for security patterns
         UNPROTECTED_ENDPOINTS=$(find src/pages/api -name "*.ts" -type f 2>/dev/null | wc -l || echo "0")
