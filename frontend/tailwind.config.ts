@@ -84,7 +84,9 @@ const config: Config = {
     },
   },
   plugins: [
+    // @ts-ignore - CommonJS require for tailwind plugins
     require('@tailwindcss/typography'),
+    // @ts-ignore - CommonJS require for tailwind plugins
     require('tailwindcss-animate')
   ],
 };
