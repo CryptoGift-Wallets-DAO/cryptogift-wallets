@@ -844,19 +844,29 @@ export function clearWalletCache(walletAddress: string): boolean {
 // Enhanced IPFS URL resolution with multiple gateways and caching
 export function resolveIPFSUrlClient(ipfsUrl: string): string {
   if (ipfsUrl.startsWith('ipfs://')) {
-    const cid = ipfsUrl.replace('ipfs://', '');
+    // FIX: Handle malformed double prefix ipfs://ipfs://
+    let cleanUrl = ipfsUrl;
+    if (cleanUrl.includes('ipfs://ipfs://')) {
+      cleanUrl = cleanUrl.replace('ipfs://ipfs://', 'ipfs://');
+      console.log('🔧 Fixed malformed double IPFS prefix:', ipfsUrl, '→', cleanUrl);
+    }
+    
+    const cid = cleanUrl.replace('ipfs://', '');
+    
+    // Additional validation: ensure CID doesn't still contain protocol
+    const finalCid = cid.startsWith('ipfs://') ? cid.replace('ipfs://', '') : cid;
     
     // Check for cached working gateway
-    const gatewayKey = `ipfs_gateway_${cid}`;
+    const gatewayKey = `ipfs_gateway_${finalCid}`;
     const cachedGateway = localStorage.getItem(gatewayKey);
     
     if (cachedGateway) {
-      console.log(`🚀 Using cached gateway for ${cid.slice(0, 8)}...`);
+      console.log(`🚀 Using cached gateway for ${finalCid.slice(0, 8)}...`);
       return cachedGateway;
     }
     
     // Default to primary reliable gateway
-    const primaryGateway = `https://nftstorage.link/ipfs/${cid}`;
+    const primaryGateway = `https://nftstorage.link/ipfs/${finalCid}`;
     return primaryGateway;
   }
   return ipfsUrl;

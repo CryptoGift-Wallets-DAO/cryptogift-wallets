@@ -255,7 +255,18 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
       console.warn('⚠️ All chain detection methods failed, using Base Sepolia default:', chainId);
     }
     
-    console.log('🔗 SIWE will use Chain ID:', chainId, '(optimized for wallet compatibility)');
+    // CRITICAL: Ensure chainId is always a number before API calls
+    const numericChainId = typeof chainId === 'string' ? parseInt(chainId, 10) : chainId;
+    
+    console.log('🔗 SIWE will use Chain ID:', numericChainId, '(type:', typeof numericChainId, ')');
+    
+    // Validate chainId is a valid number
+    if (isNaN(numericChainId) || numericChainId <= 0) {
+      console.warn('⚠️ Invalid chainId detected, using Base Sepolia default');
+      chainId = 84532;
+    } else {
+      chainId = numericChainId;
+    }
     
     console.log('🔗 Using Chain ID:', chainId);
     

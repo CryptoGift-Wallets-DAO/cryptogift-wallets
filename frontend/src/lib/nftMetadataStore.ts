@@ -231,13 +231,18 @@ export function createNFTMetadata(params: {
   owner?: string;
   creatorWallet?: string; // NEW: Track who created it
 }): NFTMetadata {
+  // DEFENSIVE: Clean imageIpfsCid to prevent double prefix
+  const cleanImageCid = params.imageIpfsCid.startsWith('ipfs://') 
+    ? params.imageIpfsCid.replace('ipfs://', '') 
+    : params.imageIpfsCid;
+
   return {
     contractAddress: params.contractAddress.toLowerCase(),
     tokenId: params.tokenId,
     name: params.name,
     description: params.description,
-    image: `ipfs://${params.imageIpfsCid}`,
-    imageIpfsCid: params.imageIpfsCid,
+    image: `ipfs://${cleanImageCid}`,
+    imageIpfsCid: cleanImageCid,
     metadataIpfsCid: params.metadataIpfsCid,
     attributes: params.attributes || [],
     createdAt: new Date().toISOString(),

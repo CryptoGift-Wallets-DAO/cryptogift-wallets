@@ -9,7 +9,7 @@ import {
   prepareReturnExpiredGiftByIdCall,
   getGiftIdFromTokenId
 } from '../../lib/escrowUtils';
-import { getAuthHeader } from '../../lib/siweClient';
+import { getAuthHeader, getAuthState } from '../../lib/siweClient';
 import { sendTransaction } from 'thirdweb';
 
 interface ExpiredGift {
@@ -62,8 +62,17 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
       // REAL API CALL: Load expired gifts for authenticated user
       const authHeader = getAuthHeader();
       if (!authHeader) {
+        console.error('❌ EXPIRED GIFTS: No auth header available');
+        const authState = getAuthState();
+        console.log('🔍 Auth state:', { 
+          hasToken: !!authState.token, 
+          isAuthenticated: authState.isAuthenticated,
+          expiresAt: authState.expiresAt 
+        });
         throw new Error('Please sign in with your wallet to view expired gifts');
       }
+      
+      console.log('✅ EXPIRED GIFTS: Auth header available, making API call...');
 
       const response = await fetch('/api/user/expired-gifts', {
         method: 'GET',
