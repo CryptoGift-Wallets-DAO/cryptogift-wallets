@@ -73,30 +73,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         console.log(`👤 NFT ${tokenId} owner:`, owner);
         
-        // CRITICAL: Check if user owns this NFT directly OR through TBA relationship
+        // CRITICAL FIX: Only check actual blockchain ownership, not metadata
         const userOwnsDirectly = owner.toLowerCase() === userAddress.toLowerCase();
         
-        // Also check if this NFT was originally minted to user (stored in metadata)
-        let isUserRelated = userOwnsDirectly;
-        let nftMetadata = null;
-        
-        try {
-          nftMetadata = await getNFTMetadata(contractAddress, tokenId.toString());
-          
-          // Check if user is the original recipient or creator
-          if (nftMetadata && nftMetadata.owner) {
-            const metadataOwner = nftMetadata.owner.toLowerCase();
-            if (metadataOwner === userAddress.toLowerCase()) {
-              isUserRelated = true;
-              console.log(`✅ NFT ${tokenId} is related to user via metadata`);
-            }
-          }
-        } catch (metadataError) {
-          console.log(`⚠️ No metadata found for NFT ${tokenId}`);
-        }
-        
-        if (isUserRelated) {
+        if (userOwnsDirectly) {
           console.log(`🎯 NFT ${tokenId} belongs to user, adding to wallet list`);
+          
+          // Get NFT metadata using the NFT API
+          let nftMetadata = null;
+          try {
+            const metadataResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/nft/${contractAddress}/${tokenId}`);
+            if (metadataResponse.ok) {
+              nftMetadata = await metadataResponse.json();
+              console.log(`✅ NFT ${tokenId} metadata loaded via API`);
+            }
+          } catch (metadataError) {
+            console.log(`⚠️ Failed to load metadata for NFT ${tokenId}`);
+          }
           
           // Calculate TBA address for this NFT
           const { ethers } = await import("ethers");
@@ -127,15 +120,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           let nftImage = '/images/nft-placeholder.png';
           let nftName = `CryptoGift Wallet #${tokenId}`;
           
-          if (nftMetadata) {
+          if (nftMetadata && nftMetadata.success) {
             if (nftMetadata.image) {
-              // Convert IPFS URLs to accessible format
-              if (nftMetadata.image.startsWith('ipfs://')) {
-                const cid = nftMetadata.image.replace('ipfs://', '');
-                nftImage = `https://nftstorage.link/ipfs/${cid}`;
-              } else {
-                nftImage = nftMetadata.image;
-              }
+              // Use image URL directly from API (already processed)
+              nftImage = nftMetadata.image;
             }
             
             if (nftMetadata.name) {

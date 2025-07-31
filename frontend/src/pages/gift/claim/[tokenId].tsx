@@ -95,19 +95,15 @@ export default function ClaimGiftPage() {
       if (metadataResponse.ok) {
         const metadataResult = await metadataResponse.json();
         
-        if (metadataResult.success && metadataResult.metadata) {
-          console.log('✅ NFT metadata loaded:', metadataResult.metadata);
+        if (metadataResult.success) {
+          console.log('✅ NFT metadata loaded:', metadataResult);
           
-          // Convert IPFS URLs to accessible format
-          let imageUrl = metadataResult.metadata.image;
-          if (imageUrl && imageUrl.startsWith('ipfs://')) {
-            const cid = imageUrl.replace('ipfs://', '');
-            imageUrl = `https://nftstorage.link/ipfs/${cid}`;
-          }
+          // Use image URL directly from API (already processed)
+          let imageUrl = metadataResult.image;
           
           setNftMetadata({
-            name: metadataResult.metadata.name || `CryptoGift NFT #${tokenId}`,
-            description: metadataResult.metadata.description || 'A secured gift NFT protected by temporal escrow',
+            name: metadataResult.name || `CryptoGift NFT #${tokenId}`,
+            description: metadataResult.description || 'A secured gift NFT protected by temporal escrow',
             image: imageUrl
           });
         } else {
