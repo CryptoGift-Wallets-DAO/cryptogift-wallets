@@ -32,9 +32,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // 1. Get current giftCounter
     const giftCounter = await readContract({
       contract: escrowContract,
-      method: "giftCounter",
+      method: "function giftCounter() view returns (uint256)",
       params: []
-    }) as bigint;
+    });
     
     debugLogger.contractCall('giftCounter', true, undefined);
     
@@ -51,13 +51,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       try {
         const gift = await readContract({
           contract: escrowContract,
-          method: "getGift",
+          method: "function getGift(uint256) view returns (address, uint256, address, uint256, bytes32, uint8)",
           params: [BigInt(giftId)]
-        }) as readonly [string, bigint, string, bigint, string, number];
+        });
         
         // getGift returns: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
-        const tokenId = Number(gift[3]);
-        const nftContract = gift[2];
+        const tokenId = Number((gift as any)[3]);
+        const nftContract = (gift as any)[2] as string;
         
         debugLogger.giftMapping(tokenId, giftId);
         
@@ -78,8 +78,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             isCorrect: giftId === 15,
             verification: {
               found: true,
-              tokenIdMatches: Number(gift[3]) === 177,
-              contractMatches: gift[2].toLowerCase() === NFT_ADDRESS.toLowerCase(),
+              tokenIdMatches: Number((gift as any)[3]) === 177,
+              contractMatches: ((gift as any)[2] as string).toLowerCase() === NFT_ADDRESS.toLowerCase(),
               giftIdFromLogs: 15,
               actualGiftId: giftId,
               dataConsistency: giftId === 15 ? 'CONSISTENT' : 'INCONSISTENT'

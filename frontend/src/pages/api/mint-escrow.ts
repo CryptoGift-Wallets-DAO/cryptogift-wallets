@@ -1008,8 +1008,9 @@ async function mintNFTEscrowGasPaid(
           }
           
         } catch (updateError) {
-          console.error('❌ FAILED TO UPDATE TOKEN URI ON CONTRACT:', updateError);
-          // Continue with mint process - metadata is still created and stored
+          console.error('❌ FAILED TO UPDATE TOKEN URI ON CONTRACT - FUNCTION NOT DEPLOYED:', updateError);
+          console.log('📋 NEXT ACTION: Deploy contract with updateTokenURI function');
+          // Continue with mint process - NFT exists, just metadata won't be updated post-mint
         }
         
       } else {
