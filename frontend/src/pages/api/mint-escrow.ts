@@ -915,16 +915,68 @@ async function mintNFTEscrowGasPaid(
         );
       }
       
-      if (metadataUpdateResult.success) {
+      if (metadataUpdateResult.success && metadataUpdateResult.metadataUrl) {
         console.log('✅ METADATA UPDATED (GAS-PAID): Real tokenId metadata created:', {
           tokenId,
           newMetadataCid: metadataUpdateResult.metadataCid,
+          newMetadataUrl: metadataUpdateResult.metadataUrl,
           oldMetadataCid: metadataCid
         });
         
-        // NOTE: The NFT still points to the old metadata URI
-        // In a full implementation, we would need to update the tokenURI on the contract
-        // For now, this creates the correct metadata for external consumption
+        // CRITICAL FIX: Update tokenURI on contract with correct metadata
+        console.log('🔄 UPDATING CONTRACT TOKEN URI with real tokenId metadata...');
+        
+        try {
+          // Get NFT contract
+          const nftContract = getContract({
+            client,
+            chain: baseSepolia,
+            address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+          });
+          
+          // Get deployer account for contract update
+          const deployerAccount = privateKeyToAccount({
+            client,
+            privateKey: process.env.PRIVATE_KEY_DEPLOY!
+          });
+          
+          // Prepare updateTokenURI transaction
+          const updateURITransaction = prepareContractCall({
+            contract: nftContract,
+            method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
+            params: [BigInt(tokenId), metadataUpdateResult.metadataUrl]
+          });
+          
+          // Execute update transaction
+          const updateResult = await sendTransaction({
+            transaction: updateURITransaction,
+            account: deployerAccount
+          });
+          
+          console.log('📨 TokenURI update transaction sent:', updateResult.transactionHash);
+          
+          // Wait for update confirmation
+          const updateReceipt = await waitForReceipt({
+            client,
+            chain: baseSepolia,
+            transactionHash: updateResult.transactionHash
+          });
+          
+          if (updateReceipt.status === 'success') {
+            console.log('✅ TOKEN URI UPDATED ON CONTRACT:', {
+              tokenId,
+              newTokenURI: metadataUpdateResult.metadataUrl,
+              updateTxHash: updateResult.transactionHash
+            });
+          } else {
+            console.error('❌ TokenURI update transaction failed:', updateReceipt.status);
+          }
+          
+        } catch (updateError) {
+          console.error('❌ FAILED TO UPDATE TOKEN URI ON CONTRACT:', updateError);
+          // Continue with mint process - metadata is still created and stored
+        }
+        
       } else {
         console.warn('⚠️ METADATA UPDATE FAILED (GAS-PAID):', metadataUpdateResult.error);
         // Continue with mint process even if metadata update fails

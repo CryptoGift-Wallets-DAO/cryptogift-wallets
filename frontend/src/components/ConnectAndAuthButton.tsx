@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
+import { baseSepolia } from 'thirdweb/chains';
 import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
 import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
@@ -89,9 +90,22 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
       <div className={className}>
         <ConnectButton
           client={client}
+          chain={baseSepolia}
           appMetadata={{
             name: "CryptoGift Wallets",
             url: "https://cryptogift-wallets.vercel.app",
+          }}
+          connectModal={{
+            size: "wide",
+            title: "Conectar Wallet",
+            showThirdwebBranding: false,
+            welcomeScreen: {
+              title: "CryptoGift Wallets",
+              subtitle: "Conecta tu wallet para comenzar"
+            }
+          }}
+          switchButton={{
+            label: "Cambiar Red"
           }}
         />
       </div>

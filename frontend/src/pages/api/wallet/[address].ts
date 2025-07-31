@@ -26,16 +26,28 @@ async function getWalletData(client: any, address: string) {
       console.warn('Could not read USDC balance:', balanceError);
     }
 
-    // Get ETH balance (native token)
+    // Get ETH balance (native token) using ThirdWeb v5 method
     let ethBalance = "0";
     try {
-      const balance = await client.getBalance({
-        address,
-        chain: baseSepolia,
+      const balance = await readContract({
+        contract: getContract({
+          client,
+          chain: baseSepolia,
+          address: "0x0000000000000000000000000000000000000000" // Native ETH
+        }),
+        method: "function balanceOf(address) view returns (uint256)",
+        params: [address]
       });
       ethBalance = (Number(balance) / 1000000000000000000).toString(); // Convert from wei to ETH
     } catch (ethError) {
-      console.warn('Could not read ETH balance:', ethError);
+      // Alternative method for native balance using RPC
+      try {
+        const provider = new (await import('ethers')).ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+        const balance = await provider.getBalance(address);
+        ethBalance = (Number(balance) / 1000000000000000000).toString();
+      } catch (rpcError) {
+        console.warn('Could not read ETH balance:', ethError, rpcError);
+      }
     }
 
     return {

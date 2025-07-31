@@ -30,8 +30,14 @@ function serializeUserProfileForRedis(profile: UserProfile): Record<string, stri
   Object.entries(profile).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       if (typeof value === 'object') {
-        // Convert arrays and objects to JSON strings
-        serialized[key] = JSON.stringify(value);
+        try {
+          // Safely convert arrays and objects to JSON strings
+          serialized[key] = JSON.stringify(value);
+        } catch (jsonError) {
+          console.error(`❌ Failed to serialize ${key}:`, value, jsonError);
+          // Fallback for objects that can't be serialized
+          serialized[key] = String(value);
+        }
       } else {
         // Convert all other types to strings
         serialized[key] = String(value);
@@ -138,16 +144,49 @@ function parseUserProfileFromRedis(redisData: Record<string, unknown>): UserProf
       return null;
     }
 
-    // Parse JSON fields that are stored as strings in Redis
-    const referralStats = redisData.referralStats ? JSON.parse(redisData.referralStats as string) : {
+    // Safe JSON parsing with fallbacks
+    let referralStats = {
       totalReferrals: 0,
       activeReferrals: 0,
       totalEarnings: 0,
       pendingRewards: 0,
       conversionRate: 0
     };
-    const sessionHistory = redisData.sessionHistory ? JSON.parse(redisData.sessionHistory as string) : [];
-    const ipHistory = redisData.ipHistory ? JSON.parse(redisData.ipHistory as string) : [];
+    
+    if (redisData.referralStats) {
+      try {
+        const statsString = redisData.referralStats as string;
+        if (statsString !== '[object Object]' && statsString.startsWith('{')) {
+          referralStats = JSON.parse(statsString);
+        }
+      } catch (parseError) {
+        console.warn('❌ Failed to parse referralStats, using defaults:', parseError);
+      }
+    }
+
+    let sessionHistory: string[] = [];
+    if (redisData.sessionHistory) {
+      try {
+        const historyString = redisData.sessionHistory as string;
+        if (historyString !== '[object Object]' && historyString.startsWith('[')) {
+          sessionHistory = JSON.parse(historyString);
+        }
+      } catch (parseError) {
+        console.warn('❌ Failed to parse sessionHistory, using empty array:', parseError);
+      }
+    }
+
+    let ipHistory: string[] = [];
+    if (redisData.ipHistory) {
+      try {
+        const ipString = redisData.ipHistory as string;
+        if (ipString !== '[object Object]' && ipString.startsWith('[')) {
+          ipHistory = JSON.parse(ipString);
+        }
+      } catch (parseError) {
+        console.warn('❌ Failed to parse ipHistory, using empty array:', parseError);
+      }
+    }
 
     const profile: UserProfile = {
       address: redisData.address as string,

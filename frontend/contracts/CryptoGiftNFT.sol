@@ -98,6 +98,16 @@ contract CryptoGiftNFT is ERC721, ERC721URIStorage, Ownable {
         return _ownerOf(tokenId) != address(0);
     }
     
+    /**
+     * @dev Update token URI (for post-mint metadata updates)
+     * @param tokenId Token ID to update
+     * @param uri New metadata URI
+     */
+    function updateTokenURI(uint256 tokenId, string memory uri) public onlyOwner {
+        require(exists(tokenId), "Token does not exist");
+        _setTokenURI(tokenId, uri);
+    }
+    
     // Required overrides for ERC721URIStorage
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);

@@ -9,6 +9,7 @@ import { RightSlideWallet } from '../../components/TBAWallet/RightSlideWallet';
 import { ExtensionInstaller } from '../../components/BrowserExtension/ExtensionInstaller';
 import { AdvancedSecurity } from '../../components/Security/AdvancedSecurity';
 import { AccountManagement } from '../../components/Account/AccountManagement';
+import { ExpiredGiftManager } from '../../components/escrow/ExpiredGiftManager';
 
 interface UserWallet {
   id: string;
@@ -299,6 +300,24 @@ export default function MyWalletsPage() {
             />
           )}
         </div>
+
+        {/* Expired Gifts Manager */}
+        {account && (
+          <div className="max-w-4xl mx-auto mt-8">
+            <ExpiredGiftManager
+              onGiftReturned={(tokenId) => {
+                console.log('✅ Gift returned:', tokenId);
+                // Refresh wallets list after gift return
+                loadUserWallets();
+              }}
+              onRefresh={() => {
+                // Refresh wallets list
+                loadUserWallets();
+              }}
+              className="rounded-2xl shadow-lg"
+            />
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="max-w-4xl mx-auto mt-8 text-center">
