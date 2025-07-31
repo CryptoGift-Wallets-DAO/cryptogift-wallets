@@ -32,9 +32,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // 1. Get current giftCounter
     const giftCounter = await readContract({
       contract: escrowContract,
-      method: "function giftCounter() view returns (uint256)",
+      method: "giftCounter",
       params: []
-    });
+    }) as bigint;
     
     debugLogger.contractCall('giftCounter', true, undefined);
     
@@ -47,13 +47,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       targetContract: NFT_ADDRESS 
     });
     
-    for (let giftId = 0; giftId < Number(giftCounter); giftId++) {
+    for (let giftId = 1; giftId <= Number(giftCounter); giftId++) {
       try {
         const gift = await readContract({
           contract: escrowContract,
-          method: "function getGift(uint256) view returns (address, uint256, address, uint256, bytes32, uint8)",
+          method: "getGift",
           params: [BigInt(giftId)]
-        });
+        }) as readonly [string, bigint, string, bigint, string, number];
         
         // getGift returns: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
         const tokenId = Number(gift[3]);

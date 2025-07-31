@@ -259,39 +259,58 @@ export async function verifyNFTOwnership(
 ): Promise<{ success: boolean; actualOwner?: string; error?: string }> {
   let attempts = 0;
   let currentOwner: string | undefined;
+  let lastError: string | undefined;
   
   const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL!);
   const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
   const nftContractCheck = new ethers.Contract(nftContract, nftContractABI, provider);
   
+  console.log(`🔍 RACE CONDITION FIX: Starting enhanced ownership verification for tokenId ${tokenId}`);
+  console.log(`🔍 Expected owner: ${expectedOwner}`);
+  console.log(`🔍 Max attempts: ${maxAttempts}, Delay: ${delayMs}ms`);
+  
   while (attempts < maxAttempts) {
     try {
+      // Wait longer on subsequent attempts (exponential backoff)
+      if (attempts > 0) {
+        const backoffDelay = delayMs * Math.pow(1.5, attempts - 1);
+        console.log(`⏳ RACE CONDITION FIX: Backing off ${backoffDelay}ms before attempt ${attempts + 1}`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+      
       currentOwner = await nftContractCheck.ownerOf(tokenId);
-      console.log(`🔍 Ownership Check (attempt ${attempts + 1}): NFT owner is ${currentOwner}`);
-      console.log(`🔍 Expected owner: ${expectedOwner}`);
+      console.log(`🔍 Ownership Check (attempt ${attempts + 1}/${maxAttempts}): NFT owner is ${currentOwner}`);
       
       if (currentOwner.toLowerCase() === expectedOwner.toLowerCase()) {
-        console.log('✅ NFT ownership confirmed');
+        console.log('✅ RACE CONDITION FIX: NFT ownership confirmed!');
         return { success: true, actualOwner: currentOwner };
       } else {
-        console.log(`⏳ NFT not yet transferred to expected owner (attempt ${attempts + 1}/${maxAttempts})`);
-        if (attempts < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-        }
+        console.log(`⏳ RACE CONDITION: NFT not yet transferred to expected owner (attempt ${attempts + 1}/${maxAttempts})`);
+        console.log(`   Expected: ${expectedOwner}`);
+        console.log(`   Actual:   ${currentOwner}`);
+        lastError = `Owner mismatch: expected ${expectedOwner}, got ${currentOwner}`;
       }
     } catch (error: any) {
-      console.log(`❌ Error checking NFT ownership (attempt ${attempts + 1}): ${error.message}`);
-      if (attempts < maxAttempts - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+      lastError = error.message;
+      console.log(`❌ RACE CONDITION: Error checking NFT ownership (attempt ${attempts + 1}/${maxAttempts}): ${error.message}`);
+      
+      // Special handling for common race condition errors
+      if (error.message.includes('ERC721: invalid token ID') || 
+          error.message.includes('ERC721NonexistentToken')) {
+        console.log('🔍 RACE CONDITION: Token may not exist yet, retrying...');
       }
     }
     attempts++;
   }
   
+  const finalError = `RACE CONDITION FAILURE: NFT ownership verification failed after ${maxAttempts} attempts. Expected: ${expectedOwner}, Got: ${currentOwner || 'unknown'}. Last error: ${lastError}`;
+  
+  console.error('❌ RACE CONDITION FINAL FAILURE:', finalError);
+  
   return { 
     success: false, 
     actualOwner: currentOwner,
-    error: `NFT ownership verification failed after ${maxAttempts} attempts. Expected: ${expectedOwner}, Got: ${currentOwner || 'unknown'}`
+    error: finalError
   };
 }
 

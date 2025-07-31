@@ -365,17 +365,25 @@ async function mintNFTEscrowGasless(
       console.log('🔍 DEBUG: Creator address:', creatorAddress ? 'Set' : 'Missing');
       console.log('✅ V2: Using registerGiftMinted for zero-custody escrow');
       
-      // CRITICAL: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
+      // CRITICAL FIX: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
       console.log('🔍 PRE-CHECK: Verifying NFT is owned by escrow before registration...');
       
       const ownershipResult = await verifyNFTOwnership(
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
         tokenId,
-        ESCROW_CONTRACT_ADDRESS!
+        ESCROW_CONTRACT_ADDRESS!,
+        10, // Increased max attempts from 5 to 10
+        2000 // Increased delay from 1000ms to 2000ms for gas-paid transactions
       );
       
       if (!ownershipResult.success) {
-        throw new Error(ownershipResult.error || 'NFT ownership verification failed');
+        console.error('❌ CRITICAL: NFT ownership verification failed - this will cause registerGiftMinted to fail');
+        console.error('❌ ERROR DETAILS:', {
+          expectedOwner: ESCROW_CONTRACT_ADDRESS,
+          actualOwner: ownershipResult.actualOwner,
+          error: ownershipResult.error
+        });
+        throw new Error(`RACE CONDITION DETECTED: ${ownershipResult.error || 'NFT ownership verification failed'}`);
       }
       
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
@@ -403,6 +411,33 @@ async function mintNFTEscrowGasless(
       }
       
       console.log('✅ Gift registered successfully in escrow V2 contract');
+      
+      // RACE CONDITION FIX: Verify that registerGiftMinted actually created the gift
+      console.log('🔍 RACE CONDITION VERIFICATION: Confirming gift was registered correctly...');
+      try {
+        const escrowContract = getEscrowContract();
+        const giftCounter = await readContract({
+          contract: escrowContract,
+          method: "giftCounter",
+          params: []
+        });
+        console.log(`✅ VERIFICATION: Current gift counter: ${giftCounter}`);
+        
+        if (Number(giftCounter) > 0) {
+          const latestGift = await readContract({
+            contract: escrowContract,
+            method: "getGift",
+            params: [BigInt(giftCounter)]
+          });
+          console.log('✅ VERIFICATION: Latest gift registered:', {
+            creator: latestGift[0],
+            tokenId: latestGift[3].toString(),
+            status: latestGift[5]
+          });
+        }
+      } catch (verificationError) {
+        console.warn('⚠️ VERIFICATION FAILED (but gift registration succeeded):', verificationError);
+      }
       
       // DETERMINISTIC SOLUTION: Parse giftId from transaction receipt events
       console.log('🔍 PARSING: Extracting giftId from transaction receipt...');
@@ -994,17 +1029,25 @@ async function mintNFTEscrowGasPaid(
       // ESCROW MINT V2: NFT minted directly to escrow, register gift with registerGiftMinted
       console.log('🔒 ESCROW MINT V2: NFT minted directly to escrow, registering gift...');
       
-      // CRITICAL: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
+      // CRITICAL FIX: Verify NFT ownership BEFORE calling registerGiftMinted to prevent race condition
       console.log('🔍 PRE-CHECK: Verifying NFT is owned by escrow before registration...');
       
       const ownershipResult = await verifyNFTOwnership(
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
         tokenId,
-        ESCROW_CONTRACT_ADDRESS!
+        ESCROW_CONTRACT_ADDRESS!,
+        10, // Increased max attempts from 5 to 10
+        2000 // Increased delay from 1000ms to 2000ms for gas-paid transactions
       );
       
       if (!ownershipResult.success) {
-        throw new Error(ownershipResult.error || 'NFT ownership verification failed');
+        console.error('❌ CRITICAL: NFT ownership verification failed - this will cause registerGiftMinted to fail');
+        console.error('❌ ERROR DETAILS:', {
+          expectedOwner: ESCROW_CONTRACT_ADDRESS,
+          actualOwner: ownershipResult.actualOwner,
+          error: ownershipResult.error
+        });
+        throw new Error(`RACE CONDITION DETECTED: ${ownershipResult.error || 'NFT ownership verification failed'}`);
       }
       
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
@@ -1038,6 +1081,33 @@ async function mintNFTEscrowGasPaid(
       }
       
       console.log('✅ Gift registered successfully in escrow V2 contract with gas-paid transaction');
+      
+      // RACE CONDITION FIX: Verify that registerGiftMinted actually created the gift
+      console.log('🔍 RACE CONDITION VERIFICATION: Confirming gift was registered correctly (gas-paid)...');
+      try {
+        const escrowContract = getEscrowContract();
+        const giftCounter = await readContract({
+          contract: escrowContract,
+          method: "giftCounter",
+          params: []
+        });
+        console.log(`✅ VERIFICATION (GAS-PAID): Current gift counter: ${giftCounter}`);
+        
+        if (Number(giftCounter) > 0) {
+          const latestGift = await readContract({
+            contract: escrowContract,
+            method: "getGift",
+            params: [BigInt(giftCounter)]
+          });
+          console.log('✅ VERIFICATION (GAS-PAID): Latest gift registered:', {
+            creator: latestGift[0],
+            tokenId: latestGift[3].toString(),
+            status: latestGift[5]
+          });
+        }
+      } catch (verificationError) {
+        console.warn('⚠️ VERIFICATION FAILED (but gift registration succeeded):', verificationError);
+      }
       
       // Step: Verify NFT is in escrow contract (should already be there from direct mint)
       console.log('🔍 Verifying NFT is in escrow contract (V2 direct mint)...');

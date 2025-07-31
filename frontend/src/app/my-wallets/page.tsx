@@ -92,14 +92,31 @@ export default function MyWalletsPage() {
     setShowWalletInterface(true);
   };
 
-  const handleSetAsActive = (walletId: string) => {
+  // Helper function to get active wallet (prevents complex inline logic)
+  const getActiveWallet = (): UserWallet | null => {
+    return wallets.find(w => w.id === activeWallet) || null;
+  };
+
+  const handleSetAsActive = async (walletId: string) => {
     setActiveWallet(walletId);
     setWallets(prev => prev.map(w => ({ 
       ...w, 
       isActive: w.id === walletId 
     })));
-    // TODO: Save active wallet preference to localStorage or API
+    
+    // Save to localStorage
     localStorage.setItem('activeWalletId', walletId);
+    
+    // TODO: Sync with backend when API is ready
+    // try {
+    //   await fetch('/api/user/set-active-wallet', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ walletId })
+    //   });
+    // } catch (error) {
+    //   console.error('Failed to sync active wallet:', error);
+    // }
   };
 
   if (!mounted) {
@@ -216,7 +233,10 @@ export default function MyWalletsPage() {
                             height={48}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = '/images/nft-placeholder.png';
+                              const placeholder = '/images/nft-placeholder.png';
+                              if (e.currentTarget.src !== placeholder) {
+                                e.currentTarget.src = placeholder;
+                              }
                             }}
                           />
                         </div>
@@ -265,32 +285,26 @@ export default function MyWalletsPage() {
         {/* Features Grid */}
         <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
           {/* Browser Extension */}
-          {activeWallet && wallets.length > 0 && (() => {
-            const wallet = wallets.find(w => w.id === activeWallet);
-            return wallet ? (
-              <ExtensionInstaller
-                walletData={{
-                  nftContract: wallet.nftContract,
-                  tokenId: wallet.tokenId,
-                  tbaAddress: wallet.tbaAddress,
-                  name: wallet.name,
-                  image: wallet.image
-                }}
-                className="shadow-lg"
-              />
-            ) : null;
-          })()}
+          {getActiveWallet() && (
+            <ExtensionInstaller
+              walletData={{
+                nftContract: getActiveWallet()!.nftContract,
+                tokenId: getActiveWallet()!.tokenId,
+                tbaAddress: getActiveWallet()!.tbaAddress,
+                name: getActiveWallet()!.name,
+                image: getActiveWallet()!.image
+              }}
+              className="shadow-lg"
+            />
+          )}
 
           {/* Advanced Security */}
-          {activeWallet && wallets.length > 0 && (() => {
-            const wallet = wallets.find(w => w.id === activeWallet);
-            return wallet ? (
-              <AdvancedSecurity
-                walletAddress={wallet.tbaAddress}
-                className="rounded-2xl shadow-lg"
-              />
-            ) : null;
-          })()}
+          {getActiveWallet() && (
+            <AdvancedSecurity
+              walletAddress={getActiveWallet()!.tbaAddress}
+              className="rounded-2xl shadow-lg"
+            />
+          )}
 
           {/* Account Management */}
           {account && (
