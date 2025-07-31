@@ -156,7 +156,7 @@ function parseUserProfileFromRedis(redisData: Record<string, unknown>): UserProf
     if (redisData.referralStats) {
       try {
         const statsString = redisData.referralStats as string;
-        if (statsString !== '[object Object]' && statsString.startsWith('{')) {
+        if (typeof statsString === 'string' && statsString !== '[object Object]' && statsString.startsWith('{')) {
           referralStats = JSON.parse(statsString);
         }
       } catch (parseError) {
@@ -168,7 +168,7 @@ function parseUserProfileFromRedis(redisData: Record<string, unknown>): UserProf
     if (redisData.sessionHistory) {
       try {
         const historyString = redisData.sessionHistory as string;
-        if (historyString !== '[object Object]' && historyString.startsWith('[')) {
+        if (typeof historyString === 'string' && historyString !== '[object Object]' && historyString.startsWith('[')) {
           sessionHistory = JSON.parse(historyString);
         }
       } catch (parseError) {
@@ -180,7 +180,7 @@ function parseUserProfileFromRedis(redisData: Record<string, unknown>): UserProf
     if (redisData.ipHistory) {
       try {
         const ipString = redisData.ipHistory as string;
-        if (ipString !== '[object Object]' && ipString.startsWith('[')) {
+        if (typeof ipString === 'string' && ipString !== '[object Object]' && ipString.startsWith('[')) {
           ipHistory = JSON.parse(ipString);
         }
       } catch (parseError) {

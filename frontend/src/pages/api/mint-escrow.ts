@@ -956,7 +956,7 @@ async function mintNFTEscrowGasPaid(
           tokenId,
           newMetadataCid: metadataUpdateResult.metadataCid,
           newMetadataUrl: metadataUpdateResult.metadataUrl,
-          oldMetadataCid: metadataCid
+          originalTokenURI: tokenURI
         });
         
         // CRITICAL FIX: Update tokenURI on contract with correct metadata

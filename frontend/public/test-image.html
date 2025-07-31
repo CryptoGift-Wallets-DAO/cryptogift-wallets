@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NFT Image Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        img { max-width: 300px; margin: 10px; border: 1px solid #ddd; }
+        .status { padding: 10px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>NFT Image Accessibility Test</h1>
+    
+    <div class="test-section">
+        <h2>Fixed Token URI Images</h2>
+        <p><strong>Token 1:</strong> ipfs://QmbAyijEMk4NuXgurSU4WAmG3cHdJxaEsfc3oESxfJpwKw/B04B5FF0-9533-493C-86AB-DEBC9A1F9588.JPEG.jpg</p>
+        
+        <h3>Gateway Tests:</h3>
+        
+        <div>
+            <h4>NFT Storage Gateway:</h4>
+            <img src="https://nftstorage.link/ipfs/QmbAyijEMk4NuXgurSU4WAmG3cHdJxaEsfc3oESxfJpwKw/B04B5FF0-9533-493C-86AB-DEBC9A1F9588.JPEG.jpg" 
+                 alt="NFT via nftstorage.link" 
+                 onload="document.getElementById('nftstorage-status').innerHTML='✅ SUCCESS: Image loaded via nftstorage.link'"
+                 onerror="document.getElementById('nftstorage-status').innerHTML='❌ ERROR: Failed to load via nftstorage.link'"
+            />
+            <div id="nftstorage-status" class="status">Loading...</div>
+        </div>
+        
+        <div>
+            <h4>IPFS.io Gateway:</h4>
+            <img src="https://ipfs.io/ipfs/QmbAyijEMk4NuXgurSU4WAmG3cHdJxaEsfc3oESxfJpwKw/B04B5FF0-9533-493C-86AB-DEBC9A1F9588.JPEG.jpg" 
+                 alt="NFT via ipfs.io" 
+                 onload="document.getElementById('ipfsio-status').innerHTML='✅ SUCCESS: Image loaded via ipfs.io'"
+                 onerror="document.getElementById('ipfsio-status').innerHTML='❌ ERROR: Failed to load via ipfs.io'"
+            />
+            <div id="ipfsio-status" class="status">Loading...</div>
+        </div>
+        
+        <div>
+            <h4>Cloudflare IPFS Gateway:</h4>
+            <img src="https://cloudflare-ipfs.com/ipfs/QmbAyijEMk4NuXgurSU4WAmG3cHdJxaEsfc3oESxfJpwKw/B04B5FF0-9533-493C-86AB-DEBC9A1F9588.JPEG.jpg" 
+                 alt="NFT via cloudflare-ipfs.com" 
+                 onload="document.getElementById('cloudflare-status').innerHTML='✅ SUCCESS: Image loaded via cloudflare-ipfs.com'"
+                 onerror="document.getElementById('cloudflare-status').innerHTML='❌ ERROR: Failed to load via cloudflare-ipfs.com'"
+            />
+            <div id="cloudflare-status" class="status">Loading...</div>
+        </div>
+        
+        <div>
+            <h4>Dweb.link Gateway:</h4>
+            <img src="https://dweb.link/ipfs/QmbAyijEMk4NuXgurSU4WAmG3cHdJxaEsfc3oESxfJpwKw/B04B5FF0-9533-493C-86AB-DEBC9A1F9588.JPEG.jpg" 
+                 alt="NFT via dweb.link" 
+                 onload="document.getElementById('dweb-status').innerHTML='✅ SUCCESS: Image loaded via dweb.link'"
+                 onerror="document.getElementById('dweb-status').innerHTML='❌ ERROR: Failed to load via dweb.link'"
+            />
+            <div id="dweb-status" class="status">Loading...</div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Contract Information</h2>
+        <p><strong>Contract Address:</strong> 0xE9F316159a0830114252a96a6B7CA6efD874650F</p>
+        <p><strong>Network:</strong> Base Sepolia (Chain ID: 84532)</p>
+        <p><strong>Total Supply:</strong> 3 NFTs</p>
+        <p><strong>Fix Status:</strong> ✅ All malformed tokenURIs corrected</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Implementation Status</h2>
+        <ul>
+            <li>✅ Fixed double IPFS prefix in tokenURIs</li>
+            <li>✅ Updated GiftWizard to use actualImageCid instead of ipfsCid</li>
+            <li>✅ Fixed mint-escrow API to store proper metadata</li>
+            <li>✅ Corrected nft-wallets API token loop (1-based indexing)</li>
+            <li>✅ Updated claim pages to load real metadata</li>
+            <li>✅ Replaced 🎁 emojis with CG wallet logo</li>
+        </ul>
+    </div>
+    
+    <script>
+        // Add timestamp
+        document.addEventListener('DOMContentLoaded', function() {
+            const timestamp = new Date().toISOString();
+            document.body.appendChild(document.createElement('p')).innerHTML = 
+                `<small>Test performed at: ${timestamp}</small>`;
+        });
+    </script>
+</body>
+</html>

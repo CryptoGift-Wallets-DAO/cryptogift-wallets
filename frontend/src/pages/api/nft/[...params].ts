@@ -65,9 +65,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       console.log("✅ Token URI found on contract:", tokenURI);
       
-      // ENHANCED: If we got a tokenURI, try to fetch the metadata directly from IPFS
+      // ENHANCED: If we got a tokenURI, try to fetch the metadata/image directly from IPFS
       if (tokenURI) {
-        let ipfsMetadataUrl = tokenURI;
+        let ipfsUrl = tokenURI;
         
         // Convert IPFS URLs to gateway URLs with fallback strategy
         if (tokenURI.startsWith("ipfs://")) {
@@ -87,10 +87,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 8000); // Increased timeout
               
-              const metadataResponse = await fetch(gateway, { 
+              const ipfsResponse = await fetch(gateway, { 
                 signal: controller.signal,
                 headers: { 
-                  'Accept': 'application/json',
+                  'Accept': 'application/json, image/*',
                   'Cache-Control': 'no-cache, no-store, must-revalidate', // FORCE NO CACHE
                   'Pragma': 'no-cache',
                   'Expires': '0'
@@ -99,63 +99,135 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               
               clearTimeout(timeoutId);
               
-              if (metadataResponse.ok) {
-                const metadata = await metadataResponse.json();
-                console.log("✅ DIRECT IPFS: Retrieved metadata:", metadata);
-                console.log("🖼️ DIRECT IPFS: Image field:", metadata.image);
+              if (ipfsResponse.ok) {
+                const contentType = ipfsResponse.headers.get('content-type');
+                console.log(`🔍 IPFS Content-Type: ${contentType}`);
                 
-                // Process image URL to ensure it's accessible
-                let processedImageUrl = metadata.image;
-                if (processedImageUrl && processedImageUrl.startsWith("ipfs://")) {
-                  const imageCid = processedImageUrl.replace("ipfs://", "");
-                  processedImageUrl = `https://nftstorage.link/ipfs/${imageCid}`;
-                  console.log("🔄 CONVERTED image URL:", processedImageUrl);
+                // Check if it's an image file (direct NFT image)
+                if (contentType && contentType.startsWith('image/')) {
+                  console.log("🖼️ DIRECT IMAGE: TokenURI points to image file, creating metadata");
+                  
+                  // Calculate TBA address
+                  const { ethers } = await import("ethers");
+                  const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
+                  const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
+                  const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
+                  
+                  const salt = ethers.solidityPackedKeccak256(
+                    ['uint256', 'address', 'uint256'],
+                    [CHAIN_ID, contractAddress, tokenId]
+                  );
+                  
+                  const packed = ethers.solidityPacked(
+                    ['bytes1', 'address', 'bytes32', 'address', 'bytes32'],
+                    [
+                      '0xff',
+                      REGISTRY_ADDRESS,
+                      salt,
+                      IMPLEMENTATION_ADDRESS,
+                      '0x0000000000000000000000000000000000000000000000000000000000000000'
+                    ]
+                  );
+                  
+                  const hash = ethers.keccak256(packed);
+                  const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
+                  
+                  // Return metadata for direct image NFT
+                  return res.status(200).json({
+                    success: true,
+                    id: tokenId,
+                    name: `CryptoGift NFT-Wallet #${tokenId}`,
+                    description: "Un regalo cripto único con wallet integrada ERC-6551",
+                    image: gateway, // Use the working gateway URL
+                    attributes: [
+                      {
+                        trait_type: "Wallet Type",
+                        value: "ERC-6551 Token Bound Account"
+                      },
+                      {
+                        trait_type: "Network", 
+                        value: "Base Sepolia"
+                      },
+                      {
+                        trait_type: "Content Type",
+                        value: contentType
+                      }
+                    ],
+                    tokenId: tokenId, // Keep as string
+                    contractAddress,
+                    owner,
+                    tbaAddress,
+                    tbaBalance: "0",
+                    tbaDeployed: false,
+                    network: "Base Sepolia",
+                    chainId: 84532,
+                    source: 'direct_image_ipfs',
+                    gateway: gateway
+                  });
                 }
                 
-                // Calculate TBA address for completeness
-                const { ethers } = await import("ethers");
-                const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
-                const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
-                const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
-                
-                const salt = ethers.solidityPackedKeccak256(
-                  ['uint256', 'address', 'uint256'],
-                  [CHAIN_ID, contractAddress, tokenId]
-                );
-                
-                const packed = ethers.solidityPacked(
-                  ['bytes1', 'address', 'bytes32', 'address', 'bytes32'],
-                  [
-                    '0xff',
-                    REGISTRY_ADDRESS,
-                    salt,
-                    IMPLEMENTATION_ADDRESS,
-                    '0x0000000000000000000000000000000000000000000000000000000000000000'
-                  ]
-                );
-                
-                const hash = ethers.keccak256(packed);
-                const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
-                
-                // Return the real metadata with processed image URL
-                return res.status(200).json({
-                  success: true,
-                  id: tokenId,
-                  name: metadata.name,
-                  description: metadata.description,
-                  image: processedImageUrl,
-                  attributes: metadata.attributes || [],
-                  tokenId: tokenId, // Keep as string
-                  contractAddress,
-                  owner,
-                  tbaAddress,
-                  tbaBalance: "0",
-                  tbaDeployed: false,
-                  network: "Base Sepolia",
-                  chainId: 84532,
-                  source: 'direct_ipfs_no_cache',
-                  gateway: gateway
-                });
+                // Try to parse as JSON metadata
+                try {
+                  const metadata = await ipfsResponse.json();
+                  console.log("✅ DIRECT IPFS: Retrieved JSON metadata:", metadata);
+                  console.log("🖼️ DIRECT IPFS: Image field:", metadata.image);
+                  
+                  // Process image URL to ensure it's accessible
+                  let processedImageUrl = metadata.image;
+                  if (processedImageUrl && processedImageUrl.startsWith("ipfs://")) {
+                    const imageCid = processedImageUrl.replace("ipfs://", "");
+                    processedImageUrl = `https://nftstorage.link/ipfs/${imageCid}`;
+                    console.log("🔄 CONVERTED image URL:", processedImageUrl);
+                  }
+                  
+                  // Calculate TBA address for completeness
+                  const { ethers } = await import("ethers");
+                  const REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS || "0x000000006551c19487814612e58FE06813775758";
+                  const IMPLEMENTATION_ADDRESS = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || "0x2d25602551487c3f3354dd80d76d54383a243358";
+                  const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532");
+                  
+                  const salt = ethers.solidityPackedKeccak256(
+                    ['uint256', 'address', 'uint256'],
+                    [CHAIN_ID, contractAddress, tokenId]
+                  );
+                  
+                  const packed = ethers.solidityPacked(
+                    ['bytes1', 'address', 'bytes32', 'address', 'bytes32'],
+                    [
+                      '0xff',
+                      REGISTRY_ADDRESS,
+                      salt,
+                      IMPLEMENTATION_ADDRESS,
+                      '0x0000000000000000000000000000000000000000000000000000000000000000'
+                    ]
+                  );
+                  
+                  const hash = ethers.keccak256(packed);
+                  const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
+                  
+                  // Return the real metadata with processed image URL
+                  return res.status(200).json({
+                    success: true,
+                    id: tokenId,
+                    name: metadata.name,
+                    description: metadata.description,
+                    image: processedImageUrl,
+                    attributes: metadata.attributes || [],
+                    tokenId: tokenId, // Keep as string
+                    contractAddress,
+                    owner,
+                    tbaAddress,
+                    tbaBalance: "0",
+                    tbaDeployed: false,
+                    network: "Base Sepolia",
+                    chainId: 84532,
+                    source: 'direct_ipfs_metadata',
+                    gateway: gateway
+                  });
+                } catch (jsonError) {
+                  console.log(`⚠️ Not JSON metadata, content-type: ${contentType}`);
+                  continue; // Try next gateway
+                }
               }
             } catch (gatewayError) {
               console.log(`⚠️ Gateway ${gateway} failed:`, gatewayError.message);
