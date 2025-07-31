@@ -5,8 +5,12 @@ import { useActiveAccount } from 'thirdweb/react';
 import { 
   formatTimeRemaining,
   isGiftExpired,
-  parseEscrowError
+  parseEscrowError,
+  prepareReturnExpiredGiftByIdCall,
+  getGiftIdFromTokenId
 } from '../../lib/escrowUtils';
+import { getAuthHeader } from '../../lib/siweClient';
+import { sendTransaction } from 'thirdweb';
 
 interface ExpiredGift {
   tokenId: string;
@@ -53,31 +57,41 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
     setError('');
 
     try {
-      // In a real implementation, this would fetch from your backend API
-      // For now, we'll simulate the data structure
       console.log('🔍 Loading expired gifts for creator:', account.address);
       
-      // This would be replaced with actual API calls
-      const mockExpiredGifts: ExpiredGift[] = [
-        {
-          tokenId: '123',
-          creator: account.address,
-          nftContract: '0x...',
-          expirationTime: Math.floor(Date.now() / 1000) - 3600, // Expired 1 hour ago
-          status: 'expired',
-          nftMetadata: {
-            name: 'Birthday Gift NFT',
-            image: 'https://example.com/image.jpg'
-          }
+      // REAL API CALL: Load expired gifts for authenticated user
+      const authHeader = getAuthHeader();
+      if (!authHeader) {
+        throw new Error('Please sign in with your wallet to view expired gifts');
+      }
+
+      const response = await fetch('/api/user/expired-gifts', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
         }
-      ];
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load expired gifts');
+      }
+
+      const { expiredGifts: apiExpiredGifts } = await response.json();
       
-      // Filter only gifts that are actually expired and still active
-      const actualExpiredGifts = mockExpiredGifts.filter(gift => 
-        gift.status === 'active' && isGiftExpired(BigInt(gift.expirationTime))
-      );
+      // Transform API response to component format
+      const transformedGifts: ExpiredGift[] = (apiExpiredGifts || []).map(gift => ({
+        tokenId: gift.tokenId,
+        creator: gift.creator,
+        nftContract: gift.nftContract,
+        expirationTime: gift.expirationTime,
+        status: 'expired', // API already filtered for expired gifts
+        nftMetadata: gift.nftMetadata
+      }));
       
-      setExpiredGifts(actualExpiredGifts);
+      console.log(`✅ Loaded ${transformedGifts.length} expired gifts from API`);
+      setExpiredGifts(transformedGifts);
       
     } catch (err: any) {
       console.error('❌ Failed to load expired gifts:', err);
@@ -94,28 +108,24 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
     setError('');
 
     try {
-      console.log('🔄 Returning expired gift:', tokenId);
+      console.log('🔄 Returning expired gift with USER WALLET:', tokenId);
 
-      const response = await fetch('/api/return-expired', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-          // SECURITY FIX: Authorization handled server-side via environment variables
-        },
-        body: JSON.stringify({
-          tokenId,
-          creatorAddress: account.address,
-          gasless: true
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to return gift');
+      // ZERO CUSTODY: User executes return with their own wallet
+      // Need to find giftId from tokenId first
+      const giftId = await getGiftIdFromTokenId(tokenId);
+      if (giftId === null) {
+        throw new Error('Could not find gift ID for this token');
       }
 
-      console.log('✅ Gift returned successfully:', result);
+      // Execute return transaction directly with user's wallet
+      const returnTx = prepareReturnExpiredGiftByIdCall(giftId);
+      
+      const result = await sendTransaction({
+        transaction: returnTx,
+        account: account // USER'S WALLET, not deployer
+      });
+
+      console.log('✅ Gift returned successfully with user wallet:', result.transactionHash);
 
       // Remove from expired gifts list
       setExpiredGifts(prev => prev.filter(gift => gift.tokenId !== tokenId));

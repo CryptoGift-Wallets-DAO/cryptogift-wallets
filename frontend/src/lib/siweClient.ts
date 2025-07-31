@@ -207,7 +207,23 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
       if (!detectedChainId && typeof window !== 'undefined' && window.ethereum) {
         try {
           const hexChainId = await window.ethereum.request({ method: 'eth_chainId' });
-          detectedChainId = parseInt(hexChainId, 16);
+          
+          // MOBILE FIX: Normalize different chain ID formats
+          if (typeof hexChainId === 'string') {
+            if (hexChainId.startsWith('eip155:')) {
+              // CAIP format: "eip155:84532" → 84532
+              detectedChainId = parseInt(hexChainId.replace('eip155:', ''), 10);
+            } else if (hexChainId.startsWith('0x')) {
+              // Hex format: "0x14a34" → 84532
+              detectedChainId = parseInt(hexChainId, 16);
+            } else {
+              // Already numeric string: "84532" → 84532
+              detectedChainId = parseInt(hexChainId, 10);
+            }
+          } else if (typeof hexChainId === 'number') {
+            detectedChainId = hexChainId;
+          }
+          
           console.log('🔗 Chain detected via window.ethereum:', detectedChainId);
         } catch (ethError) {
           console.warn('⚠️ window.ethereum chain detection failed:', ethError);

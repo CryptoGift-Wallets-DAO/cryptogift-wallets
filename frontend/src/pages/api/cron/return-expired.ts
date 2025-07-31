@@ -1,7 +1,15 @@
 /**
- * CRON: RETURN EXPIRED GIFTS
- * Secure automated return of expired gifts to their creators
- * Protected with CRON_SECRET authentication
+ * CRON: RETURN EXPIRED GIFTS [DISABLED]
+ * 
+ * ❌ DISABLED due to Zero Custody Architecture V2
+ * 
+ * REASON: Contract has NotGiftCreator restriction - only gift creators
+ * can return their own expired gifts, not deployer/admin accounts.
+ * 
+ * SOLUTION: Users return expired gifts via ExpiredGiftManager component
+ * using their own wallets, preserving zero custody principles.
+ * 
+ * Protected with CRON_SECRET authentication (when enabled)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -47,7 +55,16 @@ export default async function handler(
   }
   
   try {
-    // SECURE: Authenticate CRON request
+    // ZERO CUSTODY ARCHITECTURE: Auto-return disabled
+    // Users must return their own expired gifts with their wallets
+    return res.status(501).json({
+      success: false,
+      error: 'Auto-return disabled - Zero Custody Architecture',
+      message: 'Users must return their own expired gifts using the ExpiredGiftManager in their wallet dashboard',
+      timestamp: Date.now()
+    });
+
+    // SECURE: Authenticate CRON request (DISABLED)
     if (!authenticateCron(req)) {
       return res.status(401).json({ 
         success: false, 

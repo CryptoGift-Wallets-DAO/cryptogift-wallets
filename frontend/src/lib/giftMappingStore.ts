@@ -18,26 +18,45 @@ export async function storeGiftMapping(tokenId: string | number, giftId: string 
   const tokenIdStr = tokenId.toString();
   const giftIdStr = giftId.toString();
   
-  try {
-    // MANDATORY: Redis is required for mapping storage  
-    const redis = validateRedisForCriticalOps('Gift mapping storage');
+  // RETRY LOGIC: Critical mapping storage with exponential backoff
+  const maxAttempts = 3;
+  let lastError: Error | null = null;
 
-    const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
-    const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
-    
-    // Store both directions for fast lookups
-    await Promise.all([
-      redis.set(mappingKey, giftIdStr, { ex: 86400 * 365 }), // 1 year expiry
-      redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 365 })
-    ]);
-    
-    console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${giftId} (Redis)`);
-    return true;
-  } catch (error) {
-    console.error('❌ CRITICAL: Failed to store gift mapping:', error);
-    console.error('📊 Redis status:', getRedisStatus());
-    throw new Error(`Gift mapping storage failed: ${(error as Error).message}. This is critical for system security.`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`🔄 MAPPING STORAGE: Attempt ${attempt}/${maxAttempts} for tokenId ${tokenId} → giftId ${giftId}`);
+      
+      // MANDATORY: Redis is required for mapping storage  
+      const redis = validateRedisForCriticalOps('Gift mapping storage');
+
+      const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
+      const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
+      
+      // Store both directions for fast lookups
+      await Promise.all([
+        redis.set(mappingKey, giftIdStr, { ex: 86400 * 365 }), // 1 year expiry
+        redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 365 })
+      ]);
+      
+      console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${giftId} (Redis) - Success on attempt ${attempt}`);
+      return true;
+      
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ MAPPING STORAGE ATTEMPT ${attempt} FAILED:`, error);
+      console.error('📊 Redis status:', getRedisStatus());
+      
+      if (attempt < maxAttempts) {
+        const backoffMs = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+        console.log(`⏳ Retrying in ${backoffMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+      }
+    }
   }
+  
+  // All attempts failed
+  console.error(`💥 CRITICAL: All ${maxAttempts} mapping storage attempts failed for tokenId ${tokenId} → giftId ${giftId}`);
+  throw new Error(`Gift mapping storage failed after ${maxAttempts} attempts: ${lastError?.message}. This is critical for system security.`);
 }
 
 /**

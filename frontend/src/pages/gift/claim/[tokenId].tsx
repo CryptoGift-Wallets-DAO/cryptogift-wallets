@@ -7,6 +7,7 @@ import { ClaimEscrowInterface } from '../../../components/escrow/ClaimEscrowInte
 import { EscrowGiftStatus } from '../../../components/escrow/EscrowGiftStatus';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
+import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
 
 interface GiftInfo {
   creator: string;
@@ -98,8 +99,12 @@ export default function ClaimGiftPage() {
         if (metadataResult.success) {
           console.log('✅ NFT metadata loaded:', metadataResult);
           
-          // Use image URL directly from API (already processed)
+          // IPFS FIX: Convert ipfs:// URLs to HTTP gateway URLs
           let imageUrl = metadataResult.image;
+          if (imageUrl && imageUrl.startsWith('ipfs://')) {
+            imageUrl = resolveIPFSUrlClient(imageUrl);
+            console.log('🔗 IPFS URL resolved:', metadataResult.image, '→', imageUrl);
+          }
           
           setNftMetadata({
             name: metadataResult.name || `CryptoGift NFT #${tokenId}`,
