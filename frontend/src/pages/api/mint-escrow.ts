@@ -49,6 +49,7 @@ import {
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 import { executeMintTransaction } from '../../lib/gasPaidTransactions';
+import { storeNFTMetadata, createNFTMetadata } from '../../lib/nftMetadataStore';
 
 // Types
 interface MintEscrowRequest {
@@ -901,11 +902,13 @@ async function mintNFTEscrowGasPaid(
     console.log('📝 METADATA UPDATE (GAS-PAID): Creating final metadata with real tokenId:', tokenId);
     
     try {
-      // Extract imageIpfsCid from tokenURI (format: ipfs://metadataCid)
-      const metadataCid = tokenURI.replace('ipfs://', '');
+      // CRITICAL FIX: tokenURI now contains image CID, not metadata CID
+      // Format: ipfs://imageCid (sent from GiftWizard with actualImageCid)
+      const imageIpfsCid = tokenURI.replace('ipfs://', '');
       
-      // For now, we'll create new metadata with the real tokenId
-      // The imageIpfsCid will be extracted from the existing metadata or passed separately
+      console.log('🖼️ Using image CID for metadata creation:', imageIpfsCid);
+      
+      // Create new metadata with the real tokenId and correct image CID
       let metadataUpdateResult;
       
       if (isEscrowMint) {
@@ -928,12 +931,10 @@ async function mintNFTEscrowGasPaid(
         const currentTime = Math.floor(Date.now() / 1000);
         const expirationTime = currentTime + timeConstants[timeframeDays];
         
-        // NOTE: For now, we'll use the metadataCid as imageIpfsCid
-        // This should be improved to properly extract the image CID from the metadata
-        console.log('🔒 Creating escrow metadata with real tokenId');
+        console.log('🔒 Creating escrow metadata with real tokenId and image CID');
         metadataUpdateResult = await createEscrowMetadata(
           tokenId,
-          metadataCid, // TEMP: Using metadata CID, should be image CID
+          imageIpfsCid, // FIXED: Now using actual image CID
           giftMessage,
           creatorAddress,
           expirationTime,
@@ -941,10 +942,10 @@ async function mintNFTEscrowGasPaid(
         );
       } else {
         // Create direct mint metadata
-        console.log('🎯 Creating direct mint metadata with real tokenId');
+        console.log('🎯 Creating direct mint metadata with real tokenId and image CID');
         metadataUpdateResult = await createDirectMintMetadata(
           tokenId,
-          metadataCid, // TEMP: Using metadata CID, should be image CID
+          imageIpfsCid, // FIXED: Now using actual image CID
           giftMessage,
           creatorAddress
         );
@@ -1558,6 +1559,45 @@ export default async function handler(
       // Add direct mint specific message
       responseData.message = result.message || `NFT minted directly to your wallet. Token ID: ${result.tokenId}`;
       responseData.directMint = true;
+    }
+
+    // CRITICAL FIX: Store NFT metadata so it appears in user's wallets
+    try {
+      console.log('💾 Storing NFT metadata for wallet display...');
+      
+      // Extract image CID from metadataUri for proper metadata storage
+      const imageIpfsCid = metadataUri.replace('ipfs://', '');
+      
+      // Determine the final owner of the NFT
+      const finalOwner = isEscrowMint 
+        ? recipientAddress || creatorAddress // For escrow, track who will claim it
+        : recipientAddress || creatorAddress; // Direct mint goes to user
+      
+      const nftMetadata = createNFTMetadata({
+        contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+        tokenId: result.tokenId,
+        name: `CryptoGift NFT #${result.tokenId}`,
+        description: giftMessage || "Un regalo cripto único creado con amor",
+        imageIpfsCid: imageIpfsCid,
+        metadataIpfsCid: undefined, // Will be updated later with proper metadata
+        attributes: [
+          { trait_type: "Token ID", value: result.tokenId },
+          { trait_type: "Creation Date", value: new Date().toISOString() },
+          { trait_type: "Platform", value: "CryptoGift Wallets" },
+          { trait_type: "Gift Type", value: isEscrowMint ? "Temporal Escrow" : "Direct Mint" },
+          { trait_type: "Creator", value: creatorAddress.slice(0, 10) + '...' }
+        ],
+        mintTransactionHash: result.transactionHash,
+        owner: finalOwner,
+        creatorWallet: creatorAddress
+      });
+      
+      await storeNFTMetadata(nftMetadata);
+      console.log('✅ NFT metadata stored successfully');
+      
+    } catch (metadataStoreError) {
+      console.error('⚠️ Failed to store NFT metadata (non-critical):', metadataStoreError);
+      // Don't fail the whole transaction for metadata storage issues
     }
     
     return res.status(200).json(responseData);

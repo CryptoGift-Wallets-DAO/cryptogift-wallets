@@ -205,9 +205,18 @@ export default function TokenPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            {isOwner ? 'Tu NFT-Wallet' : '🎁 Regalo Cripto Para Ti'}
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Image 
+              src="/cg-wallet-logo.png" 
+              alt="CryptoGift Wallet" 
+              width={40} 
+              height={40}
+              className="rounded"
+            />
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+              {isOwner ? 'Tu NFT-Wallet' : 'Regalo Cripto Para Ti'}
+            </h1>
+          </div>
           <p className="text-gray-600">
             {isOwner 
               ? 'Gestiona tu NFT y los fondos de la wallet integrada' 

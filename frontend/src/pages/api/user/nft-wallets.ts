@@ -52,8 +52,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const userWallets: any[] = [];
     
+    // CRITICAL FIX: NFT contract starts from token ID 1, not 0
     // Check each NFT to see if user owns it OR if user's TBA is related
-    for (let tokenId = 0; tokenId < Number(totalSupply); tokenId++) {
+    for (let tokenId = 1; tokenId <= Number(totalSupply); tokenId++) {
       try {
         console.log(`🔍 Checking NFT ${tokenId}...`);
         

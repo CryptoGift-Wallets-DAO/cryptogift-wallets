@@ -435,9 +435,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       filter: wizardData.selectedFilter || 'Original'
     }, 'pending');
 
-    // Prepare request body based on escrow configuration
+    // CRITICAL FIX: Use imageIpfsCid for metadataUri to avoid double prefixes
+    // The actualImageCid will be used to create proper metadata during mint
     const requestBody = isEscrowEnabled ? {
-      metadataUri: `ipfs://${ipfsCid}`,
+      metadataUri: `ipfs://${actualImageCid}`,
       recipientAddress: wizardData.escrowConfig?.recipientAddress || undefined,
       password: wizardData.escrowConfig?.password!,
       timeframeDays: wizardData.escrowConfig?.timeframe!,
@@ -446,7 +447,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       gasless: true
     } : {
       // Direct mint (skip escrow) - use mint-escrow API but without password
-      metadataUri: `ipfs://${ipfsCid}`,
+      metadataUri: `ipfs://${actualImageCid}`,
       // No password = direct mint
       giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
       creatorAddress: account?.address,

@@ -82,22 +82,60 @@ export default function ClaimGiftPage() {
 
   const loadNFTMetadata = async (nftContract: string, tokenId: string) => {
     try {
-      // This would typically fetch from the NFT contract
-      // For now, we'll use a placeholder implementation
       console.log('🎨 Loading NFT metadata for:', { nftContract, tokenId });
       
-      // TODO: Implement actual NFT metadata fetching
-      // const tokenURI = await contract.tokenURI(tokenId);
-      // const metadata = await fetch(tokenURI).then(r => r.json());
-      
-      setNftMetadata({
-        name: `CryptoGift NFT #${tokenId}`,
-        description: 'A secured gift NFT protected by temporal escrow',
-        image: undefined // Will be loaded if available
+      // FIXED: Load real NFT metadata using the new API
+      const metadataResponse = await fetch(`/api/nft/${nftContract}/${tokenId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+
+      if (metadataResponse.ok) {
+        const metadataResult = await metadataResponse.json();
+        
+        if (metadataResult.success && metadataResult.metadata) {
+          console.log('✅ NFT metadata loaded:', metadataResult.metadata);
+          
+          // Convert IPFS URLs to accessible format
+          let imageUrl = metadataResult.metadata.image;
+          if (imageUrl && imageUrl.startsWith('ipfs://')) {
+            const cid = imageUrl.replace('ipfs://', '');
+            imageUrl = `https://nftstorage.link/ipfs/${cid}`;
+          }
+          
+          setNftMetadata({
+            name: metadataResult.metadata.name || `CryptoGift NFT #${tokenId}`,
+            description: metadataResult.metadata.description || 'A secured gift NFT protected by temporal escrow',
+            image: imageUrl
+          });
+        } else {
+          console.warn('⚠️ No metadata available for this NFT');
+          setNftMetadata({
+            name: `CryptoGift NFT #${tokenId}`,
+            description: 'A secured gift NFT protected by temporal escrow',
+            image: undefined
+          });
+        }
+      } else {
+        console.warn('⚠️ Failed to fetch NFT metadata from API');
+        // Fallback to default metadata
+        setNftMetadata({
+          name: `CryptoGift NFT #${tokenId}`,
+          description: 'A secured gift NFT protected by temporal escrow',
+          image: undefined
+        });
+      }
 
     } catch (error) {
       console.warn('⚠️ Could not load NFT metadata:', error);
+      // Always set something to prevent null state
+      setNftMetadata({
+        name: `CryptoGift NFT #${tokenId}`,
+        description: 'A secured gift NFT protected by temporal escrow',
+        image: undefined
+      });
     }
   };
 

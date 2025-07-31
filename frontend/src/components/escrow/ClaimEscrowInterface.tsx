@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import { sendTransaction, waitForReceipt, createThirdwebClient } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
+import Image from 'next/image';
 import { 
   validatePassword,
   getGiftStatus,
@@ -286,9 +287,18 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         {/* Header */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            🎁 Claim Your Escrow Gift
-          </h2>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Image 
+              src="/cg-wallet-logo.png" 
+              alt="CryptoGift Wallet" 
+              width={32} 
+              height={32}
+              className="rounded"
+            />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Claim Your Escrow Gift
+            </h2>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">
             Token ID: {tokenId}
           </p>
@@ -467,7 +477,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                   {claimStep === 'claiming' ? 'Claiming Gift...' : 'Processing...'}
                 </div>
               ) : (
-                '🎁 Claim Gift'
+                'Claim Gift'
               )}
             </button>
 
