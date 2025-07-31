@@ -14,7 +14,8 @@ import {
   prepareReturnExpiredGiftCall,
   getEscrowContract,
   isGiftExpired,
-  parseEscrowError
+  parseEscrowError,
+  getGiftIdFromTokenId
 } from '../../../lib/escrowUtils';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../../lib/escrowABI';
 
@@ -73,11 +74,19 @@ async function getExpiredGifts(): Promise<{
     // Check each potential token ID
     for (let tokenId = 1; tokenId <= maxTokenId; tokenId++) {
       try {
-        // Get current gift data
+        // CRITICAL FIX: Map tokenId to giftId first (tokenId ≠ giftId)
+        const giftId = await getGiftIdFromTokenId(tokenId.toString());
+        
+        if (giftId === null) {
+          // No gift exists for this tokenId, skip
+          continue;
+        }
+        
+        // Get current gift data using correct giftId
         const giftData = await readContract({
           contract: escrowContract,
           method: "getGift",
-          params: [BigInt(tokenId)]
+          params: [BigInt(giftId)]
         });
         
         // getGift returns: [creator, expirationTime, nftContract, tokenId, passwordHash, status]
