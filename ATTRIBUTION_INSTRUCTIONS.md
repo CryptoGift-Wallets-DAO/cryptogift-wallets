@@ -65,6 +65,22 @@ Co-Author: Godez22
 
 ## 📋 COMPREHENSIVE CHECKLIST FOR EVERY COMMIT
 
+### **⚙️ MANDATORY GIT CONFIGURATION (CRITICAL FOR VERCEL DEPLOYMENT)**
+
+**🚨 ANTES DE CUALQUIER COMMIT - CONFIGURAR GIT:**
+```bash
+git config --global user.email "rafael1996k@gmail.com"
+git config --global user.name "ElMartidel96"
+```
+
+**🔑 CRÍTICO:** Usar **rafael1996k@gmail.com** es OBLIGATORIO porque:
+- ✅ Coincide con la cuenta principal de GitHub
+- ✅ Activa el deployment automático en Vercel
+- ✅ Evita fallos de deploy por discrepancia de usuario
+- ✅ Mantiene la consistencia del proyecto
+
+**⚠️ SIN ESTA CONFIGURACIÓN: Los deploys automáticos NO funcionarán**
+
 ### **🚨 MANDATORY PRE-COMMIT VERIFICATION SYSTEM**
 
 **⚠️ CRÍTICO: ANTES DE CADA COMMIT EJECUTAR:**

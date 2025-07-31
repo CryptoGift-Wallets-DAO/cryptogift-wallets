@@ -254,58 +254,10 @@ async function claimEscrowGasless(
     // Step 3: Register claim attempt
     await registerTransactionAttempt(claimerAddress, transactionNonce, `claim_${tokenId}`, 0, claimConfig);
     
-    // Step 4: Get deployer account (for now, we use deployer for gasless claims)
-    // In production, this would use Biconomy smart accounts
-    const deployerAccount = privateKeyToAccount({
-      client,
-      privateKey: process.env.PRIVATE_KEY_DEPLOY!
-    });
-    
-    // Step 5: Map tokenId to giftId for correct claim
-    const giftId = await getGiftIdFromTokenId(tokenId);
-    if (giftId === null) {
-      throw new Error('Gift not found - this NFT is not registered in escrow');
-    }
-    
-    console.log(`✅ CLAIM: Using giftId ${giftId} for tokenId ${tokenId}`);
-    
-    // Step 6: Prepare claim transaction using correct giftId
-    const claimTransaction = prepareClaimGiftByIdCall(giftId, password, salt);
-    
-    console.log('📝 Executing claim transaction...');
-    const result = await sendTransaction({
-      transaction: claimTransaction,
-      account: deployerAccount
-    });
-    
-    const receipt = await waitForReceipt({
-      client,
-      chain: baseSepolia,
-      transactionHash: result.transactionHash
-    });
-    debugLogger.operation('Claim successful', { success: true, hasTransactionHash: !!result.transactionHash });
-    
-    // Step 6: Verify transaction on-chain
-    const verification = await verifyGaslessTransaction(
-      result.transactionHash,
-      claimerAddress,
-      tokenId
-    );
-    
-    if (!verification.verified) {
-      throw new Error(`Transaction verification failed: ${verification.error}`);
-    }
-    
-    // Step 7: Mark transaction as completed
-    await markTransactionCompleted(transactionNonce, result.transactionHash);
-    
-    console.log('🎉 Enhanced gasless claim completed with verification');
-    
-    return {
-      success: true,
-      transactionHash: result.transactionHash,
-      nonce: transactionNonce
-    };
+    // CRITICAL FIX: Claims should NOT use deployer account
+    // The claim function transfers NFT to msg.sender, so deployer account = NFT goes to deployer
+    // Claims should be executed by user's own account via frontend wallet connection
+    throw new Error('DEPRECATED: Claims should be executed directly from frontend using user wallet, not server-side. This prevents NFT from going to deployer address.');
     
   } catch (error: any) {
     console.error('❌ Enhanced gasless claim failed:', error);

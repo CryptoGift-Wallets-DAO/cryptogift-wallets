@@ -190,11 +190,19 @@ export async function executeGasPaidTransaction(
       { operationType: config.operationType, description: config.description }
     );
     
-    // Step 3: Get deployer account and client
-    const deployerAccount = getDeployerAccount();
+    // Step 3: Get appropriate account based on operation type
+    let executingAccount: any;
     const client = getThirdWebClient();
     
-    console.log('🔑 Using deployer account for gas-paid transaction:', deployerAccount.address.slice(0, 10) + '...');
+    if (config.operationType === 'claim') {
+      // CRITICAL FIX: Claims must use user account because claimGift() transfers NFT to msg.sender
+      // If we use deployer account, NFT goes to deployer instead of user
+      throw new Error('CRITICAL: Claims cannot use gas-paid server-side execution. Claims must be executed from frontend using user wallet to ensure NFT goes to correct recipient.');
+    } else {
+      // For minting, transfers, etc., deployer account is appropriate
+      executingAccount = getDeployerAccount();
+      console.log('🔑 Using deployer account for gas-paid transaction:', executingAccount.address.slice(0, 10) + '...');
+    }
     
     // Step 4: Execute transaction with retry logic
     const maxRetries = config.maxRetries || 3;
@@ -207,7 +215,7 @@ export async function executeGasPaidTransaction(
         // Send transaction
         const result = await sendTransaction({
           transaction,
-          account: deployerAccount,
+          account: executingAccount,
           ...options
         });
         
@@ -233,7 +241,8 @@ export async function executeGasPaidTransaction(
         });
         
         // Step 5: Optional verification (for critical operations)
-        if (config.operationType === 'claim' || config.operationType === 'mint') {
+        // Note: 'claim' operations are blocked above, so only verify mint, transfer, return
+        if (config.operationType === 'mint') {
           try {
             const verification = await verifyGaslessTransaction(
               result.transactionHash,

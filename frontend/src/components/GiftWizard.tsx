@@ -244,15 +244,38 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       isLoading: true
     }, 'success');
     
-    // STEP 1: Try GASLESS FIRST (no user confirmation needed)
-    addStep('GIFT_WIZARD', 'GASLESS_ATTEMPT_DECISION', {
-      strategy: 'GASLESS_FIRST',
-      reason: 'User preference for free transactions'
-    }, 'pending');
-    
-    console.log('🔄 Attempting GASLESS first...');
+    // CRITICAL FIX: Check if gasless is actually enabled before attempting
+    console.log('🔍 CHECKING: Is gasless actually enabled on backend?');
     
     try {
+      // First check if gasless is available from backend
+      const gaslessStatusResponse = await fetch('/api/gasless-status', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const gaslessStatus = await gaslessStatusResponse.json();
+      console.log('🔍 Backend gasless status:', gaslessStatus);
+      
+      if (!gaslessStatus.enabled || gaslessStatus.temporarilyDisabled) {
+        console.log('⚠️ GASLESS DISABLED: Skipping gasless attempt, going directly to gas modal');
+        
+        addStep('GIFT_WIZARD', 'GASLESS_DISABLED_SKIP', {
+          reason: gaslessStatus.reason || 'Gasless temporarily disabled',
+          status: gaslessStatus.status
+        }, 'pending');
+        
+        // Skip gasless entirely and go to gas modal
+        throw new Error(`Gasless transactions are ${gaslessStatus.temporarilyDisabled ? 'temporarily disabled' : 'not available'}: ${gaslessStatus.reason || 'Backend configuration'}`);
+      }
+      
+      // STEP 1: Try GASLESS only if enabled
+      addStep('GIFT_WIZARD', 'GASLESS_ATTEMPT_DECISION', {
+        strategy: 'GASLESS_FIRST',
+        reason: 'Gasless confirmed enabled on backend'
+      }, 'pending');
+      
+      console.log('🔄 Attempting GASLESS (confirmed enabled)...');
       await attemptGaslessMint();
     } catch (gaslessError) {
       console.log('❌ Gasless attempt reported failure:', gaslessError);

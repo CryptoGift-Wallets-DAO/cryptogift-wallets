@@ -163,9 +163,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const filteredCid = filteredUploadResult.cid;
       
-      // Store the metadata
+      // CRITICAL FIX: Create temporary metadata without tokenId (will be updated during mint)
+      // Real tokenId is generated during mint transaction, not here
       const metadata = {
-        name: `CryptoGift NFT #${Date.now()}`,
+        name: "CryptoGift NFT", // Generic name, will be updated with real tokenId
         description: "Un regalo cripto único creado con amor",
         image: `ipfs://${filteredCid}`,
         external_url: "https://cryptogift-wallets.vercel.app",
@@ -177,6 +178,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           {
             trait_type: "Platform",
             value: "CryptoGift Wallets",
+          },
+          {
+            trait_type: "Status",
+            value: "Processing - TokenId will be assigned during mint"
           }
         ],
       };
