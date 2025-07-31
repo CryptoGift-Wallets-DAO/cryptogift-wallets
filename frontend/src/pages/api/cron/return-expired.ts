@@ -20,6 +20,7 @@ interface CronResponse {
   returned?: number;
   errors?: string[];
   error?: string;
+  message?: string;
   timestamp: number;
 }
 
