@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
+import { sendTransaction, waitForReceipt, createThirdwebClient } from 'thirdweb';
+import { baseSepolia } from 'thirdweb/chains';
 import { 
   validatePassword,
   getGiftStatus,
   formatTimeRemaining,
   isGiftExpired,
-  parseEscrowError
+  parseEscrowError,
+  prepareClaimGiftByIdCall
 } from '../../lib/escrowUtils';
 import { type EscrowGift } from '../../lib/escrowABI';
 import { useAuth } from '../../hooks/useAuth';
@@ -39,7 +42,6 @@ interface ClaimFormData {
   password: string;
   salt: string;
   recipientAddress?: string;
-  gasless: boolean;
 }
 
 export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
@@ -55,8 +57,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   const [formData, setFormData] = useState<ClaimFormData>({
     password: '',
     salt: '',
-    recipientAddress: '',
-    gasless: true
+    recipientAddress: ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -143,10 +144,11 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     setError('');
 
     try {
-      console.log('🎁 CLAIM ESCROW: Starting claim process for token', tokenId);
+      console.log('🎁 FRONTEND CLAIM: Starting claim process for token', tokenId);
 
-      // Use authenticated request with JWT token
-      const response = await makeAuthenticatedRequest('/api/claim-escrow', {
+      // Step 1: Validate claim parameters using the new API
+      console.log('🔍 STEP 1: Validating claim parameters...');
+      const validateResponse = await makeAuthenticatedRequest('/api/validate-claim', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -155,33 +157,78 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           tokenId,
           password: formData.password,
           salt: formData.salt,
-          recipientAddress: formData.recipientAddress || undefined,
-          claimerAddress: account.address,
-          gasless: formData.gasless
+          claimerAddress: account.address
         })
       });
 
-      const result = await response.json();
+      const validationResult = await validateResponse.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to claim gift');
+      if (!validateResponse.ok || !validationResult.success || !validationResult.valid) {
+        throw new Error(validationResult.error || 'Claim validation failed');
       }
 
-      console.log('✅ CLAIM SUCCESS:', result);
+      console.log('✅ STEP 1: Claim validation successful', {
+        giftId: validationResult.giftId,
+        giftInfo: validationResult.giftInfo
+      });
+
+      // Step 2: Prepare claim transaction using the validated giftId
+      console.log('🔧 STEP 2: Preparing claim transaction...');
+      const claimTransaction = prepareClaimGiftByIdCall(
+        validationResult.giftId,
+        formData.password,
+        formData.salt,
+        '0x' // Empty gate data
+      );
+
+      console.log('✅ STEP 2: Transaction prepared for giftId', validationResult.giftId);
+
+      // Step 3: Execute claim transaction using user's wallet
+      console.log('💫 STEP 3: Executing claim transaction with user wallet...');
+      const client = createThirdwebClient({
+        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
+      });
+
+      const txResult = await sendTransaction({
+        transaction: claimTransaction,
+        account: account
+      });
+
+      console.log('📨 Transaction sent:', txResult.transactionHash);
+
+      // Step 4: Wait for transaction confirmation
+      console.log('⏳ STEP 4: Waiting for transaction confirmation...');
+      const receipt = await waitForReceipt({
+        client,
+        chain: baseSepolia,
+        transactionHash: txResult.transactionHash
+      });
+
+      if (receipt.status !== 'success') {
+        throw new Error(`Transaction failed with status: ${receipt.status}`);
+      }
+
+      console.log('✅ FRONTEND CLAIM SUCCESS:', {
+        txHash: txResult.transactionHash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed?.toString()
+      });
       
       setClaimStep('success');
       
+      // Notify parent component of successful claim
       if (onClaimSuccess) {
-        onClaimSuccess(result.transactionHash, {
+        onClaimSuccess(txResult.transactionHash, {
           tokenId,
-          recipientAddress: result.recipientAddress,
-          giftInfo: result.giftInfo,
-          gasless: result.gasless
+          recipientAddress: account.address, // NFT goes to connected wallet
+          giftInfo: validationResult.giftInfo,
+          gasless: false, // Frontend execution is always gas-paid by user
+          frontendExecution: true
         });
       }
 
     } catch (err: any) {
-      console.error('❌ CLAIM ERROR:', err);
+      console.error('❌ FRONTEND CLAIM ERROR:', err);
       const errorMessage = parseEscrowError(err);
       setError(errorMessage);
       setClaimStep('password');
@@ -223,7 +270,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           <div className="text-4xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-green-800 mb-2">Gift Claimed Successfully!</h2>
           <p className="text-green-600 mb-4">
-            The escrow gift has been transferred to your wallet.
+            The escrow gift has been successfully claimed and transferred directly to your wallet!
           </p>
           <div className="text-sm text-green-700 space-y-1">
             <p>Token ID: {tokenId}</p>
@@ -381,30 +428,18 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Gasless Transaction
-                      </label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Use gasless claiming (no gas fees)
-                      </p>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                    <div className="flex items-start">
+                      <div className="text-blue-600 dark:text-blue-400 text-lg mr-2">ℹ️</div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                          User Wallet Transaction
+                        </h4>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          This claim will be executed directly from your connected wallet. You will pay the gas fees and receive the NFT directly.
+                        </p>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => setFormData(prev => ({ ...prev, gasless: !prev.gasless }))}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        formData.gasless 
-                          ? 'bg-blue-600' 
-                          : 'bg-gray-200 dark:bg-gray-600'
-                      }`}
-                      disabled={isLoading}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          formData.gasless ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
                   </div>
                 </div>
               )}
@@ -472,11 +507,12 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             <div className="text-xs text-blue-700 dark:text-blue-300">
-              <p className="font-medium mb-1">Secure Claiming Process:</p>
+              <p className="font-medium mb-1">Secure Frontend Claiming:</p>
               <ul className="list-disc list-inside space-y-1 text-blue-600 dark:text-blue-400">
-                <li>Your password is processed securely and never stored</li>
-                <li>Transactions are processed {formData.gasless ? 'gaslessly' : 'with gas'}</li>
-                <li>The NFT will be transferred to your specified address</li>
+                <li>Your password is validated securely and never stored</li>
+                <li>Transaction executed directly from your connected wallet</li>
+                <li>You pay gas fees and receive the NFT immediately to your wallet</li>
+                <li>No server-side transaction execution ensures maximum security</li>
               </ul>
             </div>
           </div>
