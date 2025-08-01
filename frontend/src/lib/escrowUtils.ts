@@ -8,7 +8,7 @@ import { createThirdwebClient, getContract, prepareContractCall, readContract, s
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { baseSepolia } from 'thirdweb/chains';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from './escrowABI';
-import { getGiftIdFromMapping, storeGiftMapping } from './giftMappingStore';
+import { getGiftIdFromMapping, storeGiftMapping, batchStoreGiftMappings } from './giftMappingStore';
 
 // Initialize ThirdWeb client lazily to avoid build-time issues
 let client: ReturnType<typeof createThirdwebClient> | null = null;
@@ -147,8 +147,8 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
   }
   
   try {
-    console.log('🔍 MAPPING FALLBACK: Using RPC events as last resort for tokenId', tokenId);
-    console.warn('⚠️ Consider calling storeGiftMapping() after registerGiftMinted to avoid this expensive lookup');
+    // PERFORMANCE FIX: Reduced logging for expensive RPC fallback
+    console.log(`🔍 MAPPING FALLBACK: Searching blockchain events for tokenId ${tokenId} (last resort)`);
     
     // Use ethers for event querying (more reliable than ThirdWeb for this)
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL!);
@@ -166,16 +166,16 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     // Start with recent blocks, most gifts will be recent
     const searchStartBlock = Math.max(deploymentBlock, currentBlock - searchRange);
     
-    console.log(`🔍 MAPPING: Searching blocks ${searchStartBlock} to ${currentBlock} in chunks of ${maxRpcBlocks}`);
-    
     const allLogs: any[] = [];
+    let totalChunks = Math.ceil((currentBlock - searchStartBlock) / maxRpcBlocks);
+    let processedChunks = 0;
     
-    // Query in safe chunks
+    // Query in safe chunks with minimal logging
     for (let fromBlock = searchStartBlock; fromBlock <= currentBlock; fromBlock += maxRpcBlocks) {
       const toBlock = Math.min(fromBlock + maxRpcBlocks - 1, currentBlock);
+      processedChunks++;
       
       try {
-        console.log(`🔍 MAPPING: Querying chunk ${fromBlock} to ${toBlock}`);
         const chunkLogs = await provider.getLogs({
           address: ESCROW_CONTRACT_ADDRESS,
           topics: [eventTopic],
@@ -184,18 +184,21 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
         });
         allLogs.push(...chunkLogs);
         
-        // If we found logs in this chunk, we might not need to search further back
+        // Only log significant findings to reduce noise
         if (chunkLogs.length > 0) {
-          console.log(`🔍 MAPPING: Found ${chunkLogs.length} events in chunk ${fromBlock}-${toBlock}`);
+          console.log(`📦 MAPPING: Found ${chunkLogs.length} events in chunk ${processedChunks}/${totalChunks}`);
         }
       } catch (error: any) {
-        console.warn(`⚠️ MAPPING: Failed to query chunk ${fromBlock}-${toBlock}:`, error.message);
-        // Continue with next chunk instead of failing completely
+        // Only log critical chunk failures
+        if (processedChunks % 5 === 0 || processedChunks === totalChunks) {
+          console.warn(`⚠️ MAPPING: Chunk ${processedChunks}/${totalChunks} failed:`, error.message);
+        }
         continue;
       }
     }
     
-    console.log(`🔍 MAPPING: Found ${allLogs.length} total GiftRegisteredFromMint events`);
+    // Summary log instead of per-chunk logs
+    console.log(`✅ MAPPING: Processed ${processedChunks} chunks, found ${allLogs.length} total events`);
     
     // Parse ALL events and cache them for future use
     const mappings = new Map<string, number>();
@@ -216,32 +219,57 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
         );
         const eventTokenId = decoded[0].toString(); // tokenId is first in data
         
-        // Cache this mapping in memory and persist it
+        // Cache this mapping in memory for batch processing
         mappings.set(eventTokenId, parseInt(giftId));
-        
-        // Persist to Redis/KV for future lookups
-        await storeGiftMapping(eventTokenId, parseInt(giftId));
-        
-        console.log(`🔍 MAPPING: Event giftId=${giftId}, tokenId=${eventTokenId} (stored persistently)`);
       } catch (decodeError) {
         console.warn('⚠️ MAPPING: Failed to decode event:', decodeError.message);
         continue;
       }
     }
     
-    // Update cache with all found mappings
-    mappings.forEach((gId, tId) => {
-      tokenIdToGiftIdCache.set(tId, gId);
-    });
+    // BATCH OPTIMIZATION: Store all found mappings at once
+    if (mappings.size > 0) {
+      console.log(`💾 BATCH STORING: ${mappings.size} mappings to Redis...`);
+      
+      try {
+        // Convert to batch format
+        const batchMappings = Array.from(mappings.entries()).map(([tokenId, giftId]) => ({
+          tokenId,
+          giftId
+        }));
+        
+        // Batch store to persistent storage
+        await batchStoreGiftMappings(batchMappings);
+        
+        // Update memory cache
+        mappings.forEach((gId, tId) => {
+          tokenIdToGiftIdCache.set(tId, gId);
+        });
+        
+        console.log(`✅ BATCH STORED: ${mappings.size} mappings (Redis + Memory)`);
+      } catch (batchError) {
+        console.warn('⚠️ Batch storage failed, falling back to individual stores:', batchError.message);
+        
+        // Fallback: individual stores
+        for (const [tokenId, giftId] of mappings.entries()) {
+          try {
+            await storeGiftMapping(tokenId, giftId);
+            tokenIdToGiftIdCache.set(tokenId, giftId);
+          } catch (individualError) {
+            console.warn(`⚠️ Failed to store mapping ${tokenId}→${giftId}:`, individualError.message);
+          }
+        }
+      }
+    }
     
     // Look for our specific tokenId
     const giftId = mappings.get(tokenIdStr);
     if (giftId) {
-      console.log(`✅ MAPPING: Found match! tokenId ${tokenId} → giftId ${giftId}`);
+      console.log(`✅ MAPPING SUCCESS: tokenId ${tokenId} → giftId ${giftId} (cached ${mappings.size} mappings)`);
       return giftId;
     }
     
-    console.log(`❌ MAPPING: No giftId found for tokenId ${tokenId}`);
+    console.log(`❌ MAPPING: No giftId found for tokenId ${tokenId} after searching ${processedChunks} chunks`);
     return null;
     
   } catch (error) {
@@ -269,47 +297,48 @@ export async function verifyNFTOwnership(
   const nftContractABI = ["function ownerOf(uint256 tokenId) view returns (address)"];
   const nftContractCheck = new ethers.Contract(nftContract, nftContractABI, provider);
   
-  console.log(`🔍 RACE CONDITION FIX: Starting enhanced ownership verification for tokenId ${tokenId}`);
-  console.log(`🔍 Expected owner: ${expectedOwner}`);
-  console.log(`🔍 Max attempts: ${maxAttempts}, Delay: ${delayMs}ms`);
+  console.log(`🔍 OWNERSHIP VERIFY: tokenId ${tokenId}, attempts ${maxAttempts}`);
   
   while (attempts < maxAttempts) {
     try {
       // Wait longer on subsequent attempts (exponential backoff)
       if (attempts > 0) {
         const backoffDelay = delayMs * Math.pow(1.5, attempts - 1);
-        console.log(`⏳ RACE CONDITION FIX: Backing off ${backoffDelay}ms before attempt ${attempts + 1}`);
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
       }
       
       currentOwner = await nftContractCheck.ownerOf(tokenId);
-      console.log(`🔍 Ownership Check (attempt ${attempts + 1}/${maxAttempts}): NFT owner is ${currentOwner}`);
       
       if (currentOwner.toLowerCase() === expectedOwner.toLowerCase()) {
-        console.log('✅ RACE CONDITION FIX: NFT ownership confirmed!');
+        console.log(`✅ OWNERSHIP CONFIRMED: tokenId ${tokenId} → ${currentOwner.slice(0,8)}...`);
         return { success: true, actualOwner: currentOwner };
       } else {
-        console.log(`⏳ RACE CONDITION: NFT not yet transferred to expected owner (attempt ${attempts + 1}/${maxAttempts})`);
-        console.log(`   Expected: ${expectedOwner}`);
-        console.log(`   Actual:   ${currentOwner}`);
+        // Only log detailed info on final attempt or every 2nd attempt
+        if (attempts === maxAttempts - 1 || attempts % 2 === 1) {
+          console.log(`⏳ OWNERSHIP CHECK ${attempts + 1}/${maxAttempts}: Expected ${expectedOwner.slice(0,8)}..., Got ${currentOwner.slice(0,8)}...`);
+        }
         lastError = `Owner mismatch: expected ${expectedOwner}, got ${currentOwner}`;
       }
     } catch (error: any) {
       lastError = error.message;
-      console.log(`❌ RACE CONDITION: Error checking NFT ownership (attempt ${attempts + 1}/${maxAttempts}): ${error.message}`);
       
-      // Special handling for common race condition errors
+      // Only log errors on critical attempts
+      if (attempts === maxAttempts - 1 || attempts === 0) {
+        console.log(`❌ OWNERSHIP ERROR ${attempts + 1}/${maxAttempts}: ${error.message}`);
+      }
+      
+      // Special handling for common race condition errors (silent retry)
       if (error.message.includes('ERC721: invalid token ID') || 
           error.message.includes('ERC721NonexistentToken')) {
-        console.log('🔍 RACE CONDITION: Token may not exist yet, retrying...');
+        // Silent retry for token existence issues
       }
     }
     attempts++;
   }
   
-  const finalError = `RACE CONDITION FAILURE: NFT ownership verification failed after ${maxAttempts} attempts. Expected: ${expectedOwner}, Got: ${currentOwner || 'unknown'}. Last error: ${lastError}`;
+  const finalError = `OWNERSHIP FAILURE: After ${maxAttempts} attempts. Expected: ${expectedOwner.slice(0,8)}..., Got: ${(currentOwner || 'unknown').slice(0,8)}...`;
   
-  console.error('❌ RACE CONDITION FINAL FAILURE:', finalError);
+  console.error('❌ OWNERSHIP FINAL FAILURE:', finalError);
   
   return { 
     success: false, 

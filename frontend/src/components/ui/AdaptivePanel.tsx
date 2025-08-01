@@ -160,7 +160,7 @@ export function AdaptivePanel({
         return {
           initial: { opacity: 0, scale: 0.98, filter: 'blur(4px)' },
           animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
-          transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+          transition: { duration: 0.6, ease: 'easeOut' },
           whileHover: { scale: 1.02, transition: { duration: 0.2 } }
         };
       
@@ -181,11 +181,13 @@ export function AdaptivePanel({
     ${className}
   `.trim().replace(/\s+/g, ' ');
   
+  const animationProps = getAnimationProps();
+  
   return (
     <motion.div
       className={combinedClasses}
       style={style}
-      {...getAnimationProps()}
+      {...animationProps}
       {...motionProps}
     >
       {/* Luxury glow effect */}

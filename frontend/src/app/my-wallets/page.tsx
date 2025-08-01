@@ -13,6 +13,7 @@ import { ExpiredGiftManager } from '../../components/escrow/ExpiredGiftManager';
 import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
 import { getAuthState, isAuthValid } from '../../lib/siweClient';
 import { NFTImage } from '../../components/NFTImage';
+import { NFTImageModal } from '../../components/ui/NFTImageModal';
 import { ChainSwitcher } from '../../components/ChainSwitcher';
 
 interface UserWallet {
