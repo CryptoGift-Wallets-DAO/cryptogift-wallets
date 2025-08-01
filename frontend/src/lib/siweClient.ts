@@ -39,10 +39,53 @@ export interface VerifyResponse {
   error?: string;
 }
 
-// Global authentication state
-let authState: SiweAuthState = {
-  isAuthenticated: false
+// PERSISTENCE FIX: Load initial auth state from localStorage
+const loadPersistedAuthState = (): SiweAuthState => {
+  if (typeof window === 'undefined') {
+    return { isAuthenticated: false };
+  }
+  
+  try {
+    const stored = localStorage.getItem('siwe_auth_state');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      
+      // Validate that the stored token hasn't expired
+      if (parsed.expiresAt && parsed.expiresAt > Math.floor(Date.now() / 1000)) {
+        console.log('✅ SIWE: Loaded persisted auth state for:', parsed.address?.slice(0, 10) + '...');
+        return parsed;
+      } else {
+        console.log('⏰ SIWE: Stored auth state expired, clearing');
+        localStorage.removeItem('siwe_auth_state');
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ SIWE: Failed to load persisted auth state:', error);
+    localStorage.removeItem('siwe_auth_state');
+  }
+  
+  return { isAuthenticated: false };
 };
+
+// PERSISTENCE FIX: Save auth state to localStorage
+const persistAuthState = (state: SiweAuthState) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    if (state.isAuthenticated && state.token) {
+      localStorage.setItem('siwe_auth_state', JSON.stringify(state));
+      console.log('💾 SIWE: Auth state persisted to localStorage');
+    } else {
+      localStorage.removeItem('siwe_auth_state');
+      console.log('🗑️ SIWE: Auth state cleared from localStorage');
+    }
+  } catch (error) {
+    console.warn('⚠️ SIWE: Failed to persist auth state:', error);
+  }
+};
+
+// Global authentication state with persistence
+let authState: SiweAuthState = loadPersistedAuthState();
 
 /**
  * Request authentication challenge from server
@@ -285,7 +328,7 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
       throw new Error(verifyResponse.error || 'Failed to verify signature');
     }
     
-    // Update global auth state
+    // Update global auth state with persistence
     authState = {
       isAuthenticated: true,
       address: verifyResponse.address,
@@ -293,14 +336,18 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
       expiresAt: verifyResponse.expiresAt
     };
     
+    // PERSISTENCE FIX: Save to localStorage
+    persistAuthState(authState);
+    
     console.log('🎉 SIWE authentication completed successfully!');
     return authState;
     
   } catch (error: any) {
     console.error('❌ SIWE authentication failed:', error);
     
-    // Reset auth state on failure
+    // Reset auth state on failure with persistence
     authState = { isAuthenticated: false };
+    persistAuthState(authState);
     
     throw error;
   }
@@ -329,11 +376,12 @@ export function isAuthValid(): boolean {
 }
 
 /**
- * Clear authentication state (logout)
+ * Clear authentication state (logout) with persistence
  */
 export function clearAuth(): void {
   authState = { isAuthenticated: false };
-  console.log('🚪 Authentication cleared');
+  persistAuthState(authState);
+  console.log('🚪 Authentication cleared and persisted');
 }
 
 /**

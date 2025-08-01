@@ -79,16 +79,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (userOwnsDirectly) {
           console.log(`🎯 NFT ${tokenId} belongs to user, adding to wallet list`);
           
-          // Get NFT metadata using the NFT API
+          // CRITICAL FIX: Get NFT metadata directly (no internal API calls)
           let nftMetadata = null;
           try {
-            const metadataResponse = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/nft/${contractAddress}/${tokenId}`);
-            if (metadataResponse.ok) {
-              nftMetadata = await metadataResponse.json();
-              console.log(`✅ NFT ${tokenId} metadata loaded via API`);
-            }
+            // Use direct function call instead of HTTP request
+            nftMetadata = await getNFTMetadata(contractAddress, tokenId.toString());
+            console.log(`✅ NFT ${tokenId} metadata loaded directly:`, {
+              found: !!nftMetadata,
+              hasImage: !!nftMetadata?.image,
+              hasImageCid: !!nftMetadata?.imageIpfsCid
+            });
           } catch (metadataError) {
-            console.log(`⚠️ Failed to load metadata for NFT ${tokenId}`);
+            console.log(`⚠️ Failed to load metadata for NFT ${tokenId}:`, metadataError);
           }
           
           // Calculate TBA address for this NFT
@@ -116,19 +118,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const hash = ethers.keccak256(packed);
           const tbaAddress = ethers.getAddress('0x' + hash.slice(-40));
           
-          // Get NFT image and metadata
-          let nftImage = '/images/nft-placeholder.png';
+          // CRITICAL FIX: Process NFT image and metadata properly
+          let nftImage = '/images/cg-wallet-placeholder.png'; // Updated placeholder path
           let nftName = `CryptoGift Wallet #${tokenId}`;
+          let nftDescription = "Un regalo cripto único con wallet integrada ERC-6551";
           
-          if (nftMetadata && nftMetadata.success) {
-            if (nftMetadata.image) {
-              // Use image URL directly from API (already processed)
-              nftImage = nftMetadata.image;
-            }
+          if (nftMetadata) {
+            console.log(`🖼️ Processing NFT ${tokenId} metadata:`, {
+              hasName: !!nftMetadata.name,
+              hasDescription: !!nftMetadata.description,
+              hasImage: !!nftMetadata.image,
+              hasImageCid: !!nftMetadata.imageIpfsCid,
+              imageValue: nftMetadata.image
+            });
             
             if (nftMetadata.name) {
               nftName = nftMetadata.name;
             }
+            
+            if (nftMetadata.description) {
+              nftDescription = nftMetadata.description;
+            }
+            
+            if (nftMetadata.image) {
+              // CRITICAL FIX: Resolve IPFS URLs properly
+              if (nftMetadata.image.startsWith('ipfs://')) {
+                const cid = nftMetadata.image.replace('ipfs://', '');
+                nftImage = `https://nftstorage.link/ipfs/${cid}`;
+                console.log(`🔄 Converted IPFS URL for NFT ${tokenId}: ${nftImage}`);
+              } else if (nftMetadata.image.startsWith('http://') || nftMetadata.image.startsWith('https://')) {
+                nftImage = nftMetadata.image;
+                console.log(`✅ Using direct URL for NFT ${tokenId}: ${nftImage}`);
+              } else {
+                console.log(`⚠️ Unknown image format for NFT ${tokenId}:`, nftMetadata.image);
+              }
+            } else {
+              console.log(`📸 No image found for NFT ${tokenId}, using placeholder`);
+            }
+          } else {
+            console.log(`📂 No metadata found for NFT ${tokenId}, using defaults`);
           }
           
           userWallets.push({
@@ -139,6 +167,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             nftContract: contractAddress,
             tokenId: tokenId.toString(),
             image: nftImage,
+            description: nftDescription,
             balance: {
               eth: '0.0000', // TODO: Get real TBA balance
               usdc: '0.00',
@@ -147,6 +176,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             isActive: false, // Will be set by frontend
             owner: owner,
             metadata: nftMetadata
+          });
+          
+          console.log(`📦 Added wallet for NFT ${tokenId}:`, {
+            name: nftName,
+            image: nftImage,
+            tbaAddress: tbaAddress.slice(0, 10) + '...',
+            hasMetadata: !!nftMetadata
           });
         }
       } catch (tokenError) {

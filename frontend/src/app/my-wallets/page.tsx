@@ -10,6 +10,8 @@ import { ExtensionInstaller } from '../../components/BrowserExtension/ExtensionI
 import { AdvancedSecurity } from '../../components/Security/AdvancedSecurity';
 import { AccountManagement } from '../../components/Account/AccountManagement';
 import { ExpiredGiftManager } from '../../components/escrow/ExpiredGiftManager';
+import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
+import { getAuthState, isAuthValid } from '../../lib/siweClient';
 
 interface UserWallet {
   id: string;
@@ -19,6 +21,7 @@ interface UserWallet {
   nftContract: string;
   tokenId: string;
   image: string;
+  description?: string;
   balance: {
     eth: string;
     usdc: string;
@@ -35,10 +38,28 @@ export default function MyWalletsPage() {
   const [selectedWallet, setSelectedWallet] = useState<UserWallet | null>(null);
   const [showWalletInterface, setShowWalletInterface] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Check authentication status when account changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const authState = getAuthState();
+      const isValid = isAuthValid();
+      const authenticated = authState.isAuthenticated && isValid && 
+                          authState.address?.toLowerCase() === account?.address?.toLowerCase();
+      setIsAuthenticated(authenticated);
+    };
+
+    if (account?.address) {
+      checkAuth();
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, [account?.address]);
 
   const loadUserWallets = useCallback(async () => {
     if (!account?.address) return;
@@ -80,12 +101,12 @@ export default function MyWalletsPage() {
     }
   }, [account]);
 
-  // Load user's wallets
+  // Load user's wallets only when authenticated
   useEffect(() => {
-    if (account?.address) {
+    if (account?.address && isAuthenticated) {
       loadUserWallets();
     }
-  }, [account, loadUserWallets]);
+  }, [account, isAuthenticated, loadUserWallets]);
 
   const handleWalletSelect = (wallet: UserWallet) => {
     setSelectedWallet(wallet);
@@ -123,7 +144,8 @@ export default function MyWalletsPage() {
     return <div>Loading...</div>;
   }
 
-  if (!account) {
+  // CRITICAL FIX: Handle authentication flow properly
+  if (!account || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 
                      dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
@@ -139,14 +161,19 @@ export default function MyWalletsPage() {
           </div>
           <h1 className="text-2xl font-bold text-text-primary mb-2 transition-colors duration-300">Mis CryptoGift Wallets</h1>
           <p className="text-text-secondary mb-6 transition-colors duration-300">
-            Conecta tu wallet para ver y gestionar tus NFT-Wallets de CryptoGift
+            {!account 
+              ? "Conecta tu wallet para ver y gestionar tus NFT-Wallets de CryptoGift"
+              : "Autentica tu wallet para acceder a tus NFT-Wallets de forma segura"
+            }
           </p>
-          <ConnectButton
-            client={client}
-            appMetadata={{
-              name: "CryptoGift Wallets",
-              url: "https://cryptogift-wallets.vercel.app",
+          
+          {/* AUTHENTICATION FIX: Use proper auth component */}
+          <ConnectAndAuthButton 
+            onAuthChange={(authenticated, address) => {
+              console.log('🔐 Auth change in my-wallets:', { authenticated, address });
+              setIsAuthenticated(authenticated);
             }}
+            showAuthStatus={true}
           />
         </div>
       </div>
@@ -233,10 +260,14 @@ export default function MyWalletsPage() {
                             height={48}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              const placeholder = '/images/nft-placeholder.png';
+                              console.log(`🖼️ Image load failed for wallet ${wallet.id}, using fallback`);
+                              const placeholder = '/images/cg-wallet-placeholder.png';
                               if (e.currentTarget.src !== placeholder) {
                                 e.currentTarget.src = placeholder;
                               }
+                            }}
+                            onLoad={() => {
+                              console.log(`✅ Image loaded successfully for wallet ${wallet.id}: ${wallet.image}`);
                             }}
                           />
                         </div>
