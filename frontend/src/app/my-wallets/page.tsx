@@ -267,8 +267,9 @@ export default function MyWalletsPage() {
                             alt={wallet.name}
                             width={48}
                             height={48}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain bg-white/50" // FIXED: object-contain instead of object-cover
                             tokenId={wallet.id}
+                            fit="contain"
                           />
                         </div>
                         
@@ -401,6 +402,24 @@ export default function MyWalletsPage() {
           tokenId={selectedWallet.tokenId}
         />
       )}
+      
+      {/* NFT IMAGE MODAL */}
+      <NFTImageModal
+        isOpen={imageModalData.isOpen}
+        onClose={() => setImageModalData(prev => ({ ...prev, isOpen: false }))}
+        image={imageModalData.image}
+        name={imageModalData.name}
+        tokenId={imageModalData.tokenId}
+        contractAddress={imageModalData.contractAddress}
+        metadata={{
+          description: "A unique NFT-Wallet from the CryptoGift platform that functions as both an NFT and a wallet using ERC-6551 Token Bound Accounts.",
+          attributes: [
+            { trait_type: "Wallet Type", value: "ERC-6551 Token Bound Account" },
+            { trait_type: "Network", value: "Base Sepolia" },
+            { trait_type: "Status", value: "Active" }
+          ]
+        }}
+      />
     </div>
   );
 }

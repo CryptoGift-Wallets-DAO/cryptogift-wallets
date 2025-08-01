@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { NFTImage } from '../NFTImage';
+import { NFTImageModal } from '../ui/NFTImageModal';
 import { 
   formatTimeRemaining,
   isGiftExpired,
@@ -48,6 +50,7 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
   const [isExpired, setIsExpired] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // Update countdown timer
   useEffect(() => {
@@ -145,17 +148,59 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden ${className}`}>
-      {/* Header with NFT Image */}
-      <div className="relative">
+      {/* YUGI-OH FUTURISTIC CARD HEADER */}
+      <div className="relative overflow-hidden">
         {nftMetadata?.image ? (
-          <img 
-            src={nftMetadata.image} 
-            alt={nftMetadata.name || 'Gift NFT'}
-            className="w-full h-48 object-cover"
-          />
+          <div 
+            className="nft-card-image-container"
+            onDoubleClick={() => {
+              console.log('🖼️ Opening full NFT image modal...');
+              setShowImageModal(true);
+            }}
+            style={{ cursor: 'pointer' }}
+            title="Double-click to view full image"
+          >
+            <img 
+              src={nftMetadata.image} 
+              alt={nftMetadata.name || 'Gift NFT'}
+              className="nft-card-image"
+              style={{
+                width: '100%',
+                maxHeight: '400px', // Much taller than before (was 192px/h-48)
+                objectFit: 'contain', // Show full image without cropping
+                backgroundColor: '#f8fafc', // Light background for transparent areas
+                borderRadius: '0.5rem 0.5rem 0 0' // Rounded top corners only
+              }}
+            />
+            
+            {/* YUGI-OH STYLE BORDER OVERLAY */}
+            <div className="absolute inset-0 border-2 border-gradient-to-r from-yellow-400 via-blue-500 to-purple-600 rounded-t-lg opacity-60" />
+            <div className="absolute inset-0 border border-white/30 rounded-t-lg" />
+            
+            {/* HOLOGRAPHIC EFFECT */}
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-40 pointer-events-none" />
+            
+            {/* DOUBLE-CLICK HINT */}
+            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
+              🔍 Double-click to enlarge
+            </div>
+          </div>
         ) : (
-          <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
-            <div className="text-6xl">🎁</div>
+          <div className="w-full" style={{ minHeight: '300px', maxHeight: '400px' }}>
+            <div className="h-full bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-600 flex items-center justify-center relative overflow-hidden">
+              {/* FUTURISTIC PLACEHOLDER DESIGN */}
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />
+              <div className="relative z-10">
+                <div className="text-8xl mb-4 drop-shadow-lg">🎁</div>
+                <div className="text-white font-bold text-lg">CryptoGift NFT</div>
+                <div className="text-white/80 text-sm">#{tokenId}</div>
+              </div>
+              
+              {/* GEOMETRIC PATTERNS */}
+              <div className="absolute top-4 left-4 w-8 h-8 border-2 border-white/30 rotate-45" />
+              <div className="absolute bottom-4 right-4 w-6 h-6 border-2 border-white/20 rotate-12" />
+              <div className="absolute top-1/2 left-8 w-4 h-4 bg-white/20 rounded-full" />
+            </div>
           </div>
         )}
         
@@ -326,6 +371,27 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
           </div>
         )}
       </div>
+      
+      {/* NFT IMAGE MODAL */}
+      {nftMetadata?.image && (
+        <NFTImageModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          image={nftMetadata.image}
+          name={nftMetadata.name || `CryptoGift NFT #${tokenId}`}
+          tokenId={tokenId}
+          contractAddress={giftInfo?.nftContract}
+          metadata={{
+            description: nftMetadata.description,
+            attributes: [
+              { trait_type: "Wallet Type", value: "ERC-6551 Token Bound Account" },
+              { trait_type: "Network", value: "Base Sepolia" },
+              { trait_type: "Status", value: giftInfo?.status.toUpperCase() || "UNKNOWN" },
+              { trait_type: "Creator", value: giftInfo?.creator || "Unknown" }
+            ]
+          }}
+        />
+      )}
     </div>
   );
 };
