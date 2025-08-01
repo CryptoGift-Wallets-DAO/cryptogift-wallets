@@ -4,20 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useActiveAccount, useSwitchActiveWalletChain } from 'thirdweb/react';
 import { baseSepolia } from 'thirdweb/chains';
 
-// Extended window.ethereum interface for better TypeScript support
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
-      isMetaMask?: boolean;
-      isTrust?: boolean;
-      on?: (event: string, callback: (data: any) => void) => void;
-      removeListener?: (event: string, callback: (data: any) => void) => void;
-      removeAllListeners?: (event: string) => void;
-    };
-  }
-}
-
 interface ChainSwitcherProps {
   className?: string;
   onChainChanged?: (chainId: number) => void;
@@ -26,6 +12,7 @@ interface ChainSwitcherProps {
 /**
  * ChainSwitcher Component - Handles network switching for mobile wallets
  * Detects wrong networks and prompts users to switch to Base Sepolia
+ * Simplified version without event listeners to avoid TypeScript conflicts
  */
 export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
   className = "",
@@ -44,32 +31,30 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
       if (!account) return;
 
       try {
-        // Try multiple methods to detect current chain
         let detectedChainId: number | null = null;
 
-        // Primary method: Direct window.ethereum check (most reliable)
-        if (!detectedChainId && typeof window !== 'undefined' && window.ethereum) {
+        // Simple chain detection using window.ethereum (compatible with existing types)
+        if (typeof window !== 'undefined' && (window as any).ethereum) {
           try {
-            const hexChainId = await window.ethereum.request({ method: 'eth_chainId' });
+            const ethereum = (window as any).ethereum;
+            const hexChainId = await ethereum.request({ method: 'eth_chainId' });
             
+            // Parse different chain ID formats
             if (typeof hexChainId === 'string') {
               if (hexChainId.startsWith('eip155:')) {
-                // CAIP format: "eip155:84532" → 84532
                 detectedChainId = parseInt(hexChainId.replace('eip155:', ''), 10);
               } else if (hexChainId.startsWith('0x')) {
-                // Hex format: "0x14a34" → 84532
                 detectedChainId = parseInt(hexChainId, 16);
               } else {
-                // Already numeric string: "84532" → 84532
                 detectedChainId = parseInt(hexChainId, 10);
               }
             } else if (typeof hexChainId === 'number') {
               detectedChainId = hexChainId;
             }
             
-            console.log('🔗 Chain detected via window.ethereum:', detectedChainId);
+            console.log('🔗 Chain detected:', detectedChainId);
           } catch (error) {
-            console.warn('⚠️ window.ethereum chain detection failed:', error);
+            console.warn('⚠️ Chain detection failed:', error);
           }
         }
 
@@ -83,32 +68,7 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
     };
 
     detectChain();
-
-    // Listen for chain changes
-    const handleChainChanged = (chainId: string) => {
-      let parsedChainId: number;
-      
-      if (chainId.startsWith('eip155:')) {
-        parsedChainId = parseInt(chainId.replace('eip155:', ''), 10);
-      } else if (chainId.startsWith('0x')) {
-        parsedChainId = parseInt(chainId, 16);
-      } else {
-        parsedChainId = parseInt(chainId, 10);
-      }
-      
-      console.log('🔄 Chain changed detected:', parsedChainId);
-      setCurrentChainId(parsedChainId);
-      onChainChanged?.(parsedChainId);
-    };
-
-    if (typeof window !== 'undefined' && window.ethereum) {
-      window.ethereum.on?.('chainChanged', handleChainChanged);
-      
-      return () => {
-        window.ethereum.removeListener?.('chainChanged', handleChainChanged);
-      };
-    }
-  }, [account]);
+  }, [account, onChainChanged]);
 
   const handleSwitchChain = async () => {
     if (!account) return;
