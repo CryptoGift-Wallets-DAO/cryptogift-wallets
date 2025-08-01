@@ -107,7 +107,7 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
             Wrong Network Detected
           </h3>
           <p className="text-yellow-700 text-sm mb-3">
-            You're currently on chain {currentChainId}. This app requires Base Sepolia (84532) to function properly.
+            You&apos;re currently on chain {currentChainId}. This app requires Base Sepolia (84532) to function properly.
           </p>
           
           {switchError && (

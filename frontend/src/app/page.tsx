@@ -34,9 +34,8 @@ export default function Home() {
         setShowWelcomeBanner(true);
       }
       
-      // Track referral click in real-time
+      // Track referral click in real-time - will be handled by separate effect
       console.log('🎯 REFERRAL DETECTED:', ref);
-      trackReferralClick(ref);
     } else {
       // Check localStorage for existing referrer
       const storedRef = localStorage.getItem("referrer");
@@ -76,6 +75,13 @@ export default function Home() {
     }
   }, [account?.address]); // Dependencies: account address
 
+  // Separate effect to track referral clicks when referrer is detected
+  useEffect(() => {
+    if (referrer && mounted) {
+      trackReferralClick(referrer);
+    }
+  }, [referrer, mounted, trackReferralClick]);
+
   // Auto-upgrade IP-based account when user connects wallet
   useEffect(() => {
     if (account?.address && mounted) {
@@ -88,7 +94,7 @@ export default function Home() {
         trackReferralClick(storedRef);
       }
     }
-  }, [account?.address, mounted]);
+  }, [account?.address, mounted, trackReferralClick]);
 
   const upgradeIPAccount = async (userAddress: string) => {
     try {
