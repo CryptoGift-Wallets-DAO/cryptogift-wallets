@@ -1017,9 +1017,16 @@ async function mintNFTEscrowGasPaid(
             console.error('❌ TokenURI update transaction failed:', updateReceipt.status);
           }
           
-        } catch (updateError) {
-          console.error('❌ FAILED TO UPDATE TOKEN URI ON CONTRACT:', updateError);
-          console.log('⚠️ Metadata update failed, but NFT exists with original URI');
+        } catch (updateError: any) {
+          // Handle "Token does not exist" error gracefully
+          if (updateError.message?.includes('Token does not exist') || 
+              updateError.message?.includes('ERC721NonexistentToken')) {
+            console.warn(`⚠️ Token ${tokenId} not yet available for URI update, skipping for now`);
+            console.log('🔄 NFT will use original metadata from IPFS - this is normal for new tokens');
+          } else {
+            console.error('❌ FAILED TO UPDATE TOKEN URI ON CONTRACT:', updateError);
+          }
+          console.log('⚠️ Metadata update failed, but NFT mint will continue with original URI');
           // Continue with mint process - NFT exists, just metadata won't be updated post-mint
         }
         

@@ -17,6 +17,7 @@ import { type EscrowGift } from '../../lib/escrowABI';
 import { useAuth } from '../../hooks/useAuth';
 import { makeAuthenticatedRequest } from '../../lib/siweClient';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
+import { NFTImageModal } from '../ui/NFTImageModal';
 
 interface ClaimEscrowInterfaceProps {
   tokenId: string;
@@ -65,6 +66,13 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   const [error, setError] = useState<string>('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [claimStep, setClaimStep] = useState<'password' | 'claiming' | 'success'>('password');
+  const [imageModalData, setImageModalData] = useState<{
+    isOpen: boolean;
+    image: string;
+    name: string;
+    tokenId: string;
+    contractAddress: string;
+  }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
 
   // Fetch correct salt for this token when component mounts
   useEffect(() => {
@@ -330,11 +338,26 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         {nftMetadata && (
           <div className="mb-6 text-center">
             {nftMetadata.image && (
-              <img 
-                src={nftMetadata.image} 
-                alt={nftMetadata.name || 'Gift NFT'}
-                className="w-32 h-32 object-cover rounded-lg mx-auto mb-2"
-              />
+              <div 
+                className="w-32 h-32 mx-auto mb-2 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => {
+                  console.log('🖼️ Opening NFT image modal for claim:', tokenId);
+                  setImageModalData({
+                    isOpen: true,
+                    image: nftMetadata.image!,
+                    name: nftMetadata.name || `Gift NFT #${tokenId}`,
+                    tokenId: tokenId,
+                    contractAddress: giftInfo?.nftContract || ''
+                  });
+                }}
+                title="Click to view full image"
+              >
+                <img 
+                  src={nftMetadata.image} 
+                  alt={nftMetadata.name || 'Gift NFT'}
+                  className="w-full h-full object-contain bg-gray-50" // FIXED: object-contain instead of object-cover
+                />
+              </div>
             )}
             {nftMetadata.name && (
               <h3 className="font-medium text-gray-900 dark:text-white">{nftMetadata.name}</h3>
@@ -528,6 +551,24 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* NFT IMAGE MODAL */}
+      <NFTImageModal
+        isOpen={imageModalData.isOpen}
+        onClose={() => setImageModalData(prev => ({ ...prev, isOpen: false }))}
+        image={imageModalData.image}
+        name={imageModalData.name}
+        tokenId={imageModalData.tokenId}
+        contractAddress={imageModalData.contractAddress}
+        metadata={{
+          description: nftMetadata?.description || "A special NFT gift waiting to be claimed.",
+          attributes: [
+            { trait_type: "Status", value: giftInfo?.status.toUpperCase() || "ACTIVE" },
+            { trait_type: "Network", value: "Base Sepolia" },
+            { trait_type: "Type", value: "CryptoGift NFT" }
+          ]
+        }}
+      />
     </div>
   );
 };

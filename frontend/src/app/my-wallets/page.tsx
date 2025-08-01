@@ -271,7 +271,7 @@ export default function MyWalletsPage() {
                         {/* NFT Image - With Double-Click Modal */}
                         <div 
                           className="w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform"
-                          onDoubleClick={() => {
+                          onClick={() => {
                             console.log('🖼️ Opening NFT image modal for wallet:', wallet.name);
                             setImageModalData({
                               isOpen: true,
@@ -281,7 +281,7 @@ export default function MyWalletsPage() {
                               contractAddress: wallet.nftContract
                             });
                           }}
-                          title="Double-click to view full image"
+                          title="Click to view full image"
                         >
                           <NFTImage
                             src={wallet.image}

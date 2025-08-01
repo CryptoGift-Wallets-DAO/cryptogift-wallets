@@ -12,6 +12,7 @@ import {
 import { getAuthHeader, getAuthState } from '../../lib/siweClient';
 import { sendTransaction } from 'thirdweb';
 import { NFTImage } from '../NFTImage';
+import { NFTImageModal } from '../ui/NFTImageModal';
 
 interface ExpiredGift {
   tokenId: string;
@@ -43,6 +44,13 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
   const [returning, setReturning] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string>('');
   const [bulkReturning, setBulkReturning] = useState(false);
+  const [imageModalData, setImageModalData] = useState<{
+    isOpen: boolean;
+    image: string;
+    name: string;
+    tokenId: string;
+    contractAddress: string;
+  }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
 
   // Load expired gifts when component mounts or account changes
   useEffect(() => {
@@ -306,14 +314,29 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
           >
             <div className="flex">
               {/* NFT Image */}
-              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
+              <div 
+                className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => {
+                  if (gift.nftMetadata?.image) {
+                    console.log('🖼️ Opening NFT image modal for expired gift:', gift.tokenId);
+                    setImageModalData({
+                      isOpen: true,
+                      image: gift.nftMetadata.image,
+                      name: gift.nftMetadata.name || `Gift NFT #${gift.tokenId}`,
+                      tokenId: gift.tokenId,
+                      contractAddress: gift.nftContract
+                    });
+                  }
+                }}
+                title="Click to view full image"
+              >
                 {gift.nftMetadata?.image ? (
                   <NFTImage
                     src={gift.nftMetadata.image}
                     alt={gift.nftMetadata.name || `Gift NFT #${gift.tokenId}`}
                     width={96}
                     height={96}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain" // FIXED: object-contain instead of object-cover
                     tokenId={gift.tokenId}
                   />
                 ) : (
@@ -392,6 +415,24 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* NFT IMAGE MODAL */}
+      <NFTImageModal
+        isOpen={imageModalData.isOpen}
+        onClose={() => setImageModalData(prev => ({ ...prev, isOpen: false }))}
+        image={imageModalData.image}
+        name={imageModalData.name}
+        tokenId={imageModalData.tokenId}
+        contractAddress={imageModalData.contractAddress}
+        metadata={{
+          description: "An expired NFT gift that can be returned to the creator's wallet.",
+          attributes: [
+            { trait_type: "Status", value: "Expired" },
+            { trait_type: "Network", value: "Base Sepolia" },
+            { trait_type: "Type", value: "CryptoGift NFT" }
+          ]
+        }}
+      />
     </div>
   );
 };

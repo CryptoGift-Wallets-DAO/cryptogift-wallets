@@ -153,12 +153,12 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
         {nftMetadata?.image ? (
           <div 
             className="nft-card-image-container"
-            onDoubleClick={() => {
+            onClick={() => {
               console.log('🖼️ Opening full NFT image modal...');
               setShowImageModal(true);
             }}
             style={{ cursor: 'pointer' }}
-            title="Double-click to view full image"
+            title="Click to view full image"
           >
             <img 
               src={nftMetadata.image} 
@@ -180,9 +180,9 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
             {/* HOLOGRAPHIC EFFECT */}
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-40 pointer-events-none" />
             
-            {/* DOUBLE-CLICK HINT */}
+            {/* CLICK HINT */}
             <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
-              🔍 Double-click to enlarge
+              🔍 Click to enlarge
             </div>
           </div>
         ) : (
