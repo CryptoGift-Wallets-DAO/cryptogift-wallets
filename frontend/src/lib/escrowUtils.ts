@@ -133,13 +133,17 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     return cachedGiftId;
   }
 
-  // Check persistent storage (Redis/KV) - avoids RPC calls
-  const persistentGiftId = await getGiftIdFromMapping(tokenId);
-  if (persistentGiftId !== null) {
-    // Cache in memory for future requests
-    tokenIdToGiftIdCache.set(tokenIdStr, persistentGiftId);
-    console.log(`🎯 MAPPING PERSISTENT HIT: tokenId ${tokenId} → giftId ${persistentGiftId}`);
-    return persistentGiftId;
+  // Try persistent storage (Redis/KV) - avoids RPC calls if available
+  try {
+    const persistentGiftId = await getGiftIdFromMapping(tokenId);
+    if (persistentGiftId !== null) {
+      // Cache in memory for future requests
+      tokenIdToGiftIdCache.set(tokenIdStr, persistentGiftId);
+      console.log(`🎯 MAPPING PERSISTENT HIT: tokenId ${tokenId} → giftId ${persistentGiftId}`);
+      return persistentGiftId;
+    }
+  } catch (redisError) {
+    console.warn(`⚠️ Redis lookup failed for ${tokenId}, proceeding with event fallback:`, redisError.message);
   }
   
   try {

@@ -11,6 +11,7 @@ import {
 } from '../../lib/escrowUtils';
 import { getAuthHeader, getAuthState } from '../../lib/siweClient';
 import { sendTransaction } from 'thirdweb';
+import { NFTImage } from '../NFTImage';
 
 interface ExpiredGift {
   tokenId: string;
@@ -305,12 +306,15 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
           >
             <div className="flex">
               {/* NFT Image */}
-              <div className="w-24 h-24 flex-shrink-0">
+              <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
                 {gift.nftMetadata?.image ? (
-                  <img
+                  <NFTImage
                     src={gift.nftMetadata.image}
                     alt={gift.nftMetadata.name || `Gift NFT #${gift.tokenId}`}
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
+                    tokenId={gift.tokenId}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">

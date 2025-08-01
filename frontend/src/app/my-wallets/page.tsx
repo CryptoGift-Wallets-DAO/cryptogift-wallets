@@ -12,6 +12,8 @@ import { AccountManagement } from '../../components/Account/AccountManagement';
 import { ExpiredGiftManager } from '../../components/escrow/ExpiredGiftManager';
 import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
 import { getAuthState, isAuthValid } from '../../lib/siweClient';
+import { NFTImage } from '../../components/NFTImage';
+import { ChainSwitcher } from '../../components/ChainSwitcher';
 
 interface UserWallet {
   id: string;
@@ -208,6 +210,13 @@ export default function MyWalletsPage() {
           </p>
         </div>
 
+        {/* Chain Switcher - Critical for mobile wallets */}
+        <div className="max-w-4xl mx-auto mb-6">
+          <ChainSwitcher onChainChanged={(chainId) => {
+            console.log('🔗 Chain changed in my-wallets:', chainId);
+          }} />
+        </div>
+
         {/* Wallet Selector */}
         <div className="max-w-4xl mx-auto mb-8">
           <div className="bg-bg-card rounded-2xl shadow-xl p-6 transition-colors duration-300">
@@ -253,22 +262,13 @@ export default function MyWalletsPage() {
                       <div className="flex items-center space-x-4">
                         {/* NFT Image */}
                         <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300">
-                          <Image
+                          <NFTImage
                             src={wallet.image}
                             alt={wallet.name}
                             width={48}
                             height={48}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.log(`🖼️ Image load failed for wallet ${wallet.id}, using fallback`);
-                              const placeholder = '/images/cg-wallet-placeholder.png';
-                              if (e.currentTarget.src !== placeholder) {
-                                e.currentTarget.src = placeholder;
-                              }
-                            }}
-                            onLoad={() => {
-                              console.log(`✅ Image loaded successfully for wallet ${wallet.id}: ${wallet.image}`);
-                            }}
+                            tokenId={wallet.id}
                           />
                         </div>
                         

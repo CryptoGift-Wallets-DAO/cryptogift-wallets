@@ -82,21 +82,38 @@ function authenticate(req: NextApiRequest): { success: boolean; address?: string
   }
 }
 
-// Load metadata for expired gift
-async function loadGiftMetadata(tokenId: string): Promise<{ name?: string; description?: string; image?: string; }> {
+// CRITICAL FIX: Load metadata directly without internal HTTP calls
+async function loadGiftMetadata(tokenId: string, contractAddress: string): Promise<{ name?: string; description?: string; image?: string; }> {
   try {
-    // Try to load from our metadata API
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/nft-metadata/${tokenId}`);
+    console.log(`🔍 Loading metadata for expired token ${tokenId}`);
     
-    if (response.ok) {
-      const metadata = await response.json();
+    // Use direct function call instead of HTTP request
+    const { getNFTMetadata } = await import('../../../lib/nftMetadataStore');
+    const metadata = await getNFTMetadata(contractAddress, tokenId);
+    
+    if (metadata) {
+      console.log(`✅ Metadata found for expired token ${tokenId}:`, {
+        hasName: !!metadata.name,
+        hasImage: !!metadata.image,
+        imageUrl: metadata.image
+      });
+      
+      // CRITICAL FIX: Resolve IPFS URLs properly
+      let processedImageUrl = metadata.image;
+      if (processedImageUrl && processedImageUrl.startsWith('ipfs://')) {
+        const cid = processedImageUrl.replace('ipfs://', '');
+        processedImageUrl = `https://nftstorage.link/ipfs/${cid}`;
+        console.log(`🔄 Converted IPFS URL for expired token ${tokenId}: ${processedImageUrl}`);
+      }
+      
       return {
         name: metadata.name || `Gift NFT #${tokenId}`,
         description: metadata.description || 'CryptoGift NFT',
-        image: metadata.image || '/images/cg-wallet-placeholder.png'
+        image: processedImageUrl || '/images/cg-wallet-placeholder.png'
       };
     }
     
+    console.log(`📂 No metadata found for expired token ${tokenId}, using defaults`);
     return {
       name: `Gift NFT #${tokenId}`,
       description: 'CryptoGift NFT',
@@ -164,8 +181,8 @@ async function getExpiredGiftsForUser(creatorAddress: string): Promise<{
         if (isActive && isExpired) {
           console.log(`🔄 EXPIRED GIFT FOUND: Gift ${giftId} - tokenId ${gift.tokenId}`);
           
-          // Load metadata for this gift
-          const metadata = await loadGiftMetadata(gift.tokenId.toString());
+          // Load metadata for this gift with contract address
+          const metadata = await loadGiftMetadata(gift.tokenId.toString(), gift.nftContract);
           
           expiredGifts.push({
             giftId,
