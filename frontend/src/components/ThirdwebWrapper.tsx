@@ -38,7 +38,7 @@ export function ThirdwebWrapper({ children }: ThirdwebWrapperProps) {
   }
 
   return (
-    <ThirdwebProvider client={client}>
+    <ThirdwebProvider>
       {children}
     </ThirdwebProvider>
   );

@@ -4,6 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { useActiveAccount, useSwitchActiveWalletChain } from 'thirdweb/react';
 import { baseSepolia } from 'thirdweb/chains';
 
+// Extended window.ethereum interface for better TypeScript support
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      isMetaMask?: boolean;
+      isTrust?: boolean;
+      on?: (event: string, callback: (data: any) => void) => void;
+      removeListener?: (event: string, callback: (data: any) => void) => void;
+      removeAllListeners?: (event: string) => void;
+    };
+  }
+}
+
 interface ChainSwitcherProps {
   className?: string;
   onChainChanged?: (chainId: number) => void;
@@ -33,18 +47,7 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
         // Try multiple methods to detect current chain
         let detectedChainId: number | null = null;
 
-        // Method 1: Check account chain
-        if (account.wallet?.getChain) {
-          try {
-            const chain = await account.wallet.getChain();
-            detectedChainId = chain.id;
-            console.log('🔗 Chain detected via wallet.getChain():', detectedChainId);
-          } catch (error) {
-            console.warn('⚠️ wallet.getChain() failed:', error);
-          }
-        }
-
-        // Method 2: Direct window.ethereum check (mobile fallback)
+        // Primary method: Direct window.ethereum check (most reliable)
         if (!detectedChainId && typeof window !== 'undefined' && window.ethereum) {
           try {
             const hexChainId = await window.ethereum.request({ method: 'eth_chainId' });
