@@ -160,7 +160,7 @@ export function AdaptivePanel({
         return {
           initial: { opacity: 0, scale: 0.98, filter: 'blur(4px)' },
           animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
-          transition: { duration: 0.6, ease: 'easeOut' },
+          transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
           whileHover: { scale: 1.02, transition: { duration: 0.2 } }
         };
       
@@ -253,18 +253,26 @@ export function AdaptivePanel({
 /**
  * Pre-configured panel variants for common use cases
  */
-export const GlassPanel = (props: Partial<AdaptivePanelProps>) => (
-  <AdaptivePanel variant="glass" blur="md" shadow="lg" {...props} />
+export const GlassPanel = ({ children, ...props }: Partial<AdaptivePanelProps> & { children: React.ReactNode }) => (
+  <AdaptivePanel variant="glass" blur="md" shadow="lg" {...props}>
+    {children}
+  </AdaptivePanel>
 );
 
-export const LuxuryPanel = (props: Partial<AdaptivePanelProps>) => (
-  <AdaptivePanel variant="luxury" glow shadow="luxury" animation="luxury" {...props} />
+export const LuxuryPanel = ({ children, ...props }: Partial<AdaptivePanelProps> & { children: React.ReactNode }) => (
+  <AdaptivePanel variant="luxury" glow shadow="luxury" animation="luxury" {...props}>
+    {children}
+  </AdaptivePanel>
 );
 
-export const MinimalPanel = (props: Partial<AdaptivePanelProps>) => (
-  <AdaptivePanel variant="minimal" shadow="sm" animation="fade" {...props} />
+export const MinimalPanel = ({ children, ...props }: Partial<AdaptivePanelProps> & { children: React.ReactNode }) => (
+  <AdaptivePanel variant="minimal" shadow="sm" animation="fade" {...props}>
+    {children}
+  </AdaptivePanel>
 );
 
-export const SolidPanel = (props: Partial<AdaptivePanelProps>) => (
-  <AdaptivePanel variant="solid" shadow="md" {...props} />
+export const SolidPanel = ({ children, ...props }: Partial<AdaptivePanelProps> & { children: React.ReactNode }) => (
+  <AdaptivePanel variant="solid" shadow="md" {...props}>
+    {children}
+  </AdaptivePanel>
 );

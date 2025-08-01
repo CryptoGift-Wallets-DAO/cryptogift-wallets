@@ -41,6 +41,13 @@ export default function MyWalletsPage() {
   const [showWalletInterface, setShowWalletInterface] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [imageModalData, setImageModalData] = useState<{
+    isOpen: boolean;
+    image: string;
+    name: string;
+    tokenId: string;
+    contractAddress: string;
+  }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
 
   useEffect(() => {
     setMounted(true);
@@ -260,8 +267,21 @@ export default function MyWalletsPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        {/* NFT Image */}
-                        <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300">
+                        {/* NFT Image - With Double-Click Modal */}
+                        <div 
+                          className="w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform"
+                          onDoubleClick={() => {
+                            console.log('🖼️ Opening NFT image modal for wallet:', wallet.name);
+                            setImageModalData({
+                              isOpen: true,
+                              image: wallet.image,
+                              name: wallet.name,
+                              tokenId: wallet.tokenId,
+                              contractAddress: wallet.nftContract
+                            });
+                          }}
+                          title="Double-click to view full image"
+                        >
                           <NFTImage
                             src={wallet.image}
                             alt={wallet.name}
