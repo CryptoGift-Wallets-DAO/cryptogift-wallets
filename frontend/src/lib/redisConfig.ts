@@ -137,10 +137,24 @@ export function getRedisStatus(): {
 
 /**
  * Validate Redis for critical operations (anti-double minting, mappings)
- * NO FALLBACKS - These operations require Redis for security
+ * DEVELOPMENT MODE: Allows fallbacks when Redis not configured
+ * PRODUCTION MODE: Requires Redis for security
  */
-export function validateRedisForCriticalOps(operationName: string): Redis {
+export function validateRedisForCriticalOps(operationName: string): Redis | null {
+  const isDevelopment = process.env.NODE_ENV === 'development' || 
+                       process.env.VERCEL_ENV === 'development' ||
+                       !process.env.VERCEL_ENV; // Local development
+  
   if (!isRedisConfigured()) {
+    if (isDevelopment) {
+      // DEVELOPMENT MODE: Allow fallbacks with warnings
+      console.warn(`⚠️  [DEV MODE] Redis not configured for ${operationName}`);
+      console.warn(`🔄 [DEV MODE] Falling back to alternative method`);
+      console.warn(`🚨 [DEV MODE] This is NOT secure for production!`);
+      return null; // Signal to use fallback methods
+    }
+    
+    // PRODUCTION MODE: Strict Redis requirement
     const error = `
 🚨 CRITICAL SECURITY REQUIREMENT MISSING 🚨
 

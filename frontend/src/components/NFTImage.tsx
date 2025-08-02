@@ -64,7 +64,24 @@ export const NFTImage: React.FC<NFTImageProps> = ({
     // Convert ipfs:// URLs to gateway URLs for browser display
     if (src.startsWith('ipfs://')) {
       const cid = src.replace('ipfs://', '');
-      return `${IPFS_GATEWAYS[0]}${cid}`;
+      // URL encode the path to handle special characters like ó, ñ, spaces, etc.
+      const encodedCid = encodeURIComponent(cid).replace(/%2F/g, '/'); // Keep slashes unencoded
+      return `${IPFS_GATEWAYS[0]}${encodedCid}`;
+    }
+    // For regular IPFS URLs that might have special characters
+    if (src.includes('ipfs/') && src.includes('%')) {
+      // Already URL encoded, use as is
+      return src;
+    }
+    if (src.includes('ipfs/')) {
+      // Extract and encode the path part after ipfs/
+      const parts = src.split('ipfs/');
+      if (parts.length > 1) {
+        const baseUrl = parts[0] + 'ipfs/';
+        const path = parts[1];
+        const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
+        return baseUrl + encodedPath;
+      }
     }
     return src;
   });
@@ -76,7 +93,8 @@ export const NFTImage: React.FC<NFTImageProps> = ({
     if (src.startsWith('ipfs://') && gatewayIndex < IPFS_GATEWAYS.length - 1) {
       const nextGatewayIndex = gatewayIndex + 1;
       const cid = src.replace('ipfs://', '');
-      const nextGatewaySrc = `${IPFS_GATEWAYS[nextGatewayIndex]}${cid}`;
+      const encodedCid = encodeURIComponent(cid).replace(/%2F/g, '/');
+      const nextGatewaySrc = `${IPFS_GATEWAYS[nextGatewayIndex]}${encodedCid}`;
       
       console.log(`🔄 Trying gateway ${nextGatewayIndex + 1}/${IPFS_GATEWAYS.length}: ${nextGatewaySrc}`);
       

@@ -26,8 +26,14 @@ export async function storeGiftMapping(tokenId: string | number, giftId: string 
     try {
       console.log(`🔄 MAPPING STORAGE: Attempt ${attempt}/${maxAttempts} for tokenId ${tokenId} → giftId ${giftId}`);
       
-      // MANDATORY: Redis is required for mapping storage  
+      // Try Redis first, but allow fallback in development mode
       const redis = validateRedisForCriticalOps('Gift mapping storage');
+      
+      // If Redis is not available (development mode), skip storage but don't fail
+      if (!redis) {
+        console.warn(`⚠️  [DEV MODE] Redis not available for gift mapping storage, tokenId: ${tokenId} → giftId: ${giftId}`);
+        return false; // Return false but don't throw error
+      }
 
       const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
       const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
@@ -72,8 +78,14 @@ export async function getGiftIdFromMapping(tokenId: string | number): Promise<nu
   const tokenIdStr = tokenId.toString();
   
   try {
-    // MANDATORY: Redis is required for mapping lookups
+    // Try Redis first, but allow fallback in development mode
     const redis = validateRedisForCriticalOps('Gift mapping lookup');
+    
+    // If Redis is not available (development mode), return null to trigger fallback
+    if (!redis) {
+      console.warn(`⚠️  [DEV MODE] Redis not available for gift mapping lookup, tokenId: ${tokenId}`);
+      return null; // This will trigger blockchain event fallback
+    }
 
     const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
     const giftIdStr = await redis.get(mappingKey);
@@ -147,8 +159,15 @@ export async function getTokenIdFromMapping(giftId: string | number): Promise<nu
  */
 export async function batchStoreGiftMappings(mappings: Array<{ tokenId: string | number; giftId: string | number }>): Promise<number> {
   try {
-    // MANDATORY: Redis is required for batch mapping operations
-    validateRedisForCriticalOps('Batch gift mapping storage');
+    // Try Redis first, but allow fallback in development mode
+    const redis = validateRedisForCriticalOps('Batch gift mapping storage');
+    
+    // If Redis is not available (development mode), skip storage but don't fail
+    if (!redis) {
+      console.warn(`⚠️  [DEV MODE] Redis not available for batch gift mapping storage`);
+      console.warn(`🔄 [DEV MODE] Skipping storage of ${mappings.length} mappings (not secure for production)`);
+      return 0; // Return 0 stored but don't throw error
+    }
 
     let stored = 0;
     
