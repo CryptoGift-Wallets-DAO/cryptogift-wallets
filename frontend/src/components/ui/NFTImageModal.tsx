@@ -60,6 +60,20 @@ export function NFTImageModal({
     img.src = image;
   }, [isOpen, image]);
   
+  // Mobile detection for enhanced mobile experience
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -83,38 +97,166 @@ export function NFTImageModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          
-          {/* Modal Container - Click outside to close */}
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            onClick={(e) => {
-              // Close modal if clicking on the container (outside modal content)
-              if (e.target === e.currentTarget) {
-                onClose();
-              }
-            }}
-          >
-            {/* Modal Content - Adaptive max width */}
-            <div 
-              className={`relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden ${
-                isWideImage 
-                  ? 'max-w-5xl w-full' // Wider container for wide images in vertical layout
-                  : 'max-w-6xl' // Standard width for horizontal layout
-              }`}
-              onClick={(e) => e.stopPropagation()}
+          {/* MOBILE VERSION - Full screen with scroll */}
+          {isMobile ? (
+            <motion.div
+              className="fixed inset-0 z-50 bg-white dark:bg-slate-900 overflow-y-auto"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
             >
+              {/* Mobile Header with Close Button */}
+              <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Vista Previa
+                    </h2>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* Pull down hint */}
+                <div className="text-center mt-2">
+                  <div className="w-8 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto"></div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Desliza hacia abajo para cerrar</p>
+                </div>
+              </div>
+
+              {/* Mobile Content */}
+              <div className="p-4 space-y-6">
+                {/* Image Section - Optimized for mobile */}
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-4">
+                  <NFTImage
+                    src={image}
+                    alt={name}
+                    width={400}
+                    height={400}
+                    className="w-full max-h-[50vh] object-contain rounded-lg"
+                    tokenId={tokenId}
+                    fit="contain"
+                    priority={true}
+                  />
+                </div>
+
+                {/* Content Section */}
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                      {name}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Token ID: {tokenId}
+                    </p>
+                    {contractAddress && (
+                      <p className="text-xs text-slate-500 dark:text-slate-500 font-mono mt-1">
+                        {contractAddress.slice(0, 8)}...{contractAddress.slice(-6)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {metadata?.description && (
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {metadata.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Attributes */}
+                  {metadata?.attributes && metadata.attributes.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
+                        Propiedades
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {metadata.attributes.map((attr, index) => (
+                          <div key={index} className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                              {attr.trait_type}
+                            </p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
+                              {attr.value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="pt-4">
+                    <button
+                      onClick={() => {
+                        if (contractAddress) {
+                          const url = `https://sepolia.basescan.org/nft/${contractAddress}/${tokenId}`;
+                          window.open(url, '_blank');
+                        }
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                    >
+                      Ver en BaseScan
+                    </button>
+                  </div>
+
+                  {/* Close Button - Bottom */}
+                  <div className="pt-6 pb-8">
+                    <button
+                      onClick={onClose}
+                      className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium py-3 px-4 rounded-lg transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
+                    >
+                      Cerrar Vista Previa
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            /* DESKTOP VERSION - Original modal */
+            <>
+              {/* Backdrop */}
+              <motion.div
+                className="fixed inset-0 bg-black/80 backdrop-blur-md z-50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+              />
+              
+              {/* Modal Container - Click outside to close */}
+              <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                onClick={(e) => {
+                  // Close modal if clicking on the container (outside modal content)
+                  if (e.target === e.currentTarget) {
+                    onClose();
+                  }
+                }}
+              >
+                {/* Modal Content - Adaptive max width */}
+                <div 
+                  className={`relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden ${
+                    isWideImage 
+                      ? 'max-w-5xl w-full' // Wider container for wide images in vertical layout
+                      : 'max-w-6xl' // Standard width for horizontal layout
+                  }`}
+                  onClick={(e) => e.stopPropagation()}
+                >
               {/* Close Button */}
               <button
                 onClick={onClose}
