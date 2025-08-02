@@ -74,6 +74,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     console.log(`🎨 METAMASK METADATA REQUEST: ${contractAddress}:${tokenId}`);
+    
+    // CRITICAL DEBUG: Enhanced logging for 7-day NFT investigation
+    console.log(`🔍 USER-AGENT: ${req.headers['user-agent'] || 'Not provided'}`);
+    console.log(`🔍 REFERRER: ${req.headers.referer || 'Not provided'}`);
 
     // Get metadata from our storage
     const metadata = await getNFTMetadata(
@@ -84,6 +88,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!metadata) {
       console.log(`❌ No metadata found for ${contractAddress}:${tokenId}`);
       return res.status(404).json({ error: 'Metadata not found' });
+    }
+
+    // CRITICAL DEBUG: Log metadata attributes to identify 7-day differences
+    console.log(`🔍 METADATA ATTRIBUTES for ${tokenId}:`, JSON.stringify(metadata.attributes, null, 2));
+    
+    // Check if this is a 7-day NFT specifically
+    const isSevenDayNFT = metadata.attributes?.some(attr => 
+      attr.trait_type === 'Timeframe' && attr.value === 'SEVEN_DAYS'
+    );
+    
+    if (isSevenDayNFT) {
+      console.log(`🚨 SEVEN-DAY NFT DETECTED: ${tokenId} - Enhanced debugging enabled`);
+      console.log(`🔍 Original image URL: ${metadata.image}`);
     }
 
     // Convert to MetaMask-compatible format
@@ -100,6 +117,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Optional fields that MetaMask recognizes
       external_url: `https://cryptogift-wallets.vercel.app/nft/${contractAddress}/${tokenId}`,
     };
+    
+    if (isSevenDayNFT) {
+      console.log(`🦊 SEVEN-DAY METAMASK CONVERSION: ${metamaskMetadata.image}`);
+      console.log(`📋 SEVEN-DAY ATTRIBUTES: ${JSON.stringify(metamaskMetadata.attributes, null, 2)}`);
+    }
 
     // Add extra debugging for MetaMask compatibility
     console.log(`🖼️ METAMASK IMAGE URL: ${metamaskMetadata.image}`);
@@ -115,12 +137,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Security-Policy', "default-src 'none'; img-src https: data:;");
     
-    // PERFORMANCE: Optimized caching for both MetaMask and block explorers
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
+    // METAMASK SPECIFIC FIX: Different caching strategy for 7-day NFTs
+    if (isSevenDayNFT) {
+      console.log(`🦊 SEVEN-DAY CACHE FIX: Applying MetaMask-specific headers`);
+      // More aggressive cache-busting for 7-day NFTs
+      res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=1800, must-revalidate');
+      res.setHeader('Last-Modified', new Date().toUTCString());
+      // Force MetaMask to refresh
+      res.setHeader('X-MetaMask-Refresh', 'true');
+    } else {
+      // Standard caching for other timeframes
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
+    }
+    
     res.setHeader('Vary', 'Accept-Encoding');
     
     // BASESCAN HINT: Add ETag for better caching
-    const etag = `"nft-${contractAddress}-${tokenId}"`;
+    const etag = isSevenDayNFT 
+      ? `"nft-7day-${contractAddress}-${tokenId}-${Date.now()}"` 
+      : `"nft-${contractAddress}-${tokenId}"`;
     res.setHeader('ETag', etag);
 
     // BASESCAN LOGGING: Enhanced debugging for block explorer compatibility

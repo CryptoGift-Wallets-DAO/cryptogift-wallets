@@ -932,6 +932,17 @@ async function mintNFTEscrowGasPaid(
         const expirationTime = currentTime + timeConstants[timeframeDays];
         
         console.log('🔒 Creating escrow metadata with real tokenId and image CID');
+        
+        // CRITICAL DEBUG: Log specific timeframe details for 7-day issue
+        console.log('🔍 TIMEFRAME DEBUG:', {
+          timeframeDaysInput: timeframeDays,
+          timeframeDaysType: typeof timeframeDays,
+          timeConstantsMapKeys: Object.keys(timeConstantsMap),
+          mappedValue: timeConstantsMap[timeframeDays],
+          timeframeDaysString: String(timeframeDays),
+          allMapping: timeConstantsMap
+        });
+        
         metadataUpdateResult = await createEscrowMetadata(
           tokenId,
           imageIpfsCid, // FIXED: Now using actual image CID
@@ -1589,6 +1600,37 @@ export default async function handler(
         ? recipientAddress || creatorAddress // For escrow, track who will claim it
         : recipientAddress || creatorAddress; // Direct mint goes to user
       
+      // CRITICAL FIX: Create complete attributes array including escrow-specific data
+      const baseAttributes = [
+        { trait_type: "Token ID", value: result.tokenId },
+        { trait_type: "Creation Date", value: new Date().toISOString() },
+        { trait_type: "Platform", value: "CryptoGift Wallets" },
+        { trait_type: "Gift Type", value: isEscrowMint ? "Temporal Escrow" : "Direct Mint" },
+        { trait_type: "Creator", value: creatorAddress.slice(0, 10) + '...' }
+      ];
+
+      // METAMASK FIX: Add escrow-specific attributes for escrow mints
+      if (isEscrowMint && timeframeIndex !== undefined) {
+        console.log('🔒 ADDING ESCROW ATTRIBUTES FOR METAMASK COMPATIBILITY');
+        
+        // Map timeframe index back to string for display
+        const timeframeMap = {
+          [TIMEFRAME_OPTIONS.FIFTEEN_MINUTES]: 'FIFTEEN_MINUTES',
+          [TIMEFRAME_OPTIONS.SEVEN_DAYS]: 'SEVEN_DAYS', 
+          [TIMEFRAME_OPTIONS.FIFTEEN_DAYS]: 'FIFTEEN_DAYS',
+          [TIMEFRAME_OPTIONS.THIRTY_DAYS]: 'THIRTY_DAYS'
+        };
+        
+        const timeframeString = timeframeMap[timeframeIndex] || 'UNKNOWN';
+        console.log('🔍 ESCROW TIMEFRAME for metadata:', timeframeString);
+        
+        baseAttributes.push(
+          { trait_type: "Timeframe", value: timeframeString },
+          { trait_type: "Expires At", value: new Date((expirationTime || 0) * 1000).toISOString() },
+          { trait_type: "Security", value: "Password Protected" }
+        );
+      }
+
       const nftMetadata = createNFTMetadata({
         contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
         tokenId: result.tokenId,
@@ -1596,13 +1638,7 @@ export default async function handler(
         description: giftMessage || "Un regalo cripto único creado con amor",
         imageIpfsCid: imageIpfsCid,
         metadataIpfsCid: undefined, // Will be updated later with proper metadata
-        attributes: [
-          { trait_type: "Token ID", value: result.tokenId },
-          { trait_type: "Creation Date", value: new Date().toISOString() },
-          { trait_type: "Platform", value: "CryptoGift Wallets" },
-          { trait_type: "Gift Type", value: isEscrowMint ? "Temporal Escrow" : "Direct Mint" },
-          { trait_type: "Creator", value: creatorAddress.slice(0, 10) + '...' }
-        ],
+        attributes: baseAttributes, // Use complete attributes array
         mintTransactionHash: result.transactionHash,
         owner: finalOwner,
         creatorWallet: creatorAddress
