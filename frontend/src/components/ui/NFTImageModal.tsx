@@ -399,6 +399,8 @@ export function NFTImageModal({
               </div>
             </div>
           </motion.div>
+            </>
+          )}
         </>
       )}
     </AnimatePresence>
