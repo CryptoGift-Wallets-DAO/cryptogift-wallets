@@ -52,21 +52,13 @@ function convertIPFSToHTTPS(ipfsUrl: string): string {
 }
 
 /**
- * BASESCAN COMPATIBILITY: Properly encode image URLs for block explorer crawlers
+ * EMERGENCY FIX: DON'T DOUBLE-ENCODE - MetaMask broken by over-encoding
+ * Just return original URL - ipfs.io handles spaces fine automatically
  */
 function encodeImageURL(url: string): string {
-  // Split URL into base and filename
-  const lastSlashIndex = url.lastIndexOf('/');
-  if (lastSlashIndex === -1) return url;
-  
-  const baseUrl = url.substring(0, lastSlashIndex + 1);
-  const filename = url.substring(lastSlashIndex + 1);
-  
-  // CRITICAL FIX: Encode filename but preserve path structure
-  // This fixes BaseScan's issue with spaces in filenames
-  const encodedFilename = encodeURIComponent(filename);
-  
-  return baseUrl + encodedFilename;
+  // CRITICAL REVERT: Don't encode anything - ipfs.io works with spaces
+  // The original URLs work fine with MetaMask AND BaseScan can handle them
+  return url;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
