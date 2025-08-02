@@ -19,37 +19,54 @@ interface ERC721Metadata {
 }
 
 /**
- * Convert IPFS URLs to HTTPS gateway URLs for MetaMask compatibility
+ * Convert IPFS URLs to HTTPS gateway URLs compatible with both MetaMask AND BaseScan
  */
 function convertIPFSToHTTPS(ipfsUrl: string): string {
   if (!ipfsUrl) return '';
   
   // Already HTTPS URL
-  if (ipfsUrl.startsWith('https://')) return ipfsUrl;
-  if (ipfsUrl.startsWith('http://')) return ipfsUrl.replace('http://', 'https://');
+  if (ipfsUrl.startsWith('https://')) {
+    // BASESCAN FIX: Handle URLs with spaces by URL encoding ONLY the filename
+    return encodeImageURL(ipfsUrl);
+  }
+  if (ipfsUrl.startsWith('http://')) {
+    return encodeImageURL(ipfsUrl.replace('http://', 'https://'));
+  }
   
   // IPFS URL format
   if (ipfsUrl.startsWith('ipfs://')) {
     const cid = ipfsUrl.replace('ipfs://', '');
     
-    // Use multiple gateways in order of reliability for MetaMask
-    const gateways = [
-      `https://nftstorage.link/ipfs/${cid}`,
-      `https://ipfs.io/ipfs/${cid}`,
-      `https://gateway.pinata.cloud/ipfs/${cid}`,
-      `https://cloudflare-ipfs.com/ipfs/${cid}`
-    ];
-    
-    // Return the most reliable gateway for MetaMask
-    return gateways[0];
+    // BASESCAN OPTIMIZATION: Use gateway with better compatibility
+    // ipfs.io has the most reliable redirect handling for block explorers
+    const baseUrl = `https://ipfs.io/ipfs/${cid}`;
+    return encodeImageURL(baseUrl);
   }
   
   // Handle bare CID
   if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
-    return `https://nftstorage.link/ipfs/${ipfsUrl}`;
+    return encodeImageURL(`https://ipfs.io/ipfs/${ipfsUrl}`);
   }
   
   return ipfsUrl;
+}
+
+/**
+ * BASESCAN COMPATIBILITY: Properly encode image URLs for block explorer crawlers
+ */
+function encodeImageURL(url: string): string {
+  // Split URL into base and filename
+  const lastSlashIndex = url.lastIndexOf('/');
+  if (lastSlashIndex === -1) return url;
+  
+  const baseUrl = url.substring(0, lastSlashIndex + 1);
+  const filename = url.substring(lastSlashIndex + 1);
+  
+  // CRITICAL FIX: Encode filename but preserve path structure
+  // This fixes BaseScan's issue with spaces in filenames
+  const encodedFilename = encodeURIComponent(filename);
+  
+  return baseUrl + encodedFilename;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -96,16 +113,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`🖼️ METAMASK IMAGE URL: ${metamaskMetadata.image}`);
     console.log(`📋 METAMASK ATTRIBUTES: ${JSON.stringify(metamaskMetadata.attributes, null, 2)}`);
 
-    // Set proper CORS headers for MetaMask access
+    // Enhanced headers for BOTH MetaMask AND BaseScan compatibility
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, User-Agent');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    // BASESCAN OPTIMIZATION: Add headers that block explorers expect
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src https: data:;");
+    
+    // PERFORMANCE: Optimized caching for both MetaMask and block explorers
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
+    res.setHeader('Vary', 'Accept-Encoding');
+    
+    // BASESCAN HINT: Add ETag for better caching
+    const etag = `"nft-${contractAddress}-${tokenId}"`;
+    res.setHeader('ETag', etag);
 
-    // Cache for 1 hour to improve MetaMask performance
-    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
-
-    console.log(`✅ METAMASK METADATA SERVED: ${contractAddress}:${tokenId}`);
+    // BASESCAN LOGGING: Enhanced debugging for block explorer compatibility
+    console.log(`✅ METADATA SERVED FOR: ${contractAddress}:${tokenId}`);
+    console.log(`🔗 OPTIMIZED IMAGE URL: ${metamaskMetadata.image}`);
+    console.log(`📊 USER-AGENT: ${req.headers['user-agent'] || 'Not provided'}`);
     
     return res.status(200).json(metamaskMetadata);
 
