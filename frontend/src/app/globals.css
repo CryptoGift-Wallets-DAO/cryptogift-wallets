@@ -14,6 +14,10 @@
 	font-style: normal;
 	font-variation-settings: 'slnt' 0;
 	
+	/* RESPONSIVE SCALING FIX - Reduce overall UI scale */
+	zoom: 0.88;
+}
+	
 	/* LIGHT THEME - NFT-GRADE PROFESSIONAL */
 	--bg-primary: 255 255 255;          /* Blanco puro */
 	--bg-secondary: 249 250 251;        /* Gris muy claro */

@@ -252,11 +252,11 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'expired': return 'text-orange-600 bg-orange-100';
-      case 'claimed': return 'text-blue-600 bg-blue-100';
-      case 'returned': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'active': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
+      case 'expired': return 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30';
+      case 'claimed': return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30';
+      case 'returned': return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50';
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50';
     }
   };
 
@@ -275,13 +275,13 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   if (claimStep === 'success') {
     return (
       <div className={`max-w-md mx-auto ${className}`}>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-6 text-center">
           <div className="text-4xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-green-800 mb-2">Gift Claimed Successfully!</h2>
-          <p className="text-green-600 mb-4">
+          <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">Gift Claimed Successfully!</h2>
+          <p className="text-green-600 dark:text-green-400 mb-4">
             The escrow gift has been successfully claimed and transferred directly to your wallet!
           </p>
-          <div className="text-sm text-green-700 space-y-1">
+          <div className="text-sm text-green-700 dark:text-green-400 space-y-1">
             <p>Token ID: {tokenId}</p>
             <p>Recipient: {formData.recipientAddress || account?.address}</p>
           </div>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { PHOTO_FILTERS, AI_GENERATION_PROMPTS } from '../lib/constants';
+import { NFTImageModal } from './ui/NFTImageModal';
 
 interface FilterSelectorProps {
   imageUrl: string;
@@ -21,6 +22,12 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [previewModal, setPreviewModal] = useState<{
+    isOpen: boolean;
+    image: string;
+    filterName: string;
+    filterId: string;
+  }>({ isOpen: false, image: '', filterName: '', filterId: '' });
 
   // Apply CSS filters in real-time (simplified for TypeScript compatibility)
   const applyFilter = async (filterId: string) => {
@@ -59,6 +66,26 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
     if (!filteredPreviews[filterId]) {
       applyFilter(filterId);
     }
+    
+    // Show preview modal
+    const filter = PHOTO_FILTERS.find(f => f.id === filterId);
+    const filterName = filter?.name || 'Original';
+    setPreviewModal({
+      isOpen: true,
+      image: imageUrl,
+      filterName,
+      filterId
+    });
+  };
+
+  const handleOriginalClick = () => {
+    setSelectedFilter('original');
+    setPreviewModal({
+      isOpen: true,
+      image: imageUrl,
+      filterName: 'Original',
+      filterId: 'original'
+    });
   };
 
   const handleContinue = () => {
@@ -87,7 +114,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
 
       {/* Original Image Option */}
       <div
-        onClick={() => setSelectedFilter('original')}
+        onClick={handleOriginalClick}
         className={`relative cursor-pointer rounded-2xl overflow-hidden border-4 transition-all duration-300 ${
           selectedFilter === 'original'
             ? 'border-blue-500 dark:border-blue-400 shadow-xl shadow-blue-500/25'
@@ -283,6 +310,25 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
           {selectedFilter ? '✨ Continuar con ' + (PHOTO_FILTERS.find(f => f.id === selectedFilter)?.name || 'Original') : 'Selecciona un filtro'}
         </button>
       </div>
+
+      {/* Filter Preview Modal */}
+      <NFTImageModal
+        isOpen={previewModal.isOpen}
+        onClose={() => setPreviewModal(prev => ({ ...prev, isOpen: false }))}
+        image={previewModal.image}
+        name={`Vista Previa: ${previewModal.filterName}`}
+        tokenId="preview"
+        metadata={{
+          description: previewModal.filterId === 'original' 
+            ? "Previsualización de tu imagen original tal como aparecerá en la blockchain. Este será el formato NFT final que tu amigo verá." 
+            : `Previsualización con filtro ${previewModal.filterName} aplicado. Así es como se verá tu NFT en la blockchain.`,
+          attributes: [
+            { trait_type: "Filtro Aplicado", value: previewModal.filterName },
+            { trait_type: "Estado", value: "Vista Previa" },
+            { trait_type: "Calidad NFT", value: "Blockchain Ready" }
+          ]
+        }}
+      />
     </div>
   );
 };

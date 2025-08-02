@@ -190,38 +190,38 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
       )}
 
       {/* Gift Message */}
-      <div className="text-center bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6">
+      <div className="text-center bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20 rounded-2xl p-6">
         <div className="text-4xl mb-4">🎁</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
           ¡Tienes un Regalo Cripto!
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Alguien especial te ha enviado este NFT único con criptomonedas reales incluidas.
         </p>
       </div>
 
       {/* Gift Details */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6">
-        <h3 className="font-bold text-gray-800 mb-4">Detalles del Regalo</h3>
+      <div className="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
+        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-4">Detalles del Regalo</h3>
         
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-600">Valor inicial:</span>
-            <span className="font-medium text-green-600">
+            <span className="text-gray-600 dark:text-gray-400">Valor inicial:</span>
+            <span className="font-medium text-green-600 dark:text-green-400">
               {nftData.attributes?.find((attr: any) => attr.trait_type === 'Initial Balance')?.value || 'N/A'}
             </span>
           </div>
           
           <div className="flex justify-between">
-            <span className="text-gray-600">Filtro aplicado:</span>
-            <span className="font-medium">
+            <span className="text-gray-600 dark:text-gray-400">Filtro aplicado:</span>
+            <span className="font-medium text-gray-900 dark:text-white">
               {nftData.attributes?.find((attr: any) => attr.trait_type === 'Filter')?.value || 'Original'}
             </span>
           </div>
           
           <div className="flex justify-between">
-            <span className="text-gray-600">Fecha de creación:</span>
-            <span className="font-medium">
+            <span className="text-gray-600 dark:text-gray-400">Fecha de creación:</span>
+            <span className="font-medium text-gray-900 dark:text-white">
               {nftData.attributes?.find((attr: any) => attr.trait_type === 'Creation Date')?.value 
                 ? new Date(nftData.attributes.find((attr: any) => attr.trait_type === 'Creation Date').value).toLocaleDateString()
                 : 'N/A'
@@ -232,9 +232,9 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
       </div>
 
       {/* How It Works */}
-      <div className="bg-blue-50 rounded-2xl p-6">
-        <h3 className="font-bold text-blue-800 mb-4">¿Cómo funciona?</h3>
-        <div className="space-y-3 text-sm text-blue-700">
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6">
+        <h3 className="font-bold text-blue-800 dark:text-blue-300 mb-4">¿Cómo funciona?</h3>
+        <div className="space-y-3 text-sm text-blue-700 dark:text-blue-400">
           <div className="flex items-start">
             <span className="font-bold mr-2">1.</span>
             <span>Al reclamar, el NFT se transfiere a tu wallet conectada</span>
@@ -255,37 +255,37 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
       </div>
 
       {/* Crypto Novice Section */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border border-green-200 dark:border-green-700">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-green-800">🌱 ¿Nuevo en el mundo cripto?</h3>
+          <h3 className="font-bold text-green-800 dark:text-green-300">🌱 ¿Nuevo en el mundo cripto?</h3>
           <button
             onClick={() => setShowCryptoExplanation(!showCryptoExplanation)}
-            className="text-green-600 hover:text-green-800"
+            className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
           >
             {showCryptoExplanation ? '▼' : '▶'}
           </button>
         </div>
         
         {!showCryptoExplanation ? (
-          <div className="text-sm text-green-700 space-y-2">
+          <div className="text-sm text-green-700 dark:text-green-400 space-y-2">
             <p className="font-medium">¡No te preocupes! Este regalo funciona como tu primera wallet completa.</p>
             <p>No necesitas MetaMask ni otra wallet externa para empezar.</p>
             <button
               onClick={() => setShowCryptoExplanation(true)}
-              className="text-green-600 hover:text-green-800 underline"
+              className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 underline"
             >
               Clic aquí para aprender más →
             </button>
           </div>
         ) : (
-          <div className="space-y-4 text-sm text-green-700">
-            <div className="bg-white rounded-lg p-4 border border-green-200">
-              <h4 className="font-semibold mb-2">💡 ¿Qué es esto exactamente?</h4>
+          <div className="space-y-4 text-sm text-green-700 dark:text-green-400">
+            <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-green-200 dark:border-green-700">
+              <h4 className="font-semibold mb-2 text-green-800 dark:text-green-300">💡 ¿Qué es esto exactamente?</h4>
               <p>Este regalo es un <strong>NFT-Wallet</strong>: una imagen única que también funciona como una wallet de criptomonedas real.</p>
             </div>
             
-            <div className="bg-white rounded-lg p-4 border border-green-200">
-              <h4 className="font-semibold mb-2">🎯 ¿Necesito otra wallet?</h4>
+            <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-green-200 dark:border-green-700">
+              <h4 className="font-semibold mb-2 text-green-800 dark:text-green-300">🎯 ¿Necesito otra wallet?</h4>
               <p><strong>¡NO!</strong> Puedes usar esta wallet indefinidamente. Es tu primera wallet cripto completa.</p>
               <ul className="mt-2 space-y-1 ml-4 list-disc">
                 <li>Enviar y recibir dinero digital</li>
@@ -295,8 +295,8 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
               </ul>
             </div>
             
-            <div className="bg-white rounded-lg p-4 border border-green-200">
-              <h4 className="font-semibold mb-2">🔒 ¿Es seguro?</h4>
+            <div className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-green-200 dark:border-green-700">
+              <h4 className="font-semibold mb-2 text-green-800 dark:text-green-300">🔒 ¿Es seguro?</h4>
               <p>Sí, muy seguro. Usa la misma tecnología que bancos digitales grandes:</p>
               <ul className="mt-2 space-y-1 ml-4 list-disc">
                 <li>Blockchain verificado y auditado</li>
@@ -305,8 +305,8 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
               </ul>
             </div>
             
-            <div className="bg-green-100 rounded-lg p-4 border border-green-300">
-              <h4 className="font-semibold mb-2">🚀 ¿Qué hago después de reclamar?</h4>
+            <div className="bg-green-100 dark:bg-green-900/30 rounded-lg p-4 border border-green-300 dark:border-green-600">
+              <h4 className="font-semibold mb-2 text-green-800 dark:text-green-300">🚀 ¿Qué hago después de reclamar?</h4>
               <ol className="space-y-1 ml-4 list-decimal">
                 <li>Reclama tu regalo (botón azul arriba)</li>
                 <li>Explora la interfaz de wallet integrada</li>
@@ -320,14 +320,14 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
 
       {/* Error Display */}
       {(error || externalError) && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 text-red-700 dark:text-red-400">
           <div className="flex items-start">
-            <svg className="w-5 h-5 text-red-500 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-red-500 dark:text-red-400 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <div>
-              <p className="font-medium">Error al reclamar</p>
-              <p className="text-sm mt-1">{error || externalError}</p>
+              <p className="font-medium text-red-800 dark:text-red-300">Error al reclamar</p>
+              <p className="text-sm mt-1 text-red-700 dark:text-red-400">{error || externalError}</p>
             </div>
           </div>
         </div>
@@ -335,18 +335,18 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
 
       {/* Success Message */}
       {claimResult && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 text-green-700 dark:text-green-400">
           <div className="flex items-start">
-            <svg className="w-5 h-5 text-green-500 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <div>
-              <p className="font-medium">¡Regalo reclamado exitosamente!</p>
-              <p className="text-sm mt-1">
+              <p className="font-medium text-green-800 dark:text-green-300">¡Regalo reclamado exitosamente!</p>
+              <p className="text-sm mt-1 text-green-700 dark:text-green-400">
                 {claimResult.claim?.gasless ? 'Transacción gratuita completada' : 'Transacción blockchain completada'}
               </p>
               {claimResult.nft?.tbaAddress && (
-                <p className="text-xs mt-1 font-mono">
+                <p className="text-xs mt-1 font-mono text-green-600 dark:text-green-500">
                   TBA: {claimResult.nft.tbaAddress.slice(0, 10)}...{claimResult.nft.tbaAddress.slice(-8)}
                 </p>
               )}
@@ -373,7 +373,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
             )}
           </button>
           
-          <p className="text-sm text-gray-500 mt-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
             Gratis • Sin comisiones • Transacción segura
           </p>
         </div>
@@ -381,8 +381,8 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         /* Guardian Setup */
         <div className="space-y-4">
           <div className="text-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">🔒 Configura tu Seguridad</h3>
-            <p className="text-gray-600">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">🔒 Configura tu Seguridad</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               Añade 3 contactos de confianza para recuperar tu wallet si pierdes acceso
             </p>
           </div>
@@ -390,7 +390,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
           <div className="space-y-3">
             {guardians.map((guardian, index) => (
               <div key={index}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Guardián {index + 1}
                 </label>
                 <input
@@ -398,7 +398,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
                   value={guardian}
                   onChange={(e) => handleGuardianChange(index, e.target.value)}
                   placeholder="email@ejemplo.com"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
                 />
               </div>
             ))}
@@ -415,7 +415,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
                   }
                 }, 500);
               }}
-              className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white"
             >
               Ahora No
             </button>
@@ -428,7 +428,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
             Podrás configurar esto más tarde desde la configuración de tu wallet
           </p>
         </div>
@@ -436,10 +436,10 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
         /* Claim Complete - Next Steps */
         <div className="text-center space-y-4">
           <div className="text-6xl mb-4">🎉</div>
-          <h3 className="text-2xl font-bold text-gray-800">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
             ¡Tu regalo ya está en tu wallet!
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Ahora puedes usar los fondos: retirar, cambiar o enviar a otros.
           </p>
           
@@ -459,7 +459,7 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
             </button>
             <button
               onClick={() => setShowGuardianSetup(true)}
-              className="flex-1 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white"
             >
               Configurar Seguridad
             </button>
@@ -468,29 +468,29 @@ export const ClaimInterface: React.FC<ClaimInterfaceProps> = ({
       )}
 
       {/* Security Info */}
-      <div className="bg-gray-50 rounded-2xl p-6">
-        <h3 className="font-bold text-gray-800 mb-3 flex items-center">
-          <svg className="w-5 h-5 text-gray-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6">
+        <h3 className="font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
+          <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
           </svg>
           Seguridad y Transparencia
         </h3>
         
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-start">
-            <span className="text-green-500 mr-2">✓</span>
+            <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
             <span>Contratos auditados por OpenZeppelin</span>
           </div>
           <div className="flex items-start">
-            <span className="text-green-500 mr-2">✓</span>
+            <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
             <span>Fondos guardados on-chain en Base blockchain</span>
           </div>
           <div className="flex items-start">
-            <span className="text-green-500 mr-2">✓</span>
+            <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
             <span>Recuperación social con guardianes de confianza</span>
           </div>
           <div className="flex items-start">
-            <span className="text-green-500 mr-2">✓</span>
+            <span className="text-green-500 dark:text-green-400 mr-2">✓</span>
             <span>Sin custodia: tú controlas tus fondos</span>
           </div>
         </div>
