@@ -92,7 +92,17 @@ export const COMMON_TOKENS = {
 } as const;
 
 // AI-Powered Image Filters & Styles for NFT Creation (2025)
-export const PHOTO_FILTERS = [
+interface PhotoFilter {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  cssFilter: string;
+  premium: boolean;
+  comingSoon?: boolean;
+}
+
+export const PHOTO_FILTERS: PhotoFilter[] = [
   { 
     id: 'cyberpunk', 
     name: 'Cyberpunk', 
@@ -159,7 +169,7 @@ export const PHOTO_FILTERS = [
     premium: true,
     comingSoon: true
   }
-] as const;
+];
 
 // AI Image Generation prompts for different styles
 export const AI_GENERATION_PROMPTS = {

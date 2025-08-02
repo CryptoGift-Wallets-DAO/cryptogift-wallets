@@ -50,7 +50,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         img.onload = () => {
           canvas.width = img.width;
           canvas.height = img.height;
@@ -183,7 +183,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
 
                 {/* Canvas for real-time filter preview */}
                 <canvas
-                  ref={el => canvasRefs.current[filter.id] = el}
+                  ref={el => { canvasRefs.current[filter.id] = el; }}
                   className="hidden"
                 />
 
