@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
+import { motion, HTMLMotionProps, Easing } from 'framer-motion';
 import { useTheme } from 'next-themes';
 
 interface AdaptivePanelProps extends Omit<HTMLMotionProps<"div">, 'style'> {
@@ -146,21 +146,21 @@ export function AdaptivePanel({
         return {
           initial: { opacity: 0, y: 20 },
           animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.4, ease: 'easeOut' }
+          transition: { duration: 0.4, ease: "easeOut" as Easing }
         };
       
       case 'scale':
         return {
           initial: { opacity: 0, scale: 0.95 },
           animate: { opacity: 1, scale: 1 },
-          transition: { duration: 0.3, ease: 'easeOut' }
+          transition: { duration: 0.3, ease: "easeOut" as Easing }
         };
       
       case 'luxury':
         return {
           initial: { opacity: 0, scale: 0.98, filter: 'blur(4px)' },
           animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
-          transition: { duration: 0.6, ease: 'easeOut' },
+          transition: { duration: 0.6, ease: "easeOut" as Easing },
           whileHover: { scale: 1.02, transition: { duration: 0.2 } }
         };
       
@@ -211,7 +211,7 @@ export function AdaptivePanel({
                   duration: 3,
                   repeat: Infinity,
                   repeatDelay: 2,
-                  ease: 'linear'
+                  ease: "linear" as Easing
                 }
               }}
             />
@@ -236,7 +236,7 @@ export function AdaptivePanel({
                   duration: 2 + (i * 0.3),
                   repeat: Infinity,
                   delay: i * 0.2,
-                  ease: 'easeInOut'
+                  ease: "easeInOut" as Easing
                 }}
               />
             ))}

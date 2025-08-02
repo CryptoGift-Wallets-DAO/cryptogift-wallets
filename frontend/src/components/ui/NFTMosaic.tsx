@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { NFTImage } from '../NFTImage';
@@ -13,13 +13,16 @@ interface NFTData {
   tokenId: string;
 }
 
-// Enhanced mosaic props
+// Enhanced mosaic props with performance options
 interface NFTMosaicProps {
   nfts?: NFTData[];
   intensity?: 'subtle' | 'medium' | 'bold';
   animation?: 'wave' | 'cascade' | 'random';
   showLabels?: boolean;
   className?: string;
+  maxItems?: number; // Limit items for performance
+  enableLazyLoading?: boolean; // Lazy load images
+  reduceMotion?: boolean; // Reduce animations for performance
 }
 
 export function NFTMosaic({ 
@@ -27,36 +30,44 @@ export function NFTMosaic({
   intensity = 'subtle',
   animation = 'wave',
   showLabels = false,
-  className = ''
+  className = '',
+  maxItems = 96, // Default to 96 for desktop
+  enableLazyLoading = true,
+  reduceMotion = false
 }: NFTMosaicProps) {
   const { theme } = useTheme();
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
   
   // Dynamic grid configuration for different screen sizes
-  const gridConfig = {
-    desktop: { cols: 12, rows: 8, total: 96 },
-    tablet: { cols: 8, rows: 6, total: 48 },
-    mobile: { cols: 6, rows: 4, total: 24 }
-  };
+  const gridConfig = useMemo(() => ({
+    desktop: { cols: 12, rows: 8, total: Math.min(maxItems, 96) },
+    tablet: { cols: 8, rows: 6, total: Math.min(maxItems, 48) },
+    mobile: { cols: 6, rows: 4, total: Math.min(maxItems, 24) }
+  }), [maxItems]);
   
   // Use desktop config as default (responsive handled by CSS)
   const { cols, total } = gridConfig.desktop;
   
-  // Generate mosaic items with real NFTs or elegant placeholders
-  const mosaicItems = Array.from({ length: total }, (_, i) => {
-    const nft = nfts[i % Math.max(nfts.length, 1)];
-    return {
-      id: i,
-      nft,
-      delay: animation === 'wave' 
-        ? (i % cols) * 0.1 + Math.floor(i / cols) * 0.05
-        : animation === 'cascade'
-        ? i * 0.02
-        : Math.random() * 1.5,
-      row: Math.floor(i / cols),
-      col: i % cols
-    };
-  });
+  // Generate mosaic items with real NFTs or elegant placeholders - MEMOIZED
+  const mosaicItems = useMemo(() => {
+    return Array.from({ length: total }, (_, i) => {
+      const nft = nfts[i % Math.max(nfts.length, 1)];
+      return {
+        id: i,
+        nft,
+        delay: reduceMotion ? 0 : (
+          animation === 'wave' 
+            ? (i % cols) * 0.1 + Math.floor(i / cols) * 0.05
+            : animation === 'cascade'
+            ? i * 0.02
+            : Math.random() * 1.5
+        ),
+        row: Math.floor(i / cols),
+        col: i % cols
+      };
+    });
+  }, [total, nfts, cols, animation, reduceMotion]);
   
   // Intensity configurations
   const intensityConfig = {
@@ -82,9 +93,41 @@ export function NFTMosaic({
   
   const config = intensityConfig[intensity];
   
-  const handleImageLoad = (itemId: string) => {
+  const handleImageLoad = useCallback((itemId: string) => {
     setLoadedImages(prev => new Set([...prev, itemId]));
-  };
+  }, []);
+  
+  // Intersection Observer for lazy loading
+  const [intersectionObserver, setIntersectionObserver] = useState<IntersectionObserver | null>(null);
+  
+  useEffect(() => {
+    if (!enableLazyLoading) {
+      // If lazy loading disabled, mark all items as visible
+      setVisibleItems(new Set(Array.from({ length: total }, (_, i) => i)));
+      return;
+    }
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const itemId = parseInt(entry.target.getAttribute('data-item-id') || '0');
+            setVisibleItems(prev => new Set([...prev, itemId]));
+          }
+        });
+      },
+      {
+        rootMargin: '100px', // Load items 100px before they come into view
+        threshold: 0.1
+      }
+    );
+    
+    setIntersectionObserver(observer);
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [enableLazyLoading, total]);
   
   return (
     <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
@@ -104,39 +147,48 @@ export function NFTMosaic({
         }}
       >
         <AnimatePresence>
-          {mosaicItems.map((item) => (
+          {mosaicItems.map((item) => {
+            const isVisible = !enableLazyLoading || visibleItems.has(item.id);
+            
+            return (
             <motion.div
               key={item.id}
+              data-item-id={item.id}
               className="aspect-square relative overflow-hidden group"
               style={{
                 borderRadius: config.borderRadius
               }}
-              initial={{ 
+              initial={reduceMotion ? { opacity: 0 } : { 
                 scale: 0, 
                 rotate: -180,
                 opacity: 0
               }}
-              animate={{ 
+              animate={reduceMotion ? { opacity: 1 } : { 
                 scale: 1, 
                 rotate: 0,
                 opacity: 1
               }}
-              transition={{ 
+              transition={reduceMotion ? { duration: 0.3 } : { 
                 delay: item.delay,
                 duration: 0.8,
                 ease: "easeOut",
                 type: "spring",
                 stiffness: 100
               }}
-              whileHover={{ 
+              whileHover={reduceMotion ? undefined : { 
                 scale: 1.05,
                 zIndex: 10,
                 opacity: 0.8,
                 transition: { duration: 0.2 }
               }}
+              ref={(el) => {
+                if (el && intersectionObserver && enableLazyLoading) {
+                  intersectionObserver.observe(el);
+                }
+              }}
             >
-              {/* NFT IMAGE WITH PROPER DIMENSIONS */}
-              {item.nft ? (
+              {/* NFT IMAGE WITH LAZY LOADING */}
+              {item.nft && isVisible ? (
                 <div className="relative w-full h-full">
                   <NFTImage
                     src={item.nft.image}
@@ -146,6 +198,8 @@ export function NFTMosaic({
                     className="w-full h-full object-cover"
                     tokenId={item.nft.tokenId}
                     onLoad={() => handleImageLoad(item.id.toString())}
+                    placeholder="blur"
+                    priority={item.id < 12} // Priority load first row
                   />
                   
                   {/* ELEGANT OVERLAY */}
@@ -166,25 +220,22 @@ export function NFTMosaic({
                     </motion.div>
                   )}
                 </div>
-              ) : (
-                /* ELEGANT PLACEHOLDER */
+              ) : isVisible ? (
+                /* ELEGANT PLACEHOLDER - Only render if visible */
                 <div className="w-full h-full relative overflow-hidden">
                   {/* BASE GRADIENT */}
                   <div className="absolute inset-0 bg-gradient-to-br 
                                 from-slate-200 via-blue-100 to-purple-100
                                 dark:from-slate-800 dark:via-blue-900 dark:to-purple-900" />
                   
-                  {/* GEOMETRIC PATTERN */}
+                  {/* GEOMETRIC PATTERN - Simplified for performance */}
                   <div className="absolute inset-0 opacity-20">
                     <div 
                       className="w-full h-full"
                       style={{
                         backgroundImage: `
                           radial-gradient(circle at ${(item.col + 1) * 20}% ${(item.row + 1) * 25}%, 
-                            rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                          linear-gradient(${item.id * 30}deg, 
-                            rgba(139, 92, 246, 0.2) 0%, 
-                            rgba(59, 130, 246, 0.2) 100%)
+                            rgba(59, 130, 246, 0.3) 0%, transparent 50%)
                         `
                       }}
                     />
@@ -199,9 +250,13 @@ export function NFTMosaic({
                     </div>
                   </div>
                 </div>
+              ) : (
+                /* EMPTY PLACEHOLDER FOR LAZY LOADING */
+                <div className="w-full h-full bg-slate-100 dark:bg-slate-800" />
               )}
             </motion.div>
-          ))}
+          );
+          })}
         </AnimatePresence>
       </motion.div>
 

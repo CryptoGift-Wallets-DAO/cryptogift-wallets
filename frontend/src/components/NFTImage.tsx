@@ -168,20 +168,49 @@ export const NFTImage: React.FC<NFTImageProps> = ({
         }}
       />
       
-      {/* Error state placeholder */}
+      {/* Enhanced error state placeholder */}
       {hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center 
-                       bg-gradient-to-br from-slate-50 to-slate-100 
-                       dark:from-slate-800 dark:to-slate-900">
+                       bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 
+                       dark:from-slate-800 dark:via-slate-700 dark:to-slate-900">
+          {/* Animated placeholder icon */}
           <div className="w-8 h-8 mb-2 rounded-full bg-gradient-to-br 
-                         from-blue-400 to-purple-400 flex items-center justify-center">
+                         from-blue-400 to-purple-400 flex items-center justify-center
+                         animate-pulse">
             <div className="w-4 h-4 rounded-full bg-white dark:bg-black opacity-80" />
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+          
+          {/* NFT identifier */}
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1">
             NFT #{tokenId || '?'}
           </span>
+          
+          {/* Subtle pattern overlay */}
+          <div className="absolute inset-0 opacity-10"
+               style={{
+                 backgroundImage: `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+                                   radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.3) 0%, transparent 50%)`
+               }} />
         </div>
       )}
     </div>
   );
 };
+
+// Add custom CSS for shimmer animation
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .animate-shimmer {
+      animation: shimmer 2s infinite;
+    }
+  `;
+  if (!document.head.querySelector('style[data-nft-image-styles]')) {
+    style.setAttribute('data-nft-image-styles', 'true');
+    document.head.appendChild(style);
+  }
+}
