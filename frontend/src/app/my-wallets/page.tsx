@@ -14,6 +14,7 @@ import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
 import { getAuthState, isAuthValid } from '../../lib/siweClient';
 import { NFTImage } from '../../components/NFTImage';
 import { NFTImageModal } from '../../components/ui/NFTImageModal';
+import { DashboardGlassHeader } from '../../components/ui/GlassPanelHeader';
 import { ChainSwitcher } from '../../components/ChainSwitcher';
 
 interface UserWallet {
@@ -193,30 +194,33 @@ export default function MyWalletsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 
                    dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <div className="w-16 h-16 flex items-center justify-center 
-                          bg-gray-50 dark:bg-gray-800/50 
-                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
-                          backdrop-blur-sm transition-all duration-300">
-              <Image
-                src="/cg-wallet-logo.png"
-                alt="CG Wallet"
-                width={56}
-                height={56}
-                className="object-contain drop-shadow-lg w-full h-full"
-              />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-text-primary transition-colors duration-300">
-              Mis CryptoGift Wallets
-            </h1>
+      {/* Glass Panel Header with advanced blur effects */}
+      <DashboardGlassHeader
+        title="Mis CryptoGift Wallets"
+        subtitle="Gestiona todas tus NFT-Wallets desde un solo lugar"
+        icon={
+          <div className="w-12 h-12 flex items-center justify-center 
+                        bg-gradient-to-br from-blue-500/20 to-purple-500/20 
+                        rounded-xl shadow-lg border border-blue-200/30 dark:border-blue-700/30 
+                        backdrop-blur-sm transition-all duration-300">
+            <Image
+              src="/cg-wallet-logo.png"
+              alt="CG Wallet"
+              width={48}
+              height={48}
+              className="object-contain drop-shadow-lg w-10 h-10"
+            />
           </div>
-          <p className="text-text-secondary transition-colors duration-300">
-            Gestiona todas tus NFT-Wallets desde un solo lugar
-          </p>
+        }
+        className="mb-8"
+      >
+        {/* Header Actions */}
+        <div className="flex items-center gap-3">
+          <ConnectAndAuthButton />
         </div>
+      </DashboardGlassHeader>
+
+      <div className="container mx-auto px-4 py-8">
 
         {/* Chain Switcher - Critical for mobile wallets */}
         <div className="max-w-4xl mx-auto mb-6">
