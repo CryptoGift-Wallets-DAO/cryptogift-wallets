@@ -1004,21 +1004,21 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div>
-            <h1 className="text-2xl font-bold">Crear Regalo Cripto</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Crear Regalo Cripto</h1>
             {currentStep !== WizardStep.SUCCESS && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Paso {getStepNumber()} de 7
               </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl transition-colors flex-shrink-0 w-8 h-8 flex items-center justify-center"
           >
             ×
           </button>
@@ -1026,19 +1026,26 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
         {/* Progress Bar */}
         {currentStep !== WizardStep.SUCCESS && (
-          <div className="px-6 py-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 bg-gray-50 dark:bg-gray-800/50">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${(getStepNumber() / 7) * 100}%` }}
               ></div>
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>Conectar</span>
+              <span>Filtros</span>
+              <span>Listo</span>
             </div>
           </div>
         )}
 
-        {/* Content */}
-        <div className="p-6">
-          {renderStepContent()}
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            {renderStepContent()}
+          </div>
         </div>
       </div>
 

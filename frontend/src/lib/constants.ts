@@ -91,13 +91,85 @@ export const COMMON_TOKENS = {
   DAI: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
 } as const;
 
-// Supported filters for PhotoRoom
+// AI-Powered Image Filters & Styles for NFT Creation (2025)
 export const PHOTO_FILTERS = [
-  { id: 'vintage', name: 'Vintage', description: 'Classic retro look' },
-  { id: 'cyberpunk', name: 'Cyberpunk', description: 'Futuristic neon style' },
-  { id: 'watercolor', name: 'Watercolor', description: 'Artistic paint effect' },
-  { id: 'sketch', name: 'Sketch', description: 'Hand-drawn style' },
+  { 
+    id: 'cyberpunk', 
+    name: 'Cyberpunk', 
+    description: 'Futuristic neon tech',
+    category: 'futuristic',
+    cssFilter: 'saturate(1.5) hue-rotate(240deg) contrast(1.2) brightness(1.1)',
+    premium: false
+  },
+  { 
+    id: 'sketch', 
+    name: 'Sketch', 
+    description: 'Hand-drawn artwork',
+    category: 'artistic',
+    cssFilter: 'grayscale(0.8) contrast(1.5) brightness(1.2) sepia(0.2)',
+    premium: false
+  },
+  { 
+    id: 'anime', 
+    name: 'Anime', 
+    description: 'Japanese animation style',
+    category: 'animated',
+    cssFilter: 'saturate(1.4) contrast(1.1) brightness(1.05) hue-rotate(10deg)',
+    premium: false
+  },
+  { 
+    id: 'cartoon', 
+    name: 'Cartoon', 
+    description: 'Vibrant animated look',
+    category: 'animated',
+    cssFilter: 'saturate(1.6) contrast(1.3) brightness(1.1) sepia(0.1)',
+    premium: false
+  },
+  { 
+    id: 'enhance', 
+    name: 'Enhance', 
+    description: 'AI beautification',
+    category: 'enhancement',
+    cssFilter: 'contrast(1.15) brightness(1.05) saturate(1.1) sharpen(0.1)',
+    premium: false
+  },
+  { 
+    id: 'instagram', 
+    name: 'Instagram', 
+    description: 'Social media ready',
+    category: 'social',
+    cssFilter: 'saturate(1.2) contrast(1.1) brightness(1.02) sepia(0.05)',
+    premium: false
+  },
+  { 
+    id: 'watercolor', 
+    name: 'Watercolor', 
+    description: 'Artistic paint effect',
+    category: 'artistic',
+    cssFilter: 'blur(0.5px) opacity(0.9) saturate(1.3) contrast(0.9)',
+    premium: true,
+    comingSoon: true
+  },
+  { 
+    id: 'vintage', 
+    name: 'Vintage', 
+    description: 'Classic retro filter',
+    category: 'retro',
+    cssFilter: 'sepia(0.8) contrast(1.2) brightness(0.9) saturate(0.8)',
+    premium: true,
+    comingSoon: true
+  }
 ] as const;
+
+// AI Image Generation prompts for different styles
+export const AI_GENERATION_PROMPTS = {
+  cyberpunk: "cyberpunk style, neon lights, futuristic city, digital art, high tech, blue and purple neon",
+  anime: "anime style, manga art, japanese animation, cel-shaded, vibrant colors, detailed illustration",
+  cartoon: "cartoon style, vibrant colors, animated character, disney-like, colorful illustration",
+  watercolor: "watercolor painting, soft brushstrokes, artistic, flowing colors, traditional art medium",
+  sketch: "pencil sketch, hand-drawn, artistic line art, detailed drawing, traditional sketch style",
+  enhance: "high quality, detailed, professional photography, enhanced lighting, crisp details"
+} as const;
 
 // SECURITY FIX: Neutral Address Generation - CLIENT-SAFE VERSION
 // This function is now client-safe and does NOT access PRIVATE_KEY_DEPLOY

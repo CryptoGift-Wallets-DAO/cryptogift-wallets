@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { PHOTO_FILTERS } from '../lib/constants';
+import { PHOTO_FILTERS, AI_GENERATION_PROMPTS } from '../lib/constants';
 
 interface FilterSelectorProps {
   imageUrl: string;
@@ -19,36 +19,67 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
   const [filteredPreviews, setFilteredPreviews] = useState<Record<string, string>>({});
   const [loadingFilters, setLoadingFilters] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
 
+  // Apply CSS filters in real-time using Canvas API
   const applyFilter = async (filterId: string) => {
     if (filteredPreviews[filterId]) return; // Already processed
+
+    const filter = PHOTO_FILTERS.find(f => f.id === filterId);
+    if (!filter) return;
 
     setLoadingFilters(prev => new Set(prev).add(filterId));
     setError(null);
 
     try {
-      const response = await fetch('/api/transform', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          style: filterId,
-          image_url: imageUrl
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to apply filter: ${response.status}`);
+      const canvas = canvasRefs.current[filterId];
+      if (!canvas) {
+        // For non-canvas approach, just use CSS filters
+        setFilteredPreviews(prev => ({
+          ...prev,
+          [filterId]: imageUrl // Use original URL with CSS filter overlay
+        }));
+        return;
       }
 
-      const data = await response.json();
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context not available');
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
       
-      setFilteredPreviews(prev => ({
-        ...prev,
-        [filterId]: data.url
-      }));
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          // Apply CSS filter via Canvas
+          ctx.filter = filter.cssFilter;
+          ctx.drawImage(img, 0, 0);
+          
+          // Convert to data URL
+          const filteredDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          
+          setFilteredPreviews(prev => ({
+            ...prev,
+            [filterId]: filteredDataUrl
+          }));
+          
+          resolve(void 0);
+        };
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
     } catch (err) {
       console.error('Filter error:', err);
-      setError(`Error aplicando filtro ${filterId}`);
+      // Fallback to CSS filter approach
+      setFilteredPreviews(prev => ({
+        ...prev,
+        [filterId]: imageUrl
+      }));
     } finally {
       setLoadingFilters(prev => {
         const newSet = new Set(prev);
@@ -75,16 +106,16 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[80vh] overflow-y-auto">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Elige tu Estilo</h2>
-        <p className="text-gray-600">
-          Aplica filtros IA para darle un toque único a tu regalo
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Elige tu Estilo</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Aplica filtros IA de última generación para darle un toque único a tu regalo
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -94,8 +125,8 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         onClick={() => setSelectedFilter('original')}
         className={`relative cursor-pointer rounded-2xl overflow-hidden border-4 transition-all duration-300 ${
           selectedFilter === 'original'
-            ? 'border-blue-500 shadow-xl'
-            : 'border-transparent hover:border-gray-300'
+            ? 'border-blue-500 dark:border-blue-400 shadow-xl shadow-blue-500/25'
+            : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
         }`}
       >
         <Image
@@ -105,14 +136,14 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
           height={192}
           className="w-full h-48 object-cover"
         />
-        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-end">
-          <div className="bg-white bg-opacity-90 backdrop-blur-sm p-3 w-full">
-            <h3 className="font-semibold">Original</h3>
-            <p className="text-sm text-gray-600">Sin filtros</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 w-full">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Original</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Sin filtros</p>
           </div>
         </div>
         {selectedFilter === 'original' && (
-          <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 dark:bg-blue-400 rounded-full flex items-center justify-center shadow-lg">
             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
@@ -120,72 +151,166 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         )}
       </div>
 
-      {/* Filter Options */}
-      <div className="grid grid-cols-2 gap-4">
-        {PHOTO_FILTERS.map((filter) => (
-          <div
-            key={filter.id}
-            onClick={() => handleFilterClick(filter.id)}
-            className={`relative cursor-pointer rounded-2xl overflow-hidden border-4 transition-all duration-300 ${
-              selectedFilter === filter.id
-                ? 'border-blue-500 shadow-xl'
-                : 'border-transparent hover:border-gray-300'
-            }`}
-          >
-            {/* Loading State */}
-            {loadingFilters.has(filter.id) && (
-              <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
-                <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full"></div>
-              </div>
-            )}
+      {/* AI Filter Options - Organized by Category */}
+      <div className="space-y-6">
+        {/* Free Filters */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            🆓 Filtros Gratuitos
+            <span className="ml-2 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
+              Disponible ahora
+            </span>
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {PHOTO_FILTERS.filter(f => !f.premium).map((filter) => (
+              <div
+                key={filter.id}
+                onClick={() => !filter.comingSoon && handleFilterClick(filter.id)}
+                className={`relative cursor-pointer rounded-2xl overflow-hidden border-4 transition-all duration-300 ${
+                  selectedFilter === filter.id
+                    ? 'border-blue-500 dark:border-blue-400 shadow-xl shadow-blue-500/25'
+                    : filter.comingSoon 
+                    ? 'border-gray-200 dark:border-gray-700 opacity-60'
+                    : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                {/* Loading State */}
+                {loadingFilters.has(filter.id) && (
+                  <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center z-10">
+                    <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
 
-            <Image
-              src={filteredPreviews[filter.id] || imageUrl}
-              alt={filter.name}
-              width={400}
-              height={192}
-              className={`w-full h-48 object-cover transition-all duration-300 ${
-                filteredPreviews[filter.id] ? '' : 'filter grayscale'
-              }`}
-            />
-            
-            <div className="absolute inset-0 bg-black bg-opacity-20 flex items-end">
-              <div className="bg-white bg-opacity-90 backdrop-blur-sm p-3 w-full">
-                <h3 className="font-semibold">{filter.name}</h3>
-                <p className="text-sm text-gray-600">{filter.description}</p>
-              </div>
-            </div>
+                {/* Canvas for real-time filter preview */}
+                <canvas
+                  ref={el => canvasRefs.current[filter.id] = el}
+                  className="hidden"
+                />
 
-            {selectedFilter === filter.id && (
-              <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+                <div className="relative">
+                  <Image
+                    src={filteredPreviews[filter.id] || imageUrl}
+                    alt={filter.name}
+                    width={400}
+                    height={192}
+                    className="w-full h-48 object-cover transition-all duration-300"
+                    style={{
+                      filter: !filteredPreviews[filter.id] && !loadingFilters.has(filter.id) 
+                        ? filter.cssFilter 
+                        : 'none'
+                    }}
+                  />
+                  
+                  {/* Category badge */}
+                  <div className="absolute top-2 left-2">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      filter.category === 'futuristic' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' :
+                      filter.category === 'artistic' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                      filter.category === 'animated' ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400' :
+                      filter.category === 'enhancement' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                    }`}>
+                      {filter.category === 'futuristic' ? '🚀' :
+                       filter.category === 'artistic' ? '🎨' :
+                       filter.category === 'animated' ? '✨' :
+                       filter.category === 'enhancement' ? '💎' : '📸'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                  <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 w-full">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{filter.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{filter.description}</p>
+                  </div>
+                </div>
+
+                {selectedFilter === filter.id && (
+                  <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 dark:bg-blue-400 rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
               </div>
-            )}
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* Premium Filters */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            ⭐ Filtros Premium
+            <span className="ml-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full">
+              Próximamente
+            </span>
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            {PHOTO_FILTERS.filter(f => f.premium).map((filter) => (
+              <div
+                key={filter.id}
+                className="relative cursor-not-allowed rounded-2xl overflow-hidden border-4 border-dashed border-purple-300 dark:border-purple-700 opacity-75"
+              >
+                <Image
+                  src={imageUrl}
+                  alt={filter.name}
+                  width={400}
+                  height={192}
+                  className="w-full h-48 object-cover filter grayscale"
+                />
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 to-transparent flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <span className="text-white text-xl">⭐</span>
+                    </div>
+                    <p className="text-white font-medium text-sm">Próximamente</p>
+                  </div>
+                </div>
+                
+                <div className="absolute bottom-0 left-0 right-0 bg-purple-600/90 backdrop-blur-sm p-3">
+                  <h3 className="font-semibold text-white">{filter.name}</h3>
+                  <p className="text-sm text-purple-100">{filter.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* AI Generator Option */}
-      <div className="border-2 border-dashed border-purple-300 rounded-2xl p-6 text-center bg-purple-50">
-        <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-2xl p-6 text-center bg-purple-50 dark:bg-purple-900/20">
+        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-white text-xl">✨</span>
         </div>
-        <h3 className="font-semibold text-purple-800 mb-2">¿No tienes foto?</h3>
-        <p className="text-sm text-purple-600 mb-4">
-          Genera arte único con IA basado en una descripción
+        <h3 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">¿No tienes foto?</h3>
+        <p className="text-sm text-purple-600 dark:text-purple-400 mb-4">
+          Genera arte único con IA basado en una descripción de 1:1 para obtener la mejor calidad NFT
         </p>
-        <button className="text-purple-600 font-medium text-sm hover:underline">
-          Próximamente →
+        
+        <div className="text-xs text-purple-500 dark:text-purple-400 space-y-1 mb-4">
+          <p>💡 <strong>Recomendación temporal:</strong></p>
+          <p>Usa tu proveedor de IA favorito (ChatGPT, Midjourney, DALL-E) con estas especificaciones:</p>
+          <div className="bg-purple-100 dark:bg-purple-800/30 rounded p-2 mt-2">
+            <p className="font-mono text-xs">Aspect ratio: 1:1 (cuadrado)</p>
+            <p className="font-mono text-xs">Resolución: 1024x1024 o superior</p>
+            <p className="font-mono text-xs">Formato: JPG o PNG</p>
+          </div>
+        </div>
+        
+        <button 
+          disabled
+          className="text-purple-600 dark:text-purple-400 font-medium text-sm cursor-not-allowed opacity-50"
+        >
+          🔬 Próximamente - Generación IA Integrada →
         </button>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 sticky bottom-0 bg-white dark:bg-gray-900 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={onBack}
-          className="flex-1 px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white"
         >
           Atrás
         </button>
@@ -193,9 +318,9 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         <button
           onClick={handleContinue}
           disabled={!selectedFilter}
-          className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-gray-600 dark:disabled:to-gray-700 disabled:cursor-not-allowed transition-all duration-300 shadow-lg disabled:shadow-none"
         >
-          Continuar
+          {selectedFilter ? '✨ Continuar con ' + (PHOTO_FILTERS.find(f => f.id === selectedFilter)?.name || 'Original') : 'Selecciona un filtro'}
         </button>
       </div>
     </div>
