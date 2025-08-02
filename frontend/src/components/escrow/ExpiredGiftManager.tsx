@@ -13,6 +13,7 @@ import { getAuthHeader, getAuthState } from '../../lib/siweClient';
 import { sendTransaction } from 'thirdweb';
 import { NFTImage } from '../NFTImage';
 import { NFTImageModal } from '../ui/NFTImageModal';
+import { ThemeCard, ThemeSection, ThemeButton, CryptoGiftTheme } from '../ui/ThemeSystem';
 
 interface ExpiredGift {
   tokenId: string;
@@ -308,9 +309,10 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
       {/* Expired Gifts List */}
       <div className="grid gap-4">
         {expiredGifts.map(gift => (
-          <div
+          <ThemeCard
             key={gift.tokenId}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow border border-orange-200 dark:border-orange-800 overflow-hidden"
+            variant="warning"
+            className="border-orange-200 dark:border-orange-800 overflow-hidden"
           >
             <div className="flex">
               {/* NFT Image */}
@@ -394,12 +396,12 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
                 </button>
               </div>
             </div>
-          </div>
+          </ThemeCard>
         ))}
       </div>
 
       {/* Info Panel */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <ThemeCard variant="default" className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
         <div className="flex">
           <svg className="w-5 h-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -414,7 +416,7 @@ export const ExpiredGiftManager: React.FC<ExpiredGiftManagerProps> = ({
             </ul>
           </div>
         </div>
-      </div>
+      </ThemeCard>
 
       {/* NFT IMAGE MODAL */}
       <NFTImageModal
