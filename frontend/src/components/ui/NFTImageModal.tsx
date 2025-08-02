@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NFTImage } from '../NFTImage';
 
@@ -39,6 +39,26 @@ export function NFTImageModal({
   contractAddress,
   metadata
 }: NFTImageModalProps) {
+  const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
+  const [isWideImage, setIsWideImage] = useState(false);
+  
+  // Detect image aspect ratio for adaptive layout
+  useEffect(() => {
+    if (!isOpen || !image) return;
+    
+    const img = new Image();
+    img.onload = () => {
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      setImageAspectRatio(aspectRatio);
+      
+      // Consider images with aspect ratio >= 1.6 (16:10) as "wide"
+      // Ultra-wide images (>= 1.9) will definitely use vertical layout
+      setIsWideImage(aspectRatio >= 1.6);
+      
+      console.log(`🖼️ Image loaded for modal: ${img.naturalWidth}x${img.naturalHeight}, aspect ratio: ${aspectRatio.toFixed(2)}, wide: ${aspectRatio >= 1.6}`);
+    };
+    img.src = image;
+  }, [isOpen, image]);
   
   // Handle keyboard navigation
   useEffect(() => {
@@ -72,17 +92,27 @@ export function NFTImageModal({
             onClick={onClose}
           />
           
-          {/* Modal Container */}
+          {/* Modal Container - Click outside to close */}
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
+            onClick={(e) => {
+              // Close modal if clicking on the container (outside modal content)
+              if (e.target === e.currentTarget) {
+                onClose();
+              }
+            }}
           >
-            {/* Modal Content */}
+            {/* Modal Content - Adaptive max width */}
             <div 
-              className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-6xl max-h-[90vh] overflow-hidden"
+              className={`relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden ${
+                isWideImage 
+                  ? 'max-w-5xl w-full' // Wider container for wide images in vertical layout
+                  : 'max-w-6xl' // Standard width for horizontal layout
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
@@ -95,17 +125,29 @@ export function NFTImageModal({
                 </svg>
               </button>
               
-              {/* Content Layout - Responsive */}
-              <div className="flex flex-col lg:flex-row min-h-[300px] max-h-[90vh]">
-                {/* Image Section */}
-                <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+              {/* Content Layout - ADAPTIVE based on image aspect ratio */}
+              <div className={`flex min-h-[300px] max-h-[90vh] ${
+                isWideImage 
+                  ? 'flex-col' // Vertical layout for wide images (image top, info bottom)
+                  : 'flex-col lg:flex-row' // Horizontal layout for square/portrait images
+              }`}>
+                {/* Image Section - Adaptive sizing */}
+                <div className={`flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 ${
+                  isWideImage 
+                    ? 'w-full' // Full width for wide images in vertical layout
+                    : 'flex-1' // Flexible for square/portrait in horizontal layout
+                }`}>
                   <div className="relative max-w-full max-h-full">
                     <NFTImage
                       src={image}
                       alt={name}
-                      width={600}
-                      height={600}
-                      className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                      width={isWideImage ? 800 : 600} // Larger width for wide images
+                      height={isWideImage ? 450 : 600} // Proportional height for wide images
+                      className={`object-contain rounded-lg shadow-lg ${
+                        isWideImage 
+                          ? 'max-w-full max-h-[50vh]' // Limit height for wide images
+                          : 'max-w-full max-h-[70vh]' // Standard sizing for others
+                      }`}
                       tokenId={tokenId}
                       fit="contain"
                       priority={true}
@@ -116,8 +158,12 @@ export function NFTImageModal({
                   </div>
                 </div>
                 
-                {/* Metadata Section */}
-                <div className="lg:w-80 flex-shrink-0 p-6 bg-white dark:bg-slate-900 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-700">
+                {/* Metadata Section - Adaptive positioning */}
+                <div className={`p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 ${
+                  isWideImage 
+                    ? 'w-full border-t' // Full width below image for wide images
+                    : 'lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l' // Sidebar for square/portrait
+                }`}>
                   <div className="space-y-4">
                     {/* Title */}
                     <div>
@@ -170,7 +216,7 @@ export function NFTImageModal({
                       </div>
                     )}
                     
-                    {/* Technical Info */}
+                    {/* Technical Info with Aspect Ratio Display */}
                     <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                       <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
                         Technical Details
@@ -179,6 +225,16 @@ export function NFTImageModal({
                         <div>Standard: ERC-721</div>
                         <div>Network: Base Sepolia</div>
                         <div>Token Bound Account: ✅</div>
+                        {imageAspectRatio && (
+                          <div className="flex items-center gap-2">
+                            <span>Aspect Ratio: {imageAspectRatio.toFixed(2)}:1</span>
+                            {isWideImage && (
+                              <span className="text-blue-500 font-medium">
+                                📐 {imageAspectRatio >= 1.9 ? 'Ultra-wide' : 'Wide format'}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
