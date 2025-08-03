@@ -63,6 +63,10 @@ export function NFTImageModal({
   // Mobile detection for enhanced mobile experience
   const [isMobile, setIsMobile] = useState(false);
   
+  // Mobile swipe down to close functionality
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -73,6 +77,42 @@ export function NFTImageModal({
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Handle mobile swipe down to close
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    setIsDragging(true);
+    setDragY(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !isDragging) return;
+    
+    const touch = e.touches[0];
+    const startY = 50; // Start tracking from header area
+    const deltaY = Math.max(0, touch.clientY - startY);
+    
+    if (deltaY > 0) {
+      setDragY(deltaY);
+      // Add some resistance - slow down the drag after 100px
+      const resistedY = deltaY > 100 ? 100 + (deltaY - 100) * 0.3 : deltaY;
+      setDragY(resistedY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile || !isDragging) return;
+    
+    setIsDragging(false);
+    
+    // Close if dragged down more than 120px
+    if (dragY > 120) {
+      onClose();
+    }
+    
+    // Reset drag position
+    setDragY(0);
+  };
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -102,9 +142,16 @@ export function NFTImageModal({
             <motion.div
               className="fixed inset-0 z-50 bg-white dark:bg-slate-900 overflow-y-auto"
               initial={{ y: '100%' }}
-              animate={{ y: 0 }}
+              animate={{ y: dragY }}
               exit={{ y: '100%' }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              transition={{ duration: isDragging ? 0 : 0.3, ease: 'easeOut' }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{
+                transform: `translateY(${dragY}px)`,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out'
+              }}
             >
               {/* Mobile Header with Close Button */}
               <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-4">
@@ -127,8 +174,25 @@ export function NFTImageModal({
                 
                 {/* Pull down hint */}
                 <div className="text-center mt-2">
-                  <div className="w-8 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto"></div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Desliza hacia abajo para cerrar</p>
+                  <div 
+                    className={`w-8 h-1 rounded-full mx-auto transition-all duration-200 ${
+                      isDragging && dragY > 50 
+                        ? 'bg-green-500 w-12 h-2' 
+                        : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
+                  ></div>
+                  <p className={`text-xs mt-1 transition-colors duration-200 ${
+                    isDragging && dragY > 50
+                      ? 'text-green-600 dark:text-green-400 font-medium'
+                      : 'text-slate-500 dark:text-slate-400'
+                  }`}>
+                    {isDragging && dragY > 120 
+                      ? '¡Suelta para cerrar!' 
+                      : isDragging && dragY > 50
+                      ? 'Sigue deslizando...'
+                      : 'Desliza hacia abajo para cerrar'
+                    }
+                  </p>
                 </div>
               </div>
 
