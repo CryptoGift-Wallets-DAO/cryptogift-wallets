@@ -161,7 +161,7 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     const currentBlock = await provider.getBlockNumber();
     const deploymentBlock = 28915000; // V2 contract deployment block
     const maxRpcBlocks = 500; // Safe RPC limit for Alchemy
-    const searchRange = 10000; // Total range to search for the mapping
+    const searchRange = 50000; // EXPANDED: Total range to search for the mapping (was 10k, increased to 50k to capture token 68)
     
     // Start with recent blocks, most gifts will be recent
     const searchStartBlock = Math.max(deploymentBlock, currentBlock - searchRange);
