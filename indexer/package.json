@@ -1,0 +1,54 @@
+{
+  "name": "cryptogift-indexer",
+  "version": "1.0.0",
+  "description": "CryptoGift NFT-Wallet Gift Mapping Indexer - Zero-custody blockchain indexing for tokenId → giftId mapping",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "backfill": "tsx src/scripts/backfill.ts",
+    "status": "tsx src/scripts/status.ts",
+    "status:api": "curl -s http://localhost:3001/status | jq",
+    "health": "curl -s http://localhost:3001/health | jq",
+    "mapping": "curl -s http://localhost:3001/mapping/$TOKEN_ID | jq",
+    "metrics": "curl -s http://localhost:3001/metrics",
+    "alerts": "curl -s http://localhost:3001/alerts | jq",
+    "ab-check": "tsx src/scripts/ab-check.ts",
+    "test:unit": "tsx src/tests/unit.test.ts",
+    "db:migrate": "psql $DATABASE_URL -f migrations/001_init.sql",
+    "db:reset": "psql $DATABASE_URL -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;' && npm run db:migrate",
+    "lint": "echo 'No linting configured'",
+    "test": "npm run test:unit"
+  },
+  "dependencies": {
+    "viem": "^2.21.46",
+    "pg": "^8.12.0",
+    "dotenv": "^16.4.5",
+    "pino": "^9.4.0",
+    "pino-pretty": "^11.2.2",
+    "zod": "^3.23.8",
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/pg": "^8.11.10",
+    "@types/express": "^5.0.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2"
+  },
+  "keywords": [
+    "cryptogift",
+    "nft",
+    "blockchain",
+    "indexer",
+    "base-sepolia",
+    "mapping",
+    "zero-custody"
+  ],
+  "author": "mbxarts.com The Moon in a Box property",
+  "license": "MIT"
+}
