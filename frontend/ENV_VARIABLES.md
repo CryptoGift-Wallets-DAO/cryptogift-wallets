@@ -1,8 +1,18 @@
 # Variables de Entorno Requeridas - CryptoGift Wallets
 
-## 🔐 **CONFIGURACIÓN ACTUALIZADA (July 2025)**
+## 🔐 **CONFIGURACIÓN ACTUALIZADA (August 4, 2025)**
 
 **⚠️ IMPORTANTE**: Este archivo ha sido limpiado de secrets. Ver `.env.example` para valores de ejemplo.
+
+## 📱 **Mobile UX Features Configuration**
+
+Las siguientes características móviles están habilitadas por defecto y no requieren variables adicionales:
+- **R1: Deeplink Authentication** - Configurado automáticamente con MetaMask SDK
+- **R2: NFT Visibility Enhancement** - Usa variables ThirdWeb existentes
+- **R3: Spanish Error Messages** - Habilitado por defecto
+- **R4: Vertical Image Layouts** - CSS responsivo automático  
+- **R5: Auto Theme + Zoom** - CSS global sin configuración
+- **R6: IPFS Gateway Retry** - Gateways públicos sin API keys
 
 ## ThirdWeb Configuration
 Configurar estas variables en Vercel Dashboard:
