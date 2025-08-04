@@ -254,13 +254,13 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             try {
               await window.ethereum.request({
                 method: 'wallet_watchAsset',
-                params: {
+                params: [{
                   type: 'ERC721',
                   options: {
                     address: contractAddress,
                     tokenId: tokenId,
                   }
-                }
+                }]
               });
               
               // Success notification

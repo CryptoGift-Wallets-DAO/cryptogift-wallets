@@ -316,13 +316,13 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
               if (contractAddress) {
                 await window.ethereum.request({
                   method: 'wallet_watchAsset',
-                  params: {
+                  params: [{
                     type: 'ERC721',
                     options: {
                       address: contractAddress,
                       tokenId: gaslessVerification.tokenId,
                     }
-                  }
+                  }]
                 });
               }
               

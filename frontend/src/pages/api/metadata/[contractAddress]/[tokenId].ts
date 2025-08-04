@@ -62,22 +62,18 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
       console.log(`🔄 IPFS Gateway attempt ${attempt + 1}/${IPFS_GATEWAYS.length}: ${IPFS_GATEWAYS[attempt]}`);
       
       // Test gateway with HEAD request (faster than GET)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000 + (attempt * 2000)); // Exponential timeout: 5s, 7s, 9s
+      
       const testResponse = await fetch(gatewayUrl, { 
-        method: 'HEAD', 
-        timeout: 5000 + (attempt * 2000) // Exponential timeout: 5s, 7s, 9s
+        method: 'HEAD',
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
+      
       if (testResponse.ok) {
-        // R6: Telemetry logging with gtag
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'ipfs_retry', {
-            gateway: IPFS_GATEWAYS[attempt],
-            attempt: attempt + 1,
-            success: true,
-            cid: cid.slice(0, 12) + '...' // Privacy: only log partial CID
-          });
-        }
-        
+        // R6: Server-side logging (no gtag on server)
         console.log(`✅ IPFS Gateway success: ${IPFS_GATEWAYS[attempt]} (attempt ${attempt + 1})`);
         return encodeImageURL(gatewayUrl);
       }
@@ -85,16 +81,8 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
     } catch (error) {
       console.log(`❌ IPFS Gateway ${attempt + 1} failed: ${error.message}`);
       
-      // R6: Log failed attempts
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'ipfs_retry', {
-          gateway: IPFS_GATEWAYS[attempt],
-          attempt: attempt + 1,
-          success: false,
-          error: error.message.slice(0, 50), // Truncate error message
-          cid: cid.slice(0, 12) + '...'
-        });
-      }
+      // R6: Server-side error logging (no gtag on server)
+      console.log(`🔄 Retrying with next gateway if available...`);
       
       // Exponential backoff delay before next attempt
       if (attempt < IPFS_GATEWAYS.length - 1) {
