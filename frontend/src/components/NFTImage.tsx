@@ -49,6 +49,8 @@ export const NFTImage: React.FC<NFTImageProps> = ({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [gatewayIndex, setGatewayIndex] = useState(0);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
   
   // Multiple IPFS gateways for redundancy (ordered by performance)
   const IPFS_GATEWAYS = [
@@ -85,6 +87,25 @@ export const NFTImage: React.FC<NFTImageProps> = ({
     }
     return src;
   });
+
+  // R4: ResizeObserver for dynamic height adjustment - eliminates margins
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerDimensions({ width, height });
+        console.log(`🔧 Container resized: ${width}x${height} for ${tokenId || 'NFT'}`);
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [tokenId]);
 
   const handleError = () => {
     console.log(`🖼️ Image load failed for ${tokenId || 'NFT'}: ${currentSrc}`);
@@ -151,7 +172,15 @@ export const NFTImage: React.FC<NFTImageProps> = ({
   };
   
   return (
-    <div className="relative w-full h-full">
+    <div 
+      ref={containerRef}
+      className="relative w-full h-full flex items-center justify-center overflow-hidden"
+      style={{ 
+        maxHeight: '100%',
+        // R4: Dynamic height based on container to eliminate vertical margins
+        height: containerDimensions.height > 0 ? `${containerDimensions.height}px` : '100%'
+      }}
+    >
       {/* Loading state */}
       {isLoading && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center 
@@ -163,28 +192,32 @@ export const NFTImage: React.FC<NFTImageProps> = ({
         </div>
       )}
       
-      {/* NFT Image */}
-      <Image
-        src={currentSrc}
-        alt={alt}
-        width={width}
-        height={height}
-        className={`${className} ${fitClass} transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
-        onError={handleError}
-        onLoad={handleLoad}
-        priority={priority}
-        placeholder={placeholder}
-        blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}
-        unoptimized={src.startsWith('ipfs://') || src.includes('ipfs')} // Disable optimization for IPFS URLs
-        style={{
-          // Ensure the image maintains aspect ratio without cropping
-          objectFit: fit,
-          maxWidth: '100%',
-          maxHeight: '100%'
-        }}
-      />
+      {/* R4: Flex wrapper eliminates margins for vertical images */}
+      <div className="flex items-center justify-center w-full h-full">
+        <Image
+          src={currentSrc}
+          alt={alt}
+          width={width}
+          height={height}
+          className={`${className} ${fitClass} transition-opacity duration-300 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
+          }`}
+          onError={handleError}
+          onLoad={handleLoad}
+          priority={priority}
+          placeholder={placeholder}
+          blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}
+          unoptimized={src.startsWith('ipfs://') || src.includes('ipfs')} // Disable optimization for IPFS URLs
+          style={{
+            // R4: Enhanced styling for vertical images - no margins
+            objectFit: fit,
+            maxWidth: '100%',
+            maxHeight: '100%',
+            width: 'auto',
+            height: 'auto'
+          }}
+        />
+      </div>
       
       {/* Enhanced error state placeholder */}
       {hasError && (

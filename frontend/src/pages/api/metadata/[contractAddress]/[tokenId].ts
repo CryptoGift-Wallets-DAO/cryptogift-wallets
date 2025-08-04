@@ -18,37 +18,101 @@ interface ERC721Metadata {
   background_color?: string;
 }
 
+// R6: IPFS Gateway retry system with exponential backoff + telemetry
+const IPFS_GATEWAYS = [
+  'https://gateway.pinata.cloud/ipfs/',    // Primary - best mobile compatibility
+  'https://cloudflare-ipfs.com/ipfs/',    // Secondary - fast CDN
+  'https://ipfs.io/ipfs/'                 // Fallback - most reliable
+];
+
 /**
- * Convert IPFS URLs to HTTPS gateway URLs compatible with both MetaMask AND BaseScan
+ * R6: Advanced IPFS URL conversion with retry logic and telemetry
+ * Implements exponential backoff across 3 gateways with performance tracking
  */
-function convertIPFSToHTTPS(ipfsUrl: string): string {
+async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Promise<string> {
   if (!ipfsUrl) return '';
   
-  // Already HTTPS URL
+  // Already HTTPS URL - no retry needed
   if (ipfsUrl.startsWith('https://')) {
-    // BASESCAN FIX: Handle URLs with spaces by URL encoding ONLY the filename
     return encodeImageURL(ipfsUrl);
   }
   if (ipfsUrl.startsWith('http://')) {
     return encodeImageURL(ipfsUrl.replace('http://', 'https://'));
   }
   
+  let cid = '';
+  
   // IPFS URL format
   if (ipfsUrl.startsWith('ipfs://')) {
-    const cid = ipfsUrl.replace('ipfs://', '');
-    
-    // BASESCAN OPTIMIZATION: Use gateway with better compatibility
-    // ipfs.io has the most reliable redirect handling for block explorers
-    const baseUrl = `https://ipfs.io/ipfs/${cid}`;
-    return encodeImageURL(baseUrl);
-  }
-  
+    cid = ipfsUrl.replace('ipfs://', '');
+  } 
   // Handle bare CID
-  if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
-    return encodeImageURL(`https://ipfs.io/ipfs/${ipfsUrl}`);
+  else if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
+    cid = ipfsUrl;
+  }
+  else {
+    return ipfsUrl; // Return as-is if not IPFS
   }
   
-  return ipfsUrl;
+  // Try each gateway with exponential backoff
+  for (let attempt = 0; attempt < IPFS_GATEWAYS.length; attempt++) {
+    const gatewayUrl = `${IPFS_GATEWAYS[attempt]}${cid}`;
+    
+    try {
+      console.log(`🔄 IPFS Gateway attempt ${attempt + 1}/${IPFS_GATEWAYS.length}: ${IPFS_GATEWAYS[attempt]}`);
+      
+      // Test gateway with HEAD request (faster than GET)
+      const testResponse = await fetch(gatewayUrl, { 
+        method: 'HEAD', 
+        timeout: 5000 + (attempt * 2000) // Exponential timeout: 5s, 7s, 9s
+      });
+      
+      if (testResponse.ok) {
+        // R6: Telemetry logging with gtag
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'ipfs_retry', {
+            gateway: IPFS_GATEWAYS[attempt],
+            attempt: attempt + 1,
+            success: true,
+            cid: cid.slice(0, 12) + '...' // Privacy: only log partial CID
+          });
+        }
+        
+        console.log(`✅ IPFS Gateway success: ${IPFS_GATEWAYS[attempt]} (attempt ${attempt + 1})`);
+        return encodeImageURL(gatewayUrl);
+      }
+      
+    } catch (error) {
+      console.log(`❌ IPFS Gateway ${attempt + 1} failed: ${error.message}`);
+      
+      // R6: Log failed attempts
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'ipfs_retry', {
+          gateway: IPFS_GATEWAYS[attempt],
+          attempt: attempt + 1,
+          success: false,
+          error: error.message.slice(0, 50), // Truncate error message
+          cid: cid.slice(0, 12) + '...'
+        });
+      }
+      
+      // Exponential backoff delay before next attempt
+      if (attempt < IPFS_GATEWAYS.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
+    }
+  }
+  
+  // All gateways failed - return first gateway URL anyway (some clients may still work)
+  console.log(`⚠️ All IPFS gateways failed, returning primary: ${IPFS_GATEWAYS[0]}${cid}`);
+  return encodeImageURL(`${IPFS_GATEWAYS[0]}${cid}`);
+}
+
+/**
+ * Legacy function for backwards compatibility - now uses retry system
+ */
+function convertIPFSToHTTPS(ipfsUrl: string): Promise<string> {
+  return convertIPFSToHTTPSWithRetry(ipfsUrl);
 }
 
 /**
@@ -103,13 +167,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`🔍 Original image URL: ${metadata.image}`);
     }
 
-    // Convert to MetaMask-compatible format
+    // R6: Convert to MetaMask-compatible format with retry system
     const metamaskMetadata: ERC721Metadata = {
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
       description: metadata.description || 'A unique NFT-Wallet from the CryptoGift platform',
       
-      // CRITICAL: Convert IPFS to HTTPS for MetaMask compatibility
-      image: convertIPFSToHTTPS(metadata.image),
+      // R6: CRITICAL - Convert IPFS to HTTPS with retry logic and telemetry
+      image: await convertIPFSToHTTPS(metadata.image),
       
       // Standard ERC721 attributes array
       attributes: metadata.attributes || [],

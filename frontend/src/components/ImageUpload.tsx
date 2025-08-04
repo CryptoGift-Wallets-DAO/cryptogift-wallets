@@ -119,7 +119,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
               alt="Preview"
               width={600}
               height={320}
-              className="w-full h-80 object-cover rounded-2xl"
+              className="w-full h-80 object-contain bg-gray-50 dark:bg-gray-800 rounded-2xl"
             />
             <button
               onClick={removeImage}

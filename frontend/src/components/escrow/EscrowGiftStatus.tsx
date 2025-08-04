@@ -345,7 +345,7 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
         {giftInfo.status === 'claimed' && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
             <p className="text-green-800 dark:text-green-300 text-sm font-medium">
-              ✅ This gift has been successfully claimed!
+              ✅ Gift reclamado exitosamente
             </p>
           </div>
         )}
@@ -353,7 +353,7 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
         {giftInfo.status === 'returned' && (
           <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
             <p className="text-gray-700 dark:text-gray-300 text-sm">
-              ↩️ This gift has been returned to the creator&apos;s wallet.
+              ↩️ Gift devuelto al creador
             </p>
           </div>
         )}
@@ -361,13 +361,21 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
         {isExpired && giftInfo.status === 'active' && (
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
             <p className="text-orange-800 dark:text-orange-300 text-sm font-medium">
-              ⏰ This gift has expired and can no longer be claimed.
+              ❌ Gift expirado - Vence el {new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}
             </p>
             {isCreator && (
               <p className="text-orange-700 dark:text-orange-400 text-sm mt-1">
-                You can return it to your wallet using the button above.
+                Puedes devolverlo a tu wallet usando el botón de arriba.
               </p>
             )}
+          </div>
+        )}
+
+        {giftInfo.status === 'active' && !isExpired && !giftInfo.canClaim && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <p className="text-blue-800 dark:text-blue-300 text-sm font-medium">
+              ⏳ Gift todavía no Reclamado. Vence el {new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}.
+            </p>
           </div>
         )}
       </div>

@@ -59,6 +59,25 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   }, [account?.address, onAuthChange]);
 
   const handleAuthenticate = async () => {
+    // R1 FIX: USER-ACTIVATION FIRST-LINE - Must be provider.request immediately
+    if (isMobile && typeof window !== 'undefined' && window.ethereum) {
+      try {
+        // Ensure Base Sepolia is added to wallet (user-activation)
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x14a34', // 84532 in hex (Base Sepolia)
+            chainName: 'Base Sepolia',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: ['https://sepolia.base.org'],
+            blockExplorerUrls: ['https://sepolia.basescan.org']
+          }]
+        });
+      } catch (addChainError) {
+        console.log('⚠️ Chain already added or user denied:', addChainError);
+      }
+    }
+
     if (!account?.address) {
       setAuthError('No wallet connected');
       return;
@@ -83,6 +102,33 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         setAuthError(null);
         onAuthChange?.(true, account.address);
         console.log('✅ Authentication successful!');
+        
+        // R1: MOBILE DEEPLINK - Enhanced with MetaMask SDK detection
+        if (isMobile && typeof window !== 'undefined') {
+          console.log('📱 Mobile authentication successful - triggering enhanced deeplink...');
+          
+          setTimeout(async () => {
+            try {
+              // Method 1: Try MetaMask SDK deeplink if available
+              if (window.ethereum?.isMetaMask && window.ethereum.request) {
+                console.log('🦊 Using MetaMask native deeplink...');
+                // Trigger MetaMask mobile app return
+                await window.ethereum.request({
+                  method: 'wallet_requestPermissions',
+                  params: [{ eth_accounts: {} }]
+                });
+              }
+              
+              // Method 2: Custom app scheme (if app is installed)
+              window.location.href = 'cryptogift://authenticated';
+              
+            } catch (e) {
+              console.log('📱 Native methods failed, using universal link fallback...');
+              // Method 3: Universal link fallback
+              window.location.href = 'https://cryptogift-wallets.vercel.app/authenticated';
+            }
+          }, 1000); // Small delay to ensure auth state is saved
+        }
       } else {
         throw new Error('Authentication failed');
       }

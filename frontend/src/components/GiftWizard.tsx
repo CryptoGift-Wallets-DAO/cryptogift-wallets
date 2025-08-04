@@ -306,6 +306,38 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
           setCurrentStep(WizardStep.SUCCESS);
           setIsLoading(false);
           
+          // R2: FORCE METAMASK NFT REFRESH - Make newly minted NFT visible immediately
+          if (typeof window !== 'undefined' && window.ethereum && gaslessVerification.tokenId) {
+            console.log('📱 Forcing MetaMask NFT refresh for newly minted NFT...');
+            
+            try {
+              // Method 1: Add NFT to MetaMask explicitly (mobile compatibility)
+              const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
+              if (contractAddress) {
+                await window.ethereum.request({
+                  method: 'wallet_watchAsset',
+                  params: {
+                    type: 'ERC721',
+                    options: {
+                      address: contractAddress,
+                      tokenId: gaslessVerification.tokenId,
+                    }
+                  }
+                });
+              }
+              
+              // Method 2: Request account refresh (forces NFT cache update)
+              await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }]
+              });
+              
+              console.log('✅ MetaMask NFT refresh completed for minted NFT');
+            } catch (refreshError) {
+              console.log('⚠️ MetaMask refresh failed (not critical):', refreshError);
+            }
+          }
+          
           addStep('GIFT_WIZARD', 'GASLESS_RECOVERY_SUCCESS', {
             tokenId: gaslessVerification.tokenId,
             transactionHash: gaslessVerification.transactionHash,

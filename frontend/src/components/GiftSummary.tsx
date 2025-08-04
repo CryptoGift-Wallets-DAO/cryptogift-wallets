@@ -61,7 +61,7 @@ export const GiftSummary: React.FC<GiftSummaryProps> = ({
               alt="NFT Preview"
               width={192}
               height={192}
-              className="w-48 h-48 object-cover rounded-2xl shadow-lg"
+              className="w-48 h-48 object-contain rounded-2xl shadow-lg bg-gray-50 dark:bg-gray-800"
             />
             <div className="absolute -bottom-2 -right-2 bg-blue-500 dark:bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
               NFT #{Date.now().toString().slice(-4)}

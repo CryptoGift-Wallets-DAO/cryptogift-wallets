@@ -18,6 +18,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { makeAuthenticatedRequest } from '../../lib/siweClient';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
+import { useNotifications } from '../ui/NotificationSystem';
 
 interface ClaimEscrowInterfaceProps {
   tokenId: string;
@@ -56,6 +57,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
 }) => {
   const account = useActiveAccount();
   const auth = useAuth();
+  const { addNotification } = useNotifications();
   const [formData, setFormData] = useState<ClaimFormData>({
     password: '',
     salt: '',
@@ -224,6 +226,82 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       });
       
       setClaimStep('success');
+      
+      // R2: ENHANCED METAMASK NFT VISIBILITY - Pre-pin + Toast handling
+      if (typeof window !== 'undefined' && window.ethereum) {
+        console.log('📱 Enhanced MetaMask NFT visibility process starting...');
+        
+        const contractAddress = giftInfo?.nftContract || validationResult.giftInfo?.nftContract;
+        
+        if (contractAddress) {
+          try {
+            // Step 1: Pre-pin tokenURI metadata to IPFS for faster loading
+            console.log('📌 Pre-pinning tokenURI metadata...');
+            const metadataUrl = `https://cryptogift-wallets.vercel.app/api/metadata/${contractAddress}/${tokenId}`;
+            
+            // Fetch and cache metadata to ensure IPFS availability
+            const metadataResponse = await fetch(metadataUrl);
+            const metadata = await metadataResponse.json();
+            console.log('✅ Metadata pre-cached:', metadata);
+            
+            // Step 2: Request account refresh (forces NFT cache update)
+            await window.ethereum.request({
+              method: 'wallet_requestPermissions',
+              params: [{ eth_accounts: {} }]
+            });
+            
+            // Step 3: Add NFT to MetaMask with enhanced error handling
+            try {
+              await window.ethereum.request({
+                method: 'wallet_watchAsset',
+                params: {
+                  type: 'ERC721',
+                  options: {
+                    address: contractAddress,
+                    tokenId: tokenId,
+                  }
+                }
+              });
+              
+              // Success notification
+              addNotification({
+                type: 'success',
+                title: '🦊 NFT añadido a MetaMask',
+                message: 'Tu NFT debería aparecer en MetaMask en menos de 30 segundos',
+                duration: 5000
+              });
+              
+            } catch (watchError: any) {
+              // Handle user denial with instructive toast
+              if (watchError.code === 4001 || watchError.message?.includes('denied')) {
+                addNotification({
+                  type: 'warning',
+                  title: '📱 Añadir NFT manualmente',
+                  message: `Ve a MetaMask → NFTs → Importar NFT → Contrato: ${contractAddress.slice(0,8)}... → ID: ${tokenId}`,
+                  duration: 10000,
+                  action: {
+                    label: 'Copiar Contrato',
+                    onClick: () => navigator.clipboard.writeText(contractAddress)
+                  }
+                });
+              } else {
+                throw watchError; // Re-throw if not user denial
+              }
+            }
+            
+            console.log('✅ Enhanced MetaMask NFT visibility completed');
+            
+          } catch (error) {
+            console.log('⚠️ MetaMask enhancement failed:', error);
+            addNotification({
+              type: 'info',
+              title: '💡 NFT reclamado exitosamente',
+              message: 'Puede tomar unos minutos aparecer en MetaMask',
+              duration: 5000
+            });
+          }
+        }
+      }
       
       // Notify parent component of successful claim
       if (onClaimSuccess) {
@@ -516,19 +594,23 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             <div className="text-4xl mb-4">
               {giftInfo?.status === 'claimed' ? '✅' : 
                giftInfo?.status === 'returned' ? '↩️' : 
-               giftInfo?.isExpired ? '⏰' : '❌'}
+               giftInfo?.isExpired ? '⏰' : 
+               giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳' : '❌'}
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {giftInfo?.status === 'claimed' ? 'Gift Already Claimed' :
-               giftInfo?.status === 'returned' ? 'Gift Returned to Creator' :
-               giftInfo?.isExpired ? 'Gift Has Expired' :
-               'Gift Cannot Be Claimed'}
+              {giftInfo?.status === 'claimed' ? 'Gift reclamado' :
+               giftInfo?.status === 'returned' ? 'Gift devuelto al creador' :
+               giftInfo?.isExpired ? 'Gift expirado' :
+               giftInfo?.status === 'active' && !giftInfo?.canClaim ? 'Gift todavía no Reclamado' :
+               'Gift no puede ser reclamado'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {giftInfo?.status === 'claimed' ? 'This gift has already been claimed by someone else.' :
-               giftInfo?.status === 'returned' ? 'This gift has been returned to its creator.' :
-               giftInfo?.isExpired ? 'This gift has expired and can no longer be claimed.' :
-               'This gift is not available for claiming at this time.'}
+              {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente.' :
+               giftInfo?.status === 'returned' ? 'Este gift ha sido devuelto a su creador.' :
+               giftInfo?.isExpired ? 'Este gift ha expirado y ya no puede ser reclamado.' :
+               giftInfo?.status === 'active' && !giftInfo?.canClaim ? 
+                 `Gift todavía no disponible. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}.` :
+               'Este gift no está disponible para reclamar en este momento.'}
             </p>
           </div>
         )}

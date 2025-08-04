@@ -126,7 +126,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
           alt="Original"
           width={400}
           height={192}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-800"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 w-full">
@@ -180,7 +180,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
                     alt={filter.name}
                     width={400}
                     height={192}
-                    className="w-full h-48 object-cover transition-all duration-300"
+                    className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-800 transition-all duration-300"
                     style={{
                       filter: !filteredPreviews[filter.id] && !loadingFilters.has(filter.id) 
                         ? filter.cssFilter 
@@ -243,7 +243,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
                   alt={filter.name}
                   width={400}
                   height={192}
-                  className="w-full h-48 object-cover filter grayscale"
+                  className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-800 filter grayscale"
                 />
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-purple-900/80 to-transparent flex items-center justify-center">
