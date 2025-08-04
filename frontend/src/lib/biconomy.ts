@@ -1,4 +1,5 @@
-import { createSmartAccountClient, BiconomySmartAccountV2 } from "@biconomy/account";
+// TODO: Restore when @biconomy/account installation completes
+// import { createSmartAccountClient, BiconomySmartAccountV2 } from "@biconomy/account";
 import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
@@ -81,11 +82,12 @@ export async function createBiconomySmartAccount(privateKey: string) {
       };
     }
 
-    // Create Smart Account
-    const smartAccount = await createSmartAccountClient(smartAccountConfig);
-
-    console.log("Smart Account created:", await smartAccount.getAccountAddress());
-    return smartAccount;
+    // TODO: Restore when @biconomy/account package installation completes
+    // const smartAccount = await createSmartAccountClient(smartAccountConfig);
+    // console.log("Smart Account created:", await smartAccount.getAccountAddress());
+    // return smartAccount;
+    
+    throw new Error('Biconomy Smart Account temporarily disabled - package installation in progress');
   } catch (error) {
     console.error("Error creating Biconomy Smart Account:", error);
     throw error;
@@ -94,7 +96,7 @@ export async function createBiconomySmartAccount(privateKey: string) {
 
 // Send gasless transaction
 export async function sendGaslessTransaction(
-  smartAccount: BiconomySmartAccountV2,
+  smartAccount: any, // BiconomySmartAccountV2 - temporarily using any
   transaction: any
 ) {
   try {

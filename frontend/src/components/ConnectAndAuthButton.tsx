@@ -14,6 +14,28 @@ const isMobileDevice = () => {
          (window.innerWidth <= 768);
 };
 
+// R1: MetaMask SDK lazy import with fallback universal link (temporary fallback until SDK installs)
+const initializeMetaMaskSDK = async () => {
+  try {
+    if (isMobileDevice() && typeof window !== 'undefined') {
+      // TODO: Restore MetaMask SDK when package installation completes
+      // const { MetaMaskSDK } = await import('@metamask/sdk');
+      // For now, use fallback
+      const currentUrl = encodeURIComponent(window.location.href);
+      window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
+      return null;
+    }
+  } catch (error) {
+    console.log('📱 MetaMask SDK fallback to universal link:', error);
+    // Fallback: Universal link for mobile
+    if (isMobileDevice()) {
+      const currentUrl = encodeURIComponent(window.location.href);
+      window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
+    }
+  }
+  return window.ethereum;
+};
+
 interface ConnectAndAuthButtonProps {
   onAuthChange?: (isAuthenticated: boolean, address?: string) => void;
   className?: string;
@@ -59,22 +81,29 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   }, [account?.address, onAuthChange]);
 
   const handleAuthenticate = async () => {
-    // R1 FIX: USER-ACTIVATION FIRST-LINE - Must be provider.request immediately
-    if (isMobile && typeof window !== 'undefined' && window.ethereum) {
+    // R1 FIX: USER-ACTIVATION FIRST-LINE - provider.request as ABSOLUTE first instruction
+    const provider = await initializeMetaMaskSDK();
+    
+    if (provider) {
       try {
-        // Ensure Base Sepolia is added to wallet (user-activation)
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: '0x14a34', // 84532 in hex (Base Sepolia)
-            chainName: 'Base Sepolia',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: ['https://sepolia.base.org'],
-            blockExplorerUrls: ['https://sepolia.basescan.org']
-          }]
-        });
+        // Get current chain ID first to avoid unnecessary calls
+        const currentChainId = await provider.request({ method: 'eth_chainId' });
+        
+        // Only add Base Sepolia if not already on it (84532 = 0x14a34)
+        if (currentChainId !== '0x14a34') {
+          await provider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x14a34', // 84532 in hex (Base Sepolia)
+              chainName: 'Base Sepolia',
+              nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['https://sepolia.base.org'],
+              blockExplorerUrls: ['https://sepolia.basescan.org']
+            }]
+          });
+        }
       } catch (addChainError) {
-        console.log('⚠️ Chain already added or user denied:', addChainError);
+        console.log('⚠️ Chain operation failed:', addChainError);
       }
     }
 

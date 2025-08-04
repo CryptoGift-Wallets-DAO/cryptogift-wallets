@@ -54,16 +54,19 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
     return ipfsUrl; // Return as-is if not IPFS
   }
   
-  // Try each gateway with exponential backoff
+  // R6 QA FIX: Try each gateway with proper exponential backoff
   for (let attempt = 0; attempt < IPFS_GATEWAYS.length; attempt++) {
     const gatewayUrl = `${IPFS_GATEWAYS[attempt]}${cid}`;
+    const startTime = Date.now();
     
     try {
       console.log(`🔄 IPFS Gateway attempt ${attempt + 1}/${IPFS_GATEWAYS.length}: ${IPFS_GATEWAYS[attempt]}`);
       
       // Test gateway with HEAD request (faster than GET)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000 + (attempt * 2000)); // Exponential timeout: 5s, 7s, 9s
+      const baseTimeout = 2000; // 2s base timeout
+      const timeoutMs = baseTimeout * Math.pow(1.5, attempt); // Exponential: 2s, 3s, 4.5s
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       
       const testResponse = await fetch(gatewayUrl, { 
         method: 'HEAD',
@@ -71,22 +74,45 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
       });
       
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
       
       if (testResponse.ok) {
-        // R6: Server-side logging (no gtag on server)
-        console.log(`✅ IPFS Gateway success: ${IPFS_GATEWAYS[attempt]} (attempt ${attempt + 1})`);
+        // R6 QA FIX: Comprehensive telemetry logging
+        const telemetryData = {
+          gateway: IPFS_GATEWAYS[attempt],
+          attempt: attempt + 1,
+          success: true,
+          duration_ms: duration,
+          cid: cid.slice(0, 12) + '...', // Privacy: partial CID
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log(`✅ IPFS SUCCESS:`, JSON.stringify(telemetryData));
         return encodeImageURL(gatewayUrl);
       }
       
     } catch (error) {
-      console.log(`❌ IPFS Gateway ${attempt + 1} failed: ${error.message}`);
+      const duration = Date.now() - startTime;
       
-      // R6: Server-side error logging (no gtag on server)
-      console.log(`🔄 Retrying with next gateway if available...`);
+      // R6 QA FIX: Detailed error telemetry
+      const errorTelemetry = {
+        gateway: IPFS_GATEWAYS[attempt],
+        attempt: attempt + 1,
+        success: false,
+        duration_ms: duration,
+        error_type: error.name,
+        error_message: error.message.slice(0, 100), // Truncate long errors
+        cid: cid.slice(0, 12) + '...',
+        timestamp: new Date().toISOString()
+      };
       
-      // Exponential backoff delay before next attempt
+      console.log(`❌ IPFS FAILURE:`, JSON.stringify(errorTelemetry));
+      
+      // R6 QA FIX: True exponential backoff with delay *= 1.5
       if (attempt < IPFS_GATEWAYS.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        const backoffDelay = 1000 * Math.pow(1.5, attempt); // 1s, 1.5s, 2.25s
+        console.log(`⏳ Exponential backoff: ${backoffDelay}ms before next attempt`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
       }
     }
   }

@@ -239,10 +239,15 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             console.log('📌 Pre-pinning tokenURI metadata...');
             const metadataUrl = `https://cryptogift-wallets.vercel.app/api/metadata/${contractAddress}/${tokenId}`;
             
-            // Fetch and cache metadata to ensure IPFS availability
+            // R2 FIX: Fetch and cache metadata with response validation
             const metadataResponse = await fetch(metadataUrl);
+            
+            if (!metadataResponse.ok) {
+              throw new Error(`Metadata fetch failed: ${metadataResponse.status} ${metadataResponse.statusText}`);
+            }
+            
             const metadata = await metadataResponse.json();
-            console.log('✅ Metadata pre-cached:', metadata);
+            console.log('✅ Metadata pre-cached with validation:', metadata);
             
             // Step 2: Request account refresh (forces NFT cache update)
             await window.ethereum.request({
