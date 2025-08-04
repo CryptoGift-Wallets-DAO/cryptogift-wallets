@@ -8,6 +8,7 @@ import { EscrowGiftStatus } from '../../../components/escrow/EscrowGiftStatus';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
+import { NotificationProvider } from '../../../components/ui/NotificationSystem';
 
 interface GiftInfo {
   creator: string;
@@ -220,7 +221,7 @@ export default function ClaimGiftPage() {
     : 'Claim your secured temporal escrow gift with your password.';
 
   return (
-    <>
+    <NotificationProvider>
       <Head>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
@@ -349,7 +350,7 @@ export default function ClaimGiftPage() {
           </div>
         </div>
       </div>
-    </>
+    </NotificationProvider>
   );
 }
 

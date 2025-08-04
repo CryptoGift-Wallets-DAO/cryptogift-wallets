@@ -131,15 +131,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`🔍 USER-AGENT: ${req.headers['user-agent'] || 'Not provided'}`);
     console.log(`🔍 REFERRER: ${req.headers.referer || 'Not provided'}`);
 
-    // Get metadata from our storage
-    const metadata = await getNFTMetadata(
-      contractAddress as string, 
-      tokenId as string
-    );
+    // Get metadata from our storage with retry mechanism for timing issues
+    let metadata = null;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`🔄 Metadata attempt ${attempt}/${maxRetries} for token ${tokenId}`);
+      
+      metadata = await getNFTMetadata(
+        contractAddress as string, 
+        tokenId as string
+      );
+      
+      if (metadata) {
+        console.log(`✅ Metadata found on attempt ${attempt}`);
+        break;
+      }
+      
+      if (attempt < maxRetries) {
+        console.log(`⏳ Metadata not ready, waiting ${retryDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
 
     if (!metadata) {
-      console.log(`❌ No metadata found for ${contractAddress}:${tokenId}`);
-      return res.status(404).json({ error: 'Metadata not found' });
+      console.log(`❌ No metadata found for ${contractAddress}:${tokenId} after ${maxRetries} attempts`);
+      return res.status(404).json({ error: 'Metadata not found after retries' });
     }
 
     // CRITICAL DEBUG: Log metadata attributes to identify 7-day differences
