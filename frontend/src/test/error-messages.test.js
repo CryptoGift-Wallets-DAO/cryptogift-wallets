@@ -35,14 +35,14 @@ describe('Error Messages for Gift States', () => {
     if (giftInfo.status === 'active' && !giftInfo.canClaim) {
       const date = new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES');
       return {
-        title: 'Gift todavía no Reclamado',
-        message: `Gift todavía no disponible. Vence el ${date}.`,
+        title: 'Gift todavía disponible...',
+        message: `Este gift está disponible para reclamar. Vence el ${date}.`,
         icon: '⏳'
       };
     }
     
     return {
-      title: 'Gift no puede ser reclamado',
+      title: 'Gift no disponible',
       message: 'Este gift no está disponible para reclamar en este momento.',
       icon: '❌'
     };
@@ -95,8 +95,8 @@ describe('Error Messages for Gift States', () => {
 
     const result = getErrorMessage(notReadyGiftInfo);
     
-    expect(result.title).toBe('Gift todavía no Reclamado');
-    expect(result.message).toContain('Gift todavía no disponible. Vence el');
+    expect(result.title).toBe('Gift todavía disponible...');
+    expect(result.message).toContain('Este gift está disponible para reclamar. Vence el');
     expect(result.message).toContain('/12/2025'); // More flexible date check
     expect(result.icon).toBe('⏳');
   });
@@ -140,7 +140,7 @@ describe('Error Messages for Gift States', () => {
       { status: 'claimed', expected: 'Gift reclamado' },
       { status: 'returned', expected: 'Gift devuelto al creador' },
       { status: 'active', isExpired: true, expected: 'Gift expirado' },
-      { status: 'active', canClaim: false, expected: 'Gift todavía no Reclamado' }
+      { status: 'active', canClaim: false, expected: 'Gift todavía disponible...' }
     ];
 
     testCases.forEach(testCase => {

@@ -14,26 +14,45 @@ const isMobileDevice = () => {
          (window.innerWidth <= 768);
 };
 
-// R1: MetaMask SDK lazy import with fallback universal link (temporary fallback until SDK installs)
-const initializeMetaMaskSDK = async () => {
+// R1: Smart deeplink handler - POST authentication only
+// No longer interferes with ThirdWeb v5 wallet connection flow
+const handlePostAuthDeeplink = async (account: any, isMobile: boolean) => {
+  if (!isMobile || typeof window === 'undefined') return;
+
   try {
-    if (isMobileDevice() && typeof window !== 'undefined') {
-      // TODO: Restore MetaMask SDK when package installation completes
-      // const { MetaMaskSDK } = await import('@metamask/sdk');
-      // For now, use fallback
-      const currentUrl = encodeURIComponent(window.location.href);
-      window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
-      return null;
+    console.log('📱 Post-auth deeplink starting...');
+    
+    // Detect wallet type via ThirdWeb
+    const walletName = account?.wallet?.getConfig?.()?.name?.toLowerCase() || 'unknown';
+    
+    // MetaMask-specific deeplink enhancement
+    if (walletName.includes('metamask') && window.ethereum?.isMetaMask) {
+      console.log('🦊 MetaMask detected - using native permissions request');
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{ eth_accounts: {} }]
+      });
     }
+    
+    // Universal success redirect (non-blocking)
+    setTimeout(() => {
+      try {
+        // Try custom scheme first
+        window.location.href = 'cryptogift://authenticated';
+        
+        // Fallback to universal link after brief delay
+        setTimeout(() => {
+          window.location.href = 'https://cryptogift-wallets.vercel.app/authenticated';
+        }, 1000);
+      } catch (e) {
+        console.log('📱 Deeplink optional, user can continue in browser');
+      }
+    }, 500);
+    
   } catch (error) {
-    console.log('📱 MetaMask SDK fallback to universal link:', error);
-    // Fallback: Universal link for mobile
-    if (isMobileDevice()) {
-      const currentUrl = encodeURIComponent(window.location.href);
-      window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
-    }
+    console.log('📱 Deeplink enhancement failed, continuing normally:', error);
+    // Non-blocking - user can continue in browser
   }
-  return window.ethereum;
 };
 
 interface ConnectAndAuthButtonProps {
@@ -81,32 +100,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   }, [account?.address, onAuthChange]);
 
   const handleAuthenticate = async () => {
-    // R1 FIX: USER-ACTIVATION FIRST-LINE - provider.request as ABSOLUTE first instruction
-    const provider = await initializeMetaMaskSDK();
+    // ✅ FIX CRÍTICO: No más redirecciones prematuras que rompan user-activation
+    // ThirdWeb v5 ya maneja todas las wallets correctamente
     
-    if (provider) {
-      try {
-        // Get current chain ID first to avoid unnecessary calls
-        const currentChainId = await provider.request({ method: 'eth_chainId' });
-        
-        // Only add Base Sepolia if not already on it (84532 = 0x14a34)
-        if (currentChainId !== '0x14a34') {
-          await provider.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: '0x14a34', // 84532 in hex (Base Sepolia)
-              chainName: 'Base Sepolia',
-              nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-              rpcUrls: ['https://sepolia.base.org'],
-              blockExplorerUrls: ['https://sepolia.basescan.org']
-            }]
-          });
-        }
-      } catch (addChainError) {
-        console.log('⚠️ Chain operation failed:', addChainError);
-      }
-    }
-
     if (!account?.address) {
       setAuthError('No wallet connected');
       return;
@@ -123,7 +119,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         throw new Error('Wallet does not support message signing');
       }
 
-      // Perform SIWE authentication
+      // ✅ DIRECTO AL SIWE SIN REDIRECCIONES
       const authState = await authenticateWithSiwe(account.address, account);
       
       if (authState.isAuthenticated) {
@@ -132,32 +128,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         onAuthChange?.(true, account.address);
         console.log('✅ Authentication successful!');
         
-        // R1: MOBILE DEEPLINK - Enhanced with MetaMask SDK detection
-        if (isMobile && typeof window !== 'undefined') {
-          console.log('📱 Mobile authentication successful - triggering enhanced deeplink...');
-          
-          setTimeout(async () => {
-            try {
-              // Method 1: Try MetaMask SDK deeplink if available
-              if (window.ethereum?.isMetaMask && window.ethereum.request) {
-                console.log('🦊 Using MetaMask native deeplink...');
-                // Trigger MetaMask mobile app return
-                await window.ethereum.request({
-                  method: 'wallet_requestPermissions',
-                  params: [{ eth_accounts: {} }]
-                });
-              }
-              
-              // Method 2: Custom app scheme (if app is installed)
-              window.location.href = 'cryptogift://authenticated';
-              
-            } catch (e) {
-              console.log('📱 Native methods failed, using universal link fallback...');
-              // Method 3: Universal link fallback
-              window.location.href = 'https://cryptogift-wallets.vercel.app/authenticated';
-            }
-          }, 1000); // Small delay to ensure auth state is saved
-        }
+        // ✅ DEEPLINK INTELIGENTE SOLO DESPUÉS DEL ÉXITO
+        await handlePostAuthDeeplink(account, isMobile);
+        
       } else {
         throw new Error('Authentication failed');
       }

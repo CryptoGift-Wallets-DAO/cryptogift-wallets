@@ -603,18 +603,18 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳' : '❌'}
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {giftInfo?.status === 'claimed' ? 'Gift reclamado' :
-               giftInfo?.status === 'returned' ? 'Gift devuelto al creador' :
-               giftInfo?.isExpired ? 'Gift expirado' :
-               giftInfo?.status === 'active' && !giftInfo?.canClaim ? 'Gift todavía no Reclamado' :
-               'Gift no puede ser reclamado'}
+              {giftInfo?.status === 'claimed' ? '✅ Gift reclamado' :
+               giftInfo?.status === 'returned' ? '↩️ Gift devuelto al creador' :
+               giftInfo?.isExpired ? '❌ Gift expirado' :
+               giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳ Gift todavía disponible...' :
+               '❌ Gift no disponible'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente.' :
                giftInfo?.status === 'returned' ? 'Este gift ha sido devuelto a su creador.' :
                giftInfo?.isExpired ? 'Este gift ha expirado y ya no puede ser reclamado.' :
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? 
-                 `Gift todavía no disponible. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}.` :
+                 `Este gift está disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}.` :
                'Este gift no está disponible para reclamar en este momento.'}
             </p>
           </div>
