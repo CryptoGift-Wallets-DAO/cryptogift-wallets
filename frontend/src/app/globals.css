@@ -15,36 +15,27 @@
 	font-variation-settings: 'slnt' 0;
 }
 
-/* UNIVERSAL 90% SCALE SYSTEM - Compatible with all browsers */
-/* Apply 90% scale to entire page for optimal proportions */
+/* UNIVERSAL 90% ZOOM SYSTEM - Proper CSS zoom for optimal proportions */
+/* Uses CSS zoom property that doesn't break positioned elements like modals/panels */
 
-body {
-	transform: scale(0.9);
-	transform-origin: 0 0;
-	width: 111.11%; /* Compensate for 90% scale: 100/0.9 = 111.11% */
-	height: 111.11%;
-	overflow-x: auto;
-}
-
-/* Ensure viewport adjusts correctly */
-html {
-	overflow-x: auto;
-}
-
-/* Fine-tune for different screen sizes */
+/* Mobile: 92% zoom for enhanced readability */
 @media (max-width: 414px) {
-	body {
-		transform: scale(0.92); /* Slightly larger on mobile for readability */
-		width: 108.7%; /* 100/0.92 */
-		height: 108.7%;
+	:root {
+		zoom: 0.92;
 	}
 }
 
+/* Tablet/General: 90% zoom - primary fix for optimal proportions */ 
+@media (min-width: 415px) and (max-width: 1439px) {
+	:root {
+		zoom: 0.9;
+	}
+}
+
+/* Desktop: 88% zoom for large screens */
 @media (min-width: 1440px) {
-	body {
-		transform: scale(0.88); /* Slightly smaller on large screens */
-		width: 113.64%; /* 100/0.88 */
-		height: 113.64%;
+	:root {
+		zoom: 0.88;
 	}
 }
 
