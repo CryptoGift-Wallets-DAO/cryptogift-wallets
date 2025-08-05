@@ -78,25 +78,55 @@ export function NFTImageModal({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Handle mobile swipe down to close
+  // Enhanced mobile swipe down to close - Less sensitive, more intentional
+  const [touchStartY, setTouchStartY] = useState(0);
+  const [touchStartTime, setTouchStartTime] = useState(0);
+  const [minDragDistance, setMinDragDistance] = useState(0);
+  
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!isMobile) return;
-    setIsDragging(true);
+    
+    const touch = e.touches[0];
+    setTouchStartY(touch.clientY);
+    setTouchStartTime(Date.now());
+    setMinDragDistance(0);
     setDragY(0);
+    
+    // Only start dragging if touch begins in the top 25% of the screen
+    const screenHeight = window.innerHeight;
+    const touchInTopArea = touch.clientY < screenHeight * 0.25;
+    
+    if (touchInTopArea) {
+      setIsDragging(true);
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isMobile || !isDragging) return;
     
     const touch = e.touches[0];
-    const startY = 50; // Start tracking from header area
-    const deltaY = Math.max(0, touch.clientY - startY);
+    const currentY = touch.clientY;
+    const deltaY = currentY - touchStartY;
+    const timeDiff = Date.now() - touchStartTime;
     
-    if (deltaY > 0) {
-      setDragY(deltaY);
-      // Add some resistance - slow down the drag after 100px
-      const resistedY = deltaY > 100 ? 100 + (deltaY - 100) * 0.3 : deltaY;
-      setDragY(resistedY);
+    // Only register downward movement with minimum threshold
+    if (deltaY > 20) { // Minimum 20px drag to start registering
+      const adjustedDelta = deltaY - 20; // Subtract the threshold
+      
+      // Calculate velocity (pixels per millisecond)
+      const velocity = timeDiff > 0 ? adjustedDelta / timeDiff : 0;
+      
+      // Only register intentional drag (not accidental taps)
+      if (velocity > 0.1 || adjustedDelta > 30) {
+        setMinDragDistance(Math.max(minDragDistance, adjustedDelta));
+        
+        // Add progressive resistance
+        const resistedY = adjustedDelta > 80 
+          ? 80 + (adjustedDelta - 80) * 0.4 
+          : adjustedDelta;
+        
+        setDragY(resistedY);
+      }
     }
   };
 
@@ -104,14 +134,24 @@ export function NFTImageModal({
     if (!isMobile || !isDragging) return;
     
     setIsDragging(false);
+    const timeDiff = Date.now() - touchStartTime;
+    const velocity = timeDiff > 0 ? minDragDistance / timeDiff : 0;
     
-    // Close if dragged down more than 120px
-    if (dragY > 120) {
+    // Close only with intentional swipe: good distance AND velocity
+    const shouldClose = (
+      minDragDistance > 100 && // Minimum distance
+      velocity > 0.3 // Minimum velocity (intentional swipe)
+    ) || minDragDistance > 150; // OR very long drag (even if slow)
+    
+    if (shouldClose) {
       onClose();
     }
     
-    // Reset drag position
+    // Reset all states
     setDragY(0);
+    setTouchStartY(0);
+    setTouchStartTime(0);
+    setMinDragDistance(0);
   };
 
   // Handle keyboard navigation
@@ -176,21 +216,23 @@ export function NFTImageModal({
                 <div className="text-center mt-2">
                   <div 
                     className={`w-8 h-1 rounded-full mx-auto transition-all duration-200 ${
-                      isDragging && dragY > 50 
+                      isDragging && minDragDistance > 60 
                         ? 'bg-green-500 w-12 h-2' 
+                        : isDragging && minDragDistance > 20
+                        ? 'bg-yellow-500 w-10 h-1.5'
                         : 'bg-slate-300 dark:bg-slate-600'
                     }`}
                   ></div>
                   <p className={`text-xs mt-1 transition-colors duration-200 ${
-                    isDragging && dragY > 50
+                    isDragging && minDragDistance > 60
                       ? 'text-green-600 dark:text-green-400 font-medium'
                       : 'text-slate-500 dark:text-slate-400'
                   }`}>
-                    {isDragging && dragY > 120 
+                    {isDragging && minDragDistance > 100 
                       ? '¡Suelta para cerrar!' 
-                      : isDragging && dragY > 50
+                      : isDragging && minDragDistance > 30
                       ? 'Sigue deslizando...'
-                      : 'Desliza hacia abajo para cerrar'
+                      : 'Desliza DESDE ARRIBA hacia abajo para cerrar'
                     }
                   </p>
                 </div>
@@ -205,7 +247,7 @@ export function NFTImageModal({
                     alt={name}
                     width={400}
                     height={400}
-                    className="w-full max-h-[50vh] object-contain rounded-lg"
+                    className="w-full h-auto object-contain rounded-lg max-h-[60vh]"
                     tokenId={tokenId}
                     fit="contain"
                     priority={true}
@@ -351,8 +393,8 @@ export function NFTImageModal({
                       height={isWideImage ? 450 : 600} // Proportional height for wide images
                       className={`object-contain rounded-lg shadow-lg ${
                         isWideImage 
-                          ? 'max-w-full max-h-[50vh]' // Limit height for wide images
-                          : 'max-w-full max-h-[70vh]' // Standard sizing for others
+                          ? 'w-full h-auto max-h-[60vh]' // Better proportions for wide images
+                          : 'w-full h-auto max-h-[80vh]' // Larger viewing area for standard images
                       }`}
                       tokenId={tokenId}
                       fit="contain"

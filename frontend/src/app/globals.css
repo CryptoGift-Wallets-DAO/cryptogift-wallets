@@ -15,51 +15,36 @@
 	font-variation-settings: 'slnt' 0;
 }
 
-/* R5 QA FIX: Responsive zoom system */
-/* Mobile ≤414px: zoom 0.9 for better proportions */
+/* UNIVERSAL 90% SCALE SYSTEM - Compatible with all browsers */
+/* Apply 90% scale to entire page for optimal proportions */
+
+body {
+	transform: scale(0.9);
+	transform-origin: 0 0;
+	width: 111.11%; /* Compensate for 90% scale: 100/0.9 = 111.11% */
+	height: 111.11%;
+	overflow-x: auto;
+}
+
+/* Ensure viewport adjusts correctly */
+html {
+	overflow-x: auto;
+}
+
+/* Fine-tune for different screen sizes */
 @media (max-width: 414px) {
-	:root {
-		zoom: 0.9;
+	body {
+		transform: scale(0.92); /* Slightly larger on mobile for readability */
+		width: 108.7%; /* 100/0.92 */
+		height: 108.7%;
 	}
 }
 
-/* Desktop ≥1440px: zoom 0.9 + compensation scale 1.11x */
 @media (min-width: 1440px) {
-	:root {
-		zoom: 0.9;
-	}
-	
-	.zoom-comp,
-	header,
-	.sidebar, 
-	.card,
-	.btn,
-	.button,
-	.panel,
-	.modal,
-	.navbar,
-	.nav-item,
-	.menu-item,
-	[class*="card"],
-	[class*="panel"],
-	[class*="container"],
-	[role="button"],
-	input,
-	select,
-	textarea,
-	.content,
-	.main-content,
-	article,
-	section {
-		scale: 1.11; /* Compensates 0.9 zoom */
-		transform-origin: center;
-	}
-}
-
-/* Tablet/Medium: 90% zoom for optimal proportions */
-@media (min-width: 415px) and (max-width: 1439px) {
-	:root {
-		zoom: 0.9; /* 90% looks perfect on all devices */
+	body {
+		transform: scale(0.88); /* Slightly smaller on large screens */
+		width: 113.64%; /* 100/0.88 */
+		height: 113.64%;
 	}
 }
 
