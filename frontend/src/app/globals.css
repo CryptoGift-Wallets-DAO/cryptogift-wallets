@@ -20,21 +20,21 @@
 
 /* Mobile: 92% zoom for enhanced readability */
 @media (max-width: 414px) {
-	:root {
+	html {
 		zoom: 0.92;
 	}
 }
 
 /* Tablet/General: 90% zoom - primary fix for optimal proportions */ 
 @media (min-width: 415px) and (max-width: 1439px) {
-	:root {
+	html {
 		zoom: 0.9;
 	}
 }
 
 /* Desktop: 88% zoom for large screens */
 @media (min-width: 1440px) {
-	:root {
+	html {
 		zoom: 0.88;
 	}
 }

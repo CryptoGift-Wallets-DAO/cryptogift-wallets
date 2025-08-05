@@ -247,7 +247,7 @@ export function NFTImageModal({
                     alt={name}
                     width={400}
                     height={400}
-                    className="w-full h-auto object-contain rounded-lg max-h-[60vh]"
+                    className="w-full max-h-[50vh] object-contain rounded-lg"
                     tokenId={tokenId}
                     fit="contain"
                     priority={true}
@@ -393,8 +393,8 @@ export function NFTImageModal({
                       height={isWideImage ? 450 : 600} // Proportional height for wide images
                       className={`object-contain rounded-lg shadow-lg ${
                         isWideImage 
-                          ? 'w-full h-auto max-h-[60vh]' // Better proportions for wide images
-                          : 'w-full h-auto max-h-[80vh]' // Larger viewing area for standard images
+                          ? 'max-w-full max-h-[50vh]' // Limit height for wide images
+                          : 'max-w-full max-h-[70vh]' // Standard sizing for others
                       }`}
                       tokenId={tokenId}
                       fit="contain"

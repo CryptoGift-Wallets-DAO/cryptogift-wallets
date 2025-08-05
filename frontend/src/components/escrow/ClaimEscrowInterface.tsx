@@ -610,12 +610,15 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                '❌ Gift no disponible'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente.' :
-               giftInfo?.status === 'returned' ? 'Este gift ha sido devuelto a su creador.' :
-               giftInfo?.isExpired ? 'Este gift ha expirado y ya no puede ser reclamado.' :
+              {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente por otro usuario.' :
+               giftInfo?.status === 'returned' ? 'El tiempo de reclamación expiró y el gift fue devuelto automáticamente a su creador.' :
+               giftInfo?.isExpired ? 'El tiempo límite para reclamar este gift ha expirado. Ya no puede ser reclamado.' :
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? 
-                 `Este gift está disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}.` :
-               'Este gift no está disponible para reclamar en este momento.'}
+                 `Este gift está activo y disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')} a las ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` :
+               !giftInfo ? 'No se pudo cargar la información del gift. Verifica el enlace o intenta más tarde.' :
+               giftInfo?.status === 'pending' ? 'Este gift está siendo procesado. Espera unos momentos e intenta nuevamente.' :
+               giftInfo?.status === 'cancelled' ? 'Este gift fue cancelado por su creador y ya no está disponible.' :
+               'Este gift tiene un estado desconocido. Contacta al soporte técnico si el problema persiste.'}
             </p>
           </div>
         )}
