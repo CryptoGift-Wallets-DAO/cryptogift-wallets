@@ -26,7 +26,7 @@ interface ClaimEscrowInterfaceProps {
     creator: string;
     nftContract: string;
     expirationTime: number;
-    status: 'active' | 'expired' | 'claimed' | 'returned';
+    status: 'active' | 'expired' | 'claimed' | 'returned' | 'pending' | 'cancelled';
     timeRemaining?: string;
     canClaim: boolean;
     isExpired: boolean;
@@ -607,7 +607,8 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                giftInfo?.status === 'returned' ? '↩️ Gift devuelto al creador' :
                giftInfo?.isExpired ? '❌ Gift expirado' :
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳ Gift todavía disponible...' :
-               '❌ Gift no disponible'}
+               giftInfo?.status === 'active' ? '✅ Gift disponible para reclamar' : 
+               '❌ Gift expirado'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente por otro usuario.' :
@@ -618,7 +619,8 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                !giftInfo ? 'No se pudo cargar la información del gift. Verifica el enlace o intenta más tarde.' :
                giftInfo?.status === 'pending' ? 'Este gift está siendo procesado. Espera unos momentos e intenta nuevamente.' :
                giftInfo?.status === 'cancelled' ? 'Este gift fue cancelado por su creador y ya no está disponible.' :
-               'Este gift tiene un estado desconocido. Contacta al soporte técnico si el problema persiste.'}
+               giftInfo?.status === 'active' ? `Este gift está disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')} a las ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` :
+               'Este gift ha expirado y ya no puede ser reclamado.'}
             </p>
           </div>
         )}

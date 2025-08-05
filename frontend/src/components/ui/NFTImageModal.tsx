@@ -247,7 +247,7 @@ export function NFTImageModal({
                     alt={name}
                     width={400}
                     height={400}
-                    className="w-full max-h-[50vh] object-contain rounded-lg"
+                    className="w-full max-w-full h-auto object-contain rounded-lg"
                     tokenId={tokenId}
                     fit="contain"
                     priority={true}
@@ -354,13 +354,9 @@ export function NFTImageModal({
                   }
                 }}
               >
-                {/* Modal Content - Adaptive max width */}
+                {/* Modal Content - Standard layout */}
                 <div 
-                  className={`relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden ${
-                    isWideImage 
-                      ? 'max-w-5xl w-full' // Wider container for wide images in vertical layout
-                      : 'max-w-6xl' // Standard width for horizontal layout
-                  }`}
+                  className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden max-w-6xl"
                   onClick={(e) => e.stopPropagation()}
                 >
               {/* Close Button */}
@@ -373,58 +369,123 @@ export function NFTImageModal({
                 </svg>
               </button>
               
-              {/* Content Layout - ADAPTIVE based on image aspect ratio */}
+              {/* Content Layout - ADAPTIVE: horizontal for vertical images, vertical for wide images */}
               <div className={`flex min-h-[300px] max-h-[90vh] ${
-                isWideImage 
-                  ? 'flex-col' // Vertical layout for wide images (image top, info bottom)
-                  : 'flex-col lg:flex-row' // Horizontal layout for square/portrait images
+                imageAspectRatio !== null && imageAspectRatio > 1.0
+                  ? 'flex-col' // Vista VERTICAL: imagen arriba, info abajo (para horizontales)
+                  : 'flex-col lg:flex-row' // Vista LATERAL: imagen izq, info der (para verticales/cuadradas)
               }`}>
-                {/* Image Section - Adaptive sizing */}
-                <div className={`flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 ${
-                  isWideImage 
-                    ? 'w-full' // Full width for wide images in vertical layout
-                    : 'flex-1' // Flexible for square/portrait in horizontal layout
-                }`}>
-                  <div className="relative max-w-full max-h-full">
-                    <NFTImage
-                      src={image}
-                      alt={name}
-                      width={isWideImage ? 800 : 600} // Larger width for wide images
-                      height={isWideImage ? 450 : 600} // Proportional height for wide images
-                      className={`object-contain rounded-lg shadow-lg ${
-                        isWideImage 
-                          ? 'max-w-full max-h-[50vh]' // Limit height for wide images
-                          : 'max-w-full max-h-[70vh]' // Standard sizing for others
-                      }`}
-                      tokenId={tokenId}
-                      fit="contain"
-                      priority={true}
-                    />
-                    
-                    {/* Image Border Effect */}
-                    <div className="absolute inset-0 rounded-lg border-2 border-gradient-to-r from-blue-400 via-purple-400 to-blue-400 opacity-30" />
+                {/* Image Section - ADAPTIVE based on image orientation */}
+                <div className="flex items-center justify-center p-1 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900"
+                     style={{
+                       // LÓGICA DUAL: 
+                       // - Imágenes verticales/cuadradas (≤1.0): Vista lateral con ancho adaptativo
+                       // - Imágenes horizontales (>1.0): Vista vertical con ancho completo
+                       ...(imageAspectRatio !== null && imageAspectRatio > 1.0
+                         ? {
+                             // Vista VERTICAL para horizontales: ancho completo
+                             width: '100%',
+                             height: '60vh' // Altura limitada para dejar espacio a info abajo
+                           }
+                         : {
+                             // Vista LATERAL para verticales: ancho adaptativo perfecto
+                             width: imageAspectRatio !== null ? `${imageAspectRatio * 90}vh` : 'auto',
+                             maxWidth: '65vw',
+                             flexShrink: 0
+                           }
+                       )
+                     }}>
+                  <div className="relative max-w-full max-h-full flex items-center justify-center">
+                    <div style={{
+                      // LÓGICA DUAL para tamaño de imagen:
+                      ...(imageAspectRatio !== null && imageAspectRatio > 1.0
+                        ? {
+                            // Vista VERTICAL para horizontales: altura controlada
+                            height: '58vh',
+                            width: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }
+                        : {
+                            // Vista LATERAL para verticales: altura completa (PERFECTA)
+                            height: '90vh',
+                            width: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }
+                      )
+                    }}>
+                      <NFTImage
+                        src={image}
+                        alt={name}
+                        width={600}
+                        height={600}
+                        className="object-contain rounded-lg shadow-lg max-w-full max-h-full"
+                        tokenId={tokenId}
+                        fit="contain"
+                        priority={true}
+                      />
+                    </div>
                   </div>
                 </div>
                 
-                {/* Metadata Section - Adaptive positioning */}
-                <div className={`p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 ${
-                  isWideImage 
-                    ? 'w-full border-t' // Full width below image for wide images
-                    : 'lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l' // Sidebar for square/portrait
-                }`}>
-                  <div className="space-y-4">
-                    {/* Title */}
-                    <div>
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                        {name}
-                      </h2>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Token ID: {tokenId}
-                      </p>
+                {/* Metadata Section - ADAPTIVE positioning with depth effect */}
+                <div className={`p-6 border-slate-200 dark:border-slate-700 ${
+                  imageAspectRatio !== null && imageAspectRatio > 1.0
+                    ? 'w-full border-t shadow-lg bg-blue-50 dark:bg-blue-900/20' // Vista VERTICAL: info abajo con fondo azul para debug
+                    : 'lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l shadow-xl bg-white dark:bg-slate-900' // Vista LATERAL: sidebar normal
+                }`}
+                style={{
+                  // Efecto de profundidad que separa la info de la imagen
+                  ...(imageAspectRatio !== null && imageAspectRatio <= 1.0 && {
+                    // Solo en vista lateral: efecto de plano anterior
+                    boxShadow: '-10px 0 25px -5px rgba(0, 0, 0, 0.1), -4px 0 10px -2px rgba(0, 0, 0, 0.05)',
+                    zIndex: 10,
+                    position: 'relative'
+                  })
+                }}>
+                  <div className={`${
+                    imageAspectRatio !== null && imageAspectRatio > 1.0
+                      ? 'space-y-3' // Vista horizontal: espaciado compacto
+                      : 'space-y-4' // Vista lateral: espaciado normal
+                  }`}>
+                    {/* Title - Compact for horizontal */}
+                    <div className={imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'grid grid-cols-2 gap-4' : ''}>
+                      <div>
+                        <h2 className={`font-bold text-slate-900 dark:text-white mb-1 ${
+                          imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-lg' : 'text-2xl'
+                        }`}>
+                          {name}
+                        </h2>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                            Token ID: {tokenId}
+                          </span>
+                          <button 
+                            onClick={() => navigator.clipboard?.writeText(tokenId)}
+                            className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                          >
+                            📋
+                          </button>
+                        </div>
+                      </div>
                       {contractAddress && (
-                        <p className="text-xs text-slate-500 dark:text-slate-500 font-mono mt-1">
-                          {contractAddress.slice(0, 8)}...{contractAddress.slice(-6)}
-                        </p>
+                        <div className={imageAspectRatio !== null && imageAspectRatio > 1.0 ? '' : 'mt-2'}>
+                          <p className="text-xs text-slate-500 dark:text-slate-500 mb-1">Contract Address:</p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-slate-700 dark:text-slate-300">
+                              {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+                            </span>
+                            <button 
+                              onClick={() => navigator.clipboard?.writeText(contractAddress)}
+                              className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                            >
+                              📋
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                     
@@ -440,7 +501,72 @@ export function NFTImageModal({
                       </div>
                     )}
                     
-                    {/* Attributes */}
+                    {/* Core NFT Info - Responsive layout */}
+                    <div>
+                      <h3 className={`font-medium text-slate-900 dark:text-white mb-2 ${
+                        imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-sm' : 'text-sm'
+                      }`}>
+                        Información NFT
+                      </h3>
+                      <div className={`${
+                        imageAspectRatio !== null && imageAspectRatio > 1.0 
+                          ? 'grid grid-cols-2 gap-2' // Vista horizontal: 2 columnas
+                          : 'space-y-2' // Vista lateral: vertical
+                      }`}>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                            Wallet Type
+                          </span>
+                          <span className={`font-semibold text-slate-900 dark:text-white ${
+                            imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
+                          }`}>
+                            ERC-6551 TBA
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                            Network
+                          </span>
+                          <span className={`font-semibold text-slate-900 dark:text-white ${
+                            imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
+                          }`}>
+                            Base Sepolia
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                            Status
+                          </span>
+                          <span className={`font-semibold text-green-600 dark:text-green-400 ${
+                            imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
+                          }`}>
+                            ACTIVE
+                          </span>
+                        </div>
+                        {contractAddress && (
+                          <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg col-span-full">
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                              Creator
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-semibold text-slate-900 dark:text-white font-mono ${
+                                imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
+                              }`}>
+                                {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+                              </span>
+                              <button 
+                                onClick={() => navigator.clipboard?.writeText(contractAddress)}
+                                className="text-xs bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                              >
+                                📋
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Custom Attributes from metadata */}
                     {metadata?.attributes && metadata.attributes.length > 0 && (
                       <div>
                         <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-3">

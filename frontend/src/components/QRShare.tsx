@@ -18,14 +18,50 @@ export const QRShare: React.FC<QRShareProps> = ({ tokenId, shareUrl, qrCode, onC
   const [copyType, setCopyType] = useState<'url' | 'message' | null>(null);
 
   const copyToClipboard = (text: string, type: 'url' | 'message') => {
-    navigator.clipboard.writeText(text).then(() => {
+    // Check if clipboard API is available (HTTPS required)
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setCopyType(type);
+        setTimeout(() => {
+          setCopied(false);
+          setCopyType(null);
+        }, 2000);
+      }).catch((err) => {
+        console.warn('Clipboard API failed, using fallback:', err);
+        fallbackCopyToClipboard(text, type);
+      });
+    } else {
+      // Fallback for non-HTTPS or unsupported browsers
+      fallbackCopyToClipboard(text, type);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text: string, type: 'url' | 'message') => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      document.execCommand('copy');
       setCopied(true);
       setCopyType(type);
       setTimeout(() => {
         setCopied(false);
         setCopyType(null);
       }, 2000);
-    });
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      // Show manual copy instruction
+      alert(`Copia manualmente: ${text}`);
+    } finally {
+      document.body.removeChild(textArea);
+    }
   };
 
   const shareMessage = `🎁 ¡Te he enviado un regalo cripto especial!

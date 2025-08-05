@@ -1,0 +1,132 @@
+name: 📊 QA Report (Informative Only)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  qa-informative-report:
+    name: 📋 Quality Assurance Informational Report
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 📦 Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+        
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        cache-dependency-path: pnpm-lock.yaml
+
+    - name: 📦 Install Dependencies
+      run: |
+        pnpm install --frozen-lockfile
+        cd frontend && pnpm install
+      continue-on-error: true
+
+    - name: 🔍 TypeScript Analysis (Non-blocking)
+      run: |
+        cd frontend
+        echo "## 🔍 TypeScript Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if pnpm run type-check 2>&1 | tee typescript-output.txt; then
+          echo "✅ **TypeScript compilation successful**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **TypeScript errors found:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -20 typescript-output.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true
+
+    - name: 🧹 ESLint Analysis (Non-blocking)
+      run: |
+        cd frontend
+        echo "## 🧹 ESLint Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if pnpm run lint 2>&1 | tee eslint-output.txt; then
+          echo "✅ **ESLint validation successful**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **ESLint issues found:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -30 eslint-output.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true
+
+    - name: 🧪 Test Suite Analysis (Non-blocking)
+      run: |
+        cd frontend
+        echo "## 🧪 Test Suite Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if pnpm run test:coverage 2>&1 | tee test-output.txt; then
+          echo "✅ **Tests passed with coverage:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          grep -A 10 "All files" test-output.txt >> $GITHUB_STEP_SUMMARY || echo "Coverage details not found"
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Test failures detected:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -20 test-output.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true
+
+    - name: 🏗️ Build Analysis (Non-blocking)
+      run: |
+        cd frontend
+        echo "## 🏗️ Production Build Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if timeout 300 pnpm run build 2>&1 | tee build-output.txt; then
+          echo "✅ **Production build successful**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Build errors detected:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -30 build-output.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true
+
+    - name: 📊 Generate Final QA Report
+      run: |
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "---" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎯 QA Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📅 **Report Generated:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "🌿 **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "⚠️ **Note:** This is an informational report only." >> $GITHUB_STEP_SUMMARY
+        echo "Issues found do not block deployment but should be addressed." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎯 **Next Steps:**" >> $GITHUB_STEP_SUMMARY
+        echo "1. Review any errors or warnings above" >> $GITHUB_STEP_SUMMARY
+        echo "2. Fix critical issues in next iteration" >> $GITHUB_STEP_SUMMARY
+        echo "3. Deploy continues normally" >> $GITHUB_STEP_SUMMARY
+      continue-on-error: true
+
+    # Always succeed - never block deployment
+    - name: ✅ Report Complete
+      run: |
+        echo "🎉 QA Report generated successfully!"
+        echo "📊 Check the Summary tab for detailed results"
+        exit 0

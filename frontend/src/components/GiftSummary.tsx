@@ -55,13 +55,13 @@ export const GiftSummary: React.FC<GiftSummaryProps> = ({
       {/* NFT Preview */}
       <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6">
         <div className="flex flex-col md:flex-row gap-6 items-center">
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Image
               src={data.filteredImageUrl || data.imageUrl}
               alt="NFT Preview"
-              width={192}
-              height={192}
-              className="w-48 h-48 object-contain rounded-2xl shadow-lg bg-gray-50 dark:bg-gray-800"
+              width={300}
+              height={300}
+              className="max-w-48 max-h-48 w-auto h-auto object-contain rounded-2xl shadow-lg bg-gray-50 dark:bg-gray-800"
             />
             <div className="absolute -bottom-2 -right-2 bg-blue-500 dark:bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
               NFT #{Date.now().toString().slice(-4)}

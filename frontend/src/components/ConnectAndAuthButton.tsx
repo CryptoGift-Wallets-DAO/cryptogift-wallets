@@ -34,20 +34,8 @@ const handlePostAuthDeeplink = async (account: any, isMobile: boolean) => {
       });
     }
     
-    // Universal success redirect (non-blocking)
-    setTimeout(() => {
-      try {
-        // Try custom scheme first
-        window.location.href = 'cryptogift://authenticated';
-        
-        // Fallback to universal link after brief delay
-        setTimeout(() => {
-          window.location.href = 'https://cryptogift-wallets.vercel.app/authenticated';
-        }, 1000);
-      } catch (e) {
-        console.log('📱 Deeplink optional, user can continue in browser');
-      }
-    }, 500);
+    // Deeplink success indication (no redirect)
+    console.log('📱 Mobile authentication completed - staying on current page');
     
   } catch (error) {
     console.log('📱 Deeplink enhancement failed, continuing normally:', error);
@@ -72,6 +60,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Check if mobile device
   useEffect(() => {
@@ -125,8 +114,12 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
       if (authState.isAuthenticated) {
         setIsAuthenticated(true);
         setAuthError(null);
+        setShowSuccessMessage(true);
         onAuthChange?.(true, account.address);
         console.log('✅ Authentication successful!');
+        
+        // Hide success message after 4 seconds
+        setTimeout(() => setShowSuccessMessage(false), 4000);
         
         // ✅ DEEPLINK INTELIGENTE SOLO DESPUÉS DEL ÉXITO
         await handlePostAuthDeeplink(account, isMobile);
@@ -301,8 +294,25 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           </div>
         </div>
 
+        {/* INLINE SUCCESS MESSAGE - No more /authenticated interruptions! */}
+        {showSuccessMessage && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 max-w-sm animate-fade-in">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="font-medium text-green-800 dark:text-green-300">¡Autenticación Exitosa! 🎉</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">Puedes continuar con tu operación</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Security status info when authenticated */}
-        {!isAuthenticating && showAuthStatus && (
+        {!isAuthenticating && !showSuccessMessage && showAuthStatus && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 max-w-sm">
             <div className="flex items-start space-x-2">
               <div className="text-green-500 dark:text-green-400 text-lg">🛡️</div>

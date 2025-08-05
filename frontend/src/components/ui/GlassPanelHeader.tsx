@@ -51,7 +51,7 @@ export function GlassPanelHeader({
   const blurConfig = {
     subtle: {
       backdropFilter: 'blur(8px) saturate(120%)',
-      webkitBackdropFilter: 'blur(8px) saturate(120%)',
+      WebkitBackdropFilter: 'blur(8px) saturate(120%)',
       background: theme === 'dark' 
         ? 'rgba(15, 23, 42, 0.7)' 
         : 'rgba(255, 255, 255, 0.7)',
@@ -61,7 +61,7 @@ export function GlassPanelHeader({
     },
     medium: {
       backdropFilter: 'blur(16px) saturate(150%) contrast(110%)',
-      webkitBackdropFilter: 'blur(16px) saturate(150%) contrast(110%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(150%) contrast(110%)',
       background: theme === 'dark'
         ? 'rgba(15, 23, 42, 0.8)'
         : 'rgba(255, 255, 255, 0.8)',
@@ -71,7 +71,7 @@ export function GlassPanelHeader({
     },
     strong: {
       backdropFilter: 'blur(24px) saturate(180%) contrast(120%) brightness(110%)',
-      webkitBackdropFilter: 'blur(24px) saturate(180%) contrast(120%) brightness(110%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%) contrast(120%) brightness(110%)',
       background: theme === 'dark'
         ? 'rgba(15, 23, 42, 0.85)'
         : 'rgba(255, 255, 255, 0.85)',
@@ -81,7 +81,7 @@ export function GlassPanelHeader({
     },
     ultra: {
       backdropFilter: 'blur(32px) saturate(200%) contrast(130%) brightness(115%)',
-      webkitBackdropFilter: 'blur(32px) saturate(200%) contrast(130%) brightness(115%)',
+      WebkitBackdropFilter: 'blur(32px) saturate(200%) contrast(130%) brightness(115%)',
       background: theme === 'dark'
         ? 'rgba(15, 23, 42, 0.9)'
         : 'rgba(255, 255, 255, 0.9)',

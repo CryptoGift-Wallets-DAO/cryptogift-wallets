@@ -41,9 +41,19 @@ describe('Error Messages for Gift States', () => {
       };
     }
     
+    // FIXED: No more generic message! Always specific based on status
+    if (giftInfo.status === 'active') {
+      const date = new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES');
+      return {
+        title: 'Gift disponible para reclamar',
+        message: `Este gift está disponible para reclamar. Vence el ${date}.`,
+        icon: '✅'
+      };
+    }
+    
     return {
-      title: 'Gift no disponible',
-      message: 'Este gift no está disponible para reclamar en este momento.',
+      title: 'Gift expirado',
+      message: 'Este gift ha expirado y ya no puede ser reclamado.',
       icon: '❌'
     };
   };
