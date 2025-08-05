@@ -16,17 +16,17 @@
 }
 
 /* R5 QA FIX: Responsive zoom system */
-/* Mobile ≤414px: zoom 0.88 only */
+/* Mobile ≤414px: zoom 0.9 for better proportions */
 @media (max-width: 414px) {
 	:root {
-		zoom: 0.88;
+		zoom: 0.9;
 	}
 }
 
-/* Desktop ≥1440px: zoom 0.88 + compensation scale 1.12x */
+/* Desktop ≥1440px: zoom 0.9 + compensation scale 1.11x */
 @media (min-width: 1440px) {
 	:root {
-		zoom: 0.88;
+		zoom: 0.9;
 	}
 	
 	.zoom-comp,
@@ -51,15 +51,15 @@
 	.main-content,
 	article,
 	section {
-		scale: 1.12; /* Compensates 0.88 zoom */
+		scale: 1.11; /* Compensates 0.9 zoom */
 		transform-origin: center;
 	}
 }
 
-/* Tablet/Medium: No zoom (natural size) */
+/* Tablet/Medium: 90% zoom for optimal proportions */
 @media (min-width: 415px) and (max-width: 1439px) {
 	:root {
-		/* No zoom - natural size */
+		zoom: 0.9; /* 90% looks perfect on all devices */
 	}
 }
 
