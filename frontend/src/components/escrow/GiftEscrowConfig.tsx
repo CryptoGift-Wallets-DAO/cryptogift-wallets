@@ -218,7 +218,7 @@ export const GiftEscrowConfig: React.FC<GiftEscrowConfigProps> = ({
               } dark:bg-gray-700 dark:text-white`}
               placeholder="Enter a message for the gift recipient..."
               rows={3}
-              maxLength={200}
+              maxLength={191}
               disabled={isLoading}
             />
             <div className="flex justify-between items-center mt-1">
@@ -226,7 +226,7 @@ export const GiftEscrowConfig: React.FC<GiftEscrowConfigProps> = ({
                 <p className="text-red-500 text-xs">{errors.giftMessage}</p>
               )}
               <p className="text-gray-500 text-xs ml-auto">
-                {config.giftMessage.length}/200
+                {config.giftMessage.length}/191
               </p>
             </div>
           </div>

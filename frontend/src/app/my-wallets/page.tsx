@@ -272,9 +272,15 @@ export default function MyWalletsPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        {/* NFT Image - With Double-Click Modal */}
+                        {/* NFT Image - Smart Adaptive Thumbnail */}
                         <div 
-                          className="w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform"
+                          className="rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform"
+                          style={{
+                            maxWidth: '48px',
+                            maxHeight: '48px',
+                            width: 'fit-content',
+                            height: 'fit-content'
+                          }}
                           onClick={() => {
                             console.log('🖼️ Opening NFT image modal for wallet:', wallet.name);
                             setImageModalData({
@@ -292,7 +298,7 @@ export default function MyWalletsPage() {
                             alt={wallet.name}
                             width={48}
                             height={48}
-                            className="w-full h-full object-contain bg-white/50" // FIXED: object-contain instead of object-cover
+                            className="bg-white/50 dark:bg-gray-700/50"
                             tokenId={wallet.id}
                             fit="contain"
                           />
@@ -437,7 +443,7 @@ export default function MyWalletsPage() {
         tokenId={imageModalData.tokenId}
         contractAddress={imageModalData.contractAddress}
         metadata={{
-          description: "A unique NFT-Wallet from the CryptoGift platform that functions as both an NFT and a wallet using ERC-6551 Token Bound Accounts.",
+          description: "NFT-Wallet único con funciones de billetera integradas usando ERC-6551 Token Bound Accounts.",
           attributes: [
             { trait_type: "Wallet Type", value: "ERC-6551 Token Bound Account" },
             { trait_type: "Network", value: "Base Sepolia" },

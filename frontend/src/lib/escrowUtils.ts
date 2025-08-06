@@ -697,8 +697,8 @@ export function parseEscrowError(error: any): string {
  * Validation Functions
  */
 export function validateGiftMessage(message: string): { valid: boolean; message?: string } {
-  if (message.length > 200) {
-    return { valid: false, message: 'Gift message must be less than 200 characters' };
+  if (message.length > 191) {
+    return { valid: false, message: 'Gift message must be less than 191 characters' };
   }
   return { valid: true };
 }

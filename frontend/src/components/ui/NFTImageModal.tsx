@@ -297,7 +297,7 @@ export function NFTImageModal({
                   {/* Description */}
                   {metadata?.description && (
                     <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                      <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed break-words" style={{ maxWidth: '525px', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                         {metadata.description}
                       </p>
                     </div>
@@ -580,7 +580,7 @@ export function NFTImageModal({
                         {metadata?.description && (
                           <div>
                             <h3 className="text-[10px] font-medium text-slate-900 dark:text-white mb-0.5">Description</h3>
-                            <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed max-h-20 overflow-y-auto">
+                            <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed max-h-20 overflow-y-auto break-words" style={{ maxWidth: '245px', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               {metadata.description}
                             </p>
                           </div>
@@ -745,7 +745,7 @@ export function NFTImageModal({
                         <div>
                           <h3 className="text-[11px] font-medium text-slate-900 dark:text-white mb-0.5">Description</h3>
                           <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-0.5 py-0 max-h-32 overflow-y-auto">
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed break-words" style={{ maxWidth: '435px', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
                               {metadata.description}
                             </p>
                           </div>
