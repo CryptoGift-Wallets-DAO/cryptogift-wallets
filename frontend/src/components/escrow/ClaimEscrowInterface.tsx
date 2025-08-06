@@ -607,7 +607,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                giftInfo?.status === 'returned' ? '↩️ Gift devuelto al creador' :
                giftInfo?.isExpired ? '❌ Gift expirado' :
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳ Gift todavía disponible...' :
-               giftInfo?.status === 'active' ? '✅ Gift disponible para reclamar' : 
+               giftInfo?.status === 'active' ? '🎁 Gift disponible para reclamar' : 
                '❌ Gift expirado'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
