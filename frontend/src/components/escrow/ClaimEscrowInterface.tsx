@@ -19,6 +19,13 @@ import { makeAuthenticatedRequest } from '../../lib/siweClient';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
 import { useNotifications } from '../ui/NotificationSystem';
+import { MobileWalletRedirect } from '../ui/MobileWalletRedirect';
+import { 
+  isMobileDevice, 
+  isRpcError, 
+  sendTransactionMobile, 
+  waitForReceiptMobile 
+} from '../../lib/mobileRpcHandler';
 
 interface ClaimEscrowInterfaceProps {
   tokenId: string;
@@ -75,6 +82,10 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     tokenId: string;
     contractAddress: string;
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
+  const [showMobileRedirect, setShowMobileRedirect] = useState(false);
+
+  // Mobile detection (using imported utility)
+  const isMobile = isMobileDevice();
 
   // Fetch correct salt for this token when component mounts
   useEffect(() => {
@@ -196,24 +207,34 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
 
       // Step 3: Execute claim transaction using user's wallet
       console.log('💫 STEP 3: Executing claim transaction with user wallet...');
-      const client = createThirdwebClient({
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
-      });
-
-      const txResult = await sendTransaction({
-        transaction: claimTransaction,
-        account: account
-      });
+      
+      // 📱 MOBILE: Show redirect popup when transaction starts
+      if (isMobile) {
+        setShowMobileRedirect(true);
+        console.log('📱 Mobile detected - showing wallet redirect popup for claim');
+      }
+      
+      // 🔄 MOBILE RPC FALLBACK: Use mobile-optimized transaction sending
+      const txResult = isMobile 
+        ? await sendTransactionMobile(claimTransaction, account)
+        : await sendTransaction({
+            transaction: claimTransaction,
+            account: account
+          });
 
       console.log('📨 Transaction sent:', txResult.transactionHash);
 
-      // Step 4: Wait for transaction confirmation
+      // Step 4: Wait for transaction confirmation with mobile fallback
       console.log('⏳ STEP 4: Waiting for transaction confirmation...');
-      const receipt = await waitForReceipt({
-        client,
-        chain: baseSepolia,
-        transactionHash: txResult.transactionHash
-      });
+      const receipt = isMobile
+        ? await waitForReceiptMobile(txResult.transactionHash)
+        : await waitForReceipt({
+            client: createThirdwebClient({
+              clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
+            }),
+            chain: baseSepolia,
+            transactionHash: txResult.transactionHash
+          });
 
       if (receipt.status !== 'success') {
         throw new Error(`Transaction failed with status: ${receipt.status}`);
@@ -225,6 +246,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         gasUsed: receipt.gasUsed?.toString()
       });
       
+      setShowMobileRedirect(false); // Hide popup on success
       setClaimStep('success');
       
       // R2: ENHANCED METAMASK NFT VISIBILITY - Pre-pin + Toast handling
@@ -321,8 +343,18 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
 
     } catch (err: any) {
       console.error('❌ FRONTEND CLAIM ERROR:', err);
-      const errorMessage = parseEscrowError(err);
+      
+      // 📱 MOBILE: Enhanced error handling for RPC issues
+      let errorMessage: string;
+      if (isMobile && isRpcError(err)) {
+        console.error('📱 Mobile RPC error detected:', err.message);
+        errorMessage = `Error de conexión móvil: ${err.message}. Por favor, verifica tu conexión e intenta de nuevo.`;
+      } else {
+        errorMessage = parseEscrowError(err);
+      }
+      
       setError(errorMessage);
+      setShowMobileRedirect(false); // Hide popup on error
       setClaimStep('password');
       
       if (onClaimError) {
@@ -673,6 +705,15 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             { trait_type: "Type", value: "CryptoGift NFT" }
           ]
         }}
+      />
+
+      {/* Mobile Wallet Redirect Popup */}
+      <MobileWalletRedirect
+        isOpen={showMobileRedirect}
+        onClose={() => setShowMobileRedirect(false)}
+        walletAddress={account?.address || ''}
+        action="claim"
+        walletName={(account as any)?.wallet?.getConfig?.()?.name || 'Wallet'}
       />
     </div>
   );

@@ -1,1977 +1,5 @@
 [
   {
-    "sessionId": "trace_1752371805081_h7lq48kd1",
-    "startTime": "2025-07-13T01:56:45.081Z",
-    "steps": [
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T01:56:45.081Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752371805081_h7lq48kd1",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T01:56:45.081Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T01:56:45.082Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T01:56:45.082Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T01:56:45.082Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T01:56:45.081Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752371805081_h7lq48kd1",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T01:56:47.135Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T01:56:47.135Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T01:56:48.895Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T01:56:48.896Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: invalid private key, expected hex or 32 bytes, got string. Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: invalid private key, expected hex or 32 bytes, got string. Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: invalid private key, expected hex or 32 bytes, got string. Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T01:56:48.896Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: invalid private key, expected hex or 32 bytes, got string. Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T01:56:48.896Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: invalid private key, expected hex or 32 bytes, got string. Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T01:56:48.897Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752372613854_j8ffof2y2",
-    "startTime": "2025-07-13T02:10:13.854Z",
-    "steps": [
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:10:13.854Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752372613854_j8ffof2y2",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:10:13.855Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:10:13.855Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:10:13.855Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:10:13.855Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:10:13.854Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752372613854_j8ffof2y2",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:10:15.266Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:10:15.267Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:10:16.802Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:10:16.803Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: x.replace is not a function. Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: x.replace is not a function. Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: x.replace is not a function. Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:10:16.804Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: x.replace is not a function. Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:10:16.804Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: x.replace is not a function. Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:10:16.804Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752373549982_7uhfnauy5",
-    "startTime": "2025-07-13T02:25:49.983Z",
-    "steps": [
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:25:49.983Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752373549982_7uhfnauy5",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:25:49.983Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752373549982_7uhfnauy5",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:25:49.983Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:25:49.984Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:25:49.984Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:25:49.984Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:25:52.136Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:25:52.137Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:25:53.777Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:25:53.775Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:25:53.777Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:25:53.778Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:25:53.778Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752373702655_yliz0aen0",
-    "startTime": "2025-07-13T02:28:22.656Z",
-    "steps": [
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:28:22.656Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752373702655_yliz0aen0",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:28:22.656Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:28:22.656Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:28:22.656Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:28:22.656Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:28:22.655Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752373702655_yliz0aen0",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:28:24.099Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:28:24.100Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:28:25.228Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:28:25.228Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:28:25.229Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:28:25.229Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:28:25.229Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752373827247_rhtm68aai",
-    "startTime": "2025-07-13T02:30:27.248Z",
-    "steps": [
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:30:27.248Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752373827247_rhtm68aai",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:30:27.248Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:30:27.248Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:30:27.249Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:30:27.250Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:30:27.247Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752373827247_rhtm68aai",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:30:28.719Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:30:28.719Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:30:30.365Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:30:30.366Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:30:30.367Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:30:30.367Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:30:30.367Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752374727408_la2gqjuwv",
-    "startTime": "2025-07-13T02:45:27.410Z",
-    "steps": [
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:45:27.410Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:45:27.409Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752374727408_la2gqjuwv",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:45:27.410Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:45:27.411Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:45:27.411Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:45:27.409Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752374727408_la2gqjuwv",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:45:29.029Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:45:29.030Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:45:30.673Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:45:30.674Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:45:30.675Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:45:30.675Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:45:30.676Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752375005820_edxaylbdj",
-    "startTime": "2025-07-13T02:50:05.821Z",
-    "steps": [
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:50:05.821Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752375005820_edxaylbdj",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:50:05.822Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:50:05.823Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:50:05.822Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:50:05.824Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:50:05.821Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752375005820_edxaylbdj",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:50:07.480Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:50:07.480Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:50:09.612Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:50:09.614Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:50:09.614Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:50:09.614Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:50:09.615Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752375478104_g3dwnzp2x",
-    "startTime": "2025-07-13T02:57:58.105Z",
-    "steps": [
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T02:57:58.105Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T02:57:58.105Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T02:57:58.105Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752375478104_g3dwnzp2x",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T02:57:58.105Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T02:57:58.105Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T02:57:58.104Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752375478104_g3dwnzp2x",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T02:57:59.942Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T02:57:59.943Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T02:58:02.955Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T02:58:02.956Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T02:58:02.957Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T02:58:02.957Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Unknown Error\n520\nhttps://docs.biconomy.io/troubleshooting/commonerrors\n\n\"Error coming from Bundler: method must be one of the following values: pm_sponsorUserOperation, pm_supportedPaymasters, pm_supportedSmartAccounts, pm_getFeeQuoteOrData, pm_getPaymasterData, pm_getPaymasterStubData\". Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T02:58:02.958Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752376514976_eb8e9wb72",
-    "startTime": "2025-07-13T03:15:14.976Z",
-    "steps": [
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T03:15:14.976Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752376514976_eb8e9wb72",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T03:15:14.977Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752376514976_eb8e9wb72",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T03:15:14.977Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T03:15:14.977Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T03:15:14.978Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T03:15:14.978Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T03:15:16.990Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T03:15:16.990Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T03:15:19.639Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T03:15:19.640Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T03:15:19.640Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T03:15:19.641Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: Failed to parse URL from undefined. Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T03:15:19.642Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      },
-      {
-        "id": "step_14",
-        "timestamp": "2025-07-13T03:15:22.218Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_PAID_MINT_STARTED",
-        "data": {
-          "endpoint": "/api/mint-real",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
-      },
-      {
-        "id": "step_15",
-        "timestamp": "2025-07-13T03:15:24.353Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 400,
-          "statusText": "Bad Request",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
-      },
-      {
-        "id": "step_16",
-        "timestamp": "2025-07-13T03:15:24.355Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_PAID_API_ERROR",
-        "data": {
-          "errorMessage": "Gas-paid API call failed",
-          "status": 400,
-          "errorData": {
-            "error": "Real NFT minting failed",
-            "code": "REAL_MINT_FAILED",
-            "step": "REAL_MINT"
-          }
-        },
-        "result": "error",
-        "error": "Gas-paid API call failed",
-        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
-      }
-    ]
-  },
-  {
-    "sessionId": "trace_1752389082724_tkyaaznrw",
-    "startTime": "2025-07-13T06:44:42.724Z",
-    "steps": [
-      {
-        "id": "step_2",
-        "timestamp": "2025-07-13T06:44:42.724Z",
-        "component": "GIFT_WIZARD",
-        "action": "MINT_GIFT_STARTED",
-        "data": {
-          "traceId": "trace_1752389082724_tkyaaznrw",
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "amount": 10,
-          "netAmount": 9.6,
-          "referrer": null
-        },
-        "result": "pending",
-        "path": ""
-      },
-      {
-        "id": "step_3",
-        "timestamp": "2025-07-13T06:44:42.725Z",
-        "component": "GIFT_WIZARD",
-        "action": "WIZARD_STATE_SET",
-        "data": {
-          "currentStep": "MINTING",
-          "isLoading": true
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
-      },
-      {
-        "id": "step_4",
-        "timestamp": "2025-07-13T06:44:42.725Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_DECISION",
-        "data": {
-          "strategy": "GASLESS_FIRST",
-          "reason": "User preference for free transactions"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
-      },
-      {
-        "id": "step_5",
-        "timestamp": "2025-07-13T06:44:42.726Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_MINT_STARTED",
-        "data": {
-          "walletAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": true,
-          "message": "default",
-          "amount": 9.6
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION"
-      },
-      {
-        "id": "step_6",
-        "timestamp": "2025-07-13T06:44:42.726Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_STARTED",
-        "data": {
-          "hasImageFile": true,
-          "hasFilteredUrl": true
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED"
-      },
-      {
-        "id": "step_1",
-        "timestamp": "2025-07-13T06:44:42.724Z",
-        "component": "FLOW_TRACKER",
-        "action": "TRACE_STARTED",
-        "data": {
-          "sessionId": "trace_1752389082724_tkyaaznrw",
-          "userAddress": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "metadata": {
-            "amount": 10,
-            "filter": "Original",
-            "referrer": null
-          }
-        },
-        "result": "success",
-        "path": ""
-      },
-      {
-        "id": "step_8",
-        "timestamp": "2025-07-13T06:44:45.210Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_CALL_STARTED",
-        "data": {
-          "endpoint": "/api/mint",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS"
-      },
-      {
-        "id": "step_7",
-        "timestamp": "2025-07-13T06:44:45.209Z",
-        "component": "GIFT_WIZARD",
-        "action": "IPFS_UPLOAD_SUCCESS",
-        "data": {
-          "ipfsCid": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_DECISION → GIFT_WIZARD.GASLESS_MINT_STARTED → GIFT_WIZARD.IPFS_UPLOAD_STARTED"
-      },
-      {
-        "id": "step_9",
-        "timestamp": "2025-07-13T06:44:48.153Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 500,
-          "statusText": "Internal Server Error",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_STARTED → GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED"
-      },
-      {
-        "id": "step_10",
-        "timestamp": "2025-07-13T06:44:48.153Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_API_ERROR",
-        "data": {
-          "errorMessage": "Gasless transaction failed: SmartAccountInsufficientFundsError\naa21\nhttps://docs.biconomy.io/troubleshooting/commonerrors\naa21: You are not using a paymaster, and the sender address did not have enough native tokens to cover the gas costs associated with the user operation.\n,Potential cause(s): \n\nYour smart wallet does not have funds to send transaction.\n,Potential solution(s): \n\nIf you are not using a paymaster, verify that the sender address has enough native tokens to cover the required prefund.\nSend some native tokens in your smart wallet to be able to resolve the error.\nIf you are looking to use a paymaster to cover the gas fees, verify that the paymasterAndData field is set when you send the transaction.\n\"Error coming from Bundler: AA21 didn't pay prefund\". Please try again or use gas-paid transaction.",
-          "status": 500,
-          "errorData": {
-            "error": "Failed to mint NFT",
-            "message": "Gasless transaction failed: SmartAccountInsufficientFundsError\naa21\nhttps://docs.biconomy.io/troubleshooting/commonerrors\naa21: You are not using a paymaster, and the sender address did not have enough native tokens to cover the gas costs associated with the user operation.\n,Potential cause(s): \n\nYour smart wallet does not have funds to send transaction.\n,Potential solution(s): \n\nIf you are not using a paymaster, verify that the sender address has enough native tokens to cover the required prefund.\nSend some native tokens in your smart wallet to be able to resolve the error.\nIf you are looking to use a paymaster to cover the gas fees, verify that the paymasterAndData field is set when you send the transaction.\n\"Error coming from Bundler: AA21 didn't pay prefund\". Please try again or use gas-paid transaction.",
-            "debug": "Check /api/debug/mint-logs for detailed error information"
-          }
-        },
-        "result": "error",
-        "error": "Gasless transaction failed: SmartAccountInsufficientFundsError\naa21\nhttps://docs.biconomy.io/troubleshooting/commonerrors\naa21: You are not using a paymaster, and the sender address did not have enough native tokens to cover the gas costs associated with the user operation.\n,Potential cause(s): \n\nYour smart wallet does not have funds to send transaction.\n,Potential solution(s): \n\nIf you are not using a paymaster, verify that the sender address has enough native tokens to cover the required prefund.\nSend some native tokens in your smart wallet to be able to resolve the error.\nIf you are looking to use a paymaster to cover the gas fees, verify that the paymasterAndData field is set when you send the transaction.\n\"Error coming from Bundler: AA21 didn't pay prefund\". Please try again or use gas-paid transaction.",
-        "path": "GIFT_WIZARD.IPFS_UPLOAD_SUCCESS → GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED"
-      },
-      {
-        "id": "step_11",
-        "timestamp": "2025-07-13T06:44:48.154Z",
-        "component": "GIFT_WIZARD",
-        "action": "GASLESS_ATTEMPT_FAILED",
-        "data": {
-          "errorMessage": "Gasless transaction failed: SmartAccountInsufficientFundsError\naa21\nhttps://docs.biconomy.io/troubleshooting/commonerrors\naa21: You are not using a paymaster, and the sender address did not have enough native tokens to cover the gas costs associated with the user operation.\n,Potential cause(s): \n\nYour smart wallet does not have funds to send transaction.\n,Potential solution(s): \n\nIf you are not using a paymaster, verify that the sender address has enough native tokens to cover the required prefund.\nSend some native tokens in your smart wallet to be able to resolve the error.\nIf you are looking to use a paymaster to cover the gas fees, verify that the paymasterAndData field is set when you send the transaction.\n\"Error coming from Bundler: AA21 didn't pay prefund\". Please try again or use gas-paid transaction.",
-          "errorType": "GASLESS_FAILURE",
-          "willShowGasModal": true
-        },
-        "result": "error",
-        "error": "attemptGaslessMint@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:259:19\n",
-        "path": "GIFT_WIZARD.GASLESS_API_CALL_STARTED → GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR"
-      },
-      {
-        "id": "step_12",
-        "timestamp": "2025-07-13T06:44:48.154Z",
-        "component": "GIFT_WIZARD",
-        "action": "DECISION_POINT",
-        "data": {
-          "condition": "gaslessFailed",
-          "conditionResult": true,
-          "nextAction": "SHOW_GAS_MODAL",
-          "errorMessage": "Gasless transaction failed: SmartAccountInsufficientFundsError\naa21\nhttps://docs.biconomy.io/troubleshooting/commonerrors\naa21: You are not using a paymaster, and the sender address did not have enough native tokens to cover the gas costs associated with the user operation.\n,Potential cause(s): \n\nYour smart wallet does not have funds to send transaction.\n,Potential solution(s): \n\nIf you are not using a paymaster, verify that the sender address has enough native tokens to cover the required prefund.\nSend some native tokens in your smart wallet to be able to resolve the error.\nIf you are looking to use a paymaster to cover the gas fees, verify that the paymasterAndData field is set when you send the transaction.\n\"Error coming from Bundler: AA21 didn't pay prefund\". Please try again or use gas-paid transaction."
-        },
-        "result": "success",
-        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
-        "path": "GIFT_WIZARD.GASLESS_API_RESPONSE_RECEIVED → GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
-      },
-      {
-        "id": "step_13",
-        "timestamp": "2025-07-13T06:44:48.154Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_MODAL_SHOWN",
-        "data": {
-          "estimatedGas": "150000",
-          "gasPrice": "0.1",
-          "totalCost": "0.000015",
-          "networkName": "Base Sepolia"
-        },
-        "result": "success",
-        "path": "GIFT_WIZARD.GASLESS_API_ERROR → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
-      },
-      {
-        "id": "step_14",
-        "timestamp": "2025-07-13T06:44:52.379Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_PAID_MINT_STARTED",
-        "data": {
-          "endpoint": "/api/mint-real",
-          "to": "0xA362a26F6100Ff5f8157C0ed1c2bcC0a1919Df4a",
-          "imageFile": "bafkreid5283bf31e9e50dfcb42b3eb821c722441b4b2ed3efb3f1ef08",
-          "initialBalance": 9.6,
-          "filter": "Original"
-        },
-        "result": "pending",
-        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
-      },
-      {
-        "id": "step_15",
-        "timestamp": "2025-07-13T06:44:53.779Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
-        "data": {
-          "status": 400,
-          "statusText": "Bad Request",
-          "ok": false
-        },
-        "result": "error",
-        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
-      },
-      {
-        "id": "step_16",
-        "timestamp": "2025-07-13T06:44:53.780Z",
-        "component": "GIFT_WIZARD",
-        "action": "GAS_PAID_API_ERROR",
-        "data": {
-          "errorMessage": "Gas-paid API call failed",
-          "status": 400,
-          "errorData": {
-            "error": "Real NFT minting failed",
-            "code": "REAL_MINT_FAILED",
-            "step": "REAL_MINT"
-          }
-        },
-        "result": "error",
-        "error": "Gas-paid API call failed",
-        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
-      }
-    ]
-  },
-  {
     "sessionId": "trace_1752390642138_x4anjku7l",
     "startTime": "2025-07-13T07:10:42.139Z",
     "steps": [
@@ -9185,6 +7213,2476 @@
         },
         "result": "success",
         "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463015604_8o9su3jbb",
+    "startTime": "2025-08-06T06:50:15.604Z",
+    "steps": [
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T06:50:15.604Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T06:50:15.606Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      },
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T06:50:15.604Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463015604_8o9su3jbb",
+          "userAddress": "unknown"
+        },
+        "result": "success",
+        "path": ""
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463760133_70hduos4z",
+    "startTime": "2025-08-06T07:02:40.133Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:02:40.133Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463760133_70hduos4z",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:02:40.133Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754463760133_70hduos4z",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:02:40.133Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:02:43.609Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:02:46.723Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:02:46.723Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:02:46.723Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:02:52.798Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:03:02.036Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 500,
+          "statusText": "Internal Server Error",
+          "ok": false
+        },
+        "result": "error",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:03:02.037Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_ERROR",
+        "data": {
+          "errorMessage": "Gas-paid API call failed",
+          "status": 500,
+          "errorData": {
+            "success": false,
+            "error": "Gas-paid escrow mint failed: InvalidGiftMessage - Llevamos semanas trabajando en un proyecto que se encuentra en PS C:\\Users\\rafae\\cryptogift-wallets&gt; pero se cerró la ultima sesión así que analiza detenidamente los .md que encontraras ahí, pri...\n\ncontract: 0x46175CfC233500DA803841DEef7f2816e7A129E0\nchainId: 84532"
+          }
+        },
+        "result": "error",
+        "error": "Gas-paid API call failed",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463801522_01qvfh6v9",
+    "startTime": "2025-08-06T07:03:21.522Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:03:21.522Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463801522_01qvfh6v9",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:03:21.523Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754463801522_01qvfh6v9",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:03:21.523Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:03:21.844Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:03:24.806Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:03:24.807Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:03:24.807Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:03:28.105Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:03:32.628Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 500,
+          "statusText": "Internal Server Error",
+          "ok": false
+        },
+        "result": "error",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:03:32.629Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_ERROR",
+        "data": {
+          "errorMessage": "Gas-paid API call failed",
+          "status": 500,
+          "errorData": {
+            "success": false,
+            "error": "Gas-paid escrow mint failed: InvalidGiftMessage - Llevamos semanas trabajando en un proyecto que se encuentra en PS C:\\Users\\rafae\\cryptogift-wallets&gt; pero se cerró la ultima sesión así que analiza detenidamente los .md que encontraras ahí, pri...\n\ncontract: 0x46175CfC233500DA803841DEef7f2816e7A129E0\nchainId: 84532"
+          }
+        },
+        "result": "error",
+        "error": "Gas-paid API call failed",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463824744_iraavhxmk",
+    "startTime": "2025-08-06T07:03:44.744Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:03:44.744Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463824744_iraavhxmk",
+          "userAddress": "unknown"
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:03:44.745Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:03:44.746Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463878841_3rnw9qoo2",
+    "startTime": "2025-08-06T07:04:38.841Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:04:38.841Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463878841_3rnw9qoo2",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:04:38.841Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754463878841_3rnw9qoo2",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:04:38.841Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:04:38.923Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:04:42.048Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:04:42.048Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:04:42.048Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:04:46.302Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:04:54.208Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 500,
+          "statusText": "Internal Server Error",
+          "ok": false
+        },
+        "result": "error",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:04:54.209Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_ERROR",
+        "data": {
+          "errorMessage": "Gas-paid API call failed",
+          "status": 500,
+          "errorData": {
+            "success": false,
+            "error": "Gas-paid escrow mint failed: InvalidGiftMessage - Llevamos semanas trabajando en un proyecto que se encuentra en PS C:\\Users\\rafae\\cryptogift-wallets&gt; pero se cerró la ultima sesión así que analiza detenidamente los .md que encontraras ahí, pri...\n\ncontract: 0x46175CfC233500DA803841DEef7f2816e7A129E0\nchainId: 84532"
+          }
+        },
+        "result": "error",
+        "error": "Gas-paid API call failed",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463914753_luzh5k5gu",
+    "startTime": "2025-08-06T07:05:14.753Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:05:14.753Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463914753_luzh5k5gu",
+          "userAddress": "unknown"
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:05:14.753Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:05:14.754Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463932169_gupfnxcak",
+    "startTime": "2025-08-06T07:05:32.169Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:05:32.169Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463932169_gupfnxcak",
+          "userAddress": "unknown"
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:05:32.169Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:05:32.170Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754463969261_84h81bh7h",
+    "startTime": "2025-08-06T07:06:09.261Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:06:09.261Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754463969261_84h81bh7h",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:06:09.261Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754463969261_84h81bh7h",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:06:09.262Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:06:09.362Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:06:12.080Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:06:12.080Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:06:12.080Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:06:15.554Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:06:21.657Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 500,
+          "statusText": "Internal Server Error",
+          "ok": false
+        },
+        "result": "error",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:06:21.658Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_ERROR",
+        "data": {
+          "errorMessage": "Gas-paid API call failed",
+          "status": 500,
+          "errorData": {
+            "success": false,
+            "error": "Gas-paid escrow mint failed: InvalidGiftMessage - Llevamos semanas trabajando en un proyecto que se encuentra en PS C:\\Users\\rafae\\cryptogift-wallets&gt; pero se cerró la ultima sesión así que analiza detenidamente los .md que encontraras ahí, pri...\n\ncontract: 0x46175CfC233500DA803841DEef7f2816e7A129E0\nchainId: 84532"
+          }
+        },
+        "result": "error",
+        "error": "Gas-paid API call failed",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:13:01.384Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_ERROR"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:13:01.386Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_ERROR → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754464408203_jnz376lby",
+    "startTime": "2025-08-06T07:13:28.203Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:13:28.203Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754464408203_jnz376lby",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:13:28.204Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754464408203_jnz376lby",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:13:28.204Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:13:31.366Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:13:34.504Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:13:34.504Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:13:34.505Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:13:46.445Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:13:58.905Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 200,
+          "statusText": "OK",
+          "ok": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:13:58.905Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_PARSED",
+        "data": {
+          "tokenId": "96",
+          "hasShareUrl": true,
+          "hasQrCode": false,
+          "gasless": false,
+          "isEscrow": true,
+          "escrowTransactionHash": "0x26d7ea202e0a468f0dc896fe0cf2b09498ecaa7878344ef39ca5a1d118526483",
+          "nonce": "undefined...",
+          "fullResponse": {
+            "success": true,
+            "tokenId": "96",
+            "transactionHash": "0x8e186b1d6d1d643c098d8e85f038876665f7198540c45ab78c23f424f611b668",
+            "gasless": false,
+            "rateLimit": {
+              "remaining": 3,
+              "resetTime": 1754464490177
+            },
+            "escrowTransactionHash": "0x26d7ea202e0a468f0dc896fe0cf2b09498ecaa7878344ef39ca5a1d118526483",
+            "giftLink": "https://172.19.96.1:3000/gift/claim/96",
+            "salt": "0xac764cb22a39ad06a9e635790651357fcffaa2376af3b8acb678478ecb68d81d",
+            "passwordHash": "0x80d2826bed62c992f39e13a08c627f634a9e8f3c4b391deb7fccd1f188f90069",
+            "expirationTime": 1754465338
+          }
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:13:58.909Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_SUCCESS_CONFIRMED",
+        "data": {
+          "tokenId": "96",
+          "shareUrl": "https://172.19.96.1:3000/gift/claim/96",
+          "userPaidGas": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:13:58.909Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "isTransactionGasPaid",
+          "conditionResult": true,
+          "tokenId": "96",
+          "apiSaysGasless": false,
+          "expectedGasPaid": true
+        },
+        "result": "success",
+        "decision": "IF(isTransactionGasPaid) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED"
+      },
+      {
+        "id": "step_13",
+        "timestamp": "2025-08-06T07:14:14.685Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED"
+      },
+      {
+        "id": "step_14",
+        "timestamp": "2025-08-06T07:14:14.687Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754464485159_a1q48htxg",
+    "startTime": "2025-08-06T07:14:45.159Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:14:45.159Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754464485159_a1q48htxg",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:14:45.160Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754464485159_a1q48htxg",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:14:45.161Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:14:45.325Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:14:48.354Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:14:48.354Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:14:48.354Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:14:53.482Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:14:59.405Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 500,
+          "statusText": "Internal Server Error",
+          "ok": false
+        },
+        "result": "error",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:14:59.406Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_ERROR",
+        "data": {
+          "errorMessage": "Gas-paid API call failed",
+          "status": 500,
+          "errorData": {
+            "success": false,
+            "error": "Gas-paid escrow mint failed: InvalidGiftMessage - Llevamos semanas trabajando en un proyecto que se encuentra en PS C:\\Users\\rafae\\cryptogift-wallets&gt; pero se cerró la ultima sesión así que analiza detenidamente los .md que encontraras ahí, pri...\n\ncontract: 0x46175CfC233500DA803841DEef7f2816e7A129E0\nchainId: 84532"
+          }
+        },
+        "result": "error",
+        "error": "Gas-paid API call failed",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:16:22.689Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_ERROR"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:16:22.691Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_ERROR → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754464815832_xlg5w2l3w",
+    "startTime": "2025-08-06T07:20:15.833Z",
+    "steps": [
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:20:15.833Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754464815832_xlg5w2l3w",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:20:15.833Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:20:15.832Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754464815832_xlg5w2l3w",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:20:15.945Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:20:18.835Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:20:18.835Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:20:18.835Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:20:23.819Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:20:30.969Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 200,
+          "statusText": "OK",
+          "ok": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:20:30.970Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_PARSED",
+        "data": {
+          "tokenId": "98",
+          "hasShareUrl": true,
+          "hasQrCode": false,
+          "gasless": false,
+          "isEscrow": true,
+          "escrowTransactionHash": "0xeb2953acc255b53b1ba01e6f05f15b284733a8c19024c9ad25884d0578b43fd9",
+          "nonce": "undefined...",
+          "fullResponse": {
+            "success": true,
+            "tokenId": "98",
+            "transactionHash": "0x6dd88cd15b07c3f1eccf5c06f69ae3d1b8dfd5131c211efe69a18c1043e29207",
+            "gasless": false,
+            "rateLimit": {
+              "remaining": 3,
+              "resetTime": 1754464883928
+            },
+            "escrowTransactionHash": "0xeb2953acc255b53b1ba01e6f05f15b284733a8c19024c9ad25884d0578b43fd9",
+            "giftLink": "https://172.19.96.1:3000/gift/claim/98",
+            "salt": "0xdcd038b63be5ebf3ced9600aecf43251b96df5e437b40cb74c81f7c30540caa0",
+            "passwordHash": "0xec1a92905cc27f62256eaedd550d0e4398900056804e2608b23eabaf2623a66b",
+            "expirationTime": 1754465730
+          }
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:20:30.971Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "isTransactionGasPaid",
+          "conditionResult": true,
+          "tokenId": "98",
+          "apiSaysGasless": false,
+          "expectedGasPaid": true
+        },
+        "result": "success",
+        "decision": "IF(isTransactionGasPaid) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:20:30.971Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_SUCCESS_CONFIRMED",
+        "data": {
+          "tokenId": "98",
+          "shareUrl": "https://172.19.96.1:3000/gift/claim/98",
+          "userPaidGas": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754465106277_u3hutz8l4",
+    "startTime": "2025-08-06T07:25:06.278Z",
+    "steps": [
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:25:06.278Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:25:06.277Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754465106277_u3hutz8l4",
+          "userAddress": "unknown"
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:25:27.054Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754465228735_0ixi8rndy",
+    "startTime": "2025-08-06T07:27:08.735Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:27:08.735Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754465228735_0ixi8rndy",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:27:08.736Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:27:08.736Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754465228735_0ixi8rndy",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:27:09.719Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:27:13.436Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:27:13.436Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:27:13.437Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:27:20.466Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:27:31.218Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 200,
+          "statusText": "OK",
+          "ok": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:27:31.219Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_PARSED",
+        "data": {
+          "tokenId": "99",
+          "hasShareUrl": true,
+          "hasQrCode": false,
+          "gasless": false,
+          "isEscrow": true,
+          "escrowTransactionHash": "0x88662a0e72aaffe6d8c9801efe3b04297a12e864c63f8af6dbb08a1c4e3f9003",
+          "nonce": "undefined...",
+          "fullResponse": {
+            "success": true,
+            "tokenId": "99",
+            "transactionHash": "0xa2b902c9f1396a00fe840798afcb05b44177fc3eaca2e516cb69e6bd78882aee",
+            "gasless": false,
+            "rateLimit": {
+              "remaining": 3,
+              "resetTime": 1754465302781
+            },
+            "escrowTransactionHash": "0x88662a0e72aaffe6d8c9801efe3b04297a12e864c63f8af6dbb08a1c4e3f9003",
+            "giftLink": "https://172.19.96.1:3000/gift/claim/99",
+            "salt": "0x91303ee0a4cd668a3a8d3b413334b79c79f38e6d09aa7d88059fbb330b74a835",
+            "passwordHash": "0xb958cf67441e89e01692f1b818ad03a4f46d6032e98eea67002ba9fad624970f",
+            "expirationTime": 1754466150
+          }
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:27:31.220Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "isTransactionGasPaid",
+          "conditionResult": true,
+          "tokenId": "99",
+          "apiSaysGasless": false,
+          "expectedGasPaid": true
+        },
+        "result": "success",
+        "decision": "IF(isTransactionGasPaid) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:27:31.221Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_SUCCESS_CONFIRMED",
+        "data": {
+          "tokenId": "99",
+          "shareUrl": "https://172.19.96.1:3000/gift/claim/99",
+          "userPaidGas": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_13",
+        "timestamp": "2025-08-06T07:27:57.237Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED"
+      },
+      {
+        "id": "step_14",
+        "timestamp": "2025-08-06T07:27:57.239Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754465329900_04o2zxjj0",
+    "startTime": "2025-08-06T07:28:49.900Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:28:49.900Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754465329900_04o2zxjj0",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:28:49.901Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:28:49.901Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754465329900_04o2zxjj0",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:28:50.005Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:28:53.686Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:28:53.687Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:28:53.687Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:28:59.119Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:29:07.807Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 200,
+          "statusText": "OK",
+          "ok": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:29:07.807Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_PARSED",
+        "data": {
+          "tokenId": "100",
+          "hasShareUrl": true,
+          "hasQrCode": false,
+          "gasless": false,
+          "isEscrow": true,
+          "escrowTransactionHash": "0x594e3b1188c060efae3fb89e91f8e0e28711c9922c99f86d4b5e58e76f5f6b81",
+          "nonce": "undefined...",
+          "fullResponse": {
+            "success": true,
+            "tokenId": "100",
+            "transactionHash": "0x0acfe1aa3c9dff00d0ade82a0bd0ccb614f4d677eed789375ecab0f90ba4e929",
+            "gasless": false,
+            "rateLimit": {
+              "remaining": 3,
+              "resetTime": 1754465399169
+            },
+            "escrowTransactionHash": "0x594e3b1188c060efae3fb89e91f8e0e28711c9922c99f86d4b5e58e76f5f6b81",
+            "giftLink": "https://172.19.96.1:3000/gift/claim/100",
+            "salt": "0x676c3ea8d7ae5dbe498bea845abcff21a7d6fe5991000bc129e0082c1a977867",
+            "passwordHash": "0xd914f8367d9f4ced24f941f800122eeb37b6db62ecd0701491f54deaaff52bcc",
+            "expirationTime": 1754466247
+          }
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:29:07.809Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "isTransactionGasPaid",
+          "conditionResult": true,
+          "tokenId": "100",
+          "apiSaysGasless": false,
+          "expectedGasPaid": true
+        },
+        "result": "success",
+        "decision": "IF(isTransactionGasPaid) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:29:07.809Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_SUCCESS_CONFIRMED",
+        "data": {
+          "tokenId": "100",
+          "shareUrl": "https://172.19.96.1:3000/gift/claim/100",
+          "userPaidGas": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_13",
+        "timestamp": "2025-08-06T07:29:22.225Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED"
+      },
+      {
+        "id": "step_14",
+        "timestamp": "2025-08-06T07:29:22.226Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754465413827_om89n8pap",
+    "startTime": "2025-08-06T07:30:13.828Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:30:13.828Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754465413827_om89n8pap",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:30:13.828Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754465413827_om89n8pap",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:30:13.829Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:30:13.943Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:30:16.967Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:30:16.968Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:30:16.968Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:30:23.504Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:30:31.973Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 200,
+          "statusText": "OK",
+          "ok": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:30:31.974Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_PARSED",
+        "data": {
+          "tokenId": "101",
+          "hasShareUrl": true,
+          "hasQrCode": false,
+          "gasless": false,
+          "isEscrow": true,
+          "escrowTransactionHash": "0x606db1e6cb91d01ac8a3bd5501a90b5a687b669b426027085772e8c3dfc450b0",
+          "nonce": "undefined...",
+          "fullResponse": {
+            "success": true,
+            "tokenId": "101",
+            "transactionHash": "0x9a2802f765d7ee9a925bf63943cd9e0421883379fa0c9de162729c90bc168a58",
+            "gasless": false,
+            "rateLimit": {
+              "remaining": 3,
+              "resetTime": 1754465483556
+            },
+            "escrowTransactionHash": "0x606db1e6cb91d01ac8a3bd5501a90b5a687b669b426027085772e8c3dfc450b0",
+            "giftLink": "https://172.19.96.1:3000/gift/claim/101",
+            "salt": "0x702c961f57f3b957921a72d6b10427dd1c0b7c479d67aeebf8cc9b985e3472a4",
+            "passwordHash": "0xb25e8df8b1f83af1fe7649086b87578353ef31a5589b8f47c2440d2a33424d02",
+            "expirationTime": 1754466331
+          }
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:30:31.975Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "isTransactionGasPaid",
+          "conditionResult": true,
+          "tokenId": "101",
+          "apiSaysGasless": false,
+          "expectedGasPaid": true
+        },
+        "result": "success",
+        "decision": "IF(isTransactionGasPaid) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:30:31.975Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_SUCCESS_CONFIRMED",
+        "data": {
+          "tokenId": "101",
+          "shareUrl": "https://172.19.96.1:3000/gift/claim/101",
+          "userPaidGas": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_13",
+        "timestamp": "2025-08-06T07:30:39.581Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED"
+      },
+      {
+        "id": "step_14",
+        "timestamp": "2025-08-06T07:30:39.582Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_PAID_SUCCESS_CONFIRMED → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754465497859_qq3drv8jh",
+    "startTime": "2025-08-06T07:31:37.859Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:31:37.859Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754465497859_qq3drv8jh",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:31:37.859Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754465497859_qq3drv8jh",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:31:37.859Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:31:37.963Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:31:40.692Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:31:40.693Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:31:40.693Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:31:46.556Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:31:54.050Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 500,
+          "statusText": "Internal Server Error",
+          "ok": false
+        },
+        "result": "error",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:31:54.050Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_ERROR",
+        "data": {
+          "errorMessage": "Gas-paid API call failed",
+          "status": 500,
+          "errorData": {
+            "success": false,
+            "error": "Gas-paid escrow mint failed: InvalidGiftMessage - Llevamos semanas trabajando en un proyecto que se encuentra en PS C:\\Users\\rafae\\cryptogift-wallets&gt; pero se cerró la ultima sesión así que analiza detenidamente los .md que encontraras ahí,KBJH...\n\ncontract: 0x46175CfC233500DA803841DEef7f2816e7A129E0\nchainId: 84532"
+          }
+        },
+        "result": "error",
+        "error": "Gas-paid API call failed",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754465737573_v1kt0kj4x",
+    "startTime": "2025-08-06T07:35:37.573Z",
+    "steps": [
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:35:37.573Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754465737573_v1kt0kj4x",
+          "userAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "metadata": {
+            "amount": 0,
+            "filter": "Original",
+            "referrer": null
+          }
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:35:37.574Z",
+        "component": "GIFT_WIZARD",
+        "action": "MINT_GIFT_STARTED",
+        "data": {
+          "traceId": "trace_1754465737573_v1kt0kj4x",
+          "walletAddress": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "amount": 0,
+          "netAmount": 0,
+          "referrer": null
+        },
+        "result": "pending",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:35:37.574Z",
+        "component": "GIFT_WIZARD",
+        "action": "WIZARD_STATE_SET",
+        "data": {
+          "currentStep": "MINTING",
+          "isLoading": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED"
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:35:37.658Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_DISABLED_SKIP",
+        "data": {
+          "reason": "Focusing on gas-paid robustness before re-enabling gasless features",
+          "status": "disabled"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:35:40.726Z",
+        "component": "GIFT_WIZARD",
+        "action": "GASLESS_ATTEMPT_FAILED",
+        "data": {
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features",
+          "errorType": "GASLESS_FAILURE",
+          "willShowGasModal": true
+        },
+        "result": "error",
+        "error": "handleMintGift@webpack-internal:///(app-pages-browser)/./src/components/GiftWizard.tsx:270:23\n",
+        "path": "GIFT_WIZARD.MINT_GIFT_STARTED → GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP"
+      },
+      {
+        "id": "step_6",
+        "timestamp": "2025-08-06T07:35:40.726Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "gaslessFailed",
+          "conditionResult": true,
+          "nextAction": "SHOW_GAS_MODAL",
+          "errorMessage": "Gasless transactions are temporarily disabled: Focusing on gas-paid robustness before re-enabling gasless features"
+        },
+        "result": "success",
+        "decision": "IF(gaslessFailed) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.WIZARD_STATE_SET → GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED"
+      },
+      {
+        "id": "step_7",
+        "timestamp": "2025-08-06T07:35:40.726Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_MODAL_SHOWN",
+        "data": {
+          "estimatedGas": "150000",
+          "gasPrice": "0.1",
+          "totalCost": "0.000015",
+          "networkName": "Base Sepolia"
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GASLESS_DISABLED_SKIP → GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT"
+      },
+      {
+        "id": "step_8",
+        "timestamp": "2025-08-06T07:35:44.596Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_MINT_STARTED",
+        "data": {
+          "endpoint": "/api/mint-escrow",
+          "escrowEnabled": true,
+          "to": "0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6",
+          "imageFile": "ipfs://QmRBtctrcfbdhu2jYBB2HhaFkhqa8ZLsoXEML5uNhZZ6MR/mejorado.jpg",
+          "initialBalance": 0,
+          "filter": "Original"
+        },
+        "result": "pending",
+        "path": "GIFT_WIZARD.GASLESS_ATTEMPT_FAILED → GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN"
+      },
+      {
+        "id": "step_9",
+        "timestamp": "2025-08-06T07:35:54.733Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_RECEIVED",
+        "data": {
+          "status": 200,
+          "statusText": "OK",
+          "ok": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.DECISION_POINT → GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED"
+      },
+      {
+        "id": "step_10",
+        "timestamp": "2025-08-06T07:35:54.734Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_API_RESPONSE_PARSED",
+        "data": {
+          "tokenId": "103",
+          "hasShareUrl": true,
+          "hasQrCode": false,
+          "gasless": false,
+          "isEscrow": true,
+          "escrowTransactionHash": "0xa43283de48a1e0507622f56e20b94f4c01150cd0618583051b7563e22baadf33",
+          "nonce": "undefined...",
+          "fullResponse": {
+            "success": true,
+            "tokenId": "103",
+            "transactionHash": "0x419eebf0f3c4959c3d55b529a874e3fc60aec364650d261d1384c33b03b4b83d",
+            "gasless": false,
+            "rateLimit": {
+              "remaining": 3,
+              "resetTime": 1754465804648
+            },
+            "escrowTransactionHash": "0xa43283de48a1e0507622f56e20b94f4c01150cd0618583051b7563e22baadf33",
+            "giftLink": "https://172.19.96.1:3000/gift/claim/103",
+            "salt": "0xbf0b0da60d91e544ce624c053894c79ed150f02b081002448c0af71d055a0b5b",
+            "passwordHash": "0xb3cf22f336d5b53cfa5781090fd7d67c298ae0dece716fbba492c4f8ed87d033",
+            "expirationTime": 1754466654
+          }
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_MODAL_SHOWN → GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED"
+      },
+      {
+        "id": "step_11",
+        "timestamp": "2025-08-06T07:35:54.735Z",
+        "component": "GIFT_WIZARD",
+        "action": "DECISION_POINT",
+        "data": {
+          "condition": "isTransactionGasPaid",
+          "conditionResult": true,
+          "tokenId": "103",
+          "apiSaysGasless": false,
+          "expectedGasPaid": true
+        },
+        "result": "success",
+        "decision": "IF(isTransactionGasPaid) = true → TRUE_PATH",
+        "path": "GIFT_WIZARD.GAS_PAID_MINT_STARTED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED"
+      },
+      {
+        "id": "step_12",
+        "timestamp": "2025-08-06T07:35:54.736Z",
+        "component": "GIFT_WIZARD",
+        "action": "GAS_PAID_SUCCESS_CONFIRMED",
+        "data": {
+          "tokenId": "103",
+          "shareUrl": "https://172.19.96.1:3000/gift/claim/103",
+          "userPaidGas": true
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.GAS_PAID_API_RESPONSE_RECEIVED → GIFT_WIZARD.GAS_PAID_API_RESPONSE_PARSED → GIFT_WIZARD.DECISION_POINT"
+      }
+    ]
+  },
+  {
+    "sessionId": "trace_1754466624027_f1kpbanvp",
+    "startTime": "2025-08-06T07:50:24.028Z",
+    "steps": [
+      {
+        "id": "step_2",
+        "timestamp": "2025-08-06T07:50:24.028Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_3",
+        "timestamp": "2025-08-06T07:50:24.030Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      },
+      {
+        "id": "step_1",
+        "timestamp": "2025-08-06T07:50:24.027Z",
+        "component": "FLOW_TRACKER",
+        "action": "TRACE_STARTED",
+        "data": {
+          "sessionId": "trace_1754466624027_f1kpbanvp",
+          "userAddress": "unknown"
+        },
+        "result": "success",
+        "path": ""
+      },
+      {
+        "id": "step_4",
+        "timestamp": "2025-08-06T07:51:54.109Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
+      },
+      {
+        "id": "step_5",
+        "timestamp": "2025-08-06T07:51:54.110Z",
+        "component": "GIFT_WIZARD",
+        "action": "SIWE_AUTHENTICATION_SUCCESS",
+        "data": {
+          "address": "0xc655BF2B..."
+        },
+        "result": "success",
+        "path": "GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS → GIFT_WIZARD.SIWE_AUTHENTICATION_SUCCESS"
       }
     ]
   }

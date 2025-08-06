@@ -49,7 +49,41 @@ import {
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 import { executeMintTransaction } from '../../lib/gasPaidTransactions';
-import { storeNFTMetadata, createNFTMetadata } from '../../lib/nftMetadataStore';
+import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from '../../lib/nftMetadataStore';
+
+// Helper function: Store metadata with robust retry logic
+async function storeMetadataWithRetry(metadata: any, maxRetries: number = 3): Promise<void> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📦 Metadata storage attempt ${attempt}/${maxRetries}`);
+      
+      await storeNFTMetadata(metadata);
+      
+      // CRITICAL: Verify storage immediately
+      console.log(`🔍 Verifying metadata storage for ${metadata.contractAddress}:${metadata.tokenId}`);
+      const verification = await getNFTMetadata(metadata.contractAddress, metadata.tokenId);
+      
+      if (verification) {
+        console.log(`✅ Metadata stored and verified successfully on attempt ${attempt}`);
+        return;
+      } else {
+        throw new Error('Verification failed - metadata not found after storage');
+      }
+      
+    } catch (error: any) {
+      console.warn(`⚠️ Metadata storage attempt ${attempt} failed:`, error.message);
+      
+      if (attempt < maxRetries) {
+        // Exponential backoff: 2s, 4s, 8s
+        const delay = 2000 * Math.pow(2, attempt - 1);
+        console.log(`⏳ Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw new Error(`Failed to store and verify metadata after ${maxRetries} attempts`);
+}
 
 // Types
 interface MintEscrowRequest {
@@ -1644,12 +1678,14 @@ export default async function handler(
         creatorWallet: creatorAddress
       });
       
-      await storeNFTMetadata(nftMetadata);
-      console.log('✅ NFT metadata stored successfully');
+      // 🔄 ROBUST METADATA STORAGE with retry logic
+      await storeMetadataWithRetry(nftMetadata, 3);
+      console.log('✅ NFT metadata stored and verified successfully');
       
     } catch (metadataStoreError) {
-      console.error('⚠️ Failed to store NFT metadata (non-critical):', metadataStoreError);
-      // Don't fail the whole transaction for metadata storage issues
+      console.error('⚠️ Failed to store NFT metadata after retries:', metadataStoreError);
+      // Don't fail the whole transaction for metadata storage issues, but log for recovery
+      console.error('📋 Metadata that failed to store:', JSON.stringify(storedMetadata || {}, null, 2));
     }
     
     return res.status(200).json(responseData);

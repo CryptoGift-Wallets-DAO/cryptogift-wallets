@@ -320,8 +320,8 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         tokenId="preview"
         metadata={{
           description: previewModal.filterId === 'original' 
-            ? "Previsualización de tu imagen original tal como aparecerá en la blockchain. Este será el formato NFT final que tu amigo verá." 
-            : `Previsualización con filtro ${previewModal.filterName} aplicado. Así es como se verá tu NFT en la blockchain.`,
+            ? "Vista previa de tu imagen original. Formato NFT final para blockchain." 
+            : `Vista previa con filtro ${previewModal.filterName}. Tu NFT final en blockchain.`,
           attributes: [
             { trait_type: "Filtro Aplicado", value: previewModal.filterName },
             { trait_type: "Estado", value: "Vista Previa" },

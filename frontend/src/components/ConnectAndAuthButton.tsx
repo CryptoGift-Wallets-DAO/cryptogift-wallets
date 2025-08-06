@@ -6,6 +6,7 @@ import { baseSepolia } from 'thirdweb/chains';
 import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
 import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
+import { MobileWalletRedirect } from './ui/MobileWalletRedirect';
 
 // Mobile detection utility
 const isMobileDevice = () => {
@@ -61,6 +62,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   const [authError, setAuthError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showMobileRedirect, setShowMobileRedirect] = useState(false);
 
   // Check if mobile device
   useEffect(() => {
@@ -108,6 +110,12 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         throw new Error('Wallet does not support message signing');
       }
 
+      // 📱 MOBILE: Show redirect popup when signing starts
+      if (isMobile) {
+        setShowMobileRedirect(true);
+        console.log('📱 Mobile detected - showing wallet redirect popup');
+      }
+
       // ✅ DIRECTO AL SIWE SIN REDIRECCIONES
       const authState = await authenticateWithSiwe(account.address, account);
       
@@ -115,6 +123,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         setIsAuthenticated(true);
         setAuthError(null);
         setShowSuccessMessage(true);
+        setShowMobileRedirect(false); // Hide mobile popup on success
         onAuthChange?.(true, account.address);
         console.log('✅ Authentication successful!');
         
@@ -132,6 +141,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
       console.error('❌ SIWE authentication failed:', error);
       setAuthError(error.message || 'Authentication failed');
       setIsAuthenticated(false);
+      setShowMobileRedirect(false); // Hide popup on error
       onAuthChange?.(false, account.address);
     } finally {
       setIsAuthenticating(false);
@@ -351,6 +361,15 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           Re-autenticar
         </button>
       </div>
+
+      {/* Mobile Wallet Redirect Popup */}
+      <MobileWalletRedirect
+        isOpen={showMobileRedirect}
+        onClose={() => setShowMobileRedirect(false)}
+        walletAddress={account?.address || ''}
+        action="sign"
+        walletName={(account as any)?.wallet?.getConfig?.()?.name || 'Wallet'}
+      />
     </div>
   );
 };

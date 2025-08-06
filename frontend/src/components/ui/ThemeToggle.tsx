@@ -112,50 +112,49 @@ export function ThemeToggle() {
               </div>
             </motion.button>
 
-            {!isAutoEnabled && (
-              <>
-                <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
-                
-                {/* MODO CLARO */}
-                <motion.button
-                  onClick={() => {
-                    setTheme('light');
-                    setIsOpen(false);
-                  }}
-                  className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm
-                             transition-colors duration-200 ${
-                    theme === 'light' 
-                      ? 'bg-accent-gold/20 text-accent-gold' 
-                      : 'hover:bg-bg-secondary text-text-secondary'
-                  }`}
-                  whileHover={{ x: 2 }}
-                >
-                  <Sun size={14} className="text-accent-gold" />
-                  <span className="text-accent-gold">Light</span>
-                </motion.button>
+            {/* SEPARADOR SIEMPRE VISIBLE */}
+            <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
+            
+            {/* MODO CLARO - SIEMPRE VISIBLE */}
+            <motion.button
+              onClick={() => {
+                disableAutoTheme(); // Disable auto when manually selecting
+                setTheme('light');
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm
+                         transition-colors duration-200 ${
+                !isAutoEnabled && theme === 'light' 
+                  ? 'bg-accent-gold/20 text-accent-gold' 
+                  : 'hover:bg-bg-secondary text-text-secondary'
+              }`}
+              whileHover={{ x: 2 }}
+            >
+              <Sun size={14} className="text-accent-gold" />
+              <span className="text-accent-gold">Light</span>
+            </motion.button>
 
-                {/* MODO OSCURO */}
-                <motion.button
-                  onClick={() => {
-                    setTheme('dark');
-                    setIsOpen(false);
-                  }}
-                  className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm mt-1
-                             transition-colors duration-200 ${
-                    theme === 'dark' 
-                      ? 'bg-accent-silver/20 text-accent-silver' 
-                      : 'hover:bg-bg-secondary text-text-secondary'
-                  }`}
-                  whileHover={{ x: 2 }}
-                >
-                  <Moon 
-                    size={14} 
-                    className="text-accent-silver" 
-                  />
-                  <span className="text-accent-silver">Dark</span>
-                </motion.button>
-              </>
-            )}
+            {/* MODO OSCURO - SIEMPRE VISIBLE */}
+            <motion.button
+              onClick={() => {
+                disableAutoTheme(); // Disable auto when manually selecting
+                setTheme('dark');
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center space-x-2 p-2 rounded-lg text-sm mt-1
+                         transition-colors duration-200 ${
+                !isAutoEnabled && theme === 'dark' 
+                  ? 'bg-accent-silver/20 text-accent-silver' 
+                  : 'hover:bg-bg-secondary text-text-secondary'
+              }`}
+              whileHover={{ x: 2 }}
+            >
+              <Moon 
+                size={14} 
+                className="text-accent-silver" 
+              />
+              <span className="text-accent-silver">Dark</span>
+            </motion.button>
 
             {/* INFORMACIÓN DE ZONA HORARIA */}
             {timezoneInfo && isAutoEnabled && (
