@@ -51,12 +51,22 @@ export function useAutoTheme() {
   // Save auto theme settings to localStorage
   const updateAutoSettings = (newSettings: Partial<AutoThemeSettings>) => {
     const updated = { ...autoSettings, ...newSettings };
-    setAutoSettings(updated);
-    try {
-      localStorage.setItem('auto-theme-settings', JSON.stringify(updated));
-      console.log('💾 Saved auto theme settings:', updated);
-    } catch (error) {
-      console.warn('Failed to save auto theme settings:', error);
+    
+    // Only save if settings actually changed to prevent spam
+    const currentSaved = localStorage.getItem('auto-theme-settings');
+    const updatedStr = JSON.stringify(updated);
+    
+    if (currentSaved !== updatedStr) {
+      setAutoSettings(updated);
+      try {
+        localStorage.setItem('auto-theme-settings', updatedStr);
+        console.log('💾 Saved auto theme settings:', updated);
+      } catch (error) {
+        console.warn('Failed to save auto theme settings:', error);
+      }
+    } else {
+      // Settings haven't changed, just update state
+      setAutoSettings(updated);
     }
   };
 
@@ -75,11 +85,20 @@ export function useAutoTheme() {
 
   // Update current time every minute and check for theme changes
   useEffect(() => {
+    // ⚠️ ONLY RUN IF AUTO THEME IS ENABLED
+    if (!autoSettings.enabled) {
+      // Just update current time for display purposes, don't interfere with manual theme changes
+      const updateTime = () => setCurrentTime(new Date());
+      updateTime();
+      const interval = setInterval(updateTime, 60000);
+      return () => clearInterval(interval);
+    }
+
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(now);
       
-      if (autoSettings.enabled && userTimezone) {
+      if (userTimezone) {
         const currentHour = now.getHours();
         const shouldBeDark = shouldUseDarkMode(currentHour, autoSettings);
         const currentThemeIsDark = theme === 'dark';
@@ -101,7 +120,7 @@ export function useAutoTheme() {
     const interval = setInterval(updateTime, 60000);
     
     return () => clearInterval(interval);
-  }, [autoSettings, userTimezone, theme, setTheme]);
+  }, [autoSettings.enabled, autoSettings.darkHourStart, autoSettings.darkHourEnd, userTimezone, theme, setTheme]);
 
   // Get display info for current timezone and time
   const getTimezoneInfo = () => {
