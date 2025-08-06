@@ -42,6 +42,29 @@ export function NFTImageModal({
   const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
   const [isWideImage, setIsWideImage] = useState(false);
   
+  // Extract creator address from metadata attributes
+  const getCreatorAddress = () => {
+    if (!metadata?.attributes) return null;
+    const creatorAttr = metadata.attributes.find(attr => 
+      attr.trait_type.toLowerCase() === 'creator' || 
+      attr.trait_type.toLowerCase() === 'created by' ||
+      attr.trait_type.toLowerCase() === 'creator address'
+    );
+    return creatorAttr?.value as string;
+  };
+  
+  // Extract correct status from metadata attributes  
+  const getCorrectStatus = () => {
+    if (!metadata?.attributes) return 'ACTIVE';
+    const statusAttr = metadata.attributes.find(attr => 
+      attr.trait_type.toLowerCase() === 'status'
+    );
+    return statusAttr?.value as string || 'ACTIVE';
+  };
+  
+  const creatorAddress = getCreatorAddress();
+  const correctStatus = getCorrectStatus();
+  
   // Detect image aspect ratio for adaptive layout
   useEffect(() => {
     if (!isOpen || !image) return;
@@ -198,7 +221,7 @@ export function NFTImageModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
-                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    <h2 className="text-[14px] font-semibold text-slate-900 dark:text-white">
                       Vista Previa
                     </h2>
                   </div>
@@ -223,7 +246,7 @@ export function NFTImageModal({
                         : 'bg-slate-300 dark:bg-slate-600'
                     }`}
                   ></div>
-                  <p className={`text-xs mt-1 transition-colors duration-200 ${
+                  <p className={`text-[10px] mt-1 transition-colors duration-200 ${
                     isDragging && minDragDistance > 60
                       ? 'text-green-600 dark:text-green-400 font-medium'
                       : 'text-slate-500 dark:text-slate-400'
@@ -255,17 +278,17 @@ export function NFTImageModal({
                 </div>
 
                 {/* Content Section */}
-                <div className="space-y-4">
+                <div className="space-y-0.5">
                   {/* Title */}
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-0.5">
                       {name}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
                       Token ID: {tokenId}
                     </p>
                     {contractAddress && (
-                      <p className="text-xs text-slate-500 dark:text-slate-500 font-mono mt-1">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-500 font-mono mt-1">
                         {contractAddress.slice(0, 8)}...{contractAddress.slice(-6)}
                       </p>
                     )}
@@ -274,35 +297,15 @@ export function NFTImageModal({
                   {/* Description */}
                   {metadata?.description && (
                     <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
                         {metadata.description}
                       </p>
                     </div>
                   )}
 
-                  {/* Attributes */}
-                  {metadata?.attributes && metadata.attributes.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                        Propiedades
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {metadata.attributes.map((attr, index) => (
-                          <div key={index} className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                              {attr.trait_type}
-                            </p>
-                            <p className="text-sm font-medium text-slate-900 dark:text-white mt-1">
-                              {attr.value}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Action Button */}
-                  <div className="pt-4">
+                  <div className="pt-0.5">
                     <button
                       onClick={() => {
                         if (contractAddress) {
@@ -376,7 +379,7 @@ export function NFTImageModal({
                   : 'flex-col lg:flex-row' // Vista LATERAL: imagen izq, info der (para verticales/cuadradas)
               }`}>
                 {/* Image Section - ADAPTIVE based on image orientation */}
-                <div className="flex items-center justify-center p-1 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900"
+                <div className="flex items-center justify-center px-0.5 py-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900"
                      style={{
                        // LÓGICA DUAL: 
                        // - Imágenes verticales/cuadradas (≤1.0): Vista lateral con ancho adaptativo
@@ -446,187 +449,345 @@ export function NFTImageModal({
                     position: 'relative'
                   })
                 }}>
-                  <div className={`${
-                    imageAspectRatio !== null && imageAspectRatio > 1.0
-                      ? 'space-y-3' // Vista horizontal: espaciado compacto
-                      : 'space-y-4' // Vista lateral: espaciado normal
-                  }`}>
-                    {/* Title - Compact for horizontal */}
-                    <div className={imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'grid grid-cols-2 gap-4' : ''}>
-                      <div>
-                        <h2 className={`font-bold text-slate-900 dark:text-white mb-1 ${
-                          imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-lg' : 'text-2xl'
-                        }`}>
-                          {name}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            Token ID: {tokenId}
-                          </span>
-                          <button 
-                            onClick={() => navigator.clipboard?.writeText(tokenId)}
-                            className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  {/* 📊 DISTRIBUCIÓN MATEMÁTICAMENTE EXACTA DE INFORMACIÓN */}
+                  {imageAspectRatio !== null && imageAspectRatio > 1.0 ? (
+                    /* 🔸 VISTA HORIZONTAL: 2 BLOQUES 50%-50% */
+                    <div className="grid grid-cols-2 gap-0.5 h-full">
+                      {/* BLOQUE IZQUIERDO - 50% */}
+                      <div className="space-y-0.5 flex flex-col justify-between">
+                        {/* Title & IDs */}
+                        <div>
+                          <h2 className="text-[11px] font-bold text-slate-900 dark:text-white mb-0.5 truncate">
+                            {name}
+                          </h2>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-0.5">
+                              <span className="text-[10px] text-slate-600 dark:text-slate-400">
+                                ID: {tokenId}
+                              </span>
+                              <button 
+                                onClick={() => {
+                                  if (navigator.clipboard && window.isSecureContext) {
+                                    navigator.clipboard.writeText(tokenId);
+                                  } else {
+                                    const textArea = document.createElement('textarea');
+                                    textArea.value = tokenId;
+                                    textArea.style.position = 'fixed';
+                                    textArea.style.left = '-999999px';
+                                    document.body.appendChild(textArea);
+                                    textArea.select();
+                                    try { document.execCommand('copy'); } finally { document.body.removeChild(textArea); }
+                                  }
+                                }}
+                                className="text-[10px] bg-slate-100 dark:bg-slate-700 px-0.5 py-0 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                              >
+                                <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </button>
+                            </div>
+                            {contractAddress && (
+                              <div>
+                                <span className="text-[9px] text-slate-500 dark:text-slate-500">Contract:</span>
+                                <div className="flex items-center gap-0.5">
+                                  <span className="font-mono text-[9px] text-slate-700 dark:text-slate-300 truncate">
+                                    {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
+                                  </span>
+                                  <button 
+                                    onClick={() => {
+                                      if (navigator.clipboard && window.isSecureContext) {
+                                        navigator.clipboard.writeText(contractAddress);
+                                      } else {
+                                        const textArea = document.createElement('textarea');
+                                        textArea.value = contractAddress;
+                                        textArea.style.position = 'fixed';
+                                        textArea.style.left = '-999999px';
+                                        document.body.appendChild(textArea);
+                                        textArea.select();
+                                        try { document.execCommand('copy'); } finally { document.body.removeChild(textArea); }
+                                      }
+                                    }}
+                                    className="text-[9px] bg-slate-100 dark:bg-slate-700 px-0.5 py-0 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                  >
+                                    <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* NFT Core Info */}
+                        <div>
+                          <h3 className="text-[10px] font-medium text-slate-900 dark:text-white mb-0.5">NFT Info</h3>
+                          <div className="space-y-0.5">
+                            <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded text-[9px]">
+                              <span className="text-slate-600 dark:text-slate-400">Type</span>
+                              <span className="font-medium text-slate-900 dark:text-white">ERC-6551</span>
+                            </div>
+                            <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded text-[9px]">
+                              <span className="text-slate-600 dark:text-slate-400">Network</span>
+                              <span className="font-medium text-slate-900 dark:text-white">Base</span>
+                            </div>
+                            <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded text-[9px]">
+                              <span className="text-slate-600 dark:text-slate-400">Status</span>
+                              <span className={`font-medium ${
+                                correctStatus === 'CLAIMED' ? 'text-blue-600 dark:text-blue-400' : 
+                                correctStatus === 'ACTIVE' ? 'text-green-600 dark:text-green-400' : 
+                                'text-red-600 dark:text-red-400'
+                              }`}>{correctStatus}</span>
+                            </div>
+                            {creatorAddress && (
+                              <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded text-[10px]">
+                                <span className="text-slate-600 dark:text-slate-400">Creator</span>
+                                <div className="flex items-center gap-0.5">
+                                  <span className="font-medium text-slate-900 dark:text-white font-mono">
+                                    {creatorAddress.slice(0, 6)}...{creatorAddress.slice(-4)}
+                                  </span>
+                                  <button 
+                                    onClick={() => {
+                                      if (navigator.clipboard && window.isSecureContext) {
+                                        navigator.clipboard.writeText(creatorAddress);
+                                      } else {
+                                        const textArea = document.createElement('textarea');
+                                        textArea.value = creatorAddress;
+                                        textArea.style.position = 'fixed';
+                                        textArea.style.left = '-999999px';
+                                        document.body.appendChild(textArea);
+                                        textArea.select();
+                                        try { document.execCommand('copy'); } finally { document.body.removeChild(textArea); }
+                                      }
+                                    }}
+                                    className="text-[10px] bg-slate-200 dark:bg-slate-700 px-0.5 py-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                  >
+                                    <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+
+                      {/* BLOQUE DERECHO - 50% */}
+                      <div className="space-y-0.5 flex flex-col justify-between">
+                        {/* Description (moved from left block) */}
+                        {metadata?.description && (
+                          <div>
+                            <h3 className="text-[10px] font-medium text-slate-900 dark:text-white mb-0.5">Description</h3>
+                            <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-relaxed max-h-20 overflow-y-auto">
+                              {metadata.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Technical Details */}
+                        <div>
+                          <h3 className="text-[10px] font-medium text-slate-900 dark:text-white mb-0.5">Technical</h3>
+                          <div className="space-y-0.5 text-[10px] text-slate-600 dark:text-slate-400">
+                            <div className="flex justify-between">
+                              <span>Standard:</span>
+                              <span className="font-medium">ERC-721</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>TBA:</span>
+                              <span className="font-medium text-green-600">✅</span>
+                            </div>
+                            {imageAspectRatio && (
+                              <div className="flex justify-between">
+                                <span>Ratio:</span>
+                                <span className="font-medium">{imageAspectRatio.toFixed(2)}:1</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <div>
+                          <button
+                            onClick={() => {
+                              if (contractAddress) {
+                                const url = `https://sepolia.basescan.org/nft/${contractAddress}/${tokenId}`;
+                                window.open(url, '_blank');
+                              }
+                            }}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-2 rounded text-[10px] transition-colors"
                           >
-                            📋
+                            View on BaseScan
                           </button>
                         </div>
                       </div>
-                      {contractAddress && (
-                        <div className={imageAspectRatio !== null && imageAspectRatio > 1.0 ? '' : 'mt-2'}>
-                          <p className="text-xs text-slate-500 dark:text-slate-500 mb-1">Contract Address:</p>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs text-slate-700 dark:text-slate-300">
+                    </div>
+                  ) : (
+                    /* 🔸 VISTA VERTICAL: 1 BLOQUE COMPACTO */
+                    <div className="space-y-0.5">
+                      {/* Title & IDs - Compacto */}
+                      <div>
+                        <h2 className="text-[14px] font-bold text-slate-900 dark:text-white mb-0.5">
+                          {name}
+                        </h2>
+                        <div className="flex items-center gap-0.5 mb-0.5">
+                          <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                            Token ID: {tokenId}
+                          </span>
+                          <button 
+                            onClick={() => {
+                              if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(tokenId);
+                              } else {
+                                const textArea = document.createElement('textarea');
+                                textArea.value = tokenId;
+                                textArea.style.position = 'fixed';
+                                textArea.style.left = '-999999px';
+                                document.body.appendChild(textArea);
+                                textArea.select();
+                                try { document.execCommand('copy'); } finally { document.body.removeChild(textArea); }
+                              }
+                            }}
+                            className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                          >
+                            <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        </div>
+                        {contractAddress && (
+                          <div className="flex items-center gap-0.5">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-500">Contract:</span>
+                            <span className="font-mono text-[10px] text-slate-700 dark:text-slate-300">
                               {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
                             </span>
                             <button 
-                              onClick={() => navigator.clipboard?.writeText(contractAddress)}
-                              className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                              onClick={() => {
+                                if (navigator.clipboard && window.isSecureContext) {
+                                  navigator.clipboard.writeText(contractAddress);
+                                } else {
+                                  const textArea = document.createElement('textarea');
+                                  textArea.value = contractAddress;
+                                  textArea.style.position = 'fixed';
+                                  textArea.style.left = '-999999px';
+                                  document.body.appendChild(textArea);
+                                  textArea.select();
+                                  try { document.execCommand('copy'); } finally { document.body.removeChild(textArea); }
+                                }
+                              }}
+                              className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                             >
-                              📋
+                              <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
                             </button>
+                          </div>
+                        )}
+                      </div>
+
+
+                      {/* NFT Info - Compacto */}
+                      <div>
+                        <h3 className="text-[11px] font-medium text-slate-900 dark:text-white mb-0.5">NFT Information</h3>
+                        <div className="space-y-0.5">
+                          <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Wallet Type</span>
+                            <span className="text-[11px] font-semibold text-slate-900 dark:text-white">ERC-6551 TBA</span>
+                          </div>
+                          <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Network</span>
+                            <span className="text-[11px] font-semibold text-slate-900 dark:text-white">Base Sepolia</span>
+                          </div>
+                          <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Status</span>
+                            <span className={`text-[11px] font-semibold ${
+                              correctStatus === 'CLAIMED' ? 'text-blue-600 dark:text-blue-400' : 
+                              correctStatus === 'ACTIVE' ? 'text-green-600 dark:text-green-400' : 
+                              'text-red-600 dark:text-red-400'
+                            }`}>{correctStatus}</span>
+                          </div>
+                          {creatorAddress && (
+                            <div className="flex justify-between items-center px-0.5 py-0 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Creator</span>
+                              <div className="flex items-center gap-0.5">
+                                <span className="text-[11px] font-semibold text-slate-900 dark:text-white font-mono">
+                                  {creatorAddress.slice(0, 6)}...{creatorAddress.slice(-4)}
+                                </span>
+                                <button 
+                                  onClick={() => {
+                                    if (navigator.clipboard && window.isSecureContext) {
+                                      navigator.clipboard.writeText(creatorAddress);
+                                    } else {
+                                      const textArea = document.createElement('textarea');
+                                      textArea.value = creatorAddress;
+                                      textArea.style.position = 'fixed';
+                                      textArea.style.left = '-999999px';
+                                      document.body.appendChild(textArea);
+                                      textArea.select();
+                                      try { document.execCommand('copy'); } finally { document.body.removeChild(textArea); }
+                                    }
+                                  }}
+                                  className="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                  <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Description - Now has more space */}
+                      {metadata?.description && (
+                        <div>
+                          <h3 className="text-[11px] font-medium text-slate-900 dark:text-white mb-0.5">Description</h3>
+                          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-0.5 py-0 max-h-32 overflow-y-auto">
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                              {metadata.description}
+                            </p>
                           </div>
                         </div>
                       )}
-                    </div>
-                    
-                    {/* Description */}
-                    {metadata?.description && (
-                      <div>
-                        <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                          Description
-                        </h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                          {metadata.description}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Core NFT Info - Responsive layout */}
-                    <div>
-                      <h3 className={`font-medium text-slate-900 dark:text-white mb-2 ${
-                        imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-sm' : 'text-sm'
-                      }`}>
-                        Información NFT
-                      </h3>
-                      <div className={`${
-                        imageAspectRatio !== null && imageAspectRatio > 1.0 
-                          ? 'grid grid-cols-2 gap-2' // Vista horizontal: 2 columnas
-                          : 'space-y-2' // Vista lateral: vertical
-                      }`}>
-                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                            Wallet Type
-                          </span>
-                          <span className={`font-semibold text-slate-900 dark:text-white ${
-                            imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
-                          }`}>
-                            ERC-6551 TBA
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                            Network
-                          </span>
-                          <span className={`font-semibold text-slate-900 dark:text-white ${
-                            imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
-                          }`}>
-                            Base Sepolia
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                            Status
-                          </span>
-                          <span className={`font-semibold text-green-600 dark:text-green-400 ${
-                            imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
-                          }`}>
-                            ACTIVE
-                          </span>
-                        </div>
-                        {contractAddress && (
-                          <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg col-span-full">
-                            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                              Creator
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-semibold text-slate-900 dark:text-white font-mono ${
-                                imageAspectRatio !== null && imageAspectRatio > 1.0 ? 'text-xs' : 'text-sm'
-                              }`}>
-                                {contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}
-                              </span>
-                              <button 
-                                onClick={() => navigator.clipboard?.writeText(contractAddress)}
-                                className="text-xs bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                              >
-                                📋
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Custom Attributes from metadata */}
-                    {metadata?.attributes && metadata.attributes.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-3">
-                          Attributes
-                        </h3>
-                        <div className="space-y-2">
-                          {metadata.attributes.map((attr, index) => (
-                            <div 
-                              key={index}
-                              className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"
-                            >
-                              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                                {attr.trait_type}
-                              </span>
-                              <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                                {attr.value}
-                              </span>
+                      {/* Technical Details - Compacto */}
+                      <div className="pt-0.5 border-t border-slate-200 dark:border-slate-700">
+                        <h3 className="text-[11px] font-medium text-slate-900 dark:text-white mb-0.5">Technical Details</h3>
+                        <div className="space-y-0.5 text-[10px] text-slate-600 dark:text-slate-400">
+                          <div>Standard: ERC-721</div>
+                          <div>Network: Base Sepolia</div>
+                          <div>Token Bound Account: ✅</div>
+                          {imageAspectRatio && (
+                            <div className="flex items-center gap-0.5">
+                              <span>Aspect Ratio: {imageAspectRatio.toFixed(2)}:1</span>
+                              {isWideImage && (
+                                <span className="text-blue-500 font-medium">
+                                  📐 {imageAspectRatio >= 1.9 ? 'Ultra-wide' : 'Wide format'}
+                                </span>
+                              )}
                             </div>
-                          ))}
+                          )}
                         </div>
                       </div>
-                    )}
-                    
-                    {/* Technical Info with Aspect Ratio Display */}
-                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                        Technical Details
-                      </h3>
-                      <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                        <div>Standard: ERC-721</div>
-                        <div>Network: Base Sepolia</div>
-                        <div>Token Bound Account: ✅</div>
-                        {imageAspectRatio && (
-                          <div className="flex items-center gap-2">
-                            <span>Aspect Ratio: {imageAspectRatio.toFixed(2)}:1</span>
-                            {isWideImage && (
-                              <span className="text-blue-500 font-medium">
-                                📐 {imageAspectRatio >= 1.9 ? 'Ultra-wide' : 'Wide format'}
-                              </span>
-                            )}
-                          </div>
-                        )}
+
+                      {/* Action Button - Compacto */}
+                      <div className="pt-0.5">
+                        <button
+                          onClick={() => {
+                            if (contractAddress) {
+                              const url = `https://sepolia.basescan.org/nft/${contractAddress}/${tokenId}`;
+                              window.open(url, '_blank');
+                            }
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-0.5 px-4 rounded-lg transition-colors text-[11px]"
+                        >
+                          View on BaseScan
+                        </button>
                       </div>
                     </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="pt-4">
-                      <button
-                        onClick={() => {
-                          if (contractAddress) {
-                            const url = `https://sepolia.basescan.org/nft/${contractAddress}/${tokenId}`;
-                            window.open(url, '_blank');
-                          }
-                        }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-                      >
-                        View on BaseScan
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

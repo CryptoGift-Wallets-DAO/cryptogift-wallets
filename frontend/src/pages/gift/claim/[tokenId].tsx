@@ -180,11 +180,11 @@ export default function ClaimGiftPage() {
           <meta name="description" content="Loading your secured gift..." />
         </Head>
         
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-blue-900 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full text-center">
             <div className="animate-spin w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"></div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading Gift...</h1>
-            <p className="text-gray-600">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Loading Gift...</h1>
+            <p className="text-gray-600 dark:text-gray-300">
               Fetching your secured gift information...
             </p>
           </div>
@@ -241,15 +241,15 @@ export default function ClaimGiftPage() {
         )}
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-blue-900">
         {/* Header */}
-        <div className="bg-white shadow-sm">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
                 <button
                   onClick={() => router.push('/')}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
                 >
                   ← Back to CryptoGift
                 </button>
@@ -304,26 +304,26 @@ export default function ClaimGiftPage() {
               />
               
               {/* Help Section */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   How to Claim Your Gift
                 </h3>
-                <div className="space-y-3 text-sm text-gray-600">
+                <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                      <span className="text-blue-600 font-bold text-xs">1</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">1</span>
                     </div>
                     <p>Connect your wallet using the button above</p>
                   </div>
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                      <span className="text-blue-600 font-bold text-xs">2</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">2</span>
                     </div>
                     <p>Enter the password that was shared with you</p>
                   </div>
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                      <span className="text-blue-600 font-bold text-xs">3</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">3</span>
                     </div>
                     <p>The NFT will be transferred to your wallet</p>
                   </div>
