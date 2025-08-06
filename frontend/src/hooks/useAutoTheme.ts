@@ -15,7 +15,7 @@ interface AutoThemeSettings {
 export function useAutoTheme() {
   const { theme, setTheme } = useTheme();
   const [autoSettings, setAutoSettings] = useState<AutoThemeSettings>({
-    enabled: false,
+    enabled: true,  // 🎯 DEFAULT: Auto theme enabled by default for new users
     darkHourStart: 19, // 7 PM
     darkHourEnd: 7,    // 7 AM
   });
