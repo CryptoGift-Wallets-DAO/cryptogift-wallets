@@ -18,32 +18,50 @@ const isMobileDevice = () => {
          (window.innerWidth <= 768);
 };
 
-// Generate wallet-specific deeplinks
+// Generate wallet-specific deeplinks with proper URL formatting
 const generateWalletDeeplink = (walletName: string, action: string): string => {
   const lowerName = walletName.toLowerCase();
   
-  // MetaMask deeplinks
+  // Construct clean URL without double encoding
+  const currentUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+  
+  console.log('🔗 Generating deeplink for:', lowerName, 'URL:', currentUrl);
+  
+  // MetaMask deeplinks - fixed format to prevent "Invalid deeplink" warning
   if (lowerName.includes('metamask')) {
-    return 'https://metamask.app.link/dapp/' + encodeURIComponent(window.location.origin + window.location.pathname);
+    // Use proper MetaMask deeplink format without double encoding
+    const encodedUrl = encodeURIComponent(currentUrl);
+    const deeplink = `https://metamask.app.link/dapp/${encodedUrl}`;
+    console.log('🦊 MetaMask deeplink generated:', deeplink);
+    return deeplink;
   }
   
   // Trust Wallet deeplinks  
   if (lowerName.includes('trust')) {
-    return 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodeURIComponent(window.location.href);
+    const deeplink = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`;
+    console.log('🛡️ Trust Wallet deeplink generated:', deeplink);
+    return deeplink;
   }
   
   // Coinbase Wallet deeplinks
   if (lowerName.includes('coinbase')) {
-    return 'https://go.cb-w.com/dapp?cb_url=' + encodeURIComponent(window.location.href);
+    const deeplink = `https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(currentUrl)}`;
+    console.log('🪙 Coinbase Wallet deeplink generated:', deeplink);
+    return deeplink;
   }
   
   // Rainbow Wallet deeplinks
   if (lowerName.includes('rainbow')) {
-    return 'rainbow://dapp?url=' + encodeURIComponent(window.location.href);
+    const deeplink = `rainbow://dapp?url=${encodeURIComponent(currentUrl)}`;
+    console.log('🌈 Rainbow Wallet deeplink generated:', deeplink);
+    return deeplink;
   }
   
-  // Generic fallback - try to trigger wallet chooser
-  return 'https://metamask.app.link/dapp/' + encodeURIComponent(window.location.origin + window.location.pathname);
+  // Generic fallback - use MetaMask format
+  const encodedUrl = encodeURIComponent(currentUrl);
+  const fallbackDeeplink = `https://metamask.app.link/dapp/${encodedUrl}`;
+  console.log('🔄 Fallback deeplink generated:', fallbackDeeplink);
+  return fallbackDeeplink;
 };
 
 export const MobileWalletRedirect: React.FC<MobileWalletRedirectProps> = ({

@@ -249,7 +249,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       setShowMobileRedirect(false); // Hide popup on success
       setClaimStep('success');
       
-      // R2: ENHANCED METAMASK NFT VISIBILITY - Pre-pin + Toast handling
+      // R2: ENHANCED METAMASK NFT VISIBILITY with Network Verification
       if (typeof window !== 'undefined' && window.ethereum) {
         console.log('📱 Enhanced MetaMask NFT visibility process starting...');
         
@@ -257,7 +257,53 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         
         if (contractAddress) {
           try {
-            // Step 1: Pre-pin tokenURI metadata to IPFS for faster loading
+            // Step 1: Verify correct network before NFT operations
+            console.log('🔗 Verifying network for NFT visibility...');
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            const currentChainId = parseInt(chainId, 16);
+            const requiredChainId = 84532; // Base Sepolia
+            
+            if (currentChainId !== requiredChainId) {
+              console.log('⚠️ Wrong network detected for NFT visibility:', currentChainId, 'vs', requiredChainId);
+              
+              // Offer to switch network for better NFT visibility
+              addNotification({
+                type: 'warning',
+                title: '🔗 Red incorrecta para NFT',
+                message: 'Para que el NFT aparezca automáticamente, necesitas estar en Base Sepolia',
+                duration: 8000,
+                action: {
+                  label: 'Cambiar Red',
+                  onClick: async () => {
+                    try {
+                      await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x14a34' }], // Base Sepolia hex
+                      });
+                      console.log('✅ Network switched for NFT visibility');
+                      // Retry NFT visibility after network switch
+                      setTimeout(() => {
+                        window.location.reload(); // Simple refresh to retry with correct network
+                      }, 1500);
+                    } catch (switchError) {
+                      console.error('❌ Network switch failed:', switchError);
+                    }
+                  }
+                }
+              });
+              
+              // Show fallback message but don't fail the process
+              addNotification({
+                type: 'info',
+                title: '💡 NFT reclamado exitosamente',
+                message: 'Cambia a Base Sepolia para que aparezca automáticamente en tu wallet',
+                duration: 8000
+              });
+              
+              return; // Exit early if wrong network
+            }
+
+            // Step 2: Pre-pin tokenURI metadata to IPFS for faster loading
             console.log('📌 Pre-pinning tokenURI metadata...');
             const metadataUrl = `https://cryptogift-wallets.vercel.app/api/metadata/${contractAddress}/${tokenId}`;
             
@@ -271,13 +317,13 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             const metadata = await metadataResponse.json();
             console.log('✅ Metadata pre-cached with validation:', metadata);
             
-            // Step 2: Request account refresh (forces NFT cache update)
+            // Step 3: Request account refresh (forces NFT cache update)
             await window.ethereum.request({
               method: 'wallet_requestPermissions',
               params: [{ eth_accounts: {} }]
             });
             
-            // Step 3: Add NFT to MetaMask with enhanced error handling
+            // Step 4: Add NFT to MetaMask with enhanced error handling
             try {
               await window.ethereum.request({
                 method: 'wallet_watchAsset',
@@ -316,7 +362,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               }
             }
             
-            console.log('✅ Enhanced MetaMask NFT visibility completed');
+            console.log('✅ Enhanced MetaMask NFT visibility completed with network verification');
             
           } catch (error) {
             console.log('⚠️ MetaMask enhancement failed:', error);

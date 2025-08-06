@@ -7,6 +7,7 @@ import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
 import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
 import { MobileWalletRedirect } from './ui/MobileWalletRedirect';
+import { ChainSwitchingSystem } from './ui/ChainSwitchingSystem';
 
 // Mobile detection utility
 const isMobileDevice = () => {
@@ -63,6 +64,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showMobileRedirect, setShowMobileRedirect] = useState(false);
+  const [showChainPrompt, setShowChainPrompt] = useState(false);
 
   // Check if mobile device
   useEffect(() => {
@@ -132,6 +134,21 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         
         // ✅ DEEPLINK INTELIGENTE SOLO DESPUÉS DEL ÉXITO
         await handlePostAuthDeeplink(account, isMobile);
+        
+        // 🔗 CHAIN SWITCHING: Offer courtesy network setup for mobile users
+        if (isMobile) {
+          // Check if user is on correct network (Base Sepolia = 84532)
+          const currentChainId = (account as any)?.chainId;
+          const requiredChainId = 84532; // Base Sepolia
+          
+          if (currentChainId && currentChainId !== requiredChainId) {
+            console.log('🔗 Mobile user on wrong network, offering courtesy chain switch');
+            // Show chain prompt after a short delay for better UX
+            setTimeout(() => {
+              setShowChainPrompt(true);
+            }, 2000);
+          }
+        }
         
       } else {
         throw new Error('Authentication failed');
@@ -370,6 +387,20 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         action="sign"
         walletName={(account as any)?.wallet?.getConfig?.()?.name || 'Wallet'}
       />
+
+      {/* Courtesy Chain Switching for Mobile Users */}
+      {showChainPrompt && isMobile && (
+        <ChainSwitchingSystem
+          requiredChainId={84532} // Base Sepolia
+          onChainSwitched={(chainId) => {
+            console.log('✅ Chain switched to:', chainId);
+            setShowChainPrompt(false);
+          }}
+          showPersistentIndicator={false}
+          autoPrompt={false} // We control when to show it
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        />
+      )}
     </div>
   );
 };
