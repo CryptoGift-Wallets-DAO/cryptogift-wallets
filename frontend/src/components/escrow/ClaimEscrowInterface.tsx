@@ -20,6 +20,7 @@ import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
 import { useNotifications } from '../ui/NotificationSystem';
 import { MobileWalletRedirect } from '../ui/MobileWalletRedirect';
+import { NetworkOptimizationPrompt } from '../ui/NetworkOptimizationPrompt';
 import { 
   isMobileDevice, 
   isRpcError, 
@@ -83,6 +84,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     contractAddress: string;
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
   const [showMobileRedirect, setShowMobileRedirect] = useState(false);
+  const [showNetworkPrompt, setShowNetworkPrompt] = useState(false);
 
   // Mobile detection (using imported utility)
   const isMobile = isMobileDevice();
@@ -266,38 +268,24 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             if (currentChainId !== requiredChainId) {
               console.log('⚠️ Wrong network detected for NFT visibility:', currentChainId, 'vs', requiredChainId);
               
-              // Offer to switch network for better NFT visibility
-              addNotification({
-                type: 'warning',
-                title: '🔗 Red incorrecta para NFT',
-                message: 'Para que el NFT aparezca automáticamente, necesitas estar en Base Sepolia',
-                duration: 8000,
-                action: {
-                  label: 'Cambiar Red',
-                  onClick: async () => {
-                    try {
-                      await window.ethereum.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: '0x14a34' }], // Base Sepolia hex
-                      });
-                      console.log('✅ Network switched for NFT visibility');
-                      // Retry NFT visibility after network switch
-                      setTimeout(() => {
-                        window.location.reload(); // Simple refresh to retry with correct network
-                      }, 1500);
-                    } catch (switchError) {
-                      console.error('❌ Network switch failed:', switchError);
-                    }
-                  }
-                }
-              });
-              
-              // Show fallback message but don't fail the process
+              // Non-intrusive network notification (no automatic switching)
               addNotification({
                 type: 'info',
                 title: '💡 NFT reclamado exitosamente',
-                message: 'Cambia a Base Sepolia para que aparezca automáticamente en tu wallet',
-                duration: 8000
+                message: 'Para que aparezca automáticamente en tu wallet, cambia manualmente a Base Sepolia',
+                duration: 10000,
+                action: {
+                  label: 'Copiar Chain ID',
+                  onClick: () => {
+                    navigator.clipboard.writeText('84532');
+                    addNotification({
+                      type: 'success',
+                      title: 'Chain ID copiado',
+                      message: 'Ve a tu wallet y añade/cambia a Base Sepolia (84532)',
+                      duration: 5000
+                    });
+                  }
+                }
               });
               
               return; // Exit early if wrong network
@@ -581,6 +569,50 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         {/* Claim Form */}
         {canClaim && auth.isAuthenticated ? (
           <div className="space-y-4">
+            {/* 🌐 NETWORK OPTIMIZATION: Opcional y no intrusivo - solo post-auth en claim */}
+            {typeof window !== 'undefined' && window.ethereum && (
+              <div className="mb-4">
+                <button
+                  onClick={async () => {
+                    try {
+                      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                      const currentChainId = parseInt(chainId, 16);
+                      const requiredChainId = 84532; // Base Sepolia
+                      
+                      if (currentChainId !== requiredChainId) {
+                        setShowNetworkPrompt(true);
+                      } else {
+                        addNotification({
+                          type: 'success',
+                          title: '✅ Red Óptima',
+                          message: 'Ya estás en Base Sepolia - configuración perfecta!',
+                          duration: 3000
+                        });
+                      }
+                    } catch (error) {
+                      console.log('Network check failed:', error);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                      <span className="text-xl">✨</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-blue-800 dark:text-blue-300">Optimización Opcional</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Configura tu wallet para mejor experiencia NFT</p>
+                    </div>
+                  </div>
+                  <div className="text-blue-500 group-hover:text-blue-600 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+            )}
+
             {/* Password Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -760,6 +792,16 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         walletAddress={account?.address || ''}
         action="claim"
         walletName={(account as any)?.wallet?.getConfig?.()?.name || 'Wallet'}
+      />
+
+      {/* Network Optimization Prompt - Opcional y no intrusivo */}
+      <NetworkOptimizationPrompt
+        isOpen={showNetworkPrompt}
+        onClose={() => setShowNetworkPrompt(false)}
+        currentChainId={typeof window !== 'undefined' && window.ethereum ? 
+          parseInt(window.ethereum.chainId || '0x1', 16) : 1}
+        requiredChainId={84532} // Base Sepolia
+        context="claim"
       />
     </div>
   );

@@ -25,13 +25,31 @@ export const isMobileWallet = () => {
   return /MetaMask|TrustWallet|Coinbase|Rainbow|WalletConnect/i.test(navigator.userAgent);
 };
 
-// Enhanced RPC error detection with specific codes and user error exclusion
+// Enhanced RPC error detection with transaction-sent prevention
 export const isRpcError = (error: any): boolean => {
   if (!error) return false;
   
   // Extract error code and message
   const errorCode = error.code || error.error?.code;
   const errorMessage = error.message?.toLowerCase() || error.toString().toLowerCase();
+  
+  // 🚨 CRITICAL: Transaction already sent indicators - DO NOT RETRY
+  const transactionSentIndicators = [
+    'transaction already exists',
+    'already known',
+    'already pending',
+    'nonce already used',
+    'transaction with same hash',
+    'duplicate transaction',
+    'already in mempool',
+    'txn-mempool-conflict',
+    'known transaction'
+  ];
+  
+  if (transactionSentIndicators.some(indicator => errorMessage.includes(indicator))) {
+    console.log(`🚨 Transaction already sent, preventing double execution: ${errorMessage.slice(0, 100)}`);
+    return false; // Don't retry - transaction is already in mempool
+  }
   
   // RPC-specific error codes (JSON-RPC specification)
   const rpcErrorCodes = [
@@ -80,31 +98,43 @@ export const isRpcError = (error: any): boolean => {
     return false;
   }
   
-  // Network/RPC error indicators
-  const rpcErrorIndicators = [
+  // 🔄 Safe RPC retry indicators (connection issues only)
+  const safeRetryIndicators = [
     'internal json-rpc error',
     'rpc error',
-    'network error',
     'connection refused',
-    'timeout',
     'fetch failed',
     'etimedout',
     'bad gateway',
     'service unavailable',
     'too many requests',
     'rate limited',
-    'execution reverted',
     'node error',
     'provider error'
   ];
   
-  const isRpcRelated = rpcErrorIndicators.some(indicator => errorMessage.includes(indicator));
+  const isSafeRetry = safeRetryIndicators.some(indicator => errorMessage.includes(indicator));
   
-  if (isRpcRelated) {
-    console.log(`📡 RPC error detected by message: ${errorMessage.slice(0, 100)}`);
+  // 🚫 Dangerous retry indicators (could indicate transaction was processed)
+  const dangerousRetryIndicators = [
+    'timeout',
+    'network error',
+    'execution reverted' // This could mean transaction was tried
+  ];
+  
+  const isDangerousRetry = dangerousRetryIndicators.some(indicator => errorMessage.includes(indicator));
+  
+  if (isDangerousRetry) {
+    console.log(`⚠️ Potentially dangerous retry scenario: ${errorMessage.slice(0, 100)}`);
+    console.log(`🔍 Proceeding with caution - this could indicate transaction was processed`);
+    return false; // Conservative approach - don't retry dangerous scenarios
   }
   
-  return isRpcRelated;
+  if (isSafeRetry) {
+    console.log(`📡 Safe RPC retry detected: ${errorMessage.slice(0, 100)}`);
+  }
+  
+  return isSafeRetry;
 };
 
 // Create mobile-optimized ThirdWeb client
