@@ -600,8 +600,8 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                       <span className="text-xl">✨</span>
                     </div>
                     <div className="text-left">
-                      <p className="font-medium text-blue-800 dark:text-blue-300">Optimización Opcional</p>
-                      <p className="text-sm text-blue-600 dark:text-blue-400">Configura tu wallet para mejor experiencia NFT</p>
+                      <p className="font-medium text-blue-800 dark:text-blue-300">🌐 Optimización Opcional</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Configura tu wallet para mejor experiencia NFT (v2.0)</p>
                     </div>
                   </div>
                   <div className="text-blue-500 group-hover:text-blue-600 transition-colors">
