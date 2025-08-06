@@ -166,8 +166,8 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
               className="nft-card-image"
               style={{
                 width: '100%',
-                maxHeight: '400px', // Much taller than before (was 192px/h-48)
-                objectFit: 'contain', // Show full image without cropping
+                height: 'auto', // Let height adapt to image aspect ratio
+                display: 'block', // Remove any default spacing
                 backgroundColor: '#f8fafc', // Light background for transparent areas
                 borderRadius: '0.5rem 0.5rem 0 0' // Rounded top corners only
               }}
@@ -186,7 +186,7 @@ export const EscrowGiftStatus: React.FC<EscrowGiftStatusProps> = ({
             </div>
           </div>
         ) : (
-          <div className="w-full" style={{ minHeight: '300px', maxHeight: '400px' }}>
+          <div className="w-full" style={{ minHeight: '200px' }}>
             <div className="h-full bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-600 flex items-center justify-center relative overflow-hidden">
               {/* FUTURISTIC PLACEHOLDER DESIGN */}
               <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent" />

@@ -422,7 +422,13 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           <div className="mb-6 text-center">
             {nftMetadata.image && (
               <div 
-                className="w-32 h-32 mx-auto mb-2 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                className="mx-auto mb-2 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                style={{
+                  maxWidth: '128px',
+                  maxHeight: '128px',
+                  width: 'fit-content',
+                  height: 'fit-content'
+                }}
                 onClick={() => {
                   console.log('🖼️ Opening NFT image modal for claim:', tokenId);
                   setImageModalData({
@@ -438,7 +444,14 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                 <img 
                   src={nftMetadata.image} 
                   alt={nftMetadata.name || 'Gift NFT'}
-                  className="w-full h-full object-contain bg-gray-50" // FIXED: object-contain instead of object-cover
+                  style={{
+                    maxWidth: '128px',
+                    maxHeight: '128px',
+                    width: 'auto',
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                  className="bg-gray-50 dark:bg-gray-700"
                 />
               </div>
             )}
