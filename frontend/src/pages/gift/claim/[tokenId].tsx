@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { useTheme } from 'next-themes';
 import { ClaimEscrowInterface } from '../../../components/escrow/ClaimEscrowInterface';
 import { EscrowGiftStatus } from '../../../components/escrow/EscrowGiftStatus';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
