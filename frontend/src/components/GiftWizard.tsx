@@ -907,11 +907,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
                 <ConnectAndAuthButton
                   showAuthStatus={true}
                   onAuthChange={(isAuthenticated, address) => {
-                    console.log('🔄 Auth state changed:', { isAuthenticated, address });
+                    console.log('🔄 Auth state changed in GiftWizard:', { isAuthenticated, address });
+                    // SIMPLIFIED: No addStep() call to prevent static blocking
                     if (isAuthenticated) {
-                      addStep('GIFT_WIZARD', 'SIWE_AUTHENTICATION_SUCCESS', {
-                        address: address?.slice(0, 10) + '...'
-                      }, 'success');
+                      console.log('✅ GiftWizard authentication successful - ready for next step');
                     }
                   }}
                   className="w-full"
