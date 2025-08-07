@@ -319,6 +319,6 @@ Desarrollado con ❤️ por el equipo de CryptoGift Wallets
 - [NFT.Storage](https://nft.storage) - IPFS Storage
 - [Vercel](https://vercel.com) - Deployment Platform
 
---- edited for redeploy
+--- edited for redeploy and no more
 
 ⭐ **¡Dale una estrella si te gusta el proyecto!** ⭐
