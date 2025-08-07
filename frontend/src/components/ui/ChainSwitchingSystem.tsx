@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useActiveAccount, useSwitchActiveWalletChain } from 'thirdweb/react';
 import { sepolia, baseSepolia } from 'thirdweb/chains';
+import { isMobileDevice } from '../../lib/mobileRpcHandler';
 import { ThemeCard, ThemeButton } from './ThemeSystem';
 
 interface ChainSwitchingSystemProps {
@@ -100,6 +101,12 @@ export function ChainSwitchingSystem({
 
     try {
       console.log(`🔄 Switching to ${targetChain.name} (${requiredChainId})...`);
+      
+      // 🚨 MOBILE FIX: Don't use switchChain on mobile to avoid wallet_switchEthereumChain issues
+      if (isMobileDevice()) {
+        console.log('📱 Mobile detected - skipping automatic chain switch to prevent deeplink issues');
+        throw new Error('Mobile users should switch networks manually in their wallet to avoid deeplink conflicts');
+      }
       
       await switchChain(targetChain.chain);
       

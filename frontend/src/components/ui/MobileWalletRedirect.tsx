@@ -11,12 +11,7 @@ interface MobileWalletRedirectProps {
   walletName?: string;
 }
 
-// Mobile detection utility
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false;
-  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-         (window.innerWidth <= 768);
-};
+import { isMobileDevice } from '../../lib/mobileRpcHandler';
 
 // Generate wallet-specific deeplinks with proper URL formatting
 const generateWalletDeeplink = (walletName: string, action: string): string => {

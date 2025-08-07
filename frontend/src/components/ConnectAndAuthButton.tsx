@@ -9,12 +9,7 @@ import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
 import { MobileWalletRedirect } from './ui/MobileWalletRedirect';
 import { ChainSwitchingSystem } from './ui/ChainSwitchingSystem';
 
-// Mobile detection utility
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false;
-  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-         (window.innerWidth <= 768);
-};
+import { isMobileDevice } from '../lib/mobileRpcHandler';
 
 // R1: Smart deeplink handler - POST authentication only
 // No longer interferes with ThirdWeb v5 wallet connection flow

@@ -570,27 +570,40 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         {canClaim && auth.isAuthenticated ? (
           <div className="space-y-4">
             {/* 🌐 NETWORK OPTIMIZATION: Opcional y no intrusivo - solo post-auth en claim */}
-            {typeof window !== 'undefined' && window.ethereum && (
+            {typeof window !== 'undefined' && (
               <div className="mb-4">
                 <button
                   onClick={async () => {
                     try {
-                      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-                      const currentChainId = parseInt(chainId, 16);
-                      const requiredChainId = 84532; // Base Sepolia
-                      
-                      if (currentChainId !== requiredChainId) {
-                        setShowNetworkPrompt(true);
+                      if (window.ethereum) {
+                        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                        const currentChainId = parseInt(chainId, 16);
+                        const requiredChainId = 84532; // Base Sepolia
+                        
+                        if (currentChainId !== requiredChainId) {
+                          setShowNetworkPrompt(true);
+                        } else {
+                          addNotification({
+                            type: 'success',
+                            title: '✅ Red Óptima',
+                            message: 'Ya estás en Base Sepolia - configuración perfecta!',
+                            duration: 3000
+                          });
+                        }
                       } else {
+                        // No wallet detected - show prompt anyway for educational purposes
+                        setShowNetworkPrompt(true);
                         addNotification({
-                          type: 'success',
-                          title: '✅ Red Óptima',
-                          message: 'Ya estás en Base Sepolia - configuración perfecta!',
-                          duration: 3000
+                          type: 'info',
+                          title: '🦊 Wallet requerida',
+                          message: 'Para optimizar tu experiencia, conecta una wallet como MetaMask',
+                          duration: 5000
                         });
                       }
                     } catch (error) {
                       console.log('Network check failed:', error);
+                      // Show prompt anyway for educational purposes
+                      setShowNetworkPrompt(true);
                     }
                   }}
                   className="w-full flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg transition-colors group"
