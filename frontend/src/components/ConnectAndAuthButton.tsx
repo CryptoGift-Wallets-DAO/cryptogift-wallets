@@ -132,16 +132,10 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         setAuthError(null);
         setShowSuccessMessage(true);
         
-        // 🎯 FIX TIMING: Diferenciar primera auth vs re-auth
-        if (!wasAlreadyAuthenticated) {
-          // Primera autenticación: delay para visibilidad del popup
-          console.log('📱 Primera autenticación - manteniendo popup visible');
-          setTimeout(() => setShowMobileRedirect(false), 2500);
-        } else {
-          // Re-autenticación: comportamiento inmediato (como funciona ahora)
-          console.log('📱 Re-autenticación - ocultando popup inmediatamente');
-          setShowMobileRedirect(false);
-        }
+        // ✅ FIXED: Hide popup immediately after successful auth
+        // No delay needed - authentication is complete, user can continue
+        console.log('📱 Authentication successful - hiding popup immediately');
+        setShowMobileRedirect(false);
         onAuthChange?.(true, account.address);
         console.log('✅ Authentication successful!');
         
