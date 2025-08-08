@@ -181,7 +181,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           client={client}
           chain={baseSepolia}
           chains={[baseSepolia]}
-          walletConnect={{ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID }}
+          walletConnect={{ 
+            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "2f05a7ebd3f6e1ecd18aae02cc766e34" 
+          }}
           appMetadata={{
             name: "CryptoGift Wallets",
             url: "https://cryptogift-wallets.vercel.app",
@@ -300,7 +302,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
               client={client}
               chain={baseSepolia}
               chains={[baseSepolia]}
-              walletConnect={{ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID }}
+              walletConnect={{ 
+            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "2f05a7ebd3f6e1ecd18aae02cc766e34" 
+          }}
               appMetadata={{
                 name: "CryptoGift Wallets",
                 url: "https://cryptogift-wallets.vercel.app",
@@ -378,7 +382,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
             client={client}
             chain={baseSepolia}
             chains={[baseSepolia]}
-            walletConnect={{ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID }}
+            walletConnect={{ 
+            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "2f05a7ebd3f6e1ecd18aae02cc766e34" 
+          }}
             appMetadata={{
               name: "CryptoGift Wallets",
               url: "https://cryptogift-wallets.vercel.app",
