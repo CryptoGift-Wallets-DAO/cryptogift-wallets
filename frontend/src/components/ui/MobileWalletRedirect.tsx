@@ -133,9 +133,15 @@ export const MobileWalletRedirect: React.FC<MobileWalletRedirectProps> = ({
     }
   };
 
+  // 🔥 TEMPORARY DISABLE: Debug popup legacy issue
+  console.log('🚨 MobileWalletRedirect called:', { isOpen, action, walletAddress: walletAddress.slice(0, 10) + '...' });
+  
   if (!isOpen || !isMobileDevice()) {
     return null;
   }
+  
+  // ⚠️ DEBUGGING: Log when popup tries to show
+  console.log('🚨 MobileWalletRedirect SHOWING popup:', { action, walletName, isOpen });
 
   return (
     <AnimatePresence>
