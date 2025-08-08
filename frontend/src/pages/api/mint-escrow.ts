@@ -1021,19 +1021,19 @@ async function mintNFTEscrowGasPaid(
             privateKey: process.env.PRIVATE_KEY_DEPLOY!
           });
           
-          // METAMASK COMPATIBILITY FIX: Use API endpoint instead of direct IPFS URL
+          // UNIVERSAL COMPATIBILITY FIX: Use BaseScan-optimized endpoint for maximum compatibility
           const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
-          const metamaskCompatibleUrl = `https://cryptogift-wallets.vercel.app/api/metadata/${contractAddress}/${tokenId}`;
+          const universalCompatibleUrl = `https://cryptogift-wallets.vercel.app/api/nft-metadata/${contractAddress}/${tokenId}`;
           
-          console.log('🦊 METAMASK FIX: Using API endpoint instead of IPFS direct URL');
+          console.log('🌐 UNIVERSAL FIX: Using BaseScan-optimized endpoint for tokenURI');
           console.log(`📍 Original URL: ${metadataUpdateResult.metadataUrl}`);
-          console.log(`🔗 MetaMask URL: ${metamaskCompatibleUrl}`);
+          console.log(`🔗 Universal URL: ${universalCompatibleUrl}`);
           
-          // Prepare updateTokenURI transaction with MetaMask-compatible URL
+          // Prepare updateTokenURI transaction with Universal-compatible URL
           const updateURITransaction = prepareContractCall({
             contract: nftContract,
             method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
-            params: [BigInt(tokenId), metamaskCompatibleUrl]
+            params: [BigInt(tokenId), universalCompatibleUrl]
           });
           
           // Execute update transaction
