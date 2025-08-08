@@ -116,53 +116,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         console.log('📱 Mobile detected - showing wallet redirect popup');
       }
 
-      // 🔗 ENHANCED CHAIN DETECTION: Get current chain for better compatibility
-      let detectedChainId = 84532; // Default to Base Sepolia
-      
-      try {
-        // Try ThirdWeb account chain detection first
-        if (account?.chainId) {
-          detectedChainId = account.chainId;
-          console.log('🔗 Chain detected from ThirdWeb account:', detectedChainId);
-        } else if (typeof window !== 'undefined' && window.ethereum) {
-          // Fallback to direct window.ethereum detection
-          const hexChainId = await window.ethereum.request({ method: 'eth_chainId' });
-          
-          // Normalize different chain ID formats (including CAIP-2)
-          if (typeof hexChainId === 'string') {
-            if (hexChainId.startsWith('eip155:')) {
-              // CAIP-2 format: "eip155:84532" → 84532
-              detectedChainId = parseInt(hexChainId.replace('eip155:', ''), 10);
-              console.log('🔗 Chain detected from CAIP-2 format:', hexChainId, '→', detectedChainId);
-            } else if (hexChainId.startsWith('0x')) {
-              // Hex format: "0x14a34" → 84532
-              detectedChainId = parseInt(hexChainId, 16);
-              console.log('🔗 Chain detected from hex format:', hexChainId, '→', detectedChainId);
-            } else {
-              // Numeric string: "84532" → 84532
-              detectedChainId = parseInt(hexChainId, 10);
-              console.log('🔗 Chain detected from numeric string:', hexChainId, '→', detectedChainId);
-            }
-          } else if (typeof hexChainId === 'number') {
-            detectedChainId = hexChainId;
-            console.log('🔗 Chain detected as number:', detectedChainId);
-          }
-        }
-        
-        // Validate detected chainId
-        if (isNaN(detectedChainId) || detectedChainId <= 0) {
-          console.warn('⚠️ Invalid chainId detected, using Base Sepolia default:', detectedChainId);
-          detectedChainId = 84532;
-        }
-        
-        console.log('🔗 Final chain ID for SIWE authentication:', detectedChainId);
-        
-      } catch (chainDetectionError) {
-        console.warn('⚠️ Chain detection failed, using Base Sepolia default:', chainDetectionError);
-        detectedChainId = 84532;
-      }
-
-      // ✅ DIRECTO AL SIWE CON CONTEXTO DE CHAIN MEJORADO
+      // ✅ DIRECTO AL SIWE SIN REDIRECCIONES
       const authState = await authenticateWithSiwe(account.address, account);
       
       if (authState.isAuthenticated) {
@@ -226,6 +180,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         <ConnectButton
           client={client}
           chain={baseSepolia}
+          chains={[baseSepolia]}
+          walletConnect={{ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID }}
           appMetadata={{
             name: "CryptoGift Wallets",
             url: "https://cryptogift-wallets.vercel.app",
@@ -342,6 +298,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           <div className="text-xs">
             <ConnectButton
               client={client}
+              chain={baseSepolia}
+              chains={[baseSepolia]}
+              walletConnect={{ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID }}
               appMetadata={{
                 name: "CryptoGift Wallets",
                 url: "https://cryptogift-wallets.vercel.app",
@@ -417,6 +376,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         <div className="text-xs">
           <ConnectButton
             client={client}
+            chain={baseSepolia}
+            chains={[baseSepolia]}
+            walletConnect={{ projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID }}
             appMetadata={{
               name: "CryptoGift Wallets",
               url: "https://cryptogift-wallets.vercel.app",

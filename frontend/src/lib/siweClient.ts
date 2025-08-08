@@ -136,63 +136,24 @@ export async function requestChallenge(address: string, chainId?: number): Promi
 }
 
 /**
- * Sign SIWE message with wallet - Enhanced ThirdWeb v5 compatibility
+ * Sign SIWE message with wallet
  */
-export async function signMessage(message: string, account: any, chainId?: number): Promise<string> {
+export async function signMessage(message: string, account: any): Promise<string> {
   try {
     console.log('✍️ Signing SIWE message...');
     console.log('📝 Message to sign (frontend):');
     console.log(message);
     console.log('📏 Message length:', message.length);
-    console.log('🔗 Provided chainId:', chainId);
     
     // For Thirdweb v5, we need to use signMessage with proper parameters
     if (!account?.signMessage) {
       throw new Error('Wallet does not support message signing');
     }
     
-    // ENHANCED: Try to provide chain context for ThirdWeb v5 signMessage
-    let signOptions: any = { message: message };
-    
-    // If we have chain info, try to provide it to the signing method
-    if (chainId && account.wallet) {
-      try {
-        // Method 1: Try to get chain from account
-        const accountChain = (account as any).chainId || (account as any).chain?.id;
-        if (accountChain) {
-          console.log('🔗 Account chain detected:', accountChain);
-        }
-        
-        // Method 2: If chainId mismatch, try to set proper context
-        if (accountChain !== chainId) {
-          console.log('⚠️ Chain mismatch detected. Account:', accountChain, 'Expected:', chainId);
-          
-          // Try to provide chain context without forcing switch
-          try {
-            const { baseSepolia } = await import('thirdweb/chains');
-            if (chainId === 84532) {
-              // Provide Base Sepolia context for signing
-              signOptions.chain = baseSepolia;
-              console.log('🔗 Added Base Sepolia context to signing');
-            }
-          } catch (importError) {
-            console.warn('⚠️ Could not import chain context:', importError);
-          }
-        }
-        
-      } catch (chainError) {
-        console.warn('⚠️ Chain context setup failed:', chainError);
-      }
-    }
-    
-    console.log('📝 Signing with options:', { 
-      hasMessage: !!signOptions.message,
-      hasChain: !!signOptions.chain,
-      messagePreview: signOptions.message.slice(0, 100) + '...'
+    // Sign the message using Thirdweb v5 API
+    const signature = await account.signMessage({
+      message: message
     });
-    
-    // Sign the message using Thirdweb v5 API with enhanced options
-    const signature = await account.signMessage(signOptions);
     
     console.log('✅ Message signed successfully');
     console.log('📝 Signature length:', signature.length);
@@ -200,12 +161,6 @@ export async function signMessage(message: string, account: any, chainId?: numbe
     
   } catch (error: any) {
     console.error('❌ Message signing failed:', error);
-    console.error('❌ Error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack?.slice(0, 500)
-    });
     throw new Error(`Failed to sign message: ${error.message}`);
   }
 }
@@ -364,8 +319,8 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
       throw new Error(challengeResponse.error || 'Failed to get challenge');
     }
     
-    // Step 2: Sign challenge message with chain context
-    const signature = await signMessage(challengeResponse.message, account, chainId);
+    // Step 2: Sign challenge message
+    const signature = await signMessage(challengeResponse.message, account);
     
     // Step 3: Verify signature and get JWT
     const verifyResponse = await verifySignature(address, signature, challengeResponse.nonce, chainId);
