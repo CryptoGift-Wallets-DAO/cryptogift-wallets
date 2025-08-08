@@ -7,7 +7,6 @@ import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
 import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
 import { MobileWalletRedirect } from './ui/MobileWalletRedirect';
-import { ChainSwitchingSystem } from './ui/ChainSwitchingSystem';
 
 import { isMobileDevice } from '../lib/mobileRpcHandler';
 
@@ -59,7 +58,6 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showMobileRedirect, setShowMobileRedirect] = useState(false);
-  const [showChainPrompt, setShowChainPrompt] = useState(false);
 
   // Check if mobile device
   useEffect(() => {
@@ -143,18 +141,17 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         // ✅ DEEPLINK INTELIGENTE SOLO DESPUÉS DEL ÉXITO
         await handlePostAuthDeeplink(account, isMobile);
         
-        // 🔗 CHAIN SWITCHING: Offer courtesy network setup for mobile users
+        // 🔗 CHAIN DETECTION: Log for debugging (manual setup required on testnet)
         if (isMobile) {
-          // Check if user is on correct network (Base Sepolia = 84532)
+          // Check current network for logging purposes only
           const currentChainId = (account as any)?.chainId;
           const requiredChainId = 84532; // Base Sepolia
           
           if (currentChainId && currentChainId !== requiredChainId) {
-            console.log('🔗 Mobile user on wrong network, offering courtesy chain switch');
-            // Show chain prompt after a short delay for better UX
-            setTimeout(() => {
-              setShowChainPrompt(true);
-            }, 2000);
+            console.log('🔗 User on different network:', currentChainId, 'vs required:', requiredChainId);
+            console.log('📱 On mainnet, this will auto-resolve. On testnet, user must configure Base Sepolia manually.');
+          } else {
+            console.log('✅ User on correct network:', currentChainId);
           }
         }
         
@@ -410,19 +407,6 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         walletName={(account as any)?.wallet?.getConfig?.()?.name || 'Wallet'}
       />
 
-      {/* Courtesy Chain Switching for Mobile Users */}
-      {showChainPrompt && isMobile && (
-        <ChainSwitchingSystem
-          requiredChainId={84532} // Base Sepolia
-          onChainSwitched={(chainId) => {
-            console.log('✅ Chain switched to:', chainId);
-            setShowChainPrompt(false);
-          }}
-          showPersistentIndicator={false}
-          autoPrompt={false} // We control when to show it
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-        />
-      )}
     </div>
   );
 };
