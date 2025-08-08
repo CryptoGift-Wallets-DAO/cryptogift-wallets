@@ -100,6 +100,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
     try {
       console.log('🔐 Starting SIWE authentication for:', account.address.slice(0, 10) + '...');
       
+      // CRITICAL RESET: Clear any existing mobile redirects to prevent conflicts
+      setShowMobileRedirect(false);
+      
       // Verify account supports message signing
       if (!account.signMessage) {
         throw new Error('Wallet does not support message signing');
@@ -108,10 +111,17 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
       // 🔍 CAPTURAR: Estado previo para diferenciar primera auth vs re-auth
       const wasAlreadyAuthenticated = isAuthenticated;
 
-      // 📱 MOBILE: Show redirect popup when signing starts
+      // 📱 MOBILE: Show redirect popup when signing starts (EXCLUSIVE MODE)
       if (isMobile) {
-        setShowMobileRedirect(true);
-        console.log('📱 Mobile detected - showing wallet redirect popup');
+        // CRITICAL FIX: Ensure only ONE popup active - check if claim popup is running
+        const isClaimPopupActive = document.querySelector('[data-mobile-redirect="claim"]');
+        
+        if (!isClaimPopupActive) {
+          setShowMobileRedirect(true);
+          console.log('📱 Mobile detected - showing wallet redirect popup for authentication');
+        } else {
+          console.log('📱 Claim popup active - skipping auth popup to prevent -32002 error');
+        }
       }
 
       // ✅ DIRECTO AL SIWE SIN REDIRECCIONES

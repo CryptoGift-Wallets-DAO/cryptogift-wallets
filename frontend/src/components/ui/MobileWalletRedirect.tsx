@@ -145,6 +145,7 @@ export const MobileWalletRedirect: React.FC<MobileWalletRedirectProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          data-mobile-redirect={action}
         >
           {/* Backdrop */}
           <motion.div

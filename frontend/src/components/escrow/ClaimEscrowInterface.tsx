@@ -172,6 +172,9 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     
     try {
       console.log('🎁 FRONTEND CLAIM: Starting claim process for token', tokenId);
+      
+      // CRITICAL RESET: Clear any existing mobile redirects to prevent conflicts
+      setShowMobileRedirect(false);
 
       // Step 1: Validate claim parameters using the new API
       console.log('🔍 STEP 1: Validating claim parameters...');
@@ -213,10 +216,17 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       // Step 3: Execute claim transaction using user's wallet
       console.log('💫 STEP 3: Executing claim transaction with user wallet...');
       
-      // 📱 MOBILE: Show redirect popup when transaction starts
+      // 📱 MOBILE: Show redirect popup when transaction starts (EXCLUSIVE MODE)
       if (isMobile) {
-        setShowMobileRedirect(true);
-        console.log('📱 Mobile detected - showing wallet redirect popup for claim');
+        // CRITICAL FIX: Ensure only ONE popup active - check if auth popup is running
+        const isAuthPopupActive = document.querySelector('[data-mobile-redirect="sign"]');
+        
+        if (!isAuthPopupActive) {
+          setShowMobileRedirect(true);
+          console.log('📱 Mobile detected - showing wallet redirect popup for claim transaction');
+        } else {
+          console.log('📱 Auth popup active - skipping claim popup to prevent -32002 error');
+        }
       }
       
       // 🔄 FIXED: Use direct sendTransaction to avoid double transaction issue
@@ -273,9 +283,9 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       
       throw err; // Re-throw to prevent finally block execution
     } finally {
-      // 🎯 CRITICAL: Always try to add NFT to MetaMask, regardless of claim flow issues
+      // 🎯 CRITICAL: Always try to add NFT to wallet, with enhanced mobile support
       if (txResult && validationResult && typeof window !== 'undefined' && window.ethereum) {
-        console.log('📱 [POST-CLAIM] Enhanced MetaMask NFT visibility process starting...');
+        console.log('📱 [POST-CLAIM] Enhanced wallet NFT visibility process starting...');
         
         const contractAddress = giftInfo?.nftContract || validationResult.giftInfo?.nftContract;
         
@@ -293,13 +303,36 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               console.log('✅ [POST-CLAIM] Metadata pre-cached:', metadata);
             }
             
-            // Step 2: Request account refresh (forces NFT cache update)
-            await window.ethereum.request({
-              method: 'wallet_requestPermissions',
-              params: [{ eth_accounts: {} }]
-            });
+            // Step 2: 📱 MOBILE-ENHANCED: Request account refresh with mobile delay
+            if (isMobile) {
+              console.log('📱 [POST-CLAIM] Mobile detected - using enhanced refresh sequence...');
+              
+              // Mobile wallets need more time to process the transaction
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              // Request permissions with mobile-specific approach
+              try {
+                await window.ethereum.request({
+                  method: 'wallet_requestPermissions',
+                  params: [{ eth_accounts: {} }]
+                });
+              } catch (permError) {
+                console.log('📱 [POST-CLAIM] Permission request not supported on this wallet, continuing...');
+              }
+              
+              // Additional mobile delay for NFT registration
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            } else {
+              // Desktop approach
+              await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }]
+              });
+            }
             
-            // Step 3: Add NFT to MetaMask - THIS ALWAYS EXECUTES
+            // Step 3: Add NFT to wallet - Enhanced for mobile
+            console.log('🎯 [POST-CLAIM] Adding NFT to wallet...', { contractAddress, tokenId, isMobile });
+            
             const watchResult = await window.ethereum.request({
               method: 'wallet_watchAsset',
               params: [{
@@ -313,36 +346,90 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             
             console.log('✅ [POST-CLAIM] wallet_watchAsset result:', watchResult);
             
-            // Success notification
-            addNotification({
-              type: 'success',
-              title: '🦊 NFT añadido a MetaMask',
-              message: 'Tu NFT debería aparecer en MetaMask en menos de 30 segundos',
-              duration: 5000
-            });
-            
-          } catch (watchError: any) {
-            console.log('⚠️ [POST-CLAIM] MetaMask enhancement failed:', watchError);
-            
-            // Handle user denial with instructive toast
-            if (watchError.code === 4001 || watchError.message?.includes('denied')) {
+            // 📱 MOBILE-SPECIFIC: Enhanced success notification with instructions
+            if (isMobile) {
               addNotification({
-                type: 'warning',
-                title: '📱 Añadir NFT manualmente',
-                message: `Ve a MetaMask → NFTs → Importar NFT → Contrato: ${contractAddress.slice(0,8)}... → ID: ${tokenId}`,
-                duration: 10000,
+                type: 'success',
+                title: '🎉 NFT añadido exitosamente',
+                message: 'Ve a tu wallet → Sección NFTs. Puede tomar 1-2 minutos aparecer.',
+                duration: 8000,
                 action: {
-                  label: 'Copiar Contrato',
-                  onClick: () => navigator.clipboard.writeText(contractAddress)
+                  label: 'Abrir MetaMask',
+                  onClick: () => {
+                    // Try to open MetaMask mobile app
+                    const deeplink = `metamask://`;
+                    window.location.href = deeplink;
+                  }
                 }
               });
             } else {
               addNotification({
-                type: 'info',
-                title: '💡 NFT reclamado exitosamente',
-                message: 'Puede tomar unos minutos aparecer en MetaMask',
+                type: 'success',
+                title: '🦊 NFT añadido a MetaMask',
+                message: 'Tu NFT debería aparecer en MetaMask en menos de 30 segundos',
                 duration: 5000
               });
+            }
+            
+          } catch (watchError: any) {
+            console.log('⚠️ [POST-CLAIM] Wallet enhancement failed:', watchError);
+            console.log('⚠️ [POST-CLAIM] Error details:', {
+              code: watchError.code,
+              message: watchError.message,
+              isMobile,
+              contractAddress,
+              tokenId
+            });
+            
+            // 📱 MOBILE-ENHANCED: Better error handling and instructions
+            if (watchError.code === 4001 || watchError.message?.includes('denied')) {
+              addNotification({
+                type: 'warning',
+                title: '📱 Añadir NFT manualmente',
+                message: `Ve a tu wallet → NFTs → Importar NFT → Pega la dirección del contrato`,
+                duration: 15000,
+                action: {
+                  label: 'Copiar Dirección',
+                  onClick: () => {
+                    navigator.clipboard.writeText(contractAddress);
+                    addNotification({
+                      type: 'info',
+                      title: '📋 Copiado',
+                      message: `Contrato copiado: ${contractAddress.slice(0,8)}...`,
+                      duration: 3000
+                    });
+                  }
+                }
+              });
+            } else {
+              // Generic success message for mobile failures
+              if (isMobile) {
+                addNotification({
+                  type: 'info',
+                  title: '🎁 NFT reclamado exitosamente',
+                  message: `Ve a tu wallet → NFTs → Buscar por ID: ${tokenId}`,
+                  duration: 8000,
+                  action: {
+                    label: 'Copiar ID',
+                    onClick: () => {
+                      navigator.clipboard.writeText(tokenId);
+                      addNotification({
+                        type: 'info',
+                        title: '📋 ID Copiado',
+                        message: `Token ID: ${tokenId}`,
+                        duration: 3000
+                      });
+                    }
+                  }
+                });
+              } else {
+                addNotification({
+                  type: 'info',
+                  title: '💡 NFT reclamado exitosamente',
+                  message: 'Puede tomar unos minutos aparecer en MetaMask',
+                  duration: 5000
+                });
+              }
             }
           }
         }
