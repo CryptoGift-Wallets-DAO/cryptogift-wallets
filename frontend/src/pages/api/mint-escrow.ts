@@ -1685,7 +1685,7 @@ export default async function handler(
     } catch (metadataStoreError) {
       console.error('⚠️ Failed to store NFT metadata after retries:', metadataStoreError);
       // Don't fail the whole transaction for metadata storage issues, but log for recovery
-      console.error('📋 Metadata that failed to store:', JSON.stringify(storedMetadata || {}, null, 2));
+      console.error('📋 Metadata that failed to store:', JSON.stringify(nftMetadata || {}, null, 2));
     }
     
     return res.status(200).json(responseData);

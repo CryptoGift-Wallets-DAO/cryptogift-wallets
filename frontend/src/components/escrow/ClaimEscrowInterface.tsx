@@ -775,8 +775,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       <NetworkOptimizationPrompt
         isOpen={showNetworkPrompt}
         onClose={() => setShowNetworkPrompt(false)}
-        currentChainId={typeof window !== 'undefined' && window.ethereum ? 
-          parseInt(window.ethereum.chainId || '0x1', 16) : 1}
+        currentChainId={84532}
         requiredChainId={84532} // Base Sepolia
         context="claim"
       />
