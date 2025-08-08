@@ -91,6 +91,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
           } catch (metadataError) {
             console.log(`⚠️ Failed to load metadata for NFT ${tokenId}:`, metadataError);
+            
+            // 🔄 FALLBACK: Try getting metadata from our own API endpoint
+            try {
+              console.log(`🔄 Attempting fallback metadata fetch for NFT ${tokenId}...`);
+              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
+              const metadataUrl = `${baseUrl}/api/metadata/${contractAddress}/${tokenId}`;
+              
+              const response = await fetch(metadataUrl, { 
+                headers: { 'Cache-Control': 'no-store' }
+              });
+              
+              if (response.ok) {
+                const fallbackMetadata = await response.json();
+                console.log(`✅ Fallback metadata successful for NFT ${tokenId}:`, {
+                  hasName: !!fallbackMetadata.name,
+                  hasImage: !!fallbackMetadata.image
+                });
+                nftMetadata = fallbackMetadata;
+              } else {
+                console.log(`⚠️ Fallback metadata failed for NFT ${tokenId}: ${response.status}`);
+              }
+            } catch (fallbackError) {
+              console.log(`❌ Fallback metadata error for NFT ${tokenId}:`, fallbackError);
+            }
           }
           
           // Calculate TBA address for this NFT

@@ -1,12 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'nftstorage.link',
-      'ipfs.io',
-      'gateway.pinata.cloud',
-      'image-api.photoroom.com'
+    // Use remotePatterns for better security (replaces deprecated domains)
+    remotePatterns: [
+      { protocol: 'https', hostname: 'nftstorage.link' },
+      { protocol: 'https', hostname: 'ipfs.io' },
+      { protocol: 'https', hostname: 'gateway.pinata.cloud' },
+      { protocol: 'https', hostname: 'image-api.photoroom.com' },
+      // Additional IPFS gateways used by NFTImage fallback system
+      { protocol: 'https', hostname: 'cloudflare-ipfs.com' },
+      { protocol: 'https', hostname: 'dweb.link' },
+      { protocol: 'https', hostname: 'ipfs.infura.io' },
+      { protocol: 'https', hostname: 'ipfs.fleek.co' },
     ],
+    // Keep unoptimized for IPFS compatibility in mobile WebViews
     unoptimized: true
   },
   env: {
