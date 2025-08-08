@@ -190,7 +190,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             tbaAddress: tbaAddress,
             nftContract: contractAddress,
             tokenId: tokenId.toString(),
-            image: nftImage,
+            image: nftImage || null, // Never send empty strings - frontend will handle fallback
             description: nftDescription,
             balance: {
               eth: '0.0000', // TODO: Get real TBA balance

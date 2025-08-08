@@ -274,13 +274,7 @@ export default function MyWalletsPage() {
                       <div className="flex items-center space-x-4">
                         {/* NFT Image - Smart Adaptive Thumbnail */}
                         <div 
-                          className="rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform"
-                          style={{
-                            maxWidth: '48px',
-                            maxHeight: '48px',
-                            width: 'fit-content',
-                            height: 'fit-content'
-                          }}
+                          className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform bg-gray-100 dark:bg-gray-800"
                           onClick={() => {
                             console.log('🖼️ Opening NFT image modal for wallet:', wallet.name);
                             setImageModalData({
@@ -300,7 +294,7 @@ export default function MyWalletsPage() {
                             height={48}
                             className="bg-white/50 dark:bg-gray-700/50"
                             tokenId={wallet.id}
-                            fit="contain"
+                            fit="cover"
                           />
                         </div>
                         

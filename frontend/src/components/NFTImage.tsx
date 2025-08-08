@@ -63,6 +63,11 @@ export const NFTImage: React.FC<NFTImageProps> = ({
   ];
   
   const [currentSrc, setCurrentSrc] = useState(() => {
+    // Handle null/empty src - use placeholder immediately
+    if (!src || src.trim() === '') {
+      return '/images/cg-wallet-placeholder.png';
+    }
+    
     // Convert ipfs:// URLs to gateway URLs for browser display
     if (src.startsWith('ipfs://')) {
       const cid = src.replace('ipfs://', '');
@@ -110,6 +115,13 @@ export const NFTImage: React.FC<NFTImageProps> = ({
   const handleError = () => {
     console.log(`🖼️ Image load failed for ${tokenId || 'NFT'}: ${currentSrc}`);
     
+    // Prevent infinite loop if placeholder fails
+    if (currentSrc.includes('cg-wallet-placeholder.png')) {
+      console.log(`⚠️ Placeholder failed for ${tokenId || 'NFT'} - stopping retries`);
+      setIsLoading(false);
+      return;
+    }
+    
     // Try next IPFS gateway if available
     if (src.startsWith('ipfs://') && gatewayIndex < IPFS_GATEWAYS.length - 1) {
       const nextGatewayIndex = gatewayIndex + 1;
@@ -121,19 +133,15 @@ export const NFTImage: React.FC<NFTImageProps> = ({
       
       setGatewayIndex(nextGatewayIndex);
       setCurrentSrc(nextGatewaySrc);
-      setHasError(false);
       setIsLoading(true);
       return;
     }
     
-    // All gateways failed, use placeholder
-    if (!hasError) {
-      setHasError(true);
-      setIsLoading(false);
-      const placeholder = '/images/cg-wallet-placeholder.png';
-      setCurrentSrc(placeholder);
-      console.log(`❌ All gateways failed for ${tokenId || 'NFT'}, using placeholder`);
-    }
+    // All gateways failed - switch to placeholder and mark error for native img fallback
+    console.log(`❌ All options failed for ${tokenId || 'NFT'}, using placeholder`);
+    setHasError(true); // This triggers native <img> fallback instead of Next.js Image
+    setIsLoading(false);
+    setCurrentSrc('/images/cg-wallet-placeholder.png');
     
     onError?.();
   };
@@ -193,34 +201,56 @@ export const NFTImage: React.FC<NFTImageProps> = ({
       )}
       
       {/* R4: Flex wrapper eliminates margins for vertical images */}
-      <div className="flex items-center justify-center w-full h-full">
-        <Image
-          src={currentSrc}
-          alt={alt}
-          width={width}
-          height={height}
-          className={`${className} ${fitClass} transition-opacity duration-300 ${
-            isLoading ? 'opacity-0' : 'opacity-100'
-          }`}
-          onError={handleError}
-          onLoad={handleLoad}
-          priority={priority}
-          placeholder={placeholder}
-          blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}
-          unoptimized={src.startsWith('ipfs://') || src.includes('ipfs')} // Disable optimization for IPFS URLs
-          style={{
-            // R4: Enhanced styling for vertical images - no margins
-            objectFit: fit,
-            maxWidth: '100%',
-            maxHeight: '100%',
-            width: 'auto',
-            height: 'auto'
-          }}
-        />
-      </div>
+      {!hasError ? (
+        <div className="flex items-center justify-center w-full h-full">
+          <Image
+            key={currentSrc}  // Force re-render when src changes (from f20178a)
+            src={currentSrc}
+            alt={alt}
+            width={width}
+            height={height}
+            className={`${className} ${fitClass} transition-opacity duration-300 ${
+              isLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            onError={handleError}
+            onLoad={handleLoad}
+            priority={priority}
+            placeholder={placeholder}
+            blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}
+            unoptimized={src.startsWith('ipfs://') || src.includes('ipfs')} // Disable optimization for IPFS URLs
+            style={{
+              // R4: Enhanced styling for vertical images - no margins
+              objectFit: fit,
+              maxWidth: '100%',
+              maxHeight: '100%',
+              width: 'auto',
+              height: 'auto'
+            }}
+          />
+        </div>
+      ) : (
+        // FALLBACK: Native img for placeholder when Next.js Image fails (from f20178a)
+        <div className="flex items-center justify-center w-full h-full">
+          <img
+            src="/images/cg-wallet-placeholder.png"
+            alt={alt}
+            style={{
+              objectFit: fit,
+              maxWidth: '100%',
+              maxHeight: '100%',
+              width: 'auto',
+              height: 'auto'
+            }}
+            onError={(e) => {
+              console.log(`🚨 Even native img placeholder failed for ${tokenId || 'NFT'}`);
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+      )}
       
-      {/* Enhanced error state placeholder */}
-      {hasError && (
+      {/* Enhanced error state placeholder - ONLY when not showing placeholder */}
+      {hasError && !currentSrc.includes('cg-wallet-placeholder.png') && (
         <div className="absolute inset-0 flex flex-col items-center justify-center 
                        bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 
                        dark:from-slate-800 dark:via-slate-700 dark:to-slate-900">
