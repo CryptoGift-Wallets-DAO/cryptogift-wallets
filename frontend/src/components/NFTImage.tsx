@@ -110,17 +110,8 @@ export const NFTImage: React.FC<NFTImageProps> = ({
   const handleError = () => {
     console.log(`🖼️ Image load failed for ${tokenId || 'NFT'}: ${currentSrc}`);
     
-    // CRITICAL FIX: Prevent infinite loop - if already showing placeholder, stop retrying
-    if (currentSrc.includes('cg-wallet-placeholder.png')) {
-      console.log(`⚠️ Placeholder itself failed for ${tokenId || 'NFT'} - showing error state`);
-      setHasError(true);
-      setIsLoading(false);
-      onError?.();
-      return;
-    }
-    
-    // Try next IPFS gateway if available and not already on placeholder
-    if (src.startsWith('ipfs://') && gatewayIndex < IPFS_GATEWAYS.length - 1 && !hasError) {
+    // Try next IPFS gateway if available
+    if (src.startsWith('ipfs://') && gatewayIndex < IPFS_GATEWAYS.length - 1) {
       const nextGatewayIndex = gatewayIndex + 1;
       const cid = src.replace('ipfs://', '');
       const encodedCid = encodeURIComponent(cid).replace(/%2F/g, '/');
@@ -130,15 +121,19 @@ export const NFTImage: React.FC<NFTImageProps> = ({
       
       setGatewayIndex(nextGatewayIndex);
       setCurrentSrc(nextGatewaySrc);
+      setHasError(false);
       setIsLoading(true);
       return;
     }
     
-    // All gateways failed or regular URL failed - switch to placeholder
-    console.log(`❌ All options failed for ${tokenId || 'NFT'}, switching to placeholder`);
-    setHasError(true);
-    setIsLoading(false);
-    setCurrentSrc('/images/cg-wallet-placeholder.png');
+    // All gateways failed, use placeholder
+    if (!hasError) {
+      setHasError(true);
+      setIsLoading(false);
+      const placeholder = '/images/cg-wallet-placeholder.png';
+      setCurrentSrc(placeholder);
+      console.log(`❌ All gateways failed for ${tokenId || 'NFT'}, using placeholder`);
+    }
     
     onError?.();
   };
@@ -198,53 +193,31 @@ export const NFTImage: React.FC<NFTImageProps> = ({
       )}
       
       {/* R4: Flex wrapper eliminates margins for vertical images */}
-      {!hasError ? (
-        <div className="flex items-center justify-center w-full h-full">
-          <Image
-            src={currentSrc}
-            alt={alt}
-            width={width}
-            height={height}
-            className={`${className} ${fitClass} transition-opacity duration-300 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}
-            onError={handleError}
-            onLoad={handleLoad}
-            priority={priority}
-            placeholder={placeholder}
-            blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}
-            unoptimized={src.startsWith('ipfs://') || src.includes('ipfs')} // Disable optimization for IPFS URLs
-            style={{
-              // R4: Enhanced styling for vertical images - no margins
-              objectFit: fit,
-              maxWidth: '100%',
-              maxHeight: '100%',
-              width: 'auto',
-              height: 'auto'
-            }}
-          />
-        </div>
-      ) : (
-        // FALLBACK: Native img for placeholder when Next.js Image fails
-        <div className="flex items-center justify-center w-full h-full">
-          <img
-            src="/images/cg-wallet-placeholder.png"
-            alt={alt}
-            style={{
-              objectFit: fit,
-              maxWidth: '100%',
-              maxHeight: '100%',
-              width: 'auto',
-              height: 'auto'
-            }}
-            onError={(e) => {
-              console.log(`🚨 Even native img placeholder failed for ${tokenId || 'NFT'}`);
-              // Hide the img element if it fails
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        </div>
-      )}
+      <div className="flex items-center justify-center w-full h-full">
+        <Image
+          src={currentSrc}
+          alt={alt}
+          width={width}
+          height={height}
+          className={`${className} ${fitClass} transition-opacity duration-300 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
+          }`}
+          onError={handleError}
+          onLoad={handleLoad}
+          priority={priority}
+          placeholder={placeholder}
+          blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}
+          unoptimized={src.startsWith('ipfs://') || src.includes('ipfs')} // Disable optimization for IPFS URLs
+          style={{
+            // R4: Enhanced styling for vertical images - no margins
+            objectFit: fit,
+            maxWidth: '100%',
+            maxHeight: '100%',
+            width: 'auto',
+            height: 'auto'
+          }}
+        />
+      </div>
       
       {/* Enhanced error state placeholder */}
       {hasError && (
