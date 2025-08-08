@@ -93,24 +93,16 @@ export const NFTImage: React.FC<NFTImageProps> = ({
     return src;
   });
 
-  // R4: ResizeObserver for dynamic height adjustment - eliminates margins
-  React.useEffect(() => {
-    if (!containerRef.current) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        setContainerDimensions({ width, height });
-        console.log(`🔧 Container resized: ${width}x${height} for ${tokenId || 'NFT'}`);
-      }
-    });
-
-    resizeObserver.observe(containerRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [tokenId]);
+  // R4: ResizeObserver TEMPORARILY DISABLED to fix zoom interference issue
+  // TODO: Re-implement ResizeObserver without affecting browser zoom behavior
+  // React.useEffect(() => {
+  //   if (!containerRef.current) return;
+  //   const resizeObserver = new ResizeObserver((entries) => {
+  //     // Observer logic here
+  //   });
+  //   resizeObserver.observe(containerRef.current);
+  //   return () => resizeObserver.disconnect();
+  // }, [tokenId]);
 
   const handleError = () => {
     console.log(`🖼️ Image load failed for ${tokenId || 'NFT'}: ${currentSrc}`);
@@ -184,9 +176,9 @@ export const NFTImage: React.FC<NFTImageProps> = ({
       ref={containerRef}
       className="relative w-full h-full flex items-center justify-center overflow-hidden"
       style={{ 
-        maxHeight: '100%',
-        // R4: Dynamic height based on container to eliminate vertical margins
-        height: containerDimensions.height > 0 ? `${containerDimensions.height}px` : '100%'
+        maxHeight: '100%'
+        // ZOOM FIX: Removed containerDimensions.height - was interfering with browser zoom
+        // height: containerDimensions.height > 0 ? `${containerDimensions.height}px` : '100%'
       }}
     >
       {/* Loading state */}
