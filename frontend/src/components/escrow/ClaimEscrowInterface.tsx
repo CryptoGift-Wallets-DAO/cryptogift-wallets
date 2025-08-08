@@ -19,7 +19,7 @@ import { makeAuthenticatedRequest } from '../../lib/siweClient';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
 import { useNotifications } from '../ui/NotificationSystem';
-import { MobileWalletRedirect } from '../ui/MobileWalletRedirect';
+// MobileWalletRedirect REMOVED - ConnectAndAuthButton handles all mobile popups
 import { NetworkOptimizationPrompt } from '../ui/NetworkOptimizationPrompt';
 import { 
   isMobileDevice, 
@@ -83,7 +83,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     tokenId: string;
     contractAddress: string;
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
-  const [showMobileRedirect, setShowMobileRedirect] = useState(false);
+  // showMobileRedirect REMOVED - no longer needed
   const [showNetworkPrompt, setShowNetworkPrompt] = useState(false);
 
   // Mobile detection (using imported utility)
@@ -173,8 +173,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     try {
       console.log('🎁 FRONTEND CLAIM: Starting claim process for token', tokenId);
       
-      // CRITICAL RESET: Clear any existing mobile redirects to prevent conflicts
-      setShowMobileRedirect(false);
+      // Mobile redirect popup completely disabled for this component
 
       // Step 1: Validate claim parameters using the new API
       console.log('🔍 STEP 1: Validating claim parameters...');
@@ -216,17 +215,11 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       // Step 3: Execute claim transaction using user's wallet
       console.log('💫 STEP 3: Executing claim transaction with user wallet...');
       
-      // 📱 MOBILE: Show redirect popup when transaction starts (EXCLUSIVE MODE)
+      // 📱 MOBILE: POPUP DISABLED - ConnectAndAuthButton handles all mobile redirects
+      // The mobile popup is completely handled by ConnectAndAuthButton SIWE flow
+      // No additional popup needed here - transaction will work normally
       if (isMobile) {
-        // CRITICAL FIX: Ensure only ONE popup active - check if auth popup is running
-        const isAuthPopupActive = document.querySelector('[data-mobile-redirect="sign"]');
-        
-        if (!isAuthPopupActive) {
-          setShowMobileRedirect(true);
-          console.log('📱 Mobile detected - showing wallet redirect popup for claim transaction');
-        } else {
-          console.log('📱 Auth popup active - skipping claim popup to prevent -32002 error');
-        }
+        console.log('📱 Mobile detected - transaction will proceed (popup handled by auth flow)');
       }
       
       // 🔄 FIXED: Use direct sendTransaction to avoid double transaction issue
@@ -258,7 +251,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         gasUsed: receipt.gasUsed?.toString()
       });
       
-      setShowMobileRedirect(false); // Hide popup on success
+      // Mobile redirect popup disabled - no reset needed
       setClaimStep('success');
 
     } catch (err: any) {
@@ -274,7 +267,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       }
       
       setError(errorMessage);
-      setShowMobileRedirect(false); // Hide popup on error
+      // Mobile redirect popup disabled - no reset needed
       setClaimStep('password');
       
       if (onClaimError) {
@@ -849,14 +842,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         }}
       />
 
-      {/* Mobile Wallet Redirect Popup */}
-      <MobileWalletRedirect
-        isOpen={showMobileRedirect}
-        onClose={() => setShowMobileRedirect(false)}
-        walletAddress={account?.address || ''}
-        action="claim"
-        walletName={(account as any)?.wallet?.getConfig?.()?.name || 'Wallet'}
-      />
+      {/* Mobile Wallet Redirect Popup DISABLED - ConnectAndAuthButton handles all mobile UX */}
 
       {/* Network Optimization Prompt - Opcional y no intrusivo */}
       <NetworkOptimizationPrompt
