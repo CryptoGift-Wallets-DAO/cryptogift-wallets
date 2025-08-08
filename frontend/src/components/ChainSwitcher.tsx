@@ -83,7 +83,8 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
       // 🚨 MOBILE FIX: Don't use switchChain on mobile to avoid wallet_switchEthereumChain issues
       if (isMobileDevice()) {
         console.log('📱 Mobile detected - skipping automatic chain switch to prevent deeplink issues');
-        throw new Error('Mobile users should switch networks manually in their wallet to avoid deeplink conflicts');
+        setSwitchError('Mobile users should switch networks manually in their wallet to avoid deeplink conflicts');
+        return; // ✅ NON-DISRUPTIVE: allows other flows to continue
       }
       
       await switchChain(baseSepolia);

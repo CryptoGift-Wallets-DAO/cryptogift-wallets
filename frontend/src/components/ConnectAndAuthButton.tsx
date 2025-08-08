@@ -107,6 +107,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         throw new Error('Wallet does not support message signing');
       }
 
+      // 🔍 CAPTURAR: Estado previo para diferenciar primera auth vs re-auth
+      const wasAlreadyAuthenticated = isAuthenticated;
+
       // 📱 MOBILE: Show redirect popup when signing starts
       if (isMobile) {
         setShowMobileRedirect(true);
@@ -120,7 +123,17 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         setIsAuthenticated(true);
         setAuthError(null);
         setShowSuccessMessage(true);
-        setShowMobileRedirect(false); // Hide mobile popup on success
+        
+        // 🎯 FIX TIMING: Diferenciar primera auth vs re-auth
+        if (!wasAlreadyAuthenticated) {
+          // Primera autenticación: delay para visibilidad del popup
+          console.log('📱 Primera autenticación - manteniendo popup visible');
+          setTimeout(() => setShowMobileRedirect(false), 2500);
+        } else {
+          // Re-autenticación: comportamiento inmediato (como funciona ahora)
+          console.log('📱 Re-autenticación - ocultando popup inmediatamente');
+          setShowMobileRedirect(false);
+        }
         onAuthChange?.(true, account.address);
         console.log('✅ Authentication successful!');
         

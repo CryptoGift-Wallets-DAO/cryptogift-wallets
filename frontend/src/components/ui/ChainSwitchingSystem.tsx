@@ -102,10 +102,12 @@ export function ChainSwitchingSystem({
     try {
       console.log(`🔄 Switching to ${targetChain.name} (${requiredChainId})...`);
       
-      // 🚨 MOBILE FIX: Don't use switchChain on mobile to avoid wallet_switchEthereumChain issues
+      // 🚨 MOBILE FIX: Don't use switchChain on mobile to avoid wallet_switchEthereumChain issues  
       if (isMobileDevice()) {
         console.log('📱 Mobile detected - skipping automatic chain switch to prevent deeplink issues');
-        throw new Error('Mobile users should switch networks manually in their wallet to avoid deeplink conflicts');
+        setSwitchError('Please switch networks manually in your wallet to avoid deeplink conflicts');
+        setShowPrompt(false);
+        return; // ✅ NON-DISRUPTIVE: allows post-claim flow to continue
       }
       
       await switchChain(targetChain.chain);

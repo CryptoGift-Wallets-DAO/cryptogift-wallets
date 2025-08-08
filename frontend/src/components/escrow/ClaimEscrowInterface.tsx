@@ -167,6 +167,9 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     setClaimStep('claiming');
     setError('');
 
+    let validationResult: any;
+    let txResult: any;
+    
     try {
       console.log('🎁 FRONTEND CLAIM: Starting claim process for token', tokenId);
 
@@ -185,7 +188,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         })
       });
 
-      const validationResult = await validateResponse.json();
+      validationResult = await validateResponse.json();
 
       if (!validateResponse.ok || !validationResult.success || !validationResult.valid) {
         throw new Error(validationResult.error || 'Claim validation failed');
@@ -216,27 +219,24 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         console.log('📱 Mobile detected - showing wallet redirect popup for claim');
       }
       
-      // 🔄 MOBILE RPC FALLBACK: Use mobile-optimized transaction sending
-      const txResult = isMobile 
-        ? await sendTransactionMobile(claimTransaction, account)
-        : await sendTransaction({
-            transaction: claimTransaction,
-            account: account
-          });
+      // 🔄 FIXED: Use direct sendTransaction to avoid double transaction issue
+      // sendTransactionMobile causes multiple retries → multiple transactions in MetaMask
+      txResult = await sendTransaction({
+        transaction: claimTransaction,
+        account: account
+      });
 
       console.log('📨 Transaction sent:', txResult.transactionHash);
 
-      // Step 4: Wait for transaction confirmation with mobile fallback
+      // Step 4: Wait for transaction confirmation - use standard waitForReceipt
       console.log('⏳ STEP 4: Waiting for transaction confirmation...');
-      const receipt = isMobile
-        ? await waitForReceiptMobile(txResult.transactionHash)
-        : await waitForReceipt({
-            client: createThirdwebClient({
-              clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
-            }),
-            chain: baseSepolia,
-            transactionHash: txResult.transactionHash
-          });
+      const receipt = await waitForReceipt({
+        client: createThirdwebClient({
+          clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
+        }),
+        chain: baseSepolia,
+        transactionHash: txResult.transactionHash
+      });
 
       if (receipt.status !== 'success') {
         throw new Error(`Transaction failed with status: ${receipt.status}`);
@@ -250,119 +250,104 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       
       setShowMobileRedirect(false); // Hide popup on success
       setClaimStep('success');
+
+    } catch (err: any) {
+      console.error('❌ FRONTEND CLAIM ERROR:', err);
       
-      // R2: ENHANCED METAMASK NFT VISIBILITY with Network Verification
-      if (typeof window !== 'undefined' && window.ethereum) {
-        console.log('📱 Enhanced MetaMask NFT visibility process starting...');
+      // 📱 MOBILE: Enhanced error handling for RPC issues
+      let errorMessage: string;
+      if (isMobile && isRpcError(err)) {
+        console.error('📱 Mobile RPC error detected:', err.message);
+        errorMessage = `Error de conexión móvil: ${err.message}. Por favor, verifica tu conexión e intenta de nuevo.`;
+      } else {
+        errorMessage = parseEscrowError(err);
+      }
+      
+      setError(errorMessage);
+      setShowMobileRedirect(false); // Hide popup on error
+      setClaimStep('password');
+      
+      if (onClaimError) {
+        onClaimError(errorMessage);
+      }
+      
+      throw err; // Re-throw to prevent finally block execution
+    } finally {
+      // 🎯 CRITICAL: Always try to add NFT to MetaMask, regardless of claim flow issues
+      if (txResult && validationResult && typeof window !== 'undefined' && window.ethereum) {
+        console.log('📱 [POST-CLAIM] Enhanced MetaMask NFT visibility process starting...');
         
         const contractAddress = giftInfo?.nftContract || validationResult.giftInfo?.nftContract;
         
         if (contractAddress) {
           try {
-            // Step 1: Verify correct network before NFT operations
-            console.log('🔗 Verifying network for NFT visibility...');
-            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-            const currentChainId = parseInt(chainId, 16);
-            const requiredChainId = 84532; // Base Sepolia
-            
-            if (currentChainId !== requiredChainId) {
-              console.log('⚠️ Wrong network detected for NFT visibility:', currentChainId, 'vs', requiredChainId);
-              
-              // Non-intrusive network notification (no automatic switching)
-              addNotification({
-                type: 'info',
-                title: '💡 NFT reclamado exitosamente',
-                message: 'Para que aparezca automáticamente en tu wallet, cambia manualmente a Base Sepolia',
-                duration: 10000,
-                action: {
-                  label: 'Copiar Chain ID',
-                  onClick: () => {
-                    navigator.clipboard.writeText('84532');
-                    addNotification({
-                      type: 'success',
-                      title: 'Chain ID copiado',
-                      message: 'Ve a tu wallet y añade/cambia a Base Sepolia (84532)',
-                      duration: 5000
-                    });
-                  }
-                }
-              });
-              
-              return; // Exit early if wrong network
-            }
-
-            // Step 2: Pre-pin tokenURI metadata to IPFS for faster loading
-            console.log('📌 Pre-pinning tokenURI metadata...');
+            // Step 1: Pre-pin tokenURI metadata to IPFS for faster loading
+            console.log('📌 [POST-CLAIM] Pre-pinning tokenURI metadata...');
             const metadataUrl = `https://cryptogift-wallets.vercel.app/api/metadata/${contractAddress}/${tokenId}`;
             
             // R2 FIX: Fetch and cache metadata with response validation
             const metadataResponse = await fetch(metadataUrl);
             
-            if (!metadataResponse.ok) {
-              throw new Error(`Metadata fetch failed: ${metadataResponse.status} ${metadataResponse.statusText}`);
+            if (metadataResponse.ok) {
+              const metadata = await metadataResponse.json();
+              console.log('✅ [POST-CLAIM] Metadata pre-cached:', metadata);
             }
             
-            const metadata = await metadataResponse.json();
-            console.log('✅ Metadata pre-cached with validation:', metadata);
-            
-            // Step 3: Request account refresh (forces NFT cache update)
+            // Step 2: Request account refresh (forces NFT cache update)
             await window.ethereum.request({
               method: 'wallet_requestPermissions',
               params: [{ eth_accounts: {} }]
             });
             
-            // Step 4: Add NFT to MetaMask with enhanced error handling
-            try {
-              await window.ethereum.request({
-                method: 'wallet_watchAsset',
-                params: [{
-                  type: 'ERC721',
-                  options: {
-                    address: contractAddress,
-                    tokenId: tokenId,
-                  }
-                }]
-              });
-              
-              // Success notification
-              addNotification({
-                type: 'success',
-                title: '🦊 NFT añadido a MetaMask',
-                message: 'Tu NFT debería aparecer en MetaMask en menos de 30 segundos',
-                duration: 5000
-              });
-              
-            } catch (watchError: any) {
-              // Handle user denial with instructive toast
-              if (watchError.code === 4001 || watchError.message?.includes('denied')) {
-                addNotification({
-                  type: 'warning',
-                  title: '📱 Añadir NFT manualmente',
-                  message: `Ve a MetaMask → NFTs → Importar NFT → Contrato: ${contractAddress.slice(0,8)}... → ID: ${tokenId}`,
-                  duration: 10000,
-                  action: {
-                    label: 'Copiar Contrato',
-                    onClick: () => navigator.clipboard.writeText(contractAddress)
-                  }
-                });
-              } else {
-                throw watchError; // Re-throw if not user denial
-              }
-            }
+            // Step 3: Add NFT to MetaMask - THIS ALWAYS EXECUTES
+            const watchResult = await window.ethereum.request({
+              method: 'wallet_watchAsset',
+              params: [{
+                type: 'ERC721',
+                options: {
+                  address: contractAddress,
+                  tokenId: tokenId,
+                }
+              }]
+            });
             
-            console.log('✅ Enhanced MetaMask NFT visibility completed with network verification');
+            console.log('✅ [POST-CLAIM] wallet_watchAsset result:', watchResult);
             
-          } catch (error) {
-            console.log('⚠️ MetaMask enhancement failed:', error);
+            // Success notification
             addNotification({
-              type: 'info',
-              title: '💡 NFT reclamado exitosamente',
-              message: 'Puede tomar unos minutos aparecer en MetaMask',
+              type: 'success',
+              title: '🦊 NFT añadido a MetaMask',
+              message: 'Tu NFT debería aparecer en MetaMask en menos de 30 segundos',
               duration: 5000
             });
+            
+          } catch (watchError: any) {
+            console.log('⚠️ [POST-CLAIM] MetaMask enhancement failed:', watchError);
+            
+            // Handle user denial with instructive toast
+            if (watchError.code === 4001 || watchError.message?.includes('denied')) {
+              addNotification({
+                type: 'warning',
+                title: '📱 Añadir NFT manualmente',
+                message: `Ve a MetaMask → NFTs → Importar NFT → Contrato: ${contractAddress.slice(0,8)}... → ID: ${tokenId}`,
+                duration: 10000,
+                action: {
+                  label: 'Copiar Contrato',
+                  onClick: () => navigator.clipboard.writeText(contractAddress)
+                }
+              });
+            } else {
+              addNotification({
+                type: 'info',
+                title: '💡 NFT reclamado exitosamente',
+                message: 'Puede tomar unos minutos aparecer en MetaMask',
+                duration: 5000
+              });
+            }
           }
         }
       }
+    }
       
       // Notify parent component of successful claim
       if (onClaimSuccess) {
