@@ -347,10 +347,9 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           }
         }
       }
-    }
       
-      // Notify parent component of successful claim
-      if (onClaimSuccess) {
+      // Notify parent component of successful claim - MOVED TO FINALLY BLOCK
+      if (txResult && onClaimSuccess) {
         onClaimSuccess(txResult.transactionHash, {
           tokenId,
           recipientAddress: account.address, // NFT goes to connected wallet
@@ -359,27 +358,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           frontendExecution: true
         });
       }
-
-    } catch (err: any) {
-      console.error('❌ FRONTEND CLAIM ERROR:', err);
       
-      // 📱 MOBILE: Enhanced error handling for RPC issues
-      let errorMessage: string;
-      if (isMobile && isRpcError(err)) {
-        console.error('📱 Mobile RPC error detected:', err.message);
-        errorMessage = `Error de conexión móvil: ${err.message}. Por favor, verifica tu conexión e intenta de nuevo.`;
-      } else {
-        errorMessage = parseEscrowError(err);
-      }
-      
-      setError(errorMessage);
-      setShowMobileRedirect(false); // Hide popup on error
-      setClaimStep('password');
-      
-      if (onClaimError) {
-        onClaimError(errorMessage);
-      }
-    } finally {
       setIsLoading(false);
     }
   };
