@@ -4,7 +4,7 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
-import { encodeAllPathSegments } from '../../../../utils/encodePath';
+import { encodeAllPathSegmentsSafe } from '../../../../utils/encodePathSafe';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
 
 interface ERC721Metadata {
@@ -28,18 +28,24 @@ const BASESCAN_IPFS_GATEWAYS = [
 ];
 
 /**
- * BASESCAN-OPTIMIZED: Convert IPFS URLs with multiple gateway fallback
- * Tests gateways in order and uses the first working one
+ * SMART ENCODING: Convert IPFS URLs with conditional encoding based on client type
+ * - Crawlers (BaseScan, Etherscan): Get encoded URLs for compatibility
+ * - Wallets (MetaMask, Trust, Rainbow): Get clean URLs for rendering
  */
-async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> {
+async function convertToCompatibleURL(ipfsUrl: string, userAgent?: string): Promise<string> {
   if (!ipfsUrl) return '';
   
-  // Already HTTPS URL - optimize for BaseScan
+  // Detect client type for conditional encoding
+  const ua = userAgent?.toLowerCase() || '';
+  const isBlockExplorer = /bot|crawler|spider|etherscan|basescan|go-http-client|curl|wget|axios/.test(ua);
+  
+  // Already HTTPS URL - apply conditional encoding
   if (ipfsUrl.startsWith('https://')) {
-    return encodeAllPathSegments(ipfsUrl);
+    return isBlockExplorer ? encodeAllPathSegmentsSafe(ipfsUrl) : ipfsUrl;
   }
   if (ipfsUrl.startsWith('http://')) {
-    return encodeAllPathSegments(ipfsUrl.replace('http://', 'https://'));
+    const httpsUrl = ipfsUrl.replace('http://', 'https://');
+    return isBlockExplorer ? encodeAllPathSegmentsSafe(httpsUrl) : httpsUrl;
   }
   
   let cid = '';
@@ -73,7 +79,7 @@ async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> 
       
       if (testResponse.ok) {
         console.log(`✅ BASESCAN GATEWAY SUCCESS: ${BASESCAN_IPFS_GATEWAYS[i]} (attempt ${i + 1})`);
-        return encodeAllPathSegments(gatewayUrl);
+        return isBlockExplorer ? encodeAllPathSegmentsSafe(gatewayUrl) : gatewayUrl;
       }
     } catch (error) {
       console.log(`⚠️ BASESCAN GATEWAY FAILED: ${BASESCAN_IPFS_GATEWAYS[i]} - ${error.message}`);
@@ -84,7 +90,7 @@ async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> 
   // All gateways failed - return first one anyway (client may still work)
   const fallbackUrl = `${BASESCAN_IPFS_GATEWAYS[0]}${cid}`;
   console.log(`🔄 BASESCAN ALL GATEWAYS FAILED: Using fallback ${fallbackUrl}`);
-  return encodeAllPathSegments(fallbackUrl);
+  return isBlockExplorer ? encodeAllPathSegmentsSafe(fallbackUrl) : fallbackUrl;
 }
 
 /**
@@ -148,8 +154,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
       description: metadata.description || 'A unique NFT-Wallet from the CryptoGift platform',
       
-      // CRITICAL: Use BaseScan-optimized image URL with gateway fallback
-      image: await convertToBaseScanCompatibleURL(metadata.image),
+      // CRITICAL: Use smart encoding based on client type (wallets vs crawlers)
+      image: await convertToCompatibleURL(metadata.image, req.headers['user-agent']),
       
       // Standard ERC721 attributes array
       attributes: metadata.attributes || [],
