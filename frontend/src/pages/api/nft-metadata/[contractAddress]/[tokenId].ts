@@ -92,7 +92,8 @@ async function convertToUniversalURL(ipfsUrl: string): Promise<string> {
 // REMOVED: optimizeForBlockExplorers function - replaced with encodeAllPathSegmentsSafe for universal compatibility
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
+  // CRITICAL: Support HEAD requests for crawler compatibility
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -151,6 +152,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log(`🔗 BASESCAN-OPTIMIZED IMAGE: ${baseScanMetadata.image}`);
     console.log(`✅ BASESCAN METADATA SERVED: ${contractAddress}:${tokenId}`);
+    
+    // Handle HEAD request - return headers only (no body)
+    if (req.method === 'HEAD') {
+      return res.status(200).end();
+    }
     
     return res.status(200).json(baseScanMetadata);
 
