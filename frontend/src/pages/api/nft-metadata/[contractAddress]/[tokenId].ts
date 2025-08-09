@@ -18,11 +18,18 @@ interface ERC721Metadata {
   background_color?: string;
 }
 
+// BASESCAN FALLBACK GATEWAYS - Ordered by reliability for block explorers
+const BASESCAN_IPFS_GATEWAYS = [
+  'https://nftstorage.link/ipfs/',        // Primary - NFT.Storage
+  'https://cloudflare-ipfs.com/ipfs/',    // Secondary - Cloudflare CDN  
+  'https://ipfs.io/ipfs/'                 // Fallback - Most reliable
+];
+
 /**
- * BASESCAN-OPTIMIZED: Convert IPFS URLs to most compatible format
- * Uses ipfs.io gateway with proper filename encoding
+ * BASESCAN-OPTIMIZED: Convert IPFS URLs with multiple gateway fallback
+ * Tests gateways in order and uses the first working one
  */
-function convertToBaseScanCompatibleURL(ipfsUrl: string): string {
+async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> {
   if (!ipfsUrl) return '';
   
   // Already HTTPS URL - optimize for BaseScan
@@ -33,20 +40,49 @@ function convertToBaseScanCompatibleURL(ipfsUrl: string): string {
     return optimizeForBlockExplorers(ipfsUrl.replace('http://', 'https://'));
   }
   
-  // IPFS URL format - use most reliable gateway for block explorers
+  let cid = '';
+  // IPFS URL format
   if (ipfsUrl.startsWith('ipfs://')) {
-    const cid = ipfsUrl.replace('ipfs://', '');
-    const ipfsIOUrl = `https://ipfs.io/ipfs/${cid}`;
-    return optimizeForBlockExplorers(ipfsIOUrl);
-  }
-  
+    cid = ipfsUrl.replace('ipfs://', '');
+  } 
   // Handle bare CID
-  if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
-    const ipfsIOUrl = `https://ipfs.io/ipfs/${ipfsUrl}`;
-    return optimizeForBlockExplorers(ipfsIOUrl);
+  else if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
+    cid = ipfsUrl;
+  }
+  else {
+    return ipfsUrl; // Return as-is if not IPFS
   }
   
-  return ipfsUrl;
+  // Try gateways in order - return first working one
+  for (let i = 0; i < BASESCAN_IPFS_GATEWAYS.length; i++) {
+    const gatewayUrl = `${BASESCAN_IPFS_GATEWAYS[i]}${cid}`;
+    
+    try {
+      // Quick HEAD request to test gateway
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+      
+      const testResponse = await fetch(gatewayUrl, { 
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (testResponse.ok) {
+        console.log(`✅ BASESCAN GATEWAY SUCCESS: ${BASESCAN_IPFS_GATEWAYS[i]} (attempt ${i + 1})`);
+        return optimizeForBlockExplorers(gatewayUrl);
+      }
+    } catch (error) {
+      console.log(`⚠️ BASESCAN GATEWAY FAILED: ${BASESCAN_IPFS_GATEWAYS[i]} - ${error.message}`);
+      continue; // Try next gateway
+    }
+  }
+  
+  // All gateways failed - return first one anyway (client may still work)
+  const fallbackUrl = `${BASESCAN_IPFS_GATEWAYS[0]}${cid}`;
+  console.log(`🔄 BASESCAN ALL GATEWAYS FAILED: Using fallback ${fallbackUrl}`);
+  return optimizeForBlockExplorers(fallbackUrl);
 }
 
 /**
@@ -105,13 +141,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Metadata not found' });
     }
 
-    // Convert to BaseScan-optimized format
+    // Convert to BaseScan-optimized format (with gateway fallback)
     const baseScanMetadata: ERC721Metadata = {
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
       description: metadata.description || 'A unique NFT-Wallet from the CryptoGift platform',
       
-      // CRITICAL: Use BaseScan-optimized image URL
-      image: convertToBaseScanCompatibleURL(metadata.image),
+      // CRITICAL: Use BaseScan-optimized image URL with gateway fallback
+      image: await convertToBaseScanCompatibleURL(metadata.image),
       
       // Standard ERC721 attributes array
       attributes: metadata.attributes || [],
@@ -128,7 +164,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Security headers that block explorers expect
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN'); // ZOOM FIX: DENY was interfering with page viewport
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     
     // PERFORMANCE: Aggressive caching for block explorers

@@ -96,7 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
               console.log(`🔄 Attempting fallback metadata fetch for NFT ${tokenId}...`);
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
-              const metadataUrl = `${baseUrl}/api/metadata/${contractAddress}/${tokenId}`;
+              const metadataUrl = `${baseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
               
               const response = await fetch(metadataUrl, { 
                 headers: { 'Cache-Control': 'no-store' }

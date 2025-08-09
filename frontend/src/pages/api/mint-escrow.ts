@@ -1052,9 +1052,9 @@ async function mintNFTEscrowGasPaid(
           });
           
           if (updateReceipt.status === 'success') {
-            console.log('✅ TOKEN URI UPDATED ON CONTRACT (METAMASK COMPATIBLE):', {
+            console.log('✅ TOKEN URI UPDATED ON CONTRACT (UNIVERSAL COMPATIBLE):', {
               tokenId,
-              newTokenURI: metamaskCompatibleUrl,
+              newTokenURI: universalCompatibleUrl,
               originalIpfsUrl: metadataUpdateResult.metadataUrl,
               updateTxHash: updateResult.transactionHash
             });

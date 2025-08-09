@@ -300,6 +300,28 @@ npx hardhat coverage
 
 MIT License - ver [LICENSE](LICENSE) para más detalles.
 
+## 🚨 Errores Conocidos y Soluciones
+
+### **ERROR DE ZOOM DESKTOP** 
+**Síntomas:** Página se ve más grande de lo normal, requiere 90% zoom del navegador para verse bien
+**Causa Raíz:** `X-Frame-Options: DENY` en headers de API endpoints interfiere con viewport
+**Solución:** Cambiar `DENY` a `SAMEORIGIN` en endpoints de metadata
+**Archivos Afectados:** `/api/nft-metadata/[contractAddress]/[tokenId].ts`
+**Commit Problemático:** 8e2c7e2 (August 8, 2025)
+**Fix Aplicado:** a18f526 + este commit
+
+```javascript
+// ❌ PROBLEMÁTICO:
+res.setHeader('X-Frame-Options', 'DENY');
+
+// ✅ CORRECCIÓN:
+res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+```
+
+**Detección:** Si la página requiere zoom <100% para verse normal, es este error.
+
+---
+
 ## 🆘 Soporte
 
 - **Documentación**: [docs.cryptogift.gl](https://docs.cryptogift.gl)

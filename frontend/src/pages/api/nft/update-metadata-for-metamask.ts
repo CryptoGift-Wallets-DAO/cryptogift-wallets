@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ? `https://${process.env.VERCEL_URL}` 
       : 'https://cryptogift-wallets.vercel.app';
     
-    const metamaskCompatibleURI = `${baseUrl}/api/metadata/${contractAddress}/${tokenId}`;
+    const metamaskCompatibleURI = `${baseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
     
     console.log(`🎨 METAMASK URI: ${metamaskCompatibleURI}`);
 

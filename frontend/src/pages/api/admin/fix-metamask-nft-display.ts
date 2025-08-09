@@ -92,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Create MetaMask-compatible metadata URL
-        const metamaskCompatibleURI = `${baseUrl}/api/metadata/${contractAddress}/${tokenId}`;
+        const metamaskCompatibleURI = `${baseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
         
         // Skip if already using our metadata endpoint
         if (currentTokenURI === metamaskCompatibleURI) {
