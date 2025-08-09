@@ -130,12 +130,30 @@ function convertIPFSToHTTPS(ipfsUrl: string): Promise<string> {
 }
 
 /**
- * EMERGENCY FIX: DON'T DOUBLE-ENCODE - MetaMask broken by over-encoding
- * Just return original URL - ipfs.io handles spaces fine automatically
+ * CONDITIONAL ENCODING: MetaMask compatibility + Block explorer support
+ * Encodes for crawlers/bots, preserves original URLs for MetaMask
  */
-function encodeImageURL(url: string): string {
-  // CRITICAL REVERT: Don't encode anything - ipfs.io works with spaces
-  // The original URLs work fine with MetaMask AND BaseScan can handle them
+function encodeImageURL(url: string, userAgent?: string): string {
+  if (!url) return url;
+  
+  // Check if request is from block explorer crawler
+  const ua = userAgent?.toLowerCase() || '';
+  const looksLikeCrawler = /bot|crawler|spider|etherscan|basescan|go-http-client|curl|wget|axios/.test(ua);
+  
+  if (looksLikeCrawler) {
+    // BLOCK EXPLORER: Encode path components for compatibility
+    try {
+      const urlObj = new URL(url);
+      urlObj.pathname = urlObj.pathname.split('/').map(encodeURIComponent).join('/');
+      console.log(`🔍 CRAWLER DETECTED: Encoded URL for ${ua.slice(0, 20)}...`);
+      return urlObj.toString();
+    } catch (error) {
+      console.warn(`⚠️ URL encoding failed for crawler, returning original: ${error.message}`);
+      return url;
+    }
+  }
+  
+  // METAMASK: Return original URL - works fine with spaces
   return url;
 }
 
@@ -200,12 +218,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // R6: Convert to MetaMask-compatible format with retry system
+    const rawImageUrl = await convertIPFSToHTTPS(metadata.image);
+    
+    // CONDITIONAL ENCODING: Apply for block explorers, preserve for MetaMask
+    const userAgent = req.headers['user-agent'] || '';
+    const finalImageUrl = encodeImageURL(rawImageUrl, userAgent);
+    
     const metamaskMetadata: ERC721Metadata = {
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
       description: metadata.description || 'A unique NFT-Wallet from the CryptoGift platform',
       
-      // R6: CRITICAL - Convert IPFS to HTTPS with retry logic and telemetry
-      image: await convertIPFSToHTTPS(metadata.image),
+      // CRITICAL: Conditionally encoded image URL for universal compatibility
+      image: finalImageUrl,
       
       // Standard ERC721 attributes array
       attributes: metadata.attributes || [],
@@ -246,7 +270,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
     }
     
-    res.setHeader('Vary', 'Accept-Encoding');
+    res.setHeader('Vary', 'Accept-Encoding, User-Agent'); // CRITICAL: Prevent cache contamination between crawlers and MetaMask
     
     // BASESCAN HINT: Add ETag for better caching
     const etag = isSevenDayNFT 

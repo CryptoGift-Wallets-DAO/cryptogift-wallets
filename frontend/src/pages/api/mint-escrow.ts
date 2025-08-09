@@ -9,6 +9,27 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+
+/**
+ * DYNAMIC BASE URL HELPER: Support for preview/custom domains
+ * Constructs the public-facing base URL for tokenURI generation
+ */
+function getPublicBaseUrl(req?: NextApiRequest): string {
+  // Priority 1: Explicit environment configuration
+  const envUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
+  if (envUrl) {
+    return envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
+  }
+  
+  // Priority 2: Runtime detection from request headers
+  if (req?.headers?.host) {
+    const protocol = (req.headers['x-forwarded-proto'] as string) || 'https';
+    return `${protocol}://${req.headers.host}`;
+  }
+  
+  // Priority 3: Local development fallback
+  return 'http://localhost:3000';
+}
 import { ethers } from 'ethers';
 import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
@@ -1023,7 +1044,10 @@ async function mintNFTEscrowGasPaid(
           
           // UNIVERSAL COMPATIBILITY FIX: Use BaseScan-optimized endpoint for maximum compatibility
           const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
-          const universalCompatibleUrl = `https://cryptogift-wallets.vercel.app/api/nft-metadata/${contractAddress}/${tokenId}`;
+          
+          // DYNAMIC DOMAIN: Support for preview/custom domains
+          const publicBaseUrl = getPublicBaseUrl(req);
+          const universalCompatibleUrl = `${publicBaseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
           
           console.log('🌐 UNIVERSAL FIX: Using BaseScan-optimized endpoint for tokenURI');
           console.log(`📍 Original URL: ${metadataUpdateResult.metadataUrl}`);
@@ -1044,7 +1068,7 @@ async function mintNFTEscrowGasPaid(
           
           console.log('📨 TokenURI update transaction sent:', updateResult.transactionHash);
           
-          // Wait for update confirmation
+          // Wait for update confirmation with fail-fast
           const updateReceipt = await waitForReceipt({
             client,
             chain: baseSepolia,
@@ -1059,20 +1083,63 @@ async function mintNFTEscrowGasPaid(
               updateTxHash: updateResult.transactionHash
             });
           } else {
-            console.error('❌ TokenURI update transaction failed:', updateReceipt.status);
+            // FAIL-FAST: Status failure is critical for BaseScan compatibility
+            throw new Error(`TokenURI update failed: receipt status=${updateReceipt.status}`);
           }
           
         } catch (updateError: any) {
-          // Handle "Token does not exist" error gracefully
-          if (updateError.message?.includes('Token does not exist') || 
-              updateError.message?.includes('ERC721NonexistentToken')) {
-            console.warn(`⚠️ Token ${tokenId} not yet available for URI update, skipping for now`);
-            console.log('🔄 NFT will use original metadata from IPFS - this is normal for new tokens');
-          } else {
-            console.error('❌ FAILED TO UPDATE TOKEN URI ON CONTRACT:', updateError);
+          console.error(`❌ TokenURI update attempt 1 failed: ${updateError.message}`);
+          
+          // RETRY LOGIC: One retry with backoff for race conditions
+          try {
+            console.log(`🔁 Attempting TokenURI update retry after 1s backoff...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Verify token exists before retry
+            const tokenExists = await readContract({
+              contract: nftContract,
+              method: "function ownerOf(uint256 tokenId) view returns (address)",
+              params: [BigInt(tokenId)]
+            });
+            
+            if (!tokenExists) {
+              throw new Error(`Token ${tokenId} does not exist for URI update`);
+            }
+            
+            // Retry the update
+            const retryTransaction = prepareContractCall({
+              contract: nftContract,
+              method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
+              params: [BigInt(tokenId), universalCompatibleUrl]
+            });
+            
+            const retryResult = await sendTransaction({
+              transaction: retryTransaction,
+              account: deployerAccount
+            });
+            
+            const retryReceipt = await waitForReceipt({
+              client,
+              chain: baseSepolia,
+              transactionHash: retryResult.transactionHash
+            });
+            
+            if (retryReceipt.status === 'success') {
+              console.log('✅ TOKEN URI RETRY SUCCESS:', {
+                tokenId,
+                newTokenURI: universalCompatibleUrl,
+                retryTxHash: retryResult.transactionHash
+              });
+            } else {
+              // CRITICAL FAILURE: Both attempts failed
+              throw new Error(`TokenURI update failed after retry: receipt status=${retryReceipt.status}`);
+            }
+            
+          } catch (retryError: any) {
+            console.error(`💥 CRITICAL: TokenURI update failed after retry: ${retryError.message}`);
+            // FAIL-FAST: Surface the error to caller - NFT will have incorrect URI for BaseScan
+            throw new Error(`Failed to update TokenURI for BaseScan compatibility: ${retryError.message}`);
           }
-          console.log('⚠️ Metadata update failed, but NFT mint will continue with original URI');
-          // Continue with mint process - NFT exists, just metadata won't be updated post-mint
         }
         
       } else {
