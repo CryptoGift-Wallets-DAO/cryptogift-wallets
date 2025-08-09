@@ -286,7 +286,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           try {
             // Step 1: Pre-pin tokenURI metadata to IPFS for faster loading
             console.log('📌 [POST-CLAIM] Pre-pinning tokenURI metadata...');
-            const metadataUrl = `https://cryptogift-wallets.vercel.app/api/nft-metadata/${contractAddress}/${tokenId}`;
+            const metadataUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'}/api/nft-metadata/${contractAddress}/${tokenId}`;
             
             // R2 FIX: Fetch and cache metadata with response validation
             const metadataResponse = await fetch(metadataUrl);

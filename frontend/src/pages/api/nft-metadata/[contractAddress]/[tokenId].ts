@@ -4,6 +4,8 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
+import { encodeAllPathSegments } from '../../../../utils/encodePath';
+import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
 
 interface ERC721Metadata {
   name: string;
@@ -34,10 +36,10 @@ async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> 
   
   // Already HTTPS URL - optimize for BaseScan
   if (ipfsUrl.startsWith('https://')) {
-    return optimizeForBlockExplorers(ipfsUrl);
+    return encodeAllPathSegments(ipfsUrl);
   }
   if (ipfsUrl.startsWith('http://')) {
-    return optimizeForBlockExplorers(ipfsUrl.replace('http://', 'https://'));
+    return encodeAllPathSegments(ipfsUrl.replace('http://', 'https://'));
   }
   
   let cid = '';
@@ -71,7 +73,7 @@ async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> 
       
       if (testResponse.ok) {
         console.log(`✅ BASESCAN GATEWAY SUCCESS: ${BASESCAN_IPFS_GATEWAYS[i]} (attempt ${i + 1})`);
-        return optimizeForBlockExplorers(gatewayUrl);
+        return encodeAllPathSegments(gatewayUrl);
       }
     } catch (error) {
       console.log(`⚠️ BASESCAN GATEWAY FAILED: ${BASESCAN_IPFS_GATEWAYS[i]} - ${error.message}`);
@@ -82,7 +84,7 @@ async function convertToBaseScanCompatibleURL(ipfsUrl: string): Promise<string> 
   // All gateways failed - return first one anyway (client may still work)
   const fallbackUrl = `${BASESCAN_IPFS_GATEWAYS[0]}${cid}`;
   console.log(`🔄 BASESCAN ALL GATEWAYS FAILED: Using fallback ${fallbackUrl}`);
-  return optimizeForBlockExplorers(fallbackUrl);
+  return encodeAllPathSegments(fallbackUrl);
 }
 
 /**
@@ -153,7 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       attributes: metadata.attributes || [],
       
       // External URL for viewing on our platform
-      external_url: `https://cryptogift-wallets.vercel.app/nft/${contractAddress}/${tokenId}`,
+      external_url: `${getPublicBaseUrl(req)}/nft/${contractAddress}/${tokenId}`,
     };
 
     // BASESCAN-SPECIFIC HEADERS: Optimized for block explorer crawlers

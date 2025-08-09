@@ -5,6 +5,7 @@
  */
 
 import { uploadMetadata } from './ipfs';
+import { getPublicBaseUrl } from './publicBaseUrl';
 
 export interface NFTMetadataTemplate {
   name?: string;
@@ -39,7 +40,7 @@ export async function createFinalMetadata(
       name: `CryptoGift NFT #${tokenId}`,
       description: giftMessage || "Un regalo cripto único creado con amor",
       image: `ipfs://${imageIpfsCid}`,
-      external_url: "https://cryptogift-wallets.vercel.app",
+      external_url: getPublicBaseUrl(),
       attributes: [
         {
           trait_type: "Token ID",

@@ -4,6 +4,8 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
+import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
+import { encodeAllPathSegments } from '../../../../utils/encodePath';
 
 interface ERC721Metadata {
   name: string;
@@ -235,7 +237,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       attributes: metadata.attributes || [],
       
       // Optional fields that MetaMask recognizes
-      external_url: `https://cryptogift-wallets.vercel.app/nft/${contractAddress}/${tokenId}`,
+      external_url: `${getPublicBaseUrl(req)}/nft/${contractAddress}/${tokenId}`,
     };
     
     if (isSevenDayNFT) {
