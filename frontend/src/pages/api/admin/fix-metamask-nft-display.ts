@@ -7,6 +7,7 @@ import { createThirdwebClient, getContract, prepareContractCall, sendTransaction
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { getAllStoredMetadata } from '../../../lib/nftMetadataStore';
+import { getPublicBaseUrl } from '../../../lib/publicBaseUrl';
 
 const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
@@ -68,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const results: MigrationResult[] = [];
-    const baseUrl = 'https://cryptogift-wallets.vercel.app'; // Production URL
+    const baseUrl = getPublicBaseUrl(req); // Dynamic URL for any environment
 
     // Process each NFT
     for (let i = 0; i < allMetadata.length; i++) {

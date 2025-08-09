@@ -5,7 +5,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
-import { encodeAllPathSegments } from '../../../../utils/encodePath';
+import { encodeAllPathSegmentsSafe } from '../../../../utils/encodePathSafe';
 
 interface ERC721Metadata {
   name: string;
@@ -36,10 +36,10 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
   
   // Already HTTPS URL - no retry needed
   if (ipfsUrl.startsWith('https://')) {
-    return encodeImageURL(ipfsUrl);
+    return processImageURL(ipfsUrl);
   }
   if (ipfsUrl.startsWith('http://')) {
-    return encodeImageURL(ipfsUrl.replace('http://', 'https://'));
+    return processImageURL(ipfsUrl.replace('http://', 'https://'));
   }
   
   let cid = '';
@@ -90,7 +90,7 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
         };
         
         console.log(`✅ IPFS SUCCESS:`, JSON.stringify(telemetryData));
-        return encodeImageURL(gatewayUrl);
+        return processImageURL(gatewayUrl);
       }
       
     } catch (error) {
@@ -121,7 +121,7 @@ async function convertIPFSToHTTPSWithRetry(ipfsUrl: string, retryCount = 0): Pro
   
   // All gateways failed - return first gateway URL anyway (some clients may still work)
   console.log(`⚠️ All IPFS gateways failed, returning primary: ${IPFS_GATEWAYS[0]}${cid}`);
-  return encodeImageURL(`${IPFS_GATEWAYS[0]}${cid}`);
+  return processImageURL(`${IPFS_GATEWAYS[0]}${cid}`);
 }
 
 /**
@@ -132,31 +132,11 @@ function convertIPFSToHTTPS(ipfsUrl: string): Promise<string> {
 }
 
 /**
- * CONDITIONAL ENCODING: MetaMask compatibility + Block explorer support
- * Encodes for crawlers/bots, preserves original URLs for MetaMask
+ * UNIVERSAL ENCODING: Always encode safely for all clients
+ * Replaced conditional logic - all clients get properly encoded URLs
  */
-function encodeImageURL(url: string, userAgent?: string): string {
-  if (!url) return url;
-  
-  // Check if request is from block explorer crawler
-  const ua = userAgent?.toLowerCase() || '';
-  const looksLikeCrawler = /bot|crawler|spider|etherscan|basescan|go-http-client|curl|wget|axios/.test(ua);
-  
-  if (looksLikeCrawler) {
-    // BLOCK EXPLORER: Encode path components for compatibility
-    try {
-      const urlObj = new URL(url);
-      urlObj.pathname = urlObj.pathname.split('/').map(encodeURIComponent).join('/');
-      console.log(`🔍 CRAWLER DETECTED: Encoded URL for ${ua.slice(0, 20)}...`);
-      return urlObj.toString();
-    } catch (error) {
-      console.warn(`⚠️ URL encoding failed for crawler, returning original: ${error.message}`);
-      return url;
-    }
-  }
-  
-  // METAMASK: Return original URL - works fine with spaces
-  return url;
+function processImageURL(url: string): string {
+  return encodeAllPathSegmentsSafe(url);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -222,9 +202,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // R6: Convert to MetaMask-compatible format with retry system
     const rawImageUrl = await convertIPFSToHTTPS(metadata.image);
     
-    // CONDITIONAL ENCODING: Apply for block explorers, preserve for MetaMask
-    const userAgent = req.headers['user-agent'] || '';
-    const finalImageUrl = encodeImageURL(rawImageUrl, userAgent);
+    // UNIVERSAL ENCODING: Always apply safe encoding for all clients
+    const finalImageUrl = processImageURL(rawImageUrl);
     
     const metamaskMetadata: ERC721Metadata = {
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
@@ -259,20 +238,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Security-Policy', "default-src 'none'; img-src https: data:;");
     
-    // METAMASK SPECIFIC FIX: Different caching strategy for 7-day NFTs
-    if (isSevenDayNFT) {
-      console.log(`🦊 SEVEN-DAY CACHE FIX: Applying MetaMask-specific headers`);
-      // More aggressive cache-busting for 7-day NFTs
-      res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=1800, must-revalidate');
-      res.setHeader('Last-Modified', new Date().toUTCString());
-      // Force MetaMask to refresh
-      res.setHeader('X-MetaMask-Refresh', 'true');
-    } else {
-      // Standard caching for other timeframes
-      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
-    }
-    
-    res.setHeader('Vary', 'Accept-Encoding, User-Agent'); // CRITICAL: Prevent cache contamination between crawlers and MetaMask
+    // UNIVERSAL CACHING: Optimized for both wallets and explorers  
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=60');
     
     // BASESCAN HINT: Add ETag for better caching
     const etag = isSevenDayNFT 

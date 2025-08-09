@@ -28,24 +28,20 @@ const BASESCAN_IPFS_GATEWAYS = [
 ];
 
 /**
- * SMART ENCODING: Convert IPFS URLs with conditional encoding based on client type
- * - Crawlers (BaseScan, Etherscan): Get encoded URLs for compatibility
- * - Wallets (MetaMask, Trust, Rainbow): Get clean URLs for rendering
+ * UNIVERSAL URL CONVERSION: Always encode paths safely
+ * Resolves IPFS URLs to HTTPS gateways with proper encoding for ALL clients
+ * No User-Agent conditionals - wallets and explorers both get encoded URLs
  */
-async function convertToCompatibleURL(ipfsUrl: string, userAgent?: string): Promise<string> {
+async function convertToUniversalURL(ipfsUrl: string): Promise<string> {
   if (!ipfsUrl) return '';
   
-  // Detect client type for conditional encoding
-  const ua = userAgent?.toLowerCase() || '';
-  const isBlockExplorer = /bot|crawler|spider|etherscan|basescan|go-http-client|curl|wget|axios/.test(ua);
-  
-  // Already HTTPS URL - apply conditional encoding
+  // Already HTTPS URL - ensure safe encoding
   if (ipfsUrl.startsWith('https://')) {
-    return isBlockExplorer ? encodeAllPathSegmentsSafe(ipfsUrl) : ipfsUrl;
+    return encodeAllPathSegmentsSafe(ipfsUrl);
   }
   if (ipfsUrl.startsWith('http://')) {
     const httpsUrl = ipfsUrl.replace('http://', 'https://');
-    return isBlockExplorer ? encodeAllPathSegmentsSafe(httpsUrl) : httpsUrl;
+    return encodeAllPathSegmentsSafe(httpsUrl);
   }
   
   let cid = '';
@@ -79,7 +75,7 @@ async function convertToCompatibleURL(ipfsUrl: string, userAgent?: string): Prom
       
       if (testResponse.ok) {
         console.log(`✅ BASESCAN GATEWAY SUCCESS: ${BASESCAN_IPFS_GATEWAYS[i]} (attempt ${i + 1})`);
-        return isBlockExplorer ? encodeAllPathSegmentsSafe(gatewayUrl) : gatewayUrl;
+        return encodeAllPathSegmentsSafe(gatewayUrl);
       }
     } catch (error) {
       console.log(`⚠️ BASESCAN GATEWAY FAILED: ${BASESCAN_IPFS_GATEWAYS[i]} - ${error.message}`);
@@ -90,38 +86,10 @@ async function convertToCompatibleURL(ipfsUrl: string, userAgent?: string): Prom
   // All gateways failed - return first one anyway (client may still work)
   const fallbackUrl = `${BASESCAN_IPFS_GATEWAYS[0]}${cid}`;
   console.log(`🔄 BASESCAN ALL GATEWAYS FAILED: Using fallback ${fallbackUrl}`);
-  return isBlockExplorer ? encodeAllPathSegmentsSafe(fallbackUrl) : fallbackUrl;
+  return encodeAllPathSegmentsSafe(fallbackUrl);
 }
 
-/**
- * CRITICAL OPTIMIZATION: Handle filenames with spaces for BaseScan
- * Strategy: Use single encoding but ensure it's properly formatted
- */
-function optimizeForBlockExplorers(url: string): string {
-  const lastSlashIndex = url.lastIndexOf('/');
-  if (lastSlashIndex === -1) return url;
-  
-  const baseUrl = url.substring(0, lastSlashIndex + 1);
-  const filename = url.substring(lastSlashIndex + 1);
-  
-  // BASESCAN STRATEGY: Single encode but handle existing encoding properly
-  let finalFilename = filename;
-  
-  // If already encoded (contains %20), decode first then re-encode cleanly
-  if (filename.includes('%20') || filename.includes('%')) {
-    try {
-      finalFilename = decodeURIComponent(filename);
-    } catch (e) {
-      // If decode fails, use original filename
-      finalFilename = filename;
-    }
-  }
-  
-  // Now encode properly for BaseScan
-  const encodedFilename = encodeURIComponent(finalFilename);
-  
-  return baseUrl + encodedFilename;
-}
+// REMOVED: optimizeForBlockExplorers function - replaced with encodeAllPathSegmentsSafe for universal compatibility
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -154,8 +122,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
       description: metadata.description || 'A unique NFT-Wallet from the CryptoGift platform',
       
-      // CRITICAL: Use smart encoding based on client type (wallets vs crawlers)
-      image: await convertToCompatibleURL(metadata.image, req.headers['user-agent']),
+      // CRITICAL: Always use safe encoding for ALL clients (wallets + explorers)
+      image: await convertToUniversalURL(metadata.image),
       
       // Standard ERC721 attributes array
       attributes: metadata.attributes || [],
@@ -164,28 +132,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       external_url: `${getPublicBaseUrl(req)}/nft/${contractAddress}/${tokenId}`,
     };
 
-    // BASESCAN-SPECIFIC HEADERS: Optimized for block explorer crawlers
+    // UNIVERSAL HEADERS: Optimized for both wallets and explorers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, User-Agent, Accept');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
-    // Security headers that block explorers expect
+    // OPTIMIZED CACHING: Fast refresh with edge performance
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=60');
+    
+    // SECURITY HEADERS
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN'); // ZOOM FIX: DENY was interfering with page viewport
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     
-    // PERFORMANCE: Aggressive caching for block explorers
-    res.setHeader('Cache-Control', 'public, max-age=7200, s-maxage=7200, stale-while-revalidate=86400');
-    res.setHeader('Vary', 'Accept-Encoding, User-Agent');
-    
-    // ETag for efficient caching
-    const etag = `"basescan-nft-${contractAddress}-${tokenId}-v2"`;
+    // METADATA HINTS
+    const etag = `"nft-${contractAddress}-${tokenId}"`;
     res.setHeader('ETag', etag);
-    
-    // BASESCAN COMPATIBILITY: Add OpenSea-style headers
-    res.setHeader('X-NFT-Contract', contractAddress as string);
-    res.setHeader('X-NFT-Token-ID', tokenId as string);
 
     console.log(`🔗 BASESCAN-OPTIMIZED IMAGE: ${baseScanMetadata.image}`);
     console.log(`✅ BASESCAN METADATA SERVED: ${contractAddress}:${tokenId}`);
