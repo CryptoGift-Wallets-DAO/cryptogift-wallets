@@ -2,7 +2,104 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🚀 LATEST SESSION UPDATES (Agosto 9, 2025)
+## 🚀 LATEST SESSION UPDATES (Agosto 10, 2025)
+
+### 🚨 CRITICAL PRODUCTION FIX + AUDIT COMPLIANCE TIPO A ✅
+
+**EMERGENCY FIX APPLIED ✅ - ReferenceError resolved + User-Agent/hardcode elimination following Protocol v2**
+
+---
+
+## ⚡ **SESIÓN CRÍTICA - FIXES DE EMERGENCIA**
+
+### **🔴 CRITICAL ERROR RESOLVED** - TIPO A
+- **Problem**: `ReferenceError: req is not defined` causing 500 fatals in mint-escrow API
+- **Root Cause**: `mintNFTEscrowGasPaid()` function called `getPublicBaseUrl(req)` without receiving req parameter
+- **Location**: `pages/api/mint-escrow.ts:871, :1064` 
+- **Impact**: Complete mint pipeline broken since last deploy
+- **Solution**: Added `req?: NextApiRequest` parameter to function signature + updated 2 call sites
+- **Files Modified**: `pages/api/mint-escrow.ts`
+- **Status**: ✅ RESOLVED - Build successful, production ready
+
+### **🧹 USER-AGENT DEPENDENCIES ELIMINATED** - TIPO A  
+- **Problem**: 6 locations with User-Agent dependencies causing CI failures
+- **Audit Finding**: "contradicts policy of not depending on User-Agent header"
+- **Impact**: check-hardcodes.sh script failing, header inconsistency
+- **Solution**: Replaced with stable alternatives (timestamp, origin, X-Client-Type)
+- **Files Modified**: 
+  - `lib/mobileRpcHandler.ts` (User-Agent → X-Client-Type)
+  - `pages/api/wallet-recovery.ts` (userAgent → requestMethod)
+  - `pages/api/auth/verify.ts` (userAgent → timestamp)
+  - `pages/api/auth/challenge.ts` (userAgent → timestamp)
+  - `pages/api/metadata/[contractAddress]/[tokenId].ts` (User-Agent → timestamp)
+  - `pages/api/nft/[...params].ts` (User-Agent → origin)
+  - `pages/api/mint.ts` (User-Agent → origin)
+- **Status**: ✅ RESOLVED - CI compatible, headers consistent
+
+### **🏗️ HARDCODED DOMAINS ELIMINATED** - TIPO A
+- **Problem**: Critical scripts used hardcoded fallback domains
+- **Audit Finding**: "Scripts assume cryptogift-wallets.vercel.app if VERCEL_URL undefined"
+- **Impact**: Breaks alternative deployments, CI validation fails
+- **Solution**: Fail-fast approach requiring explicit environment configuration
+- **Files Modified**:
+  - `fix-tokenuri-migration.mjs` (require NEXT_PUBLIC_BASE_URL/VERCEL_URL)
+  - `scripts/e2e-tokenuri-json-image.mjs` (require env vars, no fallbacks)
+- **Implementation**: Scripts now `process.exit(1)` with clear error if not configured
+- **Status**: ✅ RESOLVED - Deployment-safe scripts
+
+---
+
+## 📊 **SESSION VALIDATION & EVIDENCE**
+
+### **PROTOCOL V2 COMPLIANCE:**
+- **3 × TIPO A**: Critical req fix, User-Agent elimination, script hardcodes (surgical fixes)
+- **0 × TIPO B/C**: Only critical fixes applied this session
+- **Emergency Protocol**: Rapid response to production-breaking error
+
+### **BUILD & DEPLOYMENT STATUS:**
+- ✅ **TypeScript Compilation**: Successful with 0 errors
+- ✅ **Next.js Build**: Complete (only non-critical Sharp warnings)
+- ✅ **Production Ready**: All fixes committed and ready for deploy
+- ⏳ **Deploy Pending**: Manual `git push origin main` required for activation
+
+### **COMMITS CREATED:**
+```bash
+4e5481f - fix: resolve critical ReferenceError 'req is not defined' in mint-escrow API
+59dd16a - fix: eliminate User-Agent dependencies and hardcoded domains (audit fixes)
+```
+
+### **FILES MODIFIED THIS SESSION:**
+```
+11 files changed, 30 insertions(+), 12 deletions(-)
+
+CRITICAL FIXES:
+- pages/api/mint-escrow.ts                    (req parameter fix)
+
+USER-AGENT ELIMINATION:
+- lib/mobileRpcHandler.ts                     (header replacement)
+- pages/api/wallet-recovery.ts                (logging cleanup)
+- pages/api/auth/verify.ts                    (logging cleanup)
+- pages/api/auth/challenge.ts                 (logging cleanup)
+- pages/api/metadata/[contractAddress]/[tokenId].ts (logging cleanup)
+- pages/api/nft/[...params].ts               (logging cleanup)
+- pages/api/mint.ts                          (logging cleanup)
+
+SCRIPT HARDCODE FIXES:
+- fix-tokenuri-migration.mjs                  (fail-fast env requirement)
+- scripts/e2e-tokenuri-json-image.mjs        (fail-fast env requirement)
+
+DOCUMENTATION:
+- DEVELOPMENT.md                              (this comprehensive update)
+```
+
+### **IMMEDIATE NEXT STEPS:**
+1. **URGENT**: Manual push to activate critical fixes in production
+2. **Follow-up**: Implement remaining Tipo B fixes (domain centralization, Redis fallback)
+3. **Validation**: E2E testing post-deploy to confirm mint pipeline restored
+
+---
+
+## 🚀 PREVIOUS SESSION (Agosto 9, 2025)
 
 ### 🔥 BASESCAN COMPATIBILITY + DESKTOP ZOOM FIX + COMPREHENSIVE ERROR RESOLUTION ✅
 
