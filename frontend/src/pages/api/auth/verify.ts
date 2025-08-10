@@ -70,7 +70,14 @@ export default async function handler(
     console.log('🔗 Verify API using Chain ID:', chainId, '(from client wallet)');
     
     // Use provided domain (from client) or determine from request headers
-    const requestDomain = domain || req.headers.host || 'cryptogift-wallets.vercel.app';
+    const requestDomain = domain || req.headers.host;
+    if (!requestDomain) {
+      console.error('❌ SIWE: No domain available from request or headers');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Domain required for SIWE verification' 
+      });
+    }
 
     if (!address || !signature || !nonce) {
       return res.status(400).json({

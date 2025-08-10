@@ -313,7 +313,10 @@ async function mintNFTEscrowGasless(
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
     
     // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
-    const placeholderTokenURI = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}/api/nft-metadata/placeholder`;
+    if (!publicBaseUrl) {
+      throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL required');
+    }
+    const placeholderTokenURI = `${publicBaseUrl}/api/nft-metadata/placeholder`;
     console.log(`🔍 Using placeholder tokenURI for gasless mint: ${placeholderTokenURI}`);
     
     const mintTransaction = prepareContractCall({
@@ -711,7 +714,10 @@ async function mintNFTDirectly(
     console.log(`🎨 Preparing gasless direct mint NFT to creator: ${to}...`);
     
     // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
-    const placeholderTokenURI = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}/api/nft-metadata/placeholder`;
+    if (!publicBaseUrl) {
+      throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL required');
+    }
+    const placeholderTokenURI = `${publicBaseUrl}/api/nft-metadata/placeholder`;
     console.log(`🔍 Using placeholder tokenURI for direct mint: ${placeholderTokenURI}`);
     
     const mintTransaction = prepareContractCall({
@@ -797,7 +803,7 @@ async function mintNFTEscrowGasPaid(
   timeframeDays: number,
   giftMessage: string,
   creatorAddress: string,
-  req?: NextApiRequest
+  publicBaseUrl: string  // REQUIRED: Explicit injection instead of req?
 ): Promise<{
   success: boolean;
   tokenId?: string;
@@ -812,7 +818,13 @@ async function mintNFTEscrowGasPaid(
   let passwordHash: string | undefined;
   
   try {
+    // PROTOCOL V2 TYPE C: Validate publicBaseUrl early (no broken URLs)
+    if (!publicBaseUrl || !publicBaseUrl.startsWith('http')) {
+      throw new Error(`Invalid publicBaseUrl: ${publicBaseUrl}. Must be a valid HTTP/HTTPS URL.`);
+    }
+    
     console.log('💰 MINT ESCROW GAS-PAID: Starting atomic operation (deployer pays gas)');
+    console.log('🌐 Using validated publicBaseUrl:', publicBaseUrl);
     
     // Step 1: Rate limiting check
     const rateLimit = checkRateLimit(creatorAddress);
@@ -869,7 +881,7 @@ async function mintNFTEscrowGasPaid(
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
     
     // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
-    const placeholderTokenURI = `${getPublicBaseUrl(req)}/api/nft-metadata/placeholder`;
+    const placeholderTokenURI = `${publicBaseUrl}/api/nft-metadata/placeholder`;
     console.log(`🔍 Using placeholder tokenURI for initial mint: ${placeholderTokenURI}`);
     
     const mintTransaction = prepareContractCall({
@@ -1044,26 +1056,26 @@ async function mintNFTEscrowGasPaid(
         // CRITICAL FIX: Update tokenURI on contract with correct metadata
         console.log('🔄 UPDATING CONTRACT TOKEN URI with real tokenId metadata...');
         
+        // Get NFT contract (moved outside try for retry access)
+        const nftContract = getContract({
+          client,
+          chain: baseSepolia,
+          address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+        });
+        
+        // Get deployer account for contract update (moved outside try for retry access)
+        const deployerAccount = privateKeyToAccount({
+          client,
+          privateKey: process.env.PRIVATE_KEY_DEPLOY!
+        });
+        
+        // UNIVERSAL COMPATIBILITY FIX: Use BaseScan-optimized endpoint for maximum compatibility
+        const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
+        
+        // UNIVERSAL COMPATIBILITY: Use injected publicBaseUrl (no req dependency)
+        const universalCompatibleUrl = `${publicBaseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
+        
         try {
-          // Get NFT contract
-          const nftContract = getContract({
-            client,
-            chain: baseSepolia,
-            address: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
-          });
-          
-          // Get deployer account for contract update
-          const deployerAccount = privateKeyToAccount({
-            client,
-            privateKey: process.env.PRIVATE_KEY_DEPLOY!
-          });
-          
-          // UNIVERSAL COMPATIBILITY FIX: Use BaseScan-optimized endpoint for maximum compatibility
-          const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
-          
-          // DYNAMIC DOMAIN: Support for preview/custom domains
-          const publicBaseUrl = getPublicBaseUrl(req);
-          const universalCompatibleUrl = `${publicBaseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
           
           console.log('🌐 UNIVERSAL FIX: Using BaseScan-optimized endpoint for tokenURI');
           console.log(`📍 Original URL: ${metadataUpdateResult.metadataUrl}`);
@@ -1419,6 +1431,10 @@ export default async function handler(
     const authenticatedAddress = authResult.address!;
     console.log('🔐 Request authenticated for address:', authenticatedAddress.slice(0, 10) + '...');
     
+    // PROTOCOL V2 TYPE C: Resolve publicBaseUrl once for all operations (no req? fragility)
+    const publicBaseUrl = getPublicBaseUrl(req);
+    console.log('🌐 Public base URL resolved:', publicBaseUrl);
+    
     // Enhanced environment variable validation with detailed logging
     const requiredEnvVars = {
       PRIVATE_KEY_DEPLOY: process.env.PRIVATE_KEY_DEPLOY,
@@ -1603,7 +1619,7 @@ export default async function handler(
             timeframeIndex!,
             sanitizedGiftMessage,
             creatorAddress,
-            req
+            publicBaseUrl
           );
           result.gasless = false;
         } else {
@@ -1623,7 +1639,7 @@ export default async function handler(
           timeframeIndex!,
           sanitizedGiftMessage,
           creatorAddress,
-          req
+          publicBaseUrl
         );
         result.gasless = false;
       }

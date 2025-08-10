@@ -141,7 +141,7 @@ function createMetadata(request: MintRequest): any {
     name: `CryptoGift NFT-Wallet #${Date.now()}`,
     description: `${request.giftMessage}\n\nThis is a unique NFT-Wallet created with CryptoGift. It contains real cryptocurrency and uses ERC-6551 Token Bound Account technology.`,
     image: `ipfs://${request.imageFile}`,
-    external_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}`,
+    external_url: `${process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL}`,
     attributes: [
       {
         trait_type: "Gift Message",
@@ -395,7 +395,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     // Step 4: Generate sharing URLs
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL;
     const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${mintResult.tokenId}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
 

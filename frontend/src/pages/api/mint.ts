@@ -961,7 +961,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Final success
     // Generate share URL and QR code for the NFT
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL;
     const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${tokenId}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
 
