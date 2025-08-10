@@ -22,11 +22,14 @@ dotenv.config({ path: './frontend/.env.local' });
 const THIRDWEB_CLIENT_ID = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY_DEPLOY;
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
+// PROTOCOL V2 FAIL-FAST: Scripts must have explicit NEXT_PUBLIC_BASE_URL  
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 if (!BASE_URL) {
-  console.error('❌ CRITICAL: BASE_URL not configured');
-  console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to environment');
+  console.error('❌ CRITICAL: NEXT_PUBLIC_BASE_URL required for token migration');
+  console.error('   Scripts cannot use VERCEL_URL fallback - risk of wrong host');
+  console.error('   Add NEXT_PUBLIC_BASE_URL to environment');
+  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
   process.exit(1);
 }
 

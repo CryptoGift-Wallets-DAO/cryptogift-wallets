@@ -35,13 +35,14 @@ if (!CONTRACT_ADDRESS) {
   process.exit(1);
 }
 const PRIVATE_KEY = process.env.PRIVATE_KEY_DEPLOY; // Required for contract calls
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL ? 
-  (process.env.NEXT_PUBLIC_BASE_URL || `https://${process.env.VERCEL_URL}`) : null;
+// PROTOCOL V2 FAIL-FAST: Scripts must have explicit NEXT_PUBLIC_BASE_URL
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 if (!BASE_URL) {
-  console.error('❌ CRITICAL: BASE_URL not found in environment');
-  console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to frontend/.env.local');
-  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app');
+  console.error('❌ CRITICAL: NEXT_PUBLIC_BASE_URL required for tokenURI migration');
+  console.error('   Scripts cannot use VERCEL_URL fallback - risk of wrong host');
+  console.error('   Add NEXT_PUBLIC_BASE_URL to frontend/.env.local');
+  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
   process.exit(1);
 }
 

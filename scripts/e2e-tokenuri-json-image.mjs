@@ -31,12 +31,14 @@ if (!RPC_URL) {
 }
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || "0xE9F316159a0830114252a96a6B7CA6efD874650F";
 const TEST_TOKENS = process.env.E2E_TOKEN_IDS ? process.env.E2E_TOKEN_IDS.split(",").map(Number) : [136]; // Default to our successfully migrated token
-const EXPECTED_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+// PROTOCOL V2 FAIL-FAST: Scripts must have explicit NEXT_PUBLIC_BASE_URL
+const EXPECTED_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 if (!EXPECTED_BASE_URL) {
-  console.error('❌ CRITICAL: BASE_URL not configured for E2E testing');
-  console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to environment');
+  console.error('❌ CRITICAL: NEXT_PUBLIC_BASE_URL required for E2E testing');
+  console.error('   Scripts cannot use VERCEL_URL fallback - risk of wrong host');
+  console.error('   Add NEXT_PUBLIC_BASE_URL to environment');
+  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
   process.exit(1);
 }
 
