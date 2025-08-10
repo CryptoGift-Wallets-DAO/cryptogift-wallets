@@ -796,7 +796,8 @@ async function mintNFTEscrowGasPaid(
   password: string,
   timeframeDays: number,
   giftMessage: string,
-  creatorAddress: string
+  creatorAddress: string,
+  req?: NextApiRequest
 ): Promise<{
   success: boolean;
   tokenId?: string;
@@ -1601,7 +1602,8 @@ export default async function handler(
             password,
             timeframeIndex!,
             sanitizedGiftMessage,
-            creatorAddress
+            creatorAddress,
+            req
           );
           result.gasless = false;
         } else {
@@ -1620,7 +1622,8 @@ export default async function handler(
           password,
           timeframeIndex!,
           sanitizedGiftMessage,
-          creatorAddress
+          creatorAddress,
+          req
         );
         result.gasless = false;
       }
