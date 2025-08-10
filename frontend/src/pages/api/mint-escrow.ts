@@ -311,10 +311,15 @@ async function mintNFTEscrowGasless(
     console.log(`🎨 Preparing gasless mint NFT to target: ${to}...`);
     console.log(`🔍 Target recipient: ${to}`);
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
+    
+    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
+    const placeholderTokenURI = `https://cryptogift-wallets.vercel.app/api/nft-metadata/placeholder`;
+    console.log(`🔍 Using placeholder tokenURI for gasless mint: ${placeholderTokenURI}`);
+    
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [to, tokenURI] // HOTFIX: Mint to target address
+      params: [to, placeholderTokenURI] // Use placeholder, update after tokenId extraction
     });
     
     // Step 9: Execute gasless mint transaction through Biconomy
@@ -704,10 +709,15 @@ async function mintNFTDirectly(
     
     // Prepare mint transaction for gasless execution
     console.log(`🎨 Preparing gasless direct mint NFT to creator: ${to}...`);
+    
+    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
+    const placeholderTokenURI = `https://cryptogift-wallets.vercel.app/api/nft-metadata/placeholder`;
+    console.log(`🔍 Using placeholder tokenURI for direct mint: ${placeholderTokenURI}`);
+    
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [to, tokenURI]
+      params: [to, placeholderTokenURI]
     });
     
     // Execute gasless direct mint transaction
@@ -856,10 +866,15 @@ async function mintNFTEscrowGasPaid(
     console.log(`🔍 Target recipient: ${targetAddress}`);
     console.log(`🔍 Is escrow mint: ${isEscrowMint}`);
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
+    
+    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
+    const placeholderTokenURI = `${getPublicBaseUrl(req)}/api/nft-metadata/placeholder`;
+    console.log(`🔍 Using placeholder tokenURI for initial mint: ${placeholderTokenURI}`);
+    
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [targetAddress, tokenURI] // V2: Direct mint to escrow or creator
+      params: [targetAddress, placeholderTokenURI] // Use placeholder, update after tokenId extraction
     });
     
     // Step 8: Execute gas-paid mint transaction using deployer account
