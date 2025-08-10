@@ -18,8 +18,13 @@ export function getSiweDomain(): string {
     return window.location.hostname;
   }
   
-  // Server-side fallback
-  return process.env.NEXT_PUBLIC_DOMAIN || process.env.VERCEL_URL || 'cryptogift-wallets.vercel.app';
+  // Server-side fallback - fail fast if not configured
+  const domain = process.env.NEXT_PUBLIC_DOMAIN || process.env.VERCEL_URL;
+  if (!domain) {
+    console.error('❌ SIWE: NEXT_PUBLIC_DOMAIN or VERCEL_URL required');
+    return 'localhost'; // Development fallback only
+  }
+  return domain;
 }
 
 export const SIWE_DOMAIN = getSiweDomain();

@@ -41,7 +41,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL ?
 if (!BASE_URL) {
   console.error('❌ CRITICAL: BASE_URL not found in environment');
   console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to frontend/.env.local');
-  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
+  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app');
   process.exit(1);
 }
 

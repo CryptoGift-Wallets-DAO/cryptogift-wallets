@@ -108,7 +108,7 @@ async function testTokenURI(uri, tokenId) {
       // Step 2: Test if it's IPFS and convert to HTTP endpoint
       let httpEndpoint;
       if (onChainURI.startsWith('ipfs://')) {
-        httpEndpoint = `https://cryptogift-wallets.vercel.app/api/nft-metadata/${CONTRACT}/${tokenId}`;
+        httpEndpoint = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/nft-metadata/${CONTRACT}/${tokenId}`;
         console.log(`🔄 Converting IPFS to HTTP endpoint: ${httpEndpoint}`);
       } else {
         httpEndpoint = onChainURI;

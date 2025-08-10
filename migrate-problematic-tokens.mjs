@@ -22,7 +22,13 @@ dotenv.config({ path: './frontend/.env.local' });
 const THIRDWEB_CLIENT_ID = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY_DEPLOY;
-const BASE_URL = 'https://cryptogift-wallets.vercel.app';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
+
+if (!BASE_URL) {
+  console.error('❌ CRITICAL: BASE_URL not configured');
+  console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to environment');
+  process.exit(1);
+}
 
 // CRITICAL TOKENS - Confirmed problematic from analysis
 const PROBLEMATIC_TOKENS = [135, 136, 1];

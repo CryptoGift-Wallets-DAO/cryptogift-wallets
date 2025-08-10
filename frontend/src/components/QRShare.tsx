@@ -71,7 +71,7 @@ Es un NFT único que contiene criptomonedas reales. Solo tienes que:
 2. Conectar tu wallet (o crear una nueva)
 3. ¡Reclamar tu regalo!
 
-${shareUrl || 'https://cryptogift-wallets.vercel.app'}
+${shareUrl || (typeof window !== 'undefined' ? window.location.origin : '')}
 
 Bienvenid@ al futuro de los regalos 💎✨`;
 
@@ -79,7 +79,7 @@ Bienvenid@ al futuro de los regalos 💎✨`;
 
   const handleSocialShare = (platform: string) => {
     const text = encodeURIComponent(shareMessage);
-    const url = encodeURIComponent(shareUrl || 'https://cryptogift-wallets.vercel.app');
+    const url = encodeURIComponent(shareUrl || (typeof window !== 'undefined' ? window.location.origin : ''));
     
     const shareUrls = {
       whatsapp: `https://wa.me/?text=${text}`,

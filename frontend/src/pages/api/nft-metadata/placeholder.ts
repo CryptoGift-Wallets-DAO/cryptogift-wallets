@@ -41,7 +41,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         value: "CryptoGift Wallets"
       }
     ],
-    external_url: process.env.NEXT_PUBLIC_SITE_URL || "https://cryptogift-wallets.vercel.app"
+    external_url: process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || "http://localhost:3000"
   };
 
   res.setHeader('Content-Type', 'application/json; charset=utf-8');

@@ -21,7 +21,14 @@ import dotenv from 'dotenv';
 dotenv.config({ path: './frontend/.env.local' });
 
 // CONFIGURATION
-const RPC_URL = process.env.BASE_SEPOLIA_RPC || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e";
+const RPC_URL = process.env.BASE_SEPOLIA_RPC || process.env.NEXT_PUBLIC_RPC_URL;
+
+if (!RPC_URL) {
+  console.error('❌ CRITICAL: RPC_URL not configured for E2E testing');
+  console.error('   Add BASE_SEPOLIA_RPC or NEXT_PUBLIC_RPC_URL to environment');
+  console.error('   Never embed API keys in source code');
+  process.exit(1);
+}
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || "0xE9F316159a0830114252a96a6B7CA6efD874650F";
 const TEST_TOKENS = process.env.E2E_TOKEN_IDS ? process.env.E2E_TOKEN_IDS.split(",").map(Number) : [136]; // Default to our successfully migrated token
 const EXPECTED_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 

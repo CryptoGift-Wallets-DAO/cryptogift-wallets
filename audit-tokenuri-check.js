@@ -26,8 +26,8 @@ async function checkTokenURIs() {
       if (!tokenURI.startsWith('http')) {
         console.log(`  ❌ PROBLEMA: no es HTTP válido`);
       }
-      if (tokenURI.includes('cryptogift-wallets.vercel.app')) {
-        console.log(`  ✅ Dominio correcto detectado`);
+      if (tokenURI.includes('/api/nft-metadata/')) {
+        console.log(`  ✅ JSON endpoint detectado`);
       }
     } catch (error) {
       console.log(`Token ${id}: ERROR - ${error.message}`);
