@@ -26,7 +26,14 @@ dotenv.config({ path: './frontend/.env.local' });
 
 // CONFIGURATION
 const THIRDWEB_CLIENT_ID = process.env.NEXT_PUBLIC_TW_CLIENT_ID || '9183b572b02ec88dd4d8f20c3ed847d3';
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || '0x8DfCAfB320cBB7bcdbF4cc83A62bccA08B30F5D3';
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
+
+if (!CONTRACT_ADDRESS) {
+  console.error('❌ CRITICAL: NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS not found in environment');
+  console.error('   Current production contract: 0xE9F316159a0830114252a96a6B7CA6efD874650F');
+  console.error('   Add NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS to frontend/.env.local');
+  process.exit(1);
+}
 const PRIVATE_KEY = process.env.PRIVATE_KEY_DEPLOY; // Required for contract calls
 const BASE_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cryptogift-wallets.vercel.app';
 

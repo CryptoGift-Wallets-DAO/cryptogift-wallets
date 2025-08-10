@@ -135,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const metadataResponse = await fetch(filteredUrl, {
         method: 'GET',
         headers: {
-          'User-Agent': 'CryptoGift-Wallets/1.0'
+          'Accept': 'image/*,*/*'
         }
       });
       

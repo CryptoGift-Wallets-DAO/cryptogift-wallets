@@ -5,7 +5,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
-import { convertIPFSToHTTPS, pickGatewayUrl } from '../../../../utils/ipfs';
+import { pickGatewayUrl } from '../../../../utils/ipfs';
 
 interface ERC721Metadata {
   name: string;
@@ -42,8 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log(`🎨 METAMASK METADATA REQUEST: ${contractAddress}:${tokenId}`);
     
-    // CRITICAL DEBUG: Enhanced logging for 7-day NFT investigation
-    console.log(`🔍 USER-AGENT: ${req.headers['user-agent'] || 'Not provided'}`);
+    // CRITICAL DEBUG: Enhanced logging for metadata investigation
+    console.log(`🔍 REQUEST METHOD: ${req.method}`);
     console.log(`🔍 REFERRER: ${req.headers.referer || 'Not provided'}`);
 
     // Get metadata from our storage with retry mechanism for timing issues
@@ -71,8 +71,87 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (!metadata) {
-      console.log(`❌ No metadata found for ${contractAddress}:${tokenId} after ${maxRetries} attempts`);
-      return res.status(404).json({ error: 'Metadata not found after retries' });
+      console.log(`⚠️ No metadata found in Redis for ${contractAddress}:${tokenId} after ${maxRetries} attempts, attempting fallback...`);
+      
+      // CRITICAL FALLBACK: Generate basic metadata for existing tokens
+      try {
+        // Verify token exists on-chain before generating fallback
+        const { ethers } = await import('ethers');
+        const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+        const tokenContract = new ethers.Contract(contractAddress as string, [
+          "function ownerOf(uint256 tokenId) view returns (address)",
+          "function tokenURI(uint256 tokenId) view returns (string)"
+        ], provider);
+        
+        // Check if token exists
+        const owner = await tokenContract.ownerOf(BigInt(tokenId as string));
+        if (!owner || owner === '0x0000000000000000000000000000000000000000') {
+          throw new Error('Token does not exist');
+        }
+        
+        console.log(`✅ Token ${contractAddress}:${tokenId} exists on-chain (owner: ${owner.slice(0, 10)}...), generating fallback`);
+        
+        // Generate fallback metadata (use same structure as the other endpoint)
+        const fallbackMetadata: ERC721Metadata = {
+          name: `CryptoGift NFT #${tokenId}`,
+          description: `A unique CryptoGift NFT created on the platform. This token was created before metadata mapping was implemented. Token ID: ${tokenId}, Contract: ${contractAddress}`,
+          image: `data:image/svg+xml;base64,${Buffer.from(`
+            <svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="400" height="400" fill="#1e293b"/>
+              <text x="200" y="180" text-anchor="middle" fill="#f8fafc" font-family="Arial" font-size="24" font-weight="bold">
+                CryptoGift NFT
+              </text>
+              <text x="200" y="220" text-anchor="middle" fill="#94a3b8" font-family="Arial" font-size="18">
+                Token #${tokenId}
+              </text>
+              <text x="200" y="260" text-anchor="middle" fill="#64748b" font-family="Arial" font-size="14">
+                Legacy Token
+              </text>
+            </svg>
+          `).toString('base64')}`,
+          attributes: [
+            {
+              trait_type: "Token ID",
+              value: tokenId.toString()
+            },
+            {
+              trait_type: "Status", 
+              value: "Legacy Token"
+            },
+            {
+              trait_type: "Platform",
+              value: "CryptoGift Wallets"
+            },
+            {
+              trait_type: "Migration Status",
+              value: "Requires Metadata Update"
+            }
+          ],
+          external_url: `${getPublicBaseUrl(req)}/nft/${contractAddress}/${tokenId}`,
+        };
+
+        console.log(`🔄 Generated fallback metadata for token ${contractAddress}:${tokenId} (metadata endpoint)`);
+        
+        // Set cache headers to prevent permanent caching of fallback
+        res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300'); // Short cache for fallback
+        res.setHeader('X-Metadata-Source', 'fallback-generated-metadata-endpoint');
+        
+        // STANDARD HEADERS: Enhanced for MetaMask compatibility
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        
+        return res.status(200).json(fallbackMetadata);
+        
+      } catch (fallbackError) {
+        console.error(`❌ Fallback failed for ${contractAddress}:${tokenId}:`, fallbackError.message);
+        return res.status(404).json({ 
+          error: 'Token not found', 
+          details: 'No metadata available and token verification failed',
+          fallbackError: fallbackError.message 
+        });
+      }
     }
 
     // CRITICAL DEBUG: Log metadata attributes to identify 7-day differences
@@ -117,7 +196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Enhanced headers for BOTH MetaMask AND BaseScan compatibility
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, User-Agent');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
     // BASESCAN OPTIMIZATION: Add headers that block explorers expect
