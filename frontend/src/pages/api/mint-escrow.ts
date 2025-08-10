@@ -312,8 +312,8 @@ async function mintNFTEscrowGasless(
     console.log(`🔍 Target recipient: ${to}`);
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
     
-    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
-    const placeholderTokenURI = `https://cryptogift-wallets.vercel.app/api/nft-metadata/placeholder`;
+    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
+    const placeholderTokenURI = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}/api/nft-metadata/placeholder`;
     console.log(`🔍 Using placeholder tokenURI for gasless mint: ${placeholderTokenURI}`);
     
     const mintTransaction = prepareContractCall({
@@ -710,8 +710,8 @@ async function mintNFTDirectly(
     // Prepare mint transaction for gasless execution
     console.log(`🎨 Preparing gasless direct mint NFT to creator: ${to}...`);
     
-    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
-    const placeholderTokenURI = `https://cryptogift-wallets.vercel.app/api/nft-metadata/placeholder`;
+    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
+    const placeholderTokenURI = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'}/api/nft-metadata/placeholder`;
     console.log(`🔍 Using placeholder tokenURI for direct mint: ${placeholderTokenURI}`);
     
     const mintTransaction = prepareContractCall({
