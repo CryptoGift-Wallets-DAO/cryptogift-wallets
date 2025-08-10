@@ -51,7 +51,7 @@ export default async function handler(
   try {
     console.log('🔐 SIWE Verification Request:', {
       method: req.method,
-      userAgent: req.headers['user-agent']?.substring(0, 50),
+      timestamp: new Date().toISOString(),
       origin: req.headers.origin
     });
 

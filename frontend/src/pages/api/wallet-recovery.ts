@@ -40,7 +40,7 @@ export default async function handler(
   try {
     secureLogger.info('wallet-recovery endpoint accessed', {
       method: req.method,
-      userAgent: req.headers['user-agent']?.substring(0, 50),
+      requestMethod: req.method,
       origin: req.headers.origin
     });
 

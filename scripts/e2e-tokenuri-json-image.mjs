@@ -24,7 +24,14 @@ dotenv.config({ path: './frontend/.env.local' });
 const RPC_URL = process.env.BASE_SEPOLIA_RPC || "https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e";
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS || "0xE9F316159a0830114252a96a6B7CA6efD874650F";
 const TEST_TOKENS = process.env.E2E_TOKEN_IDS ? process.env.E2E_TOKEN_IDS.split(",").map(Number) : [136]; // Default to our successfully migrated token
-const EXPECTED_BASE_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://cryptogift-wallets.vercel.app";
+const EXPECTED_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+
+if (!EXPECTED_BASE_URL) {
+  console.error('❌ CRITICAL: BASE_URL not configured for E2E testing');
+  console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to environment');
+  process.exit(1);
+}
 
 console.log(`🧪 E2E VALIDATION: tokenURI → JSON → image`);
 console.log(`📋 Contract: ${CONTRACT_ADDRESS}`);

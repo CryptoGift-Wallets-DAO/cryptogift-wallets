@@ -35,7 +35,15 @@ if (!CONTRACT_ADDRESS) {
   process.exit(1);
 }
 const PRIVATE_KEY = process.env.PRIVATE_KEY_DEPLOY; // Required for contract calls
-const BASE_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cryptogift-wallets.vercel.app';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL ? 
+  (process.env.NEXT_PUBLIC_BASE_URL || `https://${process.env.VERCEL_URL}`) : null;
+
+if (!BASE_URL) {
+  console.error('❌ CRITICAL: BASE_URL not found in environment');
+  console.error('   Add NEXT_PUBLIC_BASE_URL or VERCEL_URL to frontend/.env.local');
+  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
+  process.exit(1);
+}
 
 console.log(`🔧 TOKENURI MIGRATION SCRIPT`);
 console.log(`📋 Contract: ${CONTRACT_ADDRESS}`);

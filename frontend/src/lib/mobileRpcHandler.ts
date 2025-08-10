@@ -170,7 +170,7 @@ export const getMobileHeaders = () => {
   if (isMobileWallet()) {
     headers['X-Mobile-Wallet'] = 'true';
     headers['X-Request-Source'] = 'mobile-dapp';
-    headers['User-Agent'] = 'CryptoGift-Mobile/1.0';
+    headers['X-Client-Type'] = 'mobile-dapp';
   }
 
   return headers;

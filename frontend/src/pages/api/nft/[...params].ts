@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log("📅 Timestamp:", new Date().toISOString());
   console.log("🔧 Method:", req.method);
   console.log("📋 Query params:", req.query);
-  console.log("🌐 User Agent:", req.headers['user-agent']?.substring(0, 100));
+  console.log("🌍 Origin:", req.headers.origin || 'None');
   
   if (req.method !== 'GET') {
     console.error("❌ Invalid method:", req.method);

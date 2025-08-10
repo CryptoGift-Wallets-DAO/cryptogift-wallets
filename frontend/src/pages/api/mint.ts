@@ -357,7 +357,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log("📅 Timestamp:", new Date().toISOString());
   console.log("🔧 Method:", req.method);
   console.log("📋 Request body keys:", Object.keys(req.body || {}));
-  console.log("🌐 User Agent:", req.headers['user-agent']?.substring(0, 100));
+  console.log("🌍 Origin:", req.headers.origin || 'None');
 
   // 🚨 SECURITY: JWT Authentication required for minting
   try {

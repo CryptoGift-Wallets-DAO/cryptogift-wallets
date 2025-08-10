@@ -215,7 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // BASESCAN LOGGING: Enhanced debugging for block explorer compatibility
     console.log(`✅ METADATA SERVED FOR: ${contractAddress}:${tokenId}`);
     console.log(`🔗 OPTIMIZED IMAGE URL: ${metamaskMetadata.image}`);
-    console.log(`📊 USER-AGENT: ${req.headers['user-agent'] || 'Not provided'}`);
+    console.log(`⏰ TIMESTAMP: ${new Date().toISOString()}`);
     
     return res.status(200).json(metamaskMetadata);
 
