@@ -48,48 +48,16 @@ export const NFTImage: React.FC<NFTImageProps> = ({
 }) => {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [gatewayIndex, setGatewayIndex] = useState(0);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
   const containerRef = React.useRef<HTMLDivElement>(null);
   
-  // Multiple IPFS gateways for redundancy (ordered by performance)
-  const IPFS_GATEWAYS = [
-    'https://ipfs.io/ipfs/',
-    'https://gateway.pinata.cloud/ipfs/',
-    'https://dweb.link/ipfs/',
-    'https://ipfs.infura.io/ipfs/',
-    'https://nftstorage.link/ipfs/',
-    'https://ipfs.fleek.co/ipfs/'
-  ];
-  
+  // SIMPLIFIED: Use image URL exactly as provided by API (already processed)
   const [currentSrc, setCurrentSrc] = useState(() => {
     // Handle null/empty src - use placeholder immediately
     if (!src || src.trim() === '') {
       return '/images/cg-wallet-placeholder.png';
     }
-    
-    // Convert ipfs:// URLs to gateway URLs for browser display
-    if (src.startsWith('ipfs://')) {
-      const cid = src.replace('ipfs://', '');
-      // URL encode the path to handle special characters like ó, ñ, spaces, etc.
-      const encodedCid = encodeURIComponent(cid).replace(/%2F/g, '/'); // Keep slashes unencoded
-      return `${IPFS_GATEWAYS[0]}${encodedCid}`;
-    }
-    // For regular IPFS URLs that might have special characters
-    if (src.includes('ipfs/') && src.includes('%')) {
-      // Already URL encoded, use as is
-      return src;
-    }
-    if (src.includes('ipfs/')) {
-      // Extract and encode the path part after ipfs/
-      const parts = src.split('ipfs/');
-      if (parts.length > 1) {
-        const baseUrl = parts[0] + 'ipfs/';
-        const path = parts[1];
-        const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
-        return baseUrl + encodedPath;
-      }
-    }
+    // Use image URL exactly as provided by server (no client-side processing)
     return src;
   });
 
@@ -114,24 +82,9 @@ export const NFTImage: React.FC<NFTImageProps> = ({
       return;
     }
     
-    // Try next IPFS gateway if available
-    if (src.startsWith('ipfs://') && gatewayIndex < IPFS_GATEWAYS.length - 1) {
-      const nextGatewayIndex = gatewayIndex + 1;
-      const cid = src.replace('ipfs://', '');
-      const encodedCid = encodeURIComponent(cid).replace(/%2F/g, '/');
-      const nextGatewaySrc = `${IPFS_GATEWAYS[nextGatewayIndex]}${encodedCid}`;
-      
-      console.log(`🔄 Trying gateway ${nextGatewayIndex + 1}/${IPFS_GATEWAYS.length}: ${nextGatewaySrc}`);
-      
-      setGatewayIndex(nextGatewayIndex);
-      setCurrentSrc(nextGatewaySrc);
-      setIsLoading(true);
-      return;
-    }
-    
-    // All gateways failed - switch to placeholder and mark error for native img fallback
-    console.log(`❌ All options failed for ${tokenId || 'NFT'}, using placeholder`);
-    setHasError(true); // This triggers native <img> fallback instead of Next.js Image
+    // SIMPLIFIED: Just switch to placeholder (no client-side gateway rotation)
+    console.log(`❌ Image failed for ${tokenId || 'NFT'}, using placeholder`);
+    setHasError(true);
     setIsLoading(false);
     setCurrentSrc('/images/cg-wallet-placeholder.png');
     

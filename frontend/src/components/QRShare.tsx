@@ -75,7 +75,7 @@ ${shareUrl || 'https://cryptogift-wallets.vercel.app'}
 
 Bienvenid@ al futuro de los regalos 💎✨`;
 
-  const shortUrl = shareUrl ? shareUrl.replace('https://', '').replace('http://', '') : 'cryptogift-wallets.vercel.app';
+  const shortUrl = shareUrl ? shareUrl.replace('https://', '').replace('http://', '') : (typeof window !== 'undefined' ? window.location.host : 'localhost:3000');
 
   const handleSocialShare = (platform: string) => {
     const text = encodeURIComponent(shareMessage);

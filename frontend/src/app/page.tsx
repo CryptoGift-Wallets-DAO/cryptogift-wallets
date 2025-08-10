@@ -207,7 +207,7 @@ export default function Home() {
                 client={client}
                 appMetadata={{
                   name: "CryptoGift Wallets",
-                  url: "https://cryptogift-wallets.vercel.app",
+                  url: typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000",
                 }}
               />
             )}

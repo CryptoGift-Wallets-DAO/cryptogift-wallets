@@ -169,7 +169,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: "CryptoGift NFT", // Generic name, will be updated with real tokenId
         description: "Un regalo cripto único creado con amor",
         image: `ipfs://${filteredCid}`,
-        external_url: "https://cryptogift-wallets.vercel.app",
+        external_url: process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000",
         attributes: [
           {
             trait_type: "Creation Date",

@@ -4,8 +4,8 @@
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
-import { encodeAllPathSegmentsSafe } from '../../../../utils/encodePathSafe';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
+import { pickGatewayUrl } from '../../../../utils/ipfs';
 
 interface ERC721Metadata {
   name: string;
@@ -20,76 +20,7 @@ interface ERC721Metadata {
   background_color?: string;
 }
 
-// BASESCAN FALLBACK GATEWAYS - Ordered by reliability for block explorers
-const BASESCAN_IPFS_GATEWAYS = [
-  'https://nftstorage.link/ipfs/',        // Primary - NFT.Storage
-  'https://cloudflare-ipfs.com/ipfs/',    // Secondary - Cloudflare CDN  
-  'https://ipfs.io/ipfs/'                 // Fallback - Most reliable
-];
-
-/**
- * UNIVERSAL URL CONVERSION: Always encode paths safely
- * Resolves IPFS URLs to HTTPS gateways with proper encoding for ALL clients
- * No User-Agent conditionals - wallets and explorers both get encoded URLs
- */
-async function convertToUniversalURL(ipfsUrl: string): Promise<string> {
-  if (!ipfsUrl) return '';
-  
-  // Already HTTPS URL - ensure safe encoding
-  if (ipfsUrl.startsWith('https://')) {
-    return encodeAllPathSegmentsSafe(ipfsUrl);
-  }
-  if (ipfsUrl.startsWith('http://')) {
-    const httpsUrl = ipfsUrl.replace('http://', 'https://');
-    return encodeAllPathSegmentsSafe(httpsUrl);
-  }
-  
-  let cid = '';
-  // IPFS URL format
-  if (ipfsUrl.startsWith('ipfs://')) {
-    cid = ipfsUrl.replace('ipfs://', '');
-  } 
-  // Handle bare CID
-  else if (ipfsUrl.match(/^[a-zA-Z0-9]{46}$/)) {
-    cid = ipfsUrl;
-  }
-  else {
-    return ipfsUrl; // Return as-is if not IPFS
-  }
-  
-  // Try gateways in order - return first working one
-  for (let i = 0; i < BASESCAN_IPFS_GATEWAYS.length; i++) {
-    const gatewayUrl = `${BASESCAN_IPFS_GATEWAYS[i]}${cid}`;
-    
-    try {
-      // Quick HEAD request to test gateway
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
-      
-      const testResponse = await fetch(gatewayUrl, { 
-        method: 'HEAD',
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (testResponse.ok) {
-        console.log(`✅ BASESCAN GATEWAY SUCCESS: ${BASESCAN_IPFS_GATEWAYS[i]} (attempt ${i + 1})`);
-        return encodeAllPathSegmentsSafe(gatewayUrl);
-      }
-    } catch (error) {
-      console.log(`⚠️ BASESCAN GATEWAY FAILED: ${BASESCAN_IPFS_GATEWAYS[i]} - ${error.message}`);
-      continue; // Try next gateway
-    }
-  }
-  
-  // All gateways failed - return first one anyway (client may still work)
-  const fallbackUrl = `${BASESCAN_IPFS_GATEWAYS[0]}${cid}`;
-  console.log(`🔄 BASESCAN ALL GATEWAYS FAILED: Using fallback ${fallbackUrl}`);
-  return encodeAllPathSegmentsSafe(fallbackUrl);
-}
-
-// REMOVED: optimizeForBlockExplorers function - replaced with encodeAllPathSegmentsSafe for universal compatibility
+// Removed: Complex gateway logic replaced by unified ipfs.ts system
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // CRITICAL: Support HEAD requests for crawler compatibility
@@ -118,13 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Metadata not found' });
     }
 
-    // Convert to BaseScan-optimized format (with gateway fallback)
+    // UNIFIED IPFS: Single encoding pass with robust gateway selection  
     const baseScanMetadata: ERC721Metadata = {
       name: metadata.name || `CryptoGift NFT #${tokenId}`,
       description: metadata.description || 'A unique NFT-Wallet from the CryptoGift platform',
       
-      // CRITICAL: Always use safe encoding for ALL clients (wallets + explorers)
-      image: await convertToUniversalURL(metadata.image),
+      // CRITICAL: Single encoding pass for ALL clients (wallets + explorers)
+      image: await pickGatewayUrl(metadata.image),
       
       // Standard ERC721 attributes array
       attributes: metadata.attributes || [],

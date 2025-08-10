@@ -56,7 +56,7 @@ export default async function handler(
         giftId: knownGiftId,
         verifyMapping,
         message: `Successfully repaired mapping for token ${targetTokenId}`,
-        instructions: `Token ${targetTokenId} should now work at: https://cryptogift-wallets.vercel.app/gift/claim/${targetTokenId}`
+        instructions: `Token ${targetTokenId} should now work at: ${process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000'}/gift/claim/${targetTokenId}`
       });
     } else {
       console.log(`❌ REPAIR: Verification failed. Expected ${knownGiftId}, got ${verifyMapping}`);
