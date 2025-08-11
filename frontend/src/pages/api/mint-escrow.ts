@@ -338,6 +338,7 @@ async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boo
         success: false,
         error: `Image not accessible via any gateway: ${validationResult.error}`
       };
+    }
   } catch (error) {
     console.error('❌ IPFS VALIDATION SYSTEM ERROR:', error);
     return {
