@@ -550,14 +550,15 @@ async function mintNFTEscrowGasless(
     console.log('🚀 Enhancement: 1.5-2s timeout per gateway, parallel execution');
     console.log('🔍 TokenURI for validation:', tokenURI);
     
-    const ipfsValidation = await validateIPFSImageAccess(imageUrl);
+    // Validate the tokenURI accessibility via IPFS gateways
+    const ipfsValidation = await validateIPFSImageAccess(tokenURI);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
-      return res.status(400).json({
+      return {
         success: false,
-        error: 'Image not accessible via IPFS gateways',
+        error: 'TokenURI not accessible via IPFS gateways',
         details: ipfsValidation.error
-      });
+      };
     }
     console.log('✅ IPFS validation passed - image accessible via gateways');
     
@@ -790,8 +791,8 @@ async function mintNFTEscrowGasless(
             params: [BigInt(giftCounter)]
           });
           
-          // Desestructurar tupla ThirdWeb v5
-          const [creator, , , giftTokenId, , giftStatus] = latestGift as readonly [string, bigint, string, bigint, bigint, number];
+          // Desestructurar tupla ThirdWeb v5 - fixed type assertion
+          const [creator, , , giftTokenId, , giftStatus] = latestGift as readonly [string, bigint, string, bigint, `0x${string}`, number];
           
           console.log('✅ VERIFICATION: Latest gift registered:', {
             creator,
@@ -1168,14 +1169,15 @@ async function mintNFTEscrowGasPaid(
     console.log('🚀 Enhancement: 1.5-2s timeout per gateway, parallel execution');
     console.log('🔍 TokenURI for validation:', tokenURI);
     
-    const ipfsValidation = await validateIPFSImageAccess(imageUrl);
+    // Validate the tokenURI accessibility via IPFS gateways
+    const ipfsValidation = await validateIPFSImageAccess(tokenURI);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
-      return res.status(400).json({
+      return {
         success: false,
-        error: 'Image not accessible via IPFS gateways',
+        error: 'TokenURI not accessible via IPFS gateways',
         details: ipfsValidation.error
-      });
+      };
     }
     console.log('✅ IPFS validation passed - image accessible via gateways');
     

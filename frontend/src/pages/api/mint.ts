@@ -925,19 +925,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (finalPublicBaseUrl.includes('localhost') || finalPublicBaseUrl.includes('127.0.0.1')) {
           throw new Error(`CRITICAL: Cannot use localhost URL for tokenURI: ${finalPublicBaseUrl}. Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables`);
         }
-        
-        const universalTokenURI = `${finalPublicBaseUrl}/api/nft-metadata/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${actualTokenId}`;
-        
-        console.log('🌐 UNIVERSAL UPDATE:');
-        console.log('  📍 Original URI (IPFS):', metadataUri.substring(0, 80) + '...');
-        console.log('  🔗 Universal URI:', universalTokenURI);
-        
-        // Prepare updateTokenURI transaction
-        const updateURITransaction = prepareContractCall({
-          contract: nftDropContract,
-          method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
-          params: [BigInt(actualTokenId), universalTokenURI]
-        });
+      
+      // Declare variables outside try block for proper scope
+      const universalTokenURI = `${finalPublicBaseUrl}/api/nft-metadata/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${actualTokenId}`;
+      
+      console.log('🌐 UNIVERSAL UPDATE:');
+      console.log('  📍 Original URI (IPFS):', metadataUri.substring(0, 80) + '...');
+      console.log('  🔗 Universal URI:', universalTokenURI);
+      
+      // Prepare updateTokenURI transaction
+      const updateURITransaction = prepareContractCall({
+        contract: nftDropContract,
+        method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
+        params: [BigInt(actualTokenId), universalTokenURI]
+      });
+      
+      try {
         
         // Execute updateTokenURI
         const updateResult = await sendTransaction({
