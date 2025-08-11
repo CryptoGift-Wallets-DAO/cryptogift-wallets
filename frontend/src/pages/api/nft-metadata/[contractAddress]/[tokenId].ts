@@ -50,12 +50,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log(`🏗️ BASESCAN METADATA REQUEST: ${contractAddress}:${tokenId}`);
 
-    // ENHANCED: Use comprehensive fallback system
+    // ENHANCED: Use comprehensive fallback system with forced production URL for external_url
     const publicBaseUrl = getPublicBaseUrl(req);
+    const productionBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || publicBaseUrl;
+    
     const fallbackResult = await getNFTMetadataWithFallback({
       contractAddress: contractAddress as string,
       tokenId: tokenId as string,
-      publicBaseUrl,
+      publicBaseUrl: productionBaseUrl, // Force production URL for consistent external_url
       timeout: 4500 // 4.5s timeout as specified
     });
 
@@ -76,8 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       animation_url: fallbackResult.metadata.animation_url,
       background_color: fallbackResult.metadata.background_color,
       
-      // Override external_url to ensure consistency
-      external_url: `${publicBaseUrl}/nft/${contractAddress}/${tokenId}`,
+      // Override external_url to ensure consistency with production domain
+      external_url: `${productionBaseUrl}/nft/${contractAddress}/${tokenId}`,
     };
 
     // UNIVERSAL HEADERS: Optimized for both wallets and explorers
