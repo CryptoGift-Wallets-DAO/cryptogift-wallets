@@ -23,7 +23,6 @@ import {
   sanitizeGiftMessage,
   verifyNFTOwnership,
   TIMEFRAME_OPTIONS,
-  registerTransactionAttempt,
   validateNonce
 } from '../../lib/escrowUtils';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
