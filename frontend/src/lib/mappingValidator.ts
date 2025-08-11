@@ -53,8 +53,9 @@ export async function validateStoredMapping(
       
       // If it's a tokenId mismatch and we have retries left, wait and try again
       if (result.error?.includes('TokenId mismatch') && attempt < maxRetries) {
-        const delay = attempt * 1000; // 1s, 2s, 3s
-        console.log(`⏳ TokenId mismatch on attempt ${attempt}, waiting ${delay}ms for contract state to propagate...`);
+        const delay = Math.min(attempt * 2000, 8000); // 2s, 4s, 6s, 8s max - exponential backoff
+        console.log(`⏳ TokenId mismatch on attempt ${attempt}, waiting ${delay}ms for blockchain state to propagate...`);
+        console.log(`🔍 Current contract state: tokenId ${result.contractData?.tokenId || 'unknown'}, expected: ${tokenIdNum}`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
@@ -65,7 +66,8 @@ export async function validateStoredMapping(
       console.error(`❌ Validation attempt ${attempt} failed:`, (error as Error).message);
       
       if (attempt < maxRetries) {
-        const delay = attempt * 1000;
+        const delay = Math.min(attempt * 2000, 8000); // Consistent exponential backoff
+        console.log(`⏳ Retrying in ${delay}ms due to error...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }

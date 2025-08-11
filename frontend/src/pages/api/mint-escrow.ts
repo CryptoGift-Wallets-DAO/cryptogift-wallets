@@ -313,7 +313,7 @@ async function mintNFTEscrowGasless(
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
     
     // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
-    const baseUrl = getPublicBaseUrl(req);
+    const baseUrl = publicBaseUrl;
     if (!baseUrl) {
       throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL required');
     }
@@ -451,6 +451,17 @@ async function mintNFTEscrowGasless(
         throw new Error(`RACE CONDITION DETECTED: ${ownershipResult.error || 'NFT ownership verification failed'}`);
       }
       
+      // CRITICAL DEBUG: Log tokenId before registerGiftMinted call
+      console.log('🔍 CRITICAL DEBUG - BEFORE registerGiftMinted:', {
+        tokenId: tokenId,
+        tokenIdType: typeof tokenId,
+        tokenIdBigInt: BigInt(tokenId).toString(),
+        contract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.slice(0,10) + '...',
+        creator: creatorAddress.slice(0,10) + '...',
+        timeframeDays,
+        giftMessageLength: giftMessage.length
+      });
+      
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -477,6 +488,10 @@ async function mintNFTEscrowGasless(
       
       console.log('✅ Gift registered successfully in escrow V2 contract');
       
+      // RACE CONDITION FIX: IMMEDIATE WAIT-AND-VERIFY PATTERN
+      console.log('🔍 CRITICAL: Wait-and-verify gift registration immediately...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s for blockchain state update
+      
       // RACE CONDITION FIX: Verify that registerGiftMinted actually created the gift
       console.log('🔍 RACE CONDITION VERIFICATION: Confirming gift was registered correctly...');
       try {
@@ -499,6 +514,21 @@ async function mintNFTEscrowGasless(
             tokenId: latestGift[3].toString(),
             status: latestGift[5]
           });
+          
+          // CRITICAL VALIDATION: Ensure tokenId matches what we sent
+          const expectedTokenIdNum = Number(tokenId);
+          const storedTokenIdNum = Number(latestGift[3]);
+          if (storedTokenIdNum !== expectedTokenIdNum) {
+            console.error('🚨 CRITICAL VALIDATION FAILED:', {
+              sentTokenId: expectedTokenIdNum,
+              storedTokenId: storedTokenIdNum,
+              giftId: Number(giftCounter),
+              creator: latestGift[0].slice(0,10) + '...'
+            });
+            throw new Error(`VALIDATION FAILED: registerGiftMinted stored tokenId ${storedTokenIdNum} but we sent ${expectedTokenIdNum}. This is a critical contract state corruption.`);
+          }
+          
+          console.log('✅ CRITICAL VALIDATION SUCCESS: tokenId stored correctly in contract');
         }
       } catch (verificationError) {
         console.warn('⚠️ VERIFICATION FAILED (but gift registration succeeded):', verificationError);
@@ -544,12 +574,13 @@ async function mintNFTEscrowGasless(
         await storeGiftMapping(tokenId, actualGiftId);
         console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (deterministic)`);
         
-        // VALIDATION: Verify the mapping is correct
+        // VALIDATION: Verify the mapping is correct (increased retries for race condition)
         const validation = await validateMappingWithRetry(
           tokenId,
           actualGiftId,
           creatorAddress,
-          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          6 // Increased from 3 to 6 retries for race condition recovery
         );
         
         if (!validation.valid) {
@@ -683,7 +714,8 @@ async function mintNFTDirectly(
   to: string,
   tokenURI: string,
   giftMessage: string,
-  creatorAddress: string
+  creatorAddress: string,
+  publicBaseUrl: string  // REQUIRED: Explicit injection instead of req?
 ): Promise<{
   success: boolean;
   tokenId?: string;
@@ -715,7 +747,7 @@ async function mintNFTDirectly(
     console.log(`🎨 Preparing gasless direct mint NFT to creator: ${to}...`);
     
     // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
-    const baseUrl = getPublicBaseUrl(req);
+    const baseUrl = publicBaseUrl;
     if (!baseUrl) {
       throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL required');
     }
@@ -1213,6 +1245,17 @@ async function mintNFTEscrowGasPaid(
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
       console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
       
+      // CRITICAL DEBUG: Log tokenId before registerGiftMinted call (gas-paid)
+      console.log('🔍 CRITICAL DEBUG - BEFORE registerGiftMinted (GAS-PAID):', {
+        tokenId: tokenId,
+        tokenIdType: typeof tokenId,
+        tokenIdBigInt: BigInt(tokenId).toString(),
+        contract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.slice(0,10) + '...',
+        creator: creatorAddress.slice(0,10) + '...',
+        timeframeDays,
+        giftMessageLength: giftMessage.length
+      });
+      
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
         tokenId,
         process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
@@ -1242,6 +1285,10 @@ async function mintNFTEscrowGasPaid(
       
       console.log('✅ Gift registered successfully in escrow V2 contract with gas-paid transaction');
       
+      // RACE CONDITION FIX: IMMEDIATE WAIT-AND-VERIFY PATTERN (gas-paid)
+      console.log('🔍 CRITICAL: Wait-and-verify gift registration immediately (gas-paid)...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s for blockchain state update
+      
       // RACE CONDITION FIX: Verify that registerGiftMinted actually created the gift
       console.log('🔍 RACE CONDITION VERIFICATION: Confirming gift was registered correctly (gas-paid)...');
       try {
@@ -1264,6 +1311,21 @@ async function mintNFTEscrowGasPaid(
             tokenId: latestGift[3].toString(),
             status: latestGift[5]
           });
+          
+          // CRITICAL VALIDATION: Ensure tokenId matches what we sent (gas-paid)
+          const expectedTokenIdNum = Number(tokenId);
+          const storedTokenIdNum = Number(latestGift[3]);
+          if (storedTokenIdNum !== expectedTokenIdNum) {
+            console.error('🚨 CRITICAL VALIDATION FAILED (GAS-PAID):', {
+              sentTokenId: expectedTokenIdNum,
+              storedTokenId: storedTokenIdNum,
+              giftId: Number(giftCounter),
+              creator: latestGift[0].slice(0,10) + '...'
+            });
+            throw new Error(`VALIDATION FAILED (GAS-PAID): registerGiftMinted stored tokenId ${storedTokenIdNum} but we sent ${expectedTokenIdNum}. This is a critical contract state corruption.`);
+          }
+          
+          console.log('✅ CRITICAL VALIDATION SUCCESS (GAS-PAID): tokenId stored correctly in contract');
         }
       } catch (verificationError) {
         console.warn('⚠️ VERIFICATION FAILED (but gift registration succeeded):', verificationError);
@@ -1333,12 +1395,13 @@ async function mintNFTEscrowGasPaid(
         await storeGiftMapping(tokenId, actualGiftIdGasPaid);
         console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (deterministic)`);
         
-        // VALIDATION: Verify the mapping is correct (gas-paid)
+        // VALIDATION: Verify the mapping is correct (gas-paid, increased retries for race condition)
         const validationGasPaid = await validateMappingWithRetry(
           tokenId,
           actualGiftIdGasPaid,
           creatorAddress,
-          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          6 // Increased from 3 to 6 retries for race condition recovery
         );
         
         if (!validationGasPaid.valid) {
@@ -1594,7 +1657,8 @@ export default async function handler(
         targetAddress,
         metadataUri,
         sanitizedGiftMessage,
-        creatorAddress
+        creatorAddress,
+        publicBaseUrl
       );
       // Direct mints are always gasless from user perspective (deployer pays)
       result.gasless = true;
