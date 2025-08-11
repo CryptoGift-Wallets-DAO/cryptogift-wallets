@@ -910,6 +910,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       console.log("📝 FINAL Token ID:", actualTokenId);
       
+      // CRITICAL ALIGNMENT: Update tokenURI to universal endpoint (same as mint-escrow.ts)
+      console.log("🔄 UNIVERSAL ALIGNMENT: Updating tokenURI to public endpoint...");
+      try {
+        // Get public base URL (same validation as mint-escrow)
+        const publicBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
+        if (!publicBaseUrl) {
+          throw new Error('CRITICAL: No NEXT_PUBLIC_BASE_URL available for tokenURI generation. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
+        }
+        
+        const finalPublicBaseUrl = publicBaseUrl.startsWith('http') ? publicBaseUrl : `https://${publicBaseUrl}`;
+        
+        // CRITICAL VALIDATION: Prevent localhost URLs in production tokenURIs
+        if (finalPublicBaseUrl.includes('localhost') || finalPublicBaseUrl.includes('127.0.0.1')) {
+          throw new Error(`CRITICAL: Cannot use localhost URL for tokenURI: ${finalPublicBaseUrl}. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app`);
+        }
+        
+        const universalTokenURI = `${finalPublicBaseUrl}/api/nft-metadata/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${actualTokenId}`;
+        
+        console.log('🌐 UNIVERSAL UPDATE:');
+        console.log('  📍 Original URI (IPFS):', metadataUri.substring(0, 80) + '...');
+        console.log('  🔗 Universal URI:', universalTokenURI);
+        
+        // Prepare updateTokenURI transaction
+        const updateURITransaction = prepareContractCall({
+          contract: nftDropContract,
+          method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
+          params: [BigInt(actualTokenId), universalTokenURI]
+        });
+        
+        // Execute updateTokenURI
+        const updateResult = await sendTransaction({
+          transaction: updateURITransaction,
+          account,
+        });
+        
+        console.log('✅ UNIVERSAL ALIGNMENT SUCCESS: tokenURI updated');
+        console.log('  🔗 Update TX:', updateResult.transactionHash);
+        console.log('  🌐 New tokenURI:', universalTokenURI);
+        
+        addMintLog('SUCCESS', 'UNIVERSAL_TOKENURI_UPDATE', {
+          tokenId: actualTokenId,
+          newTokenURI: universalTokenURI,
+          updateTransactionHash: updateResult.transactionHash
+        });
+        
+      } catch (updateError) {
+        console.error('❌ UNIVERSAL ALIGNMENT FAILED:', updateError.message);
+        addMintLog('ERROR', 'UNIVERSAL_TOKENURI_UPDATE_FAILED', {
+          tokenId: actualTokenId,
+          error: updateError.message
+        });
+        // Continue - don't fail the entire mint for this
+        console.warn('⚠️ Continuing with IPFS tokenURI (non-fatal)');
+      }
+      
       // PASO 2: Crear dirección TBA determinística (modo simplificado)
       console.log("🎯 PASO 2: Creando TBA determinística (modo simplificado)");
       

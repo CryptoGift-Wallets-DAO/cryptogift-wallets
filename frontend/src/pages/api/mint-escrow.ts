@@ -1199,8 +1199,21 @@ async function mintNFTEscrowGasPaid(
         // UNIVERSAL COMPATIBILITY FIX: Use BaseScan-optimized endpoint for maximum compatibility
         const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
         
-        // UNIVERSAL COMPATIBILITY: Use injected publicBaseUrl (no req dependency)
+        // CRITICAL VALIDATION: Ensure publicBaseUrl is safe for tokenURI generation
+        if (!publicBaseUrl || publicBaseUrl.includes('localhost') || publicBaseUrl.includes('127.0.0.1')) {
+          throw new Error(`CRITICAL: Invalid publicBaseUrl for tokenURI generation: ${publicBaseUrl}. This would create broken NFTs. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app`);
+        }
+        
+        if (!publicBaseUrl.startsWith('https://')) {
+          console.warn('⚠️ WARNING: tokenURI should use HTTPS for maximum compatibility');
+        }
+        
+        // UNIVERSAL COMPATIBILITY: Use validated publicBaseUrl for external access
         const universalCompatibleUrl = `${publicBaseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
+        
+        console.log('🔒 VALIDATION PASSED: publicBaseUrl safe for tokenURI generation');
+        console.log('🌐 Validated Base URL:', publicBaseUrl);
+        console.log('🔗 Final tokenURI:', universalCompatibleUrl);
         
         try {
           
