@@ -9,6 +9,61 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { ethers } from 'ethers';
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
+import { baseSepolia } from 'thirdweb/chains';
+import { privateKeyToAccount } from 'thirdweb/wallets';
+import { 
+  generateSalt,
+  generatePasswordHash,
+  getEscrowContract,
+  prepareRegisterGiftMintedCall,
+  validatePassword,
+  validateGiftMessage,
+  registerTransactionAttempt,
+  validateNonce
+} from '../../lib/escrowHelpers';
+import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
+import { storeNFTMetadata, updateNFTMetadata, createNFTMetadata, getNFTMetadata } from '../../lib/nftMetadataStore';
+import { debugLogger } from '../../lib/secureDebugLogger';
+import { validateIPFSConfig } from '../../lib/ipfs';
+import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
+import { 
+  generateSalt,
+  generatePasswordHash,
+  getEscrowContract,
+  prepareRegisterGiftMintedCall,
+  validatePassword,
+  validateGiftMessage,
+  sanitizeGiftMessage,
+  verifyNFTOwnership,
+  TIMEFRAME_OPTIONS
+} from '../../lib/escrowHelpers';
+import { storeGiftMapping } from '../../lib/giftMappingStore';
+import { readContract } from 'thirdweb';
+import {
+  validateTransactionAttempt,
+  registerTransactionAttempt,
+  markTransactionCompleted,
+  markTransactionFailed,
+  verifyGaslessTransaction,
+  checkRateLimit
+} from '../../lib/gaslessValidation';
+import { createEscrowMetadata, createDirectMintMetadata } from '../../lib/metadataUpdater';
+import { parseGiftEventWithRetry } from '../../lib/eventParser';
+import { validateMappingWithRetry } from '../../lib/mappingValidator';
+import { Redis } from '@upstash/redis';
+import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
+import { 
+  calculateTokenBoundAddress,
+  getTokenIdFromTransaction,
+  validateTokenId,
+  validateTokenBoundCreation,
+  extractTokenIdFromTransferEvent,
+  diagnoseTokenIdZeroIssue,
+  TokenIdZeroError
+} from '../../lib/tokenIdValidator';
+import { executeMintTransaction } from '../../lib/gasPaidTransactions';
 
 /**
  * DYNAMIC BASE URL HELPER: Support for preview/custom domains
@@ -291,48 +346,6 @@ async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boo
     };
   }
 }
-import { ethers } from 'ethers';
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
-import { baseSepolia } from 'thirdweb/chains';
-import { privateKeyToAccount } from 'thirdweb/wallets';
-import { 
-  generateSalt,
-  generatePasswordHash,
-  getEscrowContract,
-  prepareRegisterGiftMintedCall,
-  validatePassword,
-  validateGiftMessage,
-  sanitizeGiftMessage,
-  verifyNFTOwnership,
-  TIMEFRAME_OPTIONS
-} from '../../lib/escrowUtils';
-import { storeGiftMapping } from '../../lib/giftMappingStore';
-import { readContract } from 'thirdweb';
-import {
-  validateTransactionAttempt,
-  registerTransactionAttempt,
-  markTransactionCompleted,
-  markTransactionFailed,
-  verifyGaslessTransaction,
-  checkRateLimit
-} from '../../lib/gaslessValidation';
-import { createEscrowMetadata, createDirectMintMetadata } from '../../lib/metadataUpdater';
-import { parseGiftEventWithRetry } from '../../lib/eventParser';
-import { validateMappingWithRetry } from '../../lib/mappingValidator';
-import { Redis } from '@upstash/redis';
-import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
-import { validateIPFSConfig } from '../../lib/ipfs';
-import { 
-  extractTokenIdFromTransferEvent, 
-  validateTokenId, 
-  diagnoseTokenIdZeroIssue,
-  TokenIdZeroError,
-  assertValidTokenId
-} from '../../lib/tokenIdValidator';
-import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
-import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
-import { executeMintTransaction } from '../../lib/gasPaidTransactions';
-import { storeNFTMetadata, createNFTMetadata, getNFTMetadata } from '../../lib/nftMetadataStore';
 
 // Helper function: Store metadata with robust retry logic
 async function storeMetadataWithRetry(metadata: any, maxRetries: number = 3): Promise<void> {
