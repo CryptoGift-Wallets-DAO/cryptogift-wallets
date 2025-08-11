@@ -50,12 +50,18 @@ async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boo
       };
     }
     
-    // Convert IPFS URL to HTTP gateway for testing
+    // Smart gateway selection: ThirdWeb URLs need GET, others can use HEAD
     let testUrl = imageUrl;
+    let useGetMethod = false;
+    
     if (imageUrl.startsWith('ipfs://')) {
       const cid = imageUrl.replace('ipfs://', '').split('/')[0];
       testUrl = `https://nftstorage.link/ipfs/${cid}`;
       console.log('🌐 Testing via NFT.Storage gateway:', testUrl);
+    } else if (imageUrl.includes('thirdweb')) {
+      // ThirdWeb gateways require GET method
+      useGetMethod = true;
+      console.log('🌐 ThirdWeb URL detected, using GET method:', testUrl);
     }
     
     // Test accessibility with timeout
@@ -63,21 +69,41 @@ async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boo
     const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
     
     try {
-      const response = await fetch(testUrl, {
-        method: 'HEAD',
-        signal: controller.signal
-      });
+      const fetchOptions: RequestInit = {
+        signal: controller.signal,
+        headers: {
+          'Range': 'bytes=0-1023' // Limit response size for GET requests
+        }
+      };
+      
+      if (useGetMethod) {
+        fetchOptions.method = 'GET';
+      } else {
+        fetchOptions.method = 'HEAD';
+      }
+      
+      const response = await fetch(testUrl, fetchOptions);
       
       clearTimeout(timeout);
       
       if (response.ok) {
-        console.log('✅ IPFS IMAGE VALIDATION SUCCESS: Image accessible');
+        console.log('✅ IPFS IMAGE VALIDATION SUCCESS: Image accessible', {
+          url: testUrl,
+          method: useGetMethod ? 'GET' : 'HEAD',
+          status: response.status,
+          contentType: response.headers.get('content-type')
+        });
         return { success: true };
       } else {
-        console.log('❌ IPFS IMAGE VALIDATION FAILED: HTTP', response.status);
+        console.log('❌ IPFS IMAGE VALIDATION FAILED:', {
+          url: testUrl,
+          method: useGetMethod ? 'GET' : 'HEAD',
+          status: response.status,
+          statusText: response.statusText
+        });
         return {
           success: false,
-          error: `Image not accessible: HTTP ${response.status}`
+          error: `Image not accessible: HTTP ${response.status}. Please ensure your image is properly uploaded to IPFS and accessible via gateways.`
         };
       }
     } catch (fetchError) {
