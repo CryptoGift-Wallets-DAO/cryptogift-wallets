@@ -89,10 +89,3 @@ export async function pickGatewayUrl(ipfsUrlOrCidPath: string): Promise<string> 
   return candidates[0]; // Last resort fallback
 }
 
-/**
- * Legacy function for compatibility - uses new robust system
- * @deprecated Use convertIPFSToHTTPS or pickGatewayUrl directly
- */
-export function convertIPFSToHTTPSWithRetry(ipfsUrl: string): Promise<string> {
-  return Promise.resolve(convertIPFSToHTTPS(ipfsUrl));
-}

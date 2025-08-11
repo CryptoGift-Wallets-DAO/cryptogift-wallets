@@ -19,6 +19,8 @@ import {
   validateTokenId,
   getGiftIdFromTokenId
 } from '../../../lib/escrowUtils';
+import { getNFTMetadataWithFallback } from '../../../lib/nftMetadataFallback';
+import { getPublicBaseUrl } from '../../../lib/publicBaseUrl';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../../lib/escrowABI';
 
 // Types
@@ -130,56 +132,34 @@ async function getGiftInfo(tokenId: string): Promise<{
   }
 }
 
-// Get NFT metadata
-async function getNFTMetadata(nftContract: string, tokenId: string): Promise<{
+// Get NFT metadata using robust fallback system
+async function getNFTMetadataRobust(nftContract: string, tokenId: string, req: NextApiRequest): Promise<{
   name?: string;
   description?: string;
   image?: string;
   error?: string;
 }> {
   try {
-    // Use ethers directly to avoid ThirdWeb type complexity for generic NFT contracts
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+    const publicBaseUrl = getPublicBaseUrl(req);
     
-    // Standard ERC721 tokenURI ABI
-    const erc721ABI = [
-      "function tokenURI(uint256 tokenId) external view returns (string memory)"
-    ];
+    // Use comprehensive fallback system: Redis → on-chain tokenURI → IPFS → placeholder
+    const result = await getNFTMetadataWithFallback({
+      contractAddress: nftContract,
+      tokenId,
+      publicBaseUrl,
+      timeout: 3000 // 3s timeout for gift-info API
+    });
     
-    const nftContract_ethers = new ethers.Contract(nftContract, erc721ABI, provider);
+    console.log(`📋 GIFT INFO: Metadata resolved via ${result.source} in ${result.latency}ms`);
     
-    // Try to get token URI
-    const tokenURI = await nftContract_ethers.tokenURI(tokenId);
-    
-    if (tokenURI) {
-      // If it's an IPFS URI, convert to gateway URL
-      let metadataUrl = tokenURI;
-      if (tokenURI.startsWith('ipfs://')) {
-        metadataUrl = tokenURI.replace('ipfs://', process.env.NEXT_PUBLIC_IPFS_GATEWAY!);
-      }
-      
-      // Fetch metadata JSON
-      const response = await fetch(metadataUrl);
-      if (response.ok) {
-        const metadata = await response.json();
-        
-        let imageUrl = metadata.image;
-        if (imageUrl?.startsWith('ipfs://')) {
-          imageUrl = imageUrl.replace('ipfs://', process.env.NEXT_PUBLIC_IPFS_GATEWAY!);
-        }
-        
-        return {
-          name: metadata.name,
-          description: metadata.description,
-          image: imageUrl
-        };
-      }
-    }
-    
-    return {};
+    return {
+      name: result.metadata.name,
+      description: result.metadata.description,
+      image: result.metadata.image
+    };
     
   } catch (error) {
-    console.warn('⚠️ Could not fetch NFT metadata:', error);
+    console.warn('⚠️ GIFT INFO: Fallback metadata fetch failed:', error);
     return { error: 'Metadata unavailable' };
   }
 }
@@ -248,16 +228,16 @@ export default async function handler(
     const giftLink = generateGiftLink(tokenId, baseUrl);
     
     // Optional: Get NFT metadata (async, don't block response)
-    getNFTMetadata(gift.nftContract, tokenId)
+    getNFTMetadataRobust(gift.nftContract, tokenId, req)
       .then(metadata => {
         if (metadata.name || metadata.image) {
-          console.log('📸 NFT Metadata found:', { 
+          console.log('📸 GIFT INFO: NFT Metadata found:', { 
             name: metadata.name, 
             hasImage: !!metadata.image 
           });
         }
       })
-      .catch(err => console.warn('Metadata fetch failed:', err));
+      .catch(err => console.warn('GIFT INFO: Fallback metadata fetch failed:', err));
     
     console.log('✅ GIFT INFO SUCCESS:', {
       tokenId,

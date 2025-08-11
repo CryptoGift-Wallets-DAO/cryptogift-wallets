@@ -52,14 +52,6 @@ export function generatePasswordHash(
   ) as `0x${string}`;
 }
 
-/**
- * DEPRECATED: Legacy password hash function (INSECURE - doesn't match contract)
- * Keep temporarily for migration purposes only
- * @deprecated Use generatePasswordHash with all parameters instead
- */
-export function generatePasswordHashLegacy(password: string, salt: string): `0x${string}` {
-  return ethers.keccak256(ethers.toUtf8Bytes(password + salt)) as `0x${string}`;
-}
 
 export function validatePassword(password: string): { valid: boolean; message?: string } {
   if (!password || password.length < 6) {

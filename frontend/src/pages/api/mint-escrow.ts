@@ -30,6 +30,73 @@ function getPublicBaseUrl(req?: NextApiRequest): string {
   // Priority 3: Local development fallback
   return 'http://localhost:3000';
 }
+
+/**
+ * CRITICAL: Validate IPFS image accessibility before minting
+ * Prevents minting NFTs with inaccessible images
+ */
+async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('🔍 IPFS VALIDATION: Checking image accessibility:', imageUrl);
+    
+    // Check IPFS configuration
+    const ipfsConfig = validateIPFSConfig();
+    console.log('📋 IPFS Config:', ipfsConfig);
+    
+    if (!ipfsConfig.nftStorage && !ipfsConfig.thirdweb) {
+      return {
+        success: false,
+        error: 'No IPFS providers configured. Cannot validate image accessibility.'
+      };
+    }
+    
+    // Convert IPFS URL to HTTP gateway for testing
+    let testUrl = imageUrl;
+    if (imageUrl.startsWith('ipfs://')) {
+      const cid = imageUrl.replace('ipfs://', '').split('/')[0];
+      testUrl = `https://nftstorage.link/ipfs/${cid}`;
+      console.log('🌐 Testing via NFT.Storage gateway:', testUrl);
+    }
+    
+    // Test accessibility with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    try {
+      const response = await fetch(testUrl, {
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+      
+      if (response.ok) {
+        console.log('✅ IPFS IMAGE VALIDATION SUCCESS: Image accessible');
+        return { success: true };
+      } else {
+        console.log('❌ IPFS IMAGE VALIDATION FAILED: HTTP', response.status);
+        return {
+          success: false,
+          error: `Image not accessible: HTTP ${response.status}`
+        };
+      }
+    } catch (fetchError) {
+      clearTimeout(timeout);
+      console.log('❌ IPFS IMAGE VALIDATION ERROR:', fetchError.message);
+      return {
+        success: false,
+        error: `Image accessibility test failed: ${fetchError.message}`
+      };
+    }
+    
+  } catch (error) {
+    console.error('❌ IPFS VALIDATION SYSTEM ERROR:', error);
+    return {
+      success: false,
+      error: `Validation system error: ${error.message}`
+    };
+  }
+}
 import { ethers } from 'ethers';
 import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
@@ -60,6 +127,7 @@ import { parseGiftEventWithRetry } from '../../lib/eventParser';
 import { validateMappingWithRetry } from '../../lib/mappingValidator';
 import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
+import { validateIPFSConfig } from '../../lib/ipfs';
 import { 
   extractTokenIdFromTransferEvent, 
   validateTokenId, 
@@ -244,7 +312,8 @@ async function mintNFTEscrowGasless(
   password: string,
   timeframeDays: number,
   giftMessage: string,
-  creatorAddress: string
+  creatorAddress: string,
+  publicBaseUrl: string
 ): Promise<{
   success: boolean;
   tokenId?: string;
@@ -280,6 +349,18 @@ async function mintNFTEscrowGasless(
     
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
+    
+    // Step 2.5: IPFS IMAGE ACCESSIBILITY VALIDATION (prevent inaccessible NFTs)
+    console.log('🔍 Step 2.5: Validating IPFS image accessibility...');
+    const ipfsValidation = await validateIPFSImageAccess(tokenURI);
+    
+    if (!ipfsValidation.success) {
+      console.error('❌ IPFS IMAGE VALIDATION FAILED:', ipfsValidation.error);
+      // FAIL-FAST: Don't mint NFTs with inaccessible images
+      throw new Error(`Image validation failed: ${ipfsValidation.error}. Please ensure your image is properly uploaded to IPFS and accessible via gateways.`);
+    }
+    
+    console.log('✅ IPFS image accessibility validated successfully');
     
     // Step 3: Register transaction attempt
     await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
@@ -878,6 +959,18 @@ async function mintNFTEscrowGasPaid(
     
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
+    
+    // Step 2.5: IPFS IMAGE ACCESSIBILITY VALIDATION (prevent inaccessible NFTs)
+    console.log('🔍 Step 2.5: Validating IPFS image accessibility...');
+    const ipfsValidation = await validateIPFSImageAccess(tokenURI);
+    
+    if (!ipfsValidation.success) {
+      console.error('❌ IPFS IMAGE VALIDATION FAILED:', ipfsValidation.error);
+      // FAIL-FAST: Don't mint NFTs with inaccessible images
+      throw new Error(`Image validation failed: ${ipfsValidation.error}. Please ensure your image is properly uploaded to IPFS and accessible via gateways.`);
+    }
+    
+    console.log('✅ IPFS image accessibility validated successfully');
     
     // Step 3: Register transaction attempt
     await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
@@ -1672,7 +1765,8 @@ export default async function handler(
           password,
           timeframeIndex!,
           sanitizedGiftMessage,
-          creatorAddress
+          creatorAddress,
+          publicBaseUrl
         );
         
         // If gasless fails, fallback to gas-paid

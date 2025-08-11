@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
-import { getNFTMetadata } from "../../../lib/nftMetadataStore";
+import { getNFTMetadataWithFallback } from "../../../lib/nftMetadataFallback";
+import { getPublicBaseUrl } from "../../../lib/publicBaseUrl";
 
 // API to get all NFT-Wallets owned by a user's address
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -79,42 +80,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (userOwnsDirectly) {
           console.log(`🎯 NFT ${tokenId} belongs to user, adding to wallet list`);
           
-          // CRITICAL FIX: Get NFT metadata directly (no internal API calls)
+          // UNIFIED FALLBACK SYSTEM: Redis → on-chain tokenURI → IPFS → placeholder → cache
           let nftMetadata = null;
           try {
-            // Use direct function call instead of HTTP request
-            nftMetadata = await getNFTMetadata(contractAddress, tokenId.toString());
-            console.log(`✅ NFT ${tokenId} metadata loaded directly:`, {
-              found: !!nftMetadata,
-              hasImage: !!nftMetadata?.image,
-              hasImageCid: !!nftMetadata?.imageIpfsCid
-            });
-          } catch (metadataError) {
-            console.log(`⚠️ Failed to load metadata for NFT ${tokenId}:`, metadataError);
+            const publicBaseUrl = getPublicBaseUrl(req);
             
-            // 🔄 FALLBACK: Try getting metadata from our own API endpoint
-            try {
-              console.log(`🔄 Attempting fallback metadata fetch for NFT ${tokenId}...`);
-              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.host}`;
-              const metadataUrl = `${baseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
-              
-              const response = await fetch(metadataUrl, { 
-                headers: { 'Cache-Control': 'no-store' }
-              });
-              
-              if (response.ok) {
-                const fallbackMetadata = await response.json();
-                console.log(`✅ Fallback metadata successful for NFT ${tokenId}:`, {
-                  hasName: !!fallbackMetadata.name,
-                  hasImage: !!fallbackMetadata.image
-                });
-                nftMetadata = fallbackMetadata;
-              } else {
-                console.log(`⚠️ Fallback metadata failed for NFT ${tokenId}: ${response.status}`);
-              }
-            } catch (fallbackError) {
-              console.log(`❌ Fallback metadata error for NFT ${tokenId}:`, fallbackError);
-            }
+            const result = await getNFTMetadataWithFallback({
+              contractAddress,
+              tokenId: tokenId.toString(),
+              publicBaseUrl,
+              timeout: 2000 // 2s timeout for NFT wallets API
+            });
+            
+            console.log(`✅ NFT ${tokenId} metadata via ${result.source} in ${result.latency}ms:`, {
+              hasImage: !!result.metadata.image,
+              cached: result.cached
+            });
+            
+            nftMetadata = result.metadata;
+            
+          } catch (metadataError) {
+            console.log(`❌ Unified fallback failed for NFT ${tokenId}:`, metadataError);
+            // Leave nftMetadata as null - the rest of the code handles this gracefully
           }
           
           // Calculate TBA address for this NFT
