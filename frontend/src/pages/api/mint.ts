@@ -1061,7 +1061,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
       throw new Error(`Contract execution failed: ${contractError.message}`);
-      }
     }
 
     // Calculate TBA address (ya calculada en el paso anterior, pero verificamos)
