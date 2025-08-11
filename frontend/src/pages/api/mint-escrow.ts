@@ -20,25 +20,17 @@ import {
   prepareRegisterGiftMintedCall,
   validatePassword,
   validateGiftMessage,
+  sanitizeGiftMessage,
+  verifyNFTOwnership,
+  TIMEFRAME_OPTIONS,
   registerTransactionAttempt,
   validateNonce
-} from '../../lib/escrowHelpers';
+} from '../../lib/escrowUtils';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 import { storeNFTMetadata, updateNFTMetadata, createNFTMetadata, getNFTMetadata } from '../../lib/nftMetadataStore';
 import { debugLogger } from '../../lib/secureDebugLogger';
 import { validateIPFSConfig } from '../../lib/ipfs';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
-import { 
-  generateSalt,
-  generatePasswordHash,
-  getEscrowContract,
-  prepareRegisterGiftMintedCall,
-  validatePassword,
-  validateGiftMessage,
-  sanitizeGiftMessage,
-  verifyNFTOwnership,
-  TIMEFRAME_OPTIONS
-} from '../../lib/escrowHelpers';
 import { storeGiftMapping } from '../../lib/giftMappingStore';
 import { readContract } from 'thirdweb';
 import {
@@ -55,10 +47,7 @@ import { validateMappingWithRetry } from '../../lib/mappingValidator';
 import { Redis } from '@upstash/redis';
 import { ESCROW_CONTRACT_ADDRESS } from '../../lib/escrowABI';
 import { 
-  calculateTokenBoundAddress,
-  getTokenIdFromTransaction,
   validateTokenId,
-  validateTokenBoundCreation,
   extractTokenIdFromTransferEvent,
   diagnoseTokenIdZeroIssue,
   TokenIdZeroError
@@ -783,7 +772,7 @@ async function mintNFTEscrowGasless(
         const escrowContract = getEscrowContract();
         const giftCounter = await readContract({
           contract: escrowContract,
-          method: "giftCounter",
+          method: "function giftCounter() view returns (uint256)",
           params: []
         });
         console.log(`✅ VERIFICATION: Current gift counter: ${giftCounter}`);
@@ -791,7 +780,7 @@ async function mintNFTEscrowGasless(
         if (Number(giftCounter) > 0) {
           const latestGift = await readContract({
             contract: escrowContract,
-            method: "getGift",
+            method: "function getGift(uint256) view returns (address,bytes32,bytes32,uint256,uint256,uint8)",
             params: [BigInt(giftCounter)]
           });
           console.log('✅ VERIFICATION: Latest gift registered:', {
@@ -1601,7 +1590,7 @@ async function mintNFTEscrowGasPaid(
         const escrowContract = getEscrowContract();
         const giftCounter = await readContract({
           contract: escrowContract,
-          method: "giftCounter",
+          method: "function giftCounter() view returns (uint256)",
           params: []
         });
         console.log(`✅ VERIFICATION (GAS-PAID): Current gift counter: ${giftCounter}`);
@@ -1609,7 +1598,7 @@ async function mintNFTEscrowGasPaid(
         if (Number(giftCounter) > 0) {
           const latestGift = await readContract({
             contract: escrowContract,
-            method: "getGift",
+            method: "function getGift(uint256) view returns (address,bytes32,bytes32,uint256,uint256,uint8)",
             params: [BigInt(giftCounter)]
           });
           console.log('✅ VERIFICATION (GAS-PAID): Latest gift registered:', {
