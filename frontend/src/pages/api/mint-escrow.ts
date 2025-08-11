@@ -38,6 +38,13 @@ function getPublicBaseUrl(req?: NextApiRequest): string {
 async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('🔍 IPFS VALIDATION: Checking image accessibility:', imageUrl);
+    console.log('🔍 DETAILED URL ANALYSIS:', {
+      original: imageUrl,
+      startsWithIpfs: imageUrl.startsWith('ipfs://'),
+      includesThirdweb: imageUrl.includes('thirdweb'),
+      urlLength: imageUrl.length,
+      protocol: imageUrl.split('://')[0]
+    });
     
     // Check IPFS configuration
     const ipfsConfig = validateIPFSConfig();
@@ -96,10 +103,13 @@ async function validateIPFSImageAccess(imageUrl: string): Promise<{ success: boo
         return { success: true };
       } else {
         console.log('❌ IPFS IMAGE VALIDATION FAILED:', {
-          url: testUrl,
+          originalUrl: imageUrl,
+          testUrl: testUrl,
           method: useGetMethod ? 'GET' : 'HEAD',
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          useGetMethodLogic: useGetMethod
         });
         return {
           success: false,
