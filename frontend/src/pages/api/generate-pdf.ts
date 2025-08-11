@@ -202,7 +202,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(156, 163, 175);
-    doc.text('CryptoGift Wallets - https://cryptogift.gl', pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.text(`CryptoGift Wallets - ${process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'Production Site'}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
     doc.text('Hecho con ❤️ para el futuro descentralizado', pageWidth / 2, pageHeight - 5, { align: 'center' });
 
     // Generate the PDF as base64

@@ -24,7 +24,7 @@ export function getPublicBaseUrl(req?: NextApiRequest): string {
       console.error('🚨 CRITICAL: Detected localhost URL in tokenURI generation context!');
       console.error('   This would create PERMANENTLY BROKEN tokenURIs for wallets/BaseScan');
       console.error('   Runtime URL detected:', runtimeUrl);
-      throw new Error('CRITICAL: Cannot use localhost URL for tokenURI generation. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app in environment.');
+      throw new Error('CRITICAL: Cannot use localhost URL for tokenURI generation. Set NEXT_PUBLIC_BASE_URL in environment to your production URL.');
     }
     
     console.log('✅ PUBLIC BASE URL resolved from request:', runtimeUrl);
@@ -45,12 +45,12 @@ export function getPublicBaseUrl(req?: NextApiRequest): string {
   // Priority 4: FAIL-FAST - ALWAYS for tokenURI generation
   console.error('🚨 CRITICAL ERROR: No public base URL available for tokenURI generation!');
   console.error('   This would create broken tokenURIs that wallets cannot access.');
-  console.error('   SOLUTION: Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
+  console.error('   SOLUTION: Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables');
   console.error('   Current environment:', {
     NODE_ENV: process.env.NODE_ENV,
     VERCEL_URL: process.env.VERCEL_URL ? 'SET' : 'MISSING',
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ? 'SET' : 'MISSING'
   });
   
-  throw new Error('CRITICAL: No public base URL available for tokenURI generation. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app in Vercel environment variables.');
+  throw new Error('CRITICAL: No public base URL available for tokenURI generation. Set NEXT_PUBLIC_BASE_URL to your production URL in Vercel environment variables.');
 }

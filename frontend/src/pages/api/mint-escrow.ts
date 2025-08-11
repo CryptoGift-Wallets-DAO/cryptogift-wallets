@@ -1408,7 +1408,7 @@ async function mintNFTEscrowGasPaid(
         
         // CRITICAL VALIDATION: Ensure publicBaseUrl is safe for tokenURI generation
         if (!publicBaseUrl || publicBaseUrl.includes('localhost') || publicBaseUrl.includes('127.0.0.1')) {
-          throw new Error(`CRITICAL: Invalid publicBaseUrl for tokenURI generation: ${publicBaseUrl}. This would create broken NFTs. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app`);
+          throw new Error(`CRITICAL: Invalid publicBaseUrl for tokenURI generation: ${publicBaseUrl}. This would create broken NFTs. Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables`);
         }
         
         if (!publicBaseUrl.startsWith('https://')) {
@@ -1518,13 +1518,25 @@ async function mintNFTEscrowGasPaid(
         }
         
       } else {
-        console.warn('⚠️ METADATA UPDATE FAILED (GAS-PAID):', metadataUpdateResult.error);
-        // Continue with mint process even if metadata update fails
+        console.error('❌ METADATA UPDATE FAILED (GAS-PAID):', metadataUpdateResult.error);
+        // FAIL-FAST: updateTokenURI is critical for BaseScan compatibility
+        return res.status(500).json({
+          success: false,
+          error: 'TokenURI update failed',
+          details: metadataUpdateResult.error,
+          compensationJob: 'Manual tokenURI update required'
+        });
       }
       
     } catch (metadataError) {
       console.error('❌ METADATA UPDATE ERROR (GAS-PAID):', metadataError);
-      // Continue with mint process even if metadata update fails
+      // FAIL-FAST: Propagate updateTokenURI failures
+      return res.status(500).json({
+        success: false,
+        error: 'Critical TokenURI update failure',
+        details: metadataError instanceof Error ? metadataError.message : 'Unknown error',
+        compensationJob: 'Manual tokenURI update required'
+      });
     }
     
     // Initialize escrow transaction hash variable

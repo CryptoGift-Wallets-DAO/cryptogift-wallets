@@ -191,7 +191,7 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, error, onClose, 
             <p className="text-xs text-gray-500">
               ¿Necesitas ayuda adicional?{' '}
               <a 
-                href="mailto:support@cryptogift.gl" 
+                href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@mbxarts.com'}`} 
                 className="text-blue-600 hover:text-blue-700"
               >
                 Contacta soporte

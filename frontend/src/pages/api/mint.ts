@@ -916,14 +916,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Get public base URL (same validation as mint-escrow)
         const publicBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
         if (!publicBaseUrl) {
-          throw new Error('CRITICAL: No NEXT_PUBLIC_BASE_URL available for tokenURI generation. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
+          throw new Error('CRITICAL: No NEXT_PUBLIC_BASE_URL available for tokenURI generation. Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables');
         }
         
         const finalPublicBaseUrl = publicBaseUrl.startsWith('http') ? publicBaseUrl : `https://${publicBaseUrl}`;
         
         // CRITICAL VALIDATION: Prevent localhost URLs in production tokenURIs
         if (finalPublicBaseUrl.includes('localhost') || finalPublicBaseUrl.includes('127.0.0.1')) {
-          throw new Error(`CRITICAL: Cannot use localhost URL for tokenURI: ${finalPublicBaseUrl}. Set NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app`);
+          throw new Error(`CRITICAL: Cannot use localhost URL for tokenURI: ${finalPublicBaseUrl}. Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables`);
         }
         
         const universalTokenURI = `${finalPublicBaseUrl}/api/nft-metadata/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${actualTokenId}`;
@@ -956,13 +956,67 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         
       } catch (updateError) {
-        console.error('❌ UNIVERSAL ALIGNMENT FAILED:', updateError.message);
-        addMintLog('ERROR', 'UNIVERSAL_TOKENURI_UPDATE_FAILED', {
-          tokenId: actualTokenId,
-          error: updateError.message
-        });
-        // Continue - don't fail the entire mint for this
-        console.warn('⚠️ Continuing with IPFS tokenURI (non-fatal)');
+        console.error('❌ UNIVERSAL ALIGNMENT FAILED (attempt 1):', updateError.message);
+        
+        // FAIL-FAST: Implement retry with exponential backoff for updateTokenURI
+        console.log('🔄 RETRY: Attempting updateTokenURI with exponential backoff...');
+        
+        let retrySuccess = false;
+        const maxRetries = 3;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 8000); // Max 8s
+            console.log(`⏱️  Retry ${attempt}/${maxRetries} in ${backoffMs}ms...`);
+            
+            await new Promise(resolve => setTimeout(resolve, backoffMs));
+            
+            // Re-attempt updateTokenURI transaction
+            const retryUpdateResult = await sendTransaction({
+              transaction: updateURITransaction,
+              account,
+            });
+            
+            console.log(`✅ RETRY ${attempt} SUCCESS: tokenURI updated`);
+            console.log('  🔗 Retry Update TX:', retryUpdateResult.transactionHash);
+            
+            addMintLog('SUCCESS', 'UNIVERSAL_TOKENURI_UPDATE_RETRY', {
+              tokenId: actualTokenId,
+              retryAttempt: attempt,
+              newTokenURI: universalTokenURI,
+              updateTransactionHash: retryUpdateResult.transactionHash
+            });
+            
+            retrySuccess = true;
+            break;
+            
+          } catch (retryError) {
+            console.error(`❌ RETRY ${attempt}/${maxRetries} FAILED:`, retryError.message);
+            addMintLog('ERROR', 'UNIVERSAL_TOKENURI_UPDATE_RETRY_FAILED', {
+              tokenId: actualTokenId,
+              retryAttempt: attempt,
+              error: retryError.message
+            });
+          }
+        }
+        
+        if (!retrySuccess) {
+          // FAIL-FAST: updateTokenURI is critical for BaseScan compatibility
+          addMintLog('ERROR', 'UNIVERSAL_TOKENURI_UPDATE_CRITICAL_FAILURE', {
+            tokenId: actualTokenId,
+            originalError: updateError.message,
+            compensationRequired: true
+          });
+          
+          return res.status(500).json({
+            success: false,
+            error: 'Critical TokenURI update failure after retries',
+            details: `Failed to update tokenURI after ${maxRetries} attempts. Original error: ${updateError.message}`,
+            tokenId: actualTokenId,
+            compensationJob: 'Manual tokenURI update required via admin panel',
+            phase: 'TOKENURI_UPDATE'
+          });
+        }
       }
       
       // PASO 2: Crear dirección TBA determinística (modo simplificado)

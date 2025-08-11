@@ -83,7 +83,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </Link>
               
               <a
-                href="mailto:support@cryptogift.gl?subject=Error Report&body=I encountered an error on CryptoGift Wallets"
+                href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@mbxarts.com'}?subject=Error Report&body=I encountered an error on CryptoGift Wallets`}
                 className="block w-full px-6 py-3 text-blue-600 hover:text-blue-800 transition-colors text-sm"
               >
                 📧 Reportar Problema

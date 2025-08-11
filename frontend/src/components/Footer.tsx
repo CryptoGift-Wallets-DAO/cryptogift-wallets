@@ -57,10 +57,10 @@ export const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Recursos</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="https://docs.cryptogift.gl" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Documentación</a></li>
-              <li><a href="https://blog.cryptogift.gl" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Blog</a></li>
-              <li><a href="https://help.cryptogift.gl" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Centro de Ayuda</a></li>
-              <li><a href="mailto:support@cryptogift.gl" className="hover:text-white transition-colors">Soporte</a></li>
+              <li><a href={process.env.NEXT_PUBLIC_DOCS_URL || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Documentación</a></li>
+              <li><a href={process.env.NEXT_PUBLIC_BLOG_URL || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Blog</a></li>
+              <li><a href={process.env.NEXT_PUBLIC_SUPPORT_URL || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Centro de Ayuda</a></li>
+              <li><a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@mbxarts.com'}`} className="hover:text-white transition-colors">Soporte</a></li>
             </ul>
           </div>
 
