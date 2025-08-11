@@ -6,6 +6,7 @@ import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyCon
 import { generateNeutralGiftAddressServer, isNeutralGiftAddressServer } from "../../lib/serverConstants";
 import { ethers } from "ethers";
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
+import { storeNFTMetadata, getNFTMetadata, updateNFTMetadata } from '../../lib/nftMetadataStore';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -211,6 +212,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Calculate TBA address for the claimed NFT
     const tbaAddress = await calculateTBAAddressForNFT(tokenId);
+
+    // HALLAZGO 5 FIX: Update metadata in Redis with new owner after claim
+    console.log('🔄 Updating NFT metadata with new owner after claim...');
+    try {
+      const existingMetadata = await getNFTMetadata(contractAddress, tokenId);
+      
+      if (existingMetadata) {
+        // Update owner and status in metadata
+        const updates = {
+          owner: claimerAddress, // Update to claimer address
+          status: 'claimed', // Update status from 'pending_claim'
+          claimedAt: new Date().toISOString(),
+          claimTransactionHash: claimResult?.transactionHash || undefined
+        };
+        
+        await updateNFTMetadata(contractAddress, tokenId, updates);
+        console.log('✅ NFT metadata updated successfully with new owner:', claimerAddress.slice(0,10) + '...');
+      } else {
+        console.warn('⚠️ No existing metadata found to update for token:', tokenId);
+      }
+    } catch (metadataError) {
+      console.error('❌ Failed to update metadata after claim:', metadataError);
+      // Don't fail the whole claim for metadata update issues
+    }
 
     res.status(200).json({
       success: true,

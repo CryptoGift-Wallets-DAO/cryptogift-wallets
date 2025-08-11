@@ -42,7 +42,7 @@ if (!BASE_URL) {
   console.error('❌ CRITICAL: NEXT_PUBLIC_BASE_URL required for tokenURI migration');
   console.error('   Scripts cannot use VERCEL_URL fallback - risk of wrong host');
   console.error('   Add NEXT_PUBLIC_BASE_URL to frontend/.env.local');
-  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://cryptogift-wallets.vercel.app');
+  console.error('   Example: NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app');
   process.exit(1);
 }
 
