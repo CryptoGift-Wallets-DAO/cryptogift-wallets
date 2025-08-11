@@ -35,13 +35,17 @@ interface FallbackResult {
   redirectCount?: number;
 }
 
-// Redis client with error handling
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  enableAutoPipelining: false,
-  retry: false,
-});
+// Redis client with fail-safe initialization
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      enableAutoPipelining: false,
+      retry: false,
+    })
+  : null;
+
+console.log('🔧 Redis initialization:', redis ? 'Connected' : 'Disabled (env vars missing)');
 
 // HARDENING #1: AbortController with 4-5s timeout
 const createTimeoutController = (timeoutMs: number = 4500) => {
@@ -54,6 +58,7 @@ const createTimeoutController = (timeoutMs: number = 4500) => {
 const acquireLock = async (key: string, ttlSeconds: number = 10): Promise<boolean> => {
   try {
     const lockKey = `meta:${key}:lock`;
+    if (!redis) return true; // Skip locking if Redis unavailable
     const result = await redis.set(lockKey, '1', { nx: true, ex: ttlSeconds });
     return result === 'OK';
   } catch (error) {
@@ -65,7 +70,7 @@ const acquireLock = async (key: string, ttlSeconds: number = 10): Promise<boolea
 const releaseLock = async (key: string): Promise<void> => {
   try {
     const lockKey = `meta:${key}:lock`;
-    await redis.del(lockKey);
+    if (redis) await redis.del(lockKey);
   } catch (error) {
     console.warn(`⚠️ Lock release failed for ${key}:`, error);
   }
@@ -222,7 +227,7 @@ const cacheMetadata = async (key: string, metadata: ERC721Metadata, ttlMinutes: 
       source: 'fallback-system'
     };
     
-    await redis.setex(key, ttlMinutes * 60, JSON.stringify(cacheData));
+    if (redis) await redis.setex(key, ttlMinutes * 60, JSON.stringify(cacheData));
     console.log(`💾 Cached metadata for ${key} with ${ttlMinutes}min TTL`);
   } catch (error) {
     console.warn(`⚠️ Failed to cache metadata for ${key}:`, error);
@@ -240,22 +245,32 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
   
   console.log(`🔍 Starting fallback chain for ${contractAddress}:${tokenId}`);
   
-  // Step 1: Try Redis first
+  // Step 1: Try Redis first (if available)
   try {
-    const cachedData = await redis.get(cacheKey);
-    if (cachedData) {
-      const parsed = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
-      const metadata = parsed.metadata || parsed;
-      
-      if (validateMetadataSchema(metadata)) {
-        const latency = Date.now() - startTime;
-        console.log(`✅ Redis cache hit for ${contractAddress}:${tokenId} (${latency}ms)`);
-        return {
-          metadata,
-          source: 'redis',
-          cached: true,
-          latency
-        };
+    if (!redis) {
+      console.log('⚠️ Redis not available, skipping cache lookup');
+    } else {
+      const cachedData = await redis.get(cacheKey);
+      if (cachedData) {
+        const parsed = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
+        const metadata = parsed.metadata || parsed;
+        
+        if (validateMetadataSchema(metadata)) {
+          // CRITICAL: ALWAYS normalize image URL even from Redis
+          if (metadata.image) {
+            metadata.image = await pickGatewayUrl(metadata.image);
+          }
+          
+          const latency = Date.now() - startTime;
+          console.log(`✅ Redis cache hit for ${contractAddress}:${tokenId} (${latency}ms)`);
+          console.log(`🔗 Normalized image URL: ${metadata.image}`);
+          return {
+            metadata,
+            source: 'redis',
+            cached: true,
+            latency
+          };
+        }
       }
     }
   } catch (error) {
@@ -309,8 +324,14 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
         if (response.ok) {
           const httpMetadata = await response.json();
           if (validateMetadataSchema(httpMetadata)) {
+            // CRITICAL: ALWAYS normalize image URL even from HTTP tokenURI
+            if (httpMetadata.image) {
+              httpMetadata.image = await pickGatewayUrl(httpMetadata.image);
+            }
+            
             await cacheMetadata(cacheKey, httpMetadata, 5);
             const latency = Date.now() - startTime;
+            console.log(`🔗 Normalized HTTP tokenURI image: ${httpMetadata.image}`);
             return {
               metadata: httpMetadata,
               source: 'on-chain',

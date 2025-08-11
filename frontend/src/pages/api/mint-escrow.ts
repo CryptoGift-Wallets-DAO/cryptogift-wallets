@@ -22,8 +22,7 @@ import {
   validateGiftMessage,
   sanitizeGiftMessage,
   verifyNFTOwnership,
-  TIMEFRAME_OPTIONS,
-  validateNonce
+  TIMEFRAME_OPTIONS
 } from '../../lib/escrowUtils';
 import { createBiconomySmartAccount, sendGaslessTransaction, validateBiconomyConfig } from '../../lib/biconomy';
 import { storeNFTMetadata, updateNFTMetadata, createNFTMetadata, getNFTMetadata } from '../../lib/nftMetadataStore';
@@ -176,7 +175,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
 }> {
   const attempts: Array<{url: string, method: string, status: number, timing: number}> = [];
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000); // 4s per audit
+  const timeout = setTimeout(() => controller.abort(), 2000); // 2s per gateway - optimized
   
   try {
     // Method 1: HEAD without Range (per audit)
@@ -546,13 +545,21 @@ async function mintNFTEscrowGasless(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: EMERGENCY BYPASS - IPFS VALIDATION DISABLED
-    console.log('🚨 EMERGENCY: IPFS validation temporarily disabled due to persistent HTTP 400');
-    console.log('📋 Issue: ThirdWeb IPFS validation fails despite successful uploads');  
-    console.log('🚀 Impact: Upload works + tokenURI fix = images will display correctly');
-    console.log('⚠️ Status: Emergency bypass active, proceeding with mint');
-    console.log('🔍 TokenURI for mint:', tokenURI);
-    // TODO: Re-enable validation after resolving HTTP 400 root cause
+    // Step 2.5: IPFS VALIDATION - ACTIVE AND PARALLELIZED
+    console.log('🔍 IPFS VALIDATION: Starting parallelized multi-gateway validation');
+    console.log('🚀 Enhancement: 1.5-2s timeout per gateway, parallel execution');
+    console.log('🔍 TokenURI for validation:', tokenURI);
+    
+    const ipfsValidation = await validateIPFSImageAccess(imageUrl);
+    if (!ipfsValidation.success) {
+      console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
+      return res.status(400).json({
+        success: false,
+        error: 'Image not accessible via IPFS gateways',
+        details: ipfsValidation.error
+      });
+    }
+    console.log('✅ IPFS validation passed - image accessible via gateways');
     
     // Step 3: Register transaction attempt
     await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
@@ -771,7 +778,7 @@ async function mintNFTEscrowGasless(
         const escrowContract = getEscrowContract();
         const giftCounter = await readContract({
           contract: escrowContract,
-          method: "function giftCounter() view returns (uint256)",
+          method: "giftCounter",
           params: []
         });
         console.log(`✅ VERIFICATION: Current gift counter: ${giftCounter}`);
@@ -779,18 +786,22 @@ async function mintNFTEscrowGasless(
         if (Number(giftCounter) > 0) {
           const latestGift = await readContract({
             contract: escrowContract,
-            method: "function getGift(uint256) view returns (address,bytes32,bytes32,uint256,uint256,uint8)",
+            method: "getGift",
             params: [BigInt(giftCounter)]
           });
+          
+          // Desestructurar tupla ThirdWeb v5
+          const [creator, , , giftTokenId, , giftStatus] = latestGift as readonly [string, bigint, string, bigint, bigint, number];
+          
           console.log('✅ VERIFICATION: Latest gift registered:', {
-            creator: latestGift[0],
-            tokenId: latestGift[3].toString(),
-            status: latestGift[5]
+            creator,
+            tokenId: giftTokenId.toString(),
+            status: giftStatus
           });
           
           // CRITICAL VALIDATION: Ensure tokenId matches what we sent
           const expectedTokenIdNum = Number(tokenId);
-          const storedTokenIdNum = Number(latestGift[3]);
+          const storedTokenIdNum = Number(giftTokenId);
           if (storedTokenIdNum !== expectedTokenIdNum) {
             console.error('🚨 CRITICAL VALIDATION FAILED:', {
               sentTokenId: expectedTokenIdNum,
@@ -1152,13 +1163,21 @@ async function mintNFTEscrowGasPaid(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: EMERGENCY BYPASS - IPFS VALIDATION DISABLED
-    console.log('🚨 EMERGENCY: IPFS validation temporarily disabled due to persistent HTTP 400');
-    console.log('📋 Issue: ThirdWeb IPFS validation fails despite successful uploads');  
-    console.log('🚀 Impact: Upload works + tokenURI fix = images will display correctly');
-    console.log('⚠️ Status: Emergency bypass active, proceeding with mint');
-    console.log('🔍 TokenURI for mint:', tokenURI);
-    // TODO: Re-enable validation after resolving HTTP 400 root cause
+    // Step 2.5: IPFS VALIDATION - ACTIVE AND PARALLELIZED
+    console.log('🔍 IPFS VALIDATION: Starting parallelized multi-gateway validation');
+    console.log('🚀 Enhancement: 1.5-2s timeout per gateway, parallel execution');
+    console.log('🔍 TokenURI for validation:', tokenURI);
+    
+    const ipfsValidation = await validateIPFSImageAccess(imageUrl);
+    if (!ipfsValidation.success) {
+      console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
+      return res.status(400).json({
+        success: false,
+        error: 'Image not accessible via IPFS gateways',
+        details: ipfsValidation.error
+      });
+    }
+    console.log('✅ IPFS validation passed - image accessible via gateways');
     
     // Step 3: Register transaction attempt
     await registerTransactionAttempt(creatorAddress, transactionNonce, tokenURI, 0, escrowConfig);
@@ -1589,7 +1608,7 @@ async function mintNFTEscrowGasPaid(
         const escrowContract = getEscrowContract();
         const giftCounter = await readContract({
           contract: escrowContract,
-          method: "function giftCounter() view returns (uint256)",
+          method: "giftCounter",
           params: []
         });
         console.log(`✅ VERIFICATION (GAS-PAID): Current gift counter: ${giftCounter}`);
@@ -1597,7 +1616,7 @@ async function mintNFTEscrowGasPaid(
         if (Number(giftCounter) > 0) {
           const latestGift = await readContract({
             contract: escrowContract,
-            method: "function getGift(uint256) view returns (address,bytes32,bytes32,uint256,uint256,uint8)",
+            method: "getGift",
             params: [BigInt(giftCounter)]
           });
           console.log('✅ VERIFICATION (GAS-PAID): Latest gift registered:', {
