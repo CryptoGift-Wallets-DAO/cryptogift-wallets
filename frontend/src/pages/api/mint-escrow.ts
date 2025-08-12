@@ -1522,23 +1522,13 @@ async function mintNFTEscrowGasPaid(
       } else {
         console.error('❌ METADATA UPDATE FAILED (GAS-PAID):', metadataUpdateResult.error);
         // FAIL-FAST: updateTokenURI is critical for BaseScan compatibility
-        return res.status(500).json({
-          success: false,
-          error: 'TokenURI update failed',
-          details: metadataUpdateResult.error,
-          compensationJob: 'Manual tokenURI update required'
-        });
+        throw new Error(`TokenURI update failed: ${metadataUpdateResult.error}. Manual tokenURI update required.`);
       }
       
     } catch (metadataError) {
       console.error('❌ METADATA UPDATE ERROR (GAS-PAID):', metadataError);
       // FAIL-FAST: Propagate updateTokenURI failures
-      return res.status(500).json({
-        success: false,
-        error: 'Critical TokenURI update failure',
-        details: metadataError instanceof Error ? metadataError.message : 'Unknown error',
-        compensationJob: 'Manual tokenURI update required'
-      });
+      throw new Error(`Critical TokenURI update failure: ${metadataError instanceof Error ? metadataError.message : 'Unknown error'}. Manual tokenURI update required.`);
     }
     
     // Initialize escrow transaction hash variable
