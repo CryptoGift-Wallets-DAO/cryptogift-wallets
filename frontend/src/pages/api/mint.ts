@@ -1022,32 +1022,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
       
-    } // Close catch (updateError) - Required for proper syntax structure
       
-      // PASO 2: Crear dirección TBA determinística (modo simplificado)
-      console.log("🎯 PASO 2: Creando TBA determinística (modo simplificado)");
-      
-      // Crear dirección determinística usando keccak256 
-      const deterministicSeed = ethers.solidityPackedKeccak256(
-        ['address', 'uint256', 'address'],
-        [CRYPTOGIFT_NFT_CONTRACT, actualTokenId, account.address]
-      );
-      
-      // Generar dirección TBA determinística
-      const tbaAddress = ethers.getAddress('0x' + deterministicSeed.slice(-40));
-      
-      transactionHash = nftResult.transactionHash; // Solo una transacción (el NFT)
-      tokenId = actualTokenId.toString();
-      gasless = false;
-      
-      console.log("✅ TBA DETERMINÍSTICA CREADA!", { 
-        nftTxHash: nftResult.transactionHash,
-        tokenId, 
-        tbaAddress,
-        nftContract: CRYPTOGIFT_NFT_CONTRACT,
-        method: "deterministic",
-        simplified: true
-      });
+    // PASO 2: Crear dirección TBA determinística (modo simplificado)
+    console.log("🎯 PASO 2: Creando TBA determinística (modo simplificado)");
+    
+    // Crear dirección determinística usando keccak256 
+    const deterministicSeed = ethers.solidityPackedKeccak256(
+      ['address', 'uint256', 'address'],
+      [CRYPTOGIFT_NFT_CONTRACT, actualTokenId, account.address]
+    );
+    
+    // Generar dirección TBA determinística
+    const tbaAddress = ethers.getAddress('0x' + deterministicSeed.slice(-40));
+    
+    transactionHash = nftResult.transactionHash; // Solo una transacción (el NFT)
+    tokenId = actualTokenId.toString();
+    gasless = false;
+    
+    console.log("✅ TBA DETERMINÍSTICA CREADA!", { 
+      nftTxHash: nftResult.transactionHash,
+      tokenId, 
+      tbaAddress,
+      nftContract: CRYPTOGIFT_NFT_CONTRACT,
+      method: "deterministic",
+      simplified: true
+    });
       
     } catch (contractError) {
       console.log("❌ CONTRACT ERROR DETAILS:");
