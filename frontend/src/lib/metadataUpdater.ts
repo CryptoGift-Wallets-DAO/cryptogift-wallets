@@ -39,7 +39,7 @@ export async function createFinalMetadata(
     const finalMetadata: NFTMetadataTemplate = {
       name: `CryptoGift NFT #${tokenId}`,
       description: giftMessage || "Un regalo cripto único creado con amor",
-      image: `ipfs://${imageIpfsCid}`,
+      image: `https://gateway.thirdweb.com/ipfs/${imageIpfsCid}`, // HTTP URL for wallet/explorer compatibility
       external_url: getPublicBaseUrl(),
       attributes: [
         {

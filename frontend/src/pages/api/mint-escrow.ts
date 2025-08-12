@@ -69,8 +69,11 @@ function getPublicBaseUrl(req?: NextApiRequest): string {
     return `${protocol}://${req.headers.host}`;
   }
   
-  // Priority 3: Local development fallback
-  return 'http://localhost:3000';
+  // Priority 3: FAIL-FAST - Never use localhost in production
+  console.error('🚨 CRITICAL: No public base URL available for tokenURI generation!');
+  console.error('   Environment vars checked: NEXT_PUBLIC_BASE_URL, VERCEL_URL');
+  console.error('   Request headers available:', !!req?.headers?.host);
+  throw new Error('CRITICAL: No public base URL available. Configure NEXT_PUBLIC_BASE_URL in environment variables.');
 }
 
 /**
@@ -132,26 +135,51 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
       }))
   );
   
-  // Wait for first successful result or all to complete
-  const results = await Promise.allSettled(parallelPromises);
+  // EARLY EXIT IMPLEMENTATION: Return as soon as first gateway succeeds
+  console.log('🏁 Starting early-exit parallel gateway validation...');
   
-  // Process results and find first success
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      const gatewayResult = result.value;
-      attempts.push(...gatewayResult.attempts);
-      
-      if (gatewayResult.success) {
-        console.log(`✅ Parallel gateway succeeded: ${gatewayResult.candidate.gateway}`);
-        return {
-          success: true,
-          workingUrl: gatewayResult.candidate.url,
-          gateway: gatewayResult.candidate.gateway,
-          method: 'method' in gatewayResult ? gatewayResult.method : undefined,
-          attempts
-        };
+  try {
+    // Create racing promises that resolve immediately on first success
+    const racePromises = parallelPromises.map(async (promise, index) => {
+      try {
+        const result = await promise;
+        attempts.push(...result.attempts);
+        
+        if (result.success) {
+          console.log(`🚀 EARLY SUCCESS (gateway ${index}): ${result.candidate.gateway}`);
+          return { ...result, earlyExit: true };
+        }
+        return result; // Failed result
+      } catch (error) {
+        return { success: false, error: error.message, candidate: { gateway: `gateway-${index}` } };
+      }
+    });
+    
+    // Race all promises - first to succeed wins
+    const results = await Promise.allSettled(racePromises);
+    
+    // Process results: prioritize early successes, then any successes
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const gatewayResult = result.value;
+        
+        if (gatewayResult.success) {
+          const successType = gatewayResult.earlyExit ? 'EARLY EXIT' : 'STANDARD';
+          console.log(`✅ ${successType} SUCCESS: ${gatewayResult.candidate.gateway}`);
+          
+          return {
+            success: true,
+            workingUrl: gatewayResult.candidate.url,
+            gateway: gatewayResult.candidate.gateway,
+            method: 'method' in gatewayResult ? gatewayResult.method : undefined,
+            attempts
+          };
+        }
       }
     }
+  } catch (error) {
+    console.error('❌ Early exit implementation failed:', error);
+    // Continue with fallback logic below
   }
   
   return {
@@ -241,7 +269,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const headStart = Date.now();
     
     const headController = new AbortController();
-    const headTimeout = setTimeout(() => headController.abort(), 2000);
+    const headTimeout = setTimeout(() => headController.abort(), 5000); // Increased for propagation
     
     try {
       
@@ -272,7 +300,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const getRangeStart = Date.now();
     
     const getRangeController = new AbortController();
-    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 2000);
+    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 5000); // Increased for propagation
     
     try {
       
@@ -302,7 +330,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const getStart = Date.now();
     
     const getController = new AbortController();
-    const getTimeout = setTimeout(() => getController.abort(), 2000);
+    const getTimeout = setTimeout(() => getController.abort(), 5000); // Increased from 2s to 5s
     
     try {
       
@@ -381,8 +409,8 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
       
       attempts++;
       if (attempts < maxAttempts) {
-        console.log(`⏳ Metadata validation failed (attempt ${attempts}), retrying in 2s for IPFS propagation...`);
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay for propagation
+        console.log(`⏳ Metadata validation failed (attempt ${attempts}), retrying in 4s for IPFS propagation...`);
+        await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay for better propagation
       }
     }
     

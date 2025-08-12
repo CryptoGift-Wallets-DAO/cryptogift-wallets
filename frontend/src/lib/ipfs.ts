@@ -190,7 +190,9 @@ async function uploadToThirdWeb(file: File): Promise<IPFSUploadResult> {
       files: [file],
     });
     
-    const url = `https://gateway.thirdweb.com/ipfs/${cid}`;
+    // CRITICAL FIX: Include filename for proper gateway access
+    const filename = file.name || 'image.jpg';
+    const url = `https://gateway.thirdweb.com/ipfs/${cid}/${filename}`;
     
     console.log('✅ ThirdWeb upload successful:', { cid, url });
     

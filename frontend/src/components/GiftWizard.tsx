@@ -476,14 +476,14 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       timeframeDays: wizardData.escrowConfig?.timeframe!,
       giftMessage: wizardData.escrowConfig?.giftMessage!,
       creatorAddress: account?.address,
-      gasless: true
+      gasless: false // DISABLED: Focus on gas-paid robustness per specialist analysis
     } : {
       // Direct mint (skip escrow) - use metadata CID not image CID
       metadataUri: `ipfs://${ipfsCid}`,
       // No password = direct mint
       giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
       creatorAddress: account?.address,
-      gasless: true
+      gasless: false // DISABLED: Focus on gas-paid robustness per specialist analysis
     };
 
     const mintResponse = await makeAuthenticatedRequest(apiEndpoint, {

@@ -131,6 +131,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create metadata if this is the final upload
     const filteredUrl = fields.filteredUrl?.[0];
     if (filteredUrl && typeof filteredUrl === 'string' && filteredUrl.startsWith('http')) {
+      // SECURITY FIX: Whitelist allowed domains to prevent SSRF
+      const allowedDomains = [
+        'gateway.thirdweb.com',
+        'ipfs.io',
+        'cloudflare-ipfs.com', 
+        'gateway.pinata.cloud',
+        'nftstorage.link'
+      ];
+      
+      const urlHost = new URL(filteredUrl).hostname;
+      if (!allowedDomains.includes(urlHost)) {
+        throw new Error(`Security: Domain ${urlHost} not allowed. Only IPFS gateways permitted.`);
+      }
+      
+      console.log(`✅ Filtered URL domain validated: ${urlHost}`);
+      
       // If we have a filtered image URL, use that as the main image
       const metadataResponse = await fetch(filteredUrl, {
         method: 'GET',
@@ -169,7 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: "CryptoGift NFT", // Generic name, will be updated with real tokenId
         description: "Un regalo cripto único creado con amor",
         image: `ipfs://${filteredCid}`,
-        external_url: process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000",
+        external_url: process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL required for metadata generation'); })(),
         attributes: [
           {
             trait_type: "Creation Date",
@@ -215,7 +231,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: "CryptoGift NFT",
       description: "Un regalo cripto único creado con amor",
       image: `ipfs://${cid}`, // Use the uploaded image CID
-      external_url: process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000",
+      external_url: process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL required for metadata generation'); })(),
       attributes: [
         {
           trait_type: "Creation Date",
@@ -245,6 +261,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     
     const metadataCid = metadataUploadResult.cid;
+    
+    // CRITICAL FIX: Validate propagation before returning to prevent validation failures
+    console.log('🔍 Validating metadata propagation before returning to client...');
+    addMintLog('INFO', 'PROPAGATION_VALIDATION_START', { metadataCid });
+    
+    // Test metadata accessibility with increased timeout for propagation
+    const testGateways = [
+      `https://gateway.thirdweb.com/ipfs/${metadataCid}`,
+      `https://ipfs.io/ipfs/${metadataCid}`,
+      `https://cloudflare-ipfs.com/ipfs/${metadataCid}`
+    ];
+    
+    let propagationValidated = false;
+    for (const gatewayUrl of testGateways) {
+      try {
+        const testResponse = await fetch(gatewayUrl, { 
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000) // 5s timeout for propagation
+        });
+        
+        if (testResponse.ok) {
+          console.log(`✅ Propagation validated: ${gatewayUrl}`);
+          addMintLog('SUCCESS', 'PROPAGATION_VALIDATION_SUCCESS', { 
+            gateway: gatewayUrl,
+            status: testResponse.status 
+          });
+          propagationValidated = true;
+          break;
+        }
+      } catch (error) {
+        console.log(`⏳ Propagation pending: ${gatewayUrl} (${error.message})`);
+      }
+    }
+    
+    if (!propagationValidated) {
+      console.log('⚠️ Propagation not yet complete, but continuing (may require retry in validation)');
+      addMintLog('WARN', 'PROPAGATION_VALIDATION_PENDING', {
+        message: 'Metadata uploaded but not yet propagated to gateways'
+      });
+    }
 
     // Return consistent structure: ipfsCid = metadata CID, imageIpfsCid = image CID
     res.status(200).json({
