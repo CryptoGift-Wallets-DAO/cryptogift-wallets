@@ -358,6 +358,80 @@ function encodeAllPathSegmentsSafe(path: string): string {
 }
 
 /**
+ * ENHANCED VALIDATION: Validates both metadata JSON and image field within it
+ * This addresses audit finding #4: superficial validation
+ */
+async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log('🔍 METADATA + IMAGE VALIDATION: Starting comprehensive validation');
+    console.log('📋 MetadataURL:', metadataUrl);
+    
+    // Step 1: Validate metadata JSON accessibility
+    const metadataValidation = await validateIPFSWithMultipleGateways(metadataUrl);
+    if (!metadataValidation.success) {
+      return {
+        success: false,
+        error: `Metadata JSON not accessible: ${metadataValidation.error}`
+      };
+    }
+    
+    console.log('✅ Metadata JSON accessible, now fetching content to validate image field');
+    
+    // Step 2: Download and parse metadata JSON
+    let metadataJson;
+    try {
+      const response = await fetch(metadataValidation.workingUrl!, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(5000)  // 5s timeout
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      metadataJson = await response.json();
+      console.log('📋 Metadata JSON parsed successfully:', { 
+        hasImage: !!metadataJson.image,
+        hasName: !!metadataJson.name,
+        imageField: metadataJson.image?.substring(0, 50) + '...'
+      });
+    } catch (fetchError) {
+      return {
+        success: false,
+        error: `Failed to fetch/parse metadata JSON: ${fetchError.message}`
+      };
+    }
+    
+    // Step 3: Validate image field exists and is valid
+    if (!metadataJson.image) {
+      return {
+        success: false,
+        error: 'Metadata JSON missing required "image" field'
+      };
+    }
+    
+    // Step 4: Validate image accessibility via IPFS gateways
+    const imageValidation = await validateIPFSWithMultipleGateways(metadataJson.image);
+    if (!imageValidation.success) {
+      return {
+        success: false,
+        error: `Image from metadata not accessible: ${imageValidation.error}`
+      };
+    }
+    
+    console.log('✅ COMPREHENSIVE VALIDATION SUCCESS: Both metadata and image are accessible');
+    return { success: true };
+    
+  } catch (error) {
+    console.error('❌ METADATA+IMAGE VALIDATION SYSTEM ERROR:', error);
+    return {
+      success: false,
+      error: `Comprehensive validation error: ${error.message}`
+    };
+  }
+}
+
+/**
  * ORIGINAL FUNCTION - NOW CALLS NEW IMPLEMENTATION
  * Maintains backward compatibility
  */
@@ -621,13 +695,13 @@ async function mintNFTEscrowGasless(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: IPFS VALIDATION - ACTIVE AND PARALLELIZED
-    console.log('🔍 IPFS VALIDATION: Starting parallelized multi-gateway validation');
-    console.log('🚀 Enhancement: 1.5-2s timeout per gateway, parallel execution');
-    console.log('🔍 TokenURI for validation:', tokenURI);
+    // Step 2.5: ENHANCED IPFS VALIDATION - METADATA + IMAGE COMPREHENSIVE CHECK
+    console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation');
+    console.log('🚀 Enhancement: Validates both JSON metadata and image field accessibility'); 
+    console.log('🔍 MetadataURI for validation:', tokenURI);
     
-    // Validate the tokenURI accessibility via IPFS gateways
-    const ipfsValidation = await validateIPFSImageAccess(tokenURI);
+    // ENHANCED VALIDATION: Check both metadata JSON and image field accessibility
+    const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
       
@@ -1257,13 +1331,13 @@ async function mintNFTEscrowGasPaid(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: IPFS VALIDATION - ACTIVE AND PARALLELIZED
-    console.log('🔍 IPFS VALIDATION: Starting parallelized multi-gateway validation');
-    console.log('🚀 Enhancement: 1.5-2s timeout per gateway, parallel execution');
-    console.log('🔍 TokenURI for validation:', tokenURI);
+    // Step 2.5: ENHANCED IPFS VALIDATION - METADATA + IMAGE COMPREHENSIVE CHECK
+    console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation');
+    console.log('🚀 Enhancement: Validates both JSON metadata and image field accessibility'); 
+    console.log('🔍 MetadataURI for validation:', tokenURI);
     
-    // Validate the tokenURI accessibility via IPFS gateways
-    const ipfsValidation = await validateIPFSImageAccess(tokenURI);
+    // ENHANCED VALIDATION: Check both metadata JSON and image field accessibility
+    const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
       
