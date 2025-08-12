@@ -147,7 +147,7 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
           success: true,
           workingUrl: gatewayResult.candidate.url,
           gateway: gatewayResult.candidate.gateway,
-          method: gatewayResult.method,
+          method: 'method' in gatewayResult ? gatewayResult.method : undefined,
           attempts
         };
       }
@@ -222,9 +222,10 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     console.log(`🔍 Testing HEAD: ${url}`);
     const headStart = Date.now();
     
+    const headController = new AbortController();
+    const headTimeout = setTimeout(() => headController.abort(), 2000);
+    
     try {
-      const headController = new AbortController();
-      const headTimeout = setTimeout(() => headController.abort(), 2000);
       
       const headResponse = await fetch(url, {
         method: 'HEAD',
@@ -252,9 +253,10 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     console.log(`🔍 Testing GET+Range: ${url}`);
     const getRangeStart = Date.now();
     
+    const getRangeController = new AbortController();
+    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 2000);
+    
     try {
-      const getRangeController = new AbortController();
-      const getRangeTimeout = setTimeout(() => getRangeController.abort(), 2000);
       
       const getRangeResponse = await fetch(url, {
         method: 'GET',
@@ -281,9 +283,10 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     console.log(`🔍 Testing GET (no Range): ${url}`);
     const getStart = Date.now();
     
+    const getController = new AbortController();
+    const getTimeout = setTimeout(() => getController.abort(), 2000);
+    
     try {
-      const getController = new AbortController();
-      const getTimeout = setTimeout(() => getController.abort(), 2000);
       
       const getResponse = await fetch(url, {
         method: 'GET',
