@@ -1022,6 +1022,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
       
+    } // Close catch (updateError) - Required for proper syntax structure
+      
       // PASO 2: Crear dirección TBA determinística (modo simplificado)
       console.log("🎯 PASO 2: Creando TBA determinística (modo simplificado)");
       
@@ -1061,6 +1063,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       
       throw new Error(`Contract execution failed: ${contractError.message}`);
+      }
     }
 
     // Calculate TBA address (ya calculada en el paso anterior, pero verificamos)
