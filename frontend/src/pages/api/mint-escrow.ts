@@ -366,12 +366,30 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     console.log('🔍 METADATA + IMAGE VALIDATION: Starting comprehensive validation');
     console.log('📋 MetadataURL:', metadataUrl);
     
-    // Step 1: Validate metadata JSON accessibility
-    const metadataValidation = await validateIPFSWithMultipleGateways(metadataUrl);
+    // Step 1: Validate metadata JSON accessibility with IPFS propagation retry
+    let metadataValidation;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      metadataValidation = await validateIPFSWithMultipleGateways(metadataUrl);
+      
+      if (metadataValidation.success) {
+        console.log(`✅ Metadata validation succeeded on attempt ${attempts + 1}`);
+        break;
+      }
+      
+      attempts++;
+      if (attempts < maxAttempts) {
+        console.log(`⏳ Metadata validation failed (attempt ${attempts}), retrying in 2s for IPFS propagation...`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay for propagation
+      }
+    }
+    
     if (!metadataValidation.success) {
       return {
         success: false,
-        error: `Metadata JSON not accessible: ${metadataValidation.error}`
+        error: `Metadata JSON not accessible after ${maxAttempts} attempts: ${metadataValidation.error}`
       };
     }
     
@@ -695,12 +713,12 @@ async function mintNFTEscrowGasless(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: ENHANCED IPFS VALIDATION - METADATA + IMAGE COMPREHENSIVE CHECK
-    console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation');
-    console.log('🚀 Enhancement: Validates both JSON metadata and image field accessibility'); 
+    // Step 2.5: ENHANCED IPFS VALIDATION with PROPAGATION RETRY - METADATA + IMAGE 
+    console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation with retry');
+    console.log('🚀 Enhancement: Validates JSON metadata + image field + handles IPFS propagation delays'); 
     console.log('🔍 MetadataURI for validation:', tokenURI);
     
-    // ENHANCED VALIDATION: Check both metadata JSON and image field accessibility
+    // ENHANCED VALIDATION with IPFS propagation retry: Check metadata JSON + image field
     const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
@@ -1331,12 +1349,12 @@ async function mintNFTEscrowGasPaid(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: ENHANCED IPFS VALIDATION - METADATA + IMAGE COMPREHENSIVE CHECK
-    console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation');
-    console.log('🚀 Enhancement: Validates both JSON metadata and image field accessibility'); 
+    // Step 2.5: ENHANCED IPFS VALIDATION with PROPAGATION RETRY - METADATA + IMAGE 
+    console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation with retry');
+    console.log('🚀 Enhancement: Validates JSON metadata + image field + handles IPFS propagation delays'); 
     console.log('🔍 MetadataURI for validation:', tokenURI);
     
-    // ENHANCED VALIDATION: Check both metadata JSON and image field accessibility
+    // ENHANCED VALIDATION with IPFS propagation retry: Check metadata JSON + image field
     const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
