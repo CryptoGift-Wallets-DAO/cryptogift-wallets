@@ -208,13 +208,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Return both metadata and image CIDs for consistency
+    // CRITICAL FIX: Create metadata JSON even for non-filtered images
+    console.log('🔧 Creating metadata JSON for non-filtered image upload');
+    
+    const metadata = {
+      name: "CryptoGift NFT",
+      description: "Un regalo cripto único creado con amor",
+      image: `ipfs://${cid}`, // Use the uploaded image CID
+      external_url: process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000",
+      attributes: [
+        {
+          trait_type: "Creation Date",
+          value: new Date().toISOString(),
+        },
+        {
+          trait_type: "Platform", 
+          value: "CryptoGift Wallets",
+        },
+        {
+          trait_type: "Type",
+          value: "Direct Upload (No Filter Applied)"
+        }
+      ],
+    };
+
+    addMintLog('INFO', 'METADATA_CREATION_NON_FILTERED', { 
+      imageCid: cid, 
+      metadata 
+    });
+    
+    const metadataUploadResult = await uploadMetadata(metadata);
+    addMintLog('SUCCESS', 'METADATA_UPLOAD_NON_FILTERED_COMPLETE', {
+      provider: metadataUploadResult.provider,
+      cid: metadataUploadResult.cid,
+      url: metadataUploadResult.url
+    });
+    
+    const metadataCid = metadataUploadResult.cid;
+
+    // Return consistent structure: ipfsCid = metadata CID, imageIpfsCid = image CID
     res.status(200).json({
       success: true,
-      ipfsCid: cid,        // This is actually the image CID for non-filtered images
-      imageIpfsCid: cid,   // CRITICAL FIX: Always provide imageIpfsCid so GiftWizard can use it
-      ipfsUrl: `ipfs://${cid}`,
-      httpUrl: `https://gateway.pinata.cloud/ipfs/${cid}`,
+      ipfsCid: metadataCid,     // FIXED: Always metadata CID
+      imageIpfsCid: cid,        // FIXED: Always image CID
+      ipfsUrl: `ipfs://${metadataCid}`,  // FIXED: Metadata URL
+      imageUrl: `ipfs://${cid}`, // Image URL
+      httpUrl: `https://gateway.pinata.cloud/ipfs/${cid}`, // For compatibility
+      metadata,
     });
 
   } catch (error) {
