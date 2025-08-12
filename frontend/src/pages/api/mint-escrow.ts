@@ -197,12 +197,30 @@ function constructGatewayUrls(imageUrl: string): Array<{url: string, gateway: st
       gateway: gateway.split('/')[2] // Extract domain name
     }));
   } else {
-    // Already HTTPS URL, test as-is
-    const domain = new URL(imageUrl).hostname;
-    return [{
-      url: imageUrl,
-      gateway: domain
-    }];
+    // CRITICAL FIX: HTTPS URL with IPFS path - extract CID and try all gateways
+    // This fixes the upload-validation disconnect for ThirdWeb URLs
+    const ipfsMatch = imageUrl.match(/\/ipfs\/([^\/]+)(\/.*)?$/);
+    if (ipfsMatch) {
+      const [, cid, pathAfterCid = ''] = ipfsMatch;
+      console.log('🔧 Converting HTTPS IPFS URL to multiple gateways:', {
+        original: imageUrl,
+        extractedCid: cid,
+        pathAfterCid
+      });
+      
+      // Try all gateways with the extracted CID
+      return gateways.map(gateway => ({
+        url: `${gateway}/${cid}${pathAfterCid}`,
+        gateway: gateway.split('/')[2] // Extract domain name  
+      }));
+    } else {
+      // Non-IPFS HTTPS URL, test as-is
+      const domain = new URL(imageUrl).hostname;
+      return [{
+        url: imageUrl,
+        gateway: domain
+      }];
+    }
   }
 }
 
