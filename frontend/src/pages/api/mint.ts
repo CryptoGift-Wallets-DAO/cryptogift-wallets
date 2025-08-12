@@ -106,6 +106,7 @@ async function verifyImageAccessibility(imageCid: string): Promise<{
   allGatewayResults: Array<{ gateway: string; success: boolean; error?: string }>;
 }> {
   const gateways = [
+    `https://gateway.thirdweb.com/ipfs/${imageCid}`, // Add ThirdWeb gateway (primary for recent uploads)
     `https://nftstorage.link/ipfs/${imageCid}`,
     `https://ipfs.io/ipfs/${imageCid}`,
     `https://gateway.pinata.cloud/ipfs/${imageCid}`,
