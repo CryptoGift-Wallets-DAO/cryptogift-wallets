@@ -398,10 +398,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
   
-  addMintLog('INFO', 'API_START', { timestamp: new Date().toISOString() });
-  addAPIStep('API_HANDLER_STARTED', { method: req.method, timestamp: new Date().toISOString() }, 'pending');
-  
-  if (req.method !== 'POST') {
+  // CRITICAL: Main try block for all mint operations
+  try {
+    addMintLog('INFO', 'API_START', { timestamp: new Date().toISOString() });
+    addAPIStep('API_HANDLER_STARTED', { method: req.method, timestamp: new Date().toISOString() }, 'pending');
+    
+    if (req.method !== 'POST') {
     addMintLog('ERROR', 'INVALID_METHOD', { method: req.method });
     addAPIError('INVALID_METHOD', `Method ${req.method} not allowed`, { method: req.method });
     return res.status(405).json({ error: 'Method not allowed' });
@@ -409,7 +411,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   
   addAPIDecision('isMethodPOST', true, { method: req.method });
 
-  try {
     console.log("📝 EXTRACTING PARAMETERS from request body...");
     const { to: originalCreatorAddress, imageFile, giftMessage, initialBalance, filter = "Original", referrer, authenticatedWallet } = req.body;
     
@@ -706,7 +707,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("🔍 FALLBACK: Direct gas-paid transaction");
       addAPIStep('DIRECT_GAS_PAID_ATTEMPT', { strategy: 'FAST_FALLBACK' }, 'pending');
       
-      try {
       console.log("🔍 MINT DEBUG: Creating ThirdWeb client");
       const client = createThirdwebClient({
         clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
@@ -1022,9 +1022,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
       
-      
-    // PASO 2: Crear dirección TBA determinística (modo simplificado)
-    console.log("🎯 PASO 2: Creando TBA determinística (modo simplificado)");
+      } catch (alignmentError) {
+        addMintLog('ERROR', 'UNIVERSAL_ALIGNMENT_FAILED', {
+          error: alignmentError instanceof Error ? alignmentError.message : 'Unknown error',
+          stack: alignmentError instanceof Error ? alignmentError.stack : undefined
+        });
+        
+        throw new Error(`Universal alignment failed: ${alignmentError instanceof Error ? alignmentError.message : 'Unknown error'}`);
+      }
+
+      // PASO 2: Crear dirección TBA determinística (modo simplificado)
+      console.log("🎯 PASO 2: Creando TBA determinística (modo simplificado)");
     
     // Crear dirección determinística usando keccak256 
     const deterministicSeed = ethers.solidityPackedKeccak256(
@@ -1047,22 +1055,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: "deterministic",
       simplified: true
     });
-      
-    } catch (contractError) {
-      console.log("❌ CONTRACT ERROR DETAILS:");
-      console.log("📝 Error message:", contractError.message);
-      console.log("📝 Error name:", contractError.name);
-      console.log("📝 Contract address:", process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS);
-      console.log("📝 Chain ID:", 84532);
-      addMintLog('ERROR', 'CONTRACT_EXECUTION_ERROR', {
-        error: contractError.message,
-        stack: contractError.stack,
-        contract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
-        chainId: 84532
-      });
-      
-      throw new Error(`Contract execution failed: ${contractError.message}`);
-      }
     }
 
     // Calculate TBA address (ya calculada en el paso anterior, pero verificamos)
