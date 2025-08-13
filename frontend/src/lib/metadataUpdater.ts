@@ -47,10 +47,18 @@ export async function createFinalMetadata(
     });
     
     // Create comprehensive metadata with real tokenId
+    const imageUrl = `https://gateway.thirdweb.com/ipfs/${cleanImageCid}`;
+    
+    console.log('🖼️ FINAL IMAGE URL GENERATED:', {
+      imageUrl,
+      cleanImageCid: cleanImageCid.substring(0, 40) + '...',
+      originalImageCid: imageIpfsCid.substring(0, 40) + '...'
+    });
+    
     const finalMetadata: NFTMetadataTemplate = {
       name: `CryptoGift NFT #${tokenId}`,
       description: giftMessage || "Un regalo cripto único creado con amor",
-      image: `https://gateway.thirdweb.com/ipfs/${cleanImageCid}`, // HTTP URL for wallet/explorer compatibility
+      image: imageUrl, // HTTP URL for wallet/explorer compatibility
       external_url: getPublicBaseUrl(),
       attributes: [
         {
