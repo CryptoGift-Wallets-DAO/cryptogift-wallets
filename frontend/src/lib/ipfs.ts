@@ -16,6 +16,101 @@ export interface IPFSUploadResult {
   error?: string;
 }
 
+/**
+ * HELPER FUNCTIONS FOR ROBUST IPFS URL HANDLING
+ * Implements surgical micro-improvements for production reliability
+ */
+
+/**
+ * Check if URL is an IPFS URL (ipfs:// protocol)
+ */
+export function isIpfsUrl(url: string): boolean {
+  return url.startsWith('ipfs://');
+}
+
+/**
+ * Check if URL is already an HTTPS gateway URL
+ */
+export function isHttpsGatewayUrl(url: string): boolean {
+  return url.startsWith('https://') && (
+    url.includes('/ipfs/') || 
+    url.includes('gateway.') || 
+    url.includes('ipfs.io') ||
+    url.includes('cloudflare-ipfs.com')
+  );
+}
+
+/**
+ * Extract CID and path from IPFS URL or return as-is if already clean
+ * Handles: ipfs://QmXXX/file.png → QmXXX/file.png
+ * Handles: ipfs://ipfs://QmXXX/file.png → QmXXX/file.png (recursive fix)
+ * Handles: QmXXX/file.png → QmXXX/file.png (no change)
+ */
+export function extractCidPath(input: string): string {
+  // Already clean CID/path
+  if (!isIpfsUrl(input) && !isHttpsGatewayUrl(input)) {
+    return input;
+  }
+  
+  // IPFS URL: strip prefix preserving path, handle double prefixes
+  if (isIpfsUrl(input)) {
+    let cleaned = input.replace(/^ipfs:\/\//, '');
+    // Handle double prefix: if result still starts with ipfs://, strip again
+    while (cleaned.startsWith('ipfs://')) {
+      cleaned = cleaned.replace(/^ipfs:\/\//, '');
+    }
+    return cleaned;
+  }
+  
+  // HTTPS Gateway URL: extract CID/path portion
+  if (isHttpsGatewayUrl(input)) {
+    const match = input.match(/\/ipfs\/(.+)/);
+    return match ? match[1] : input;
+  }
+  
+  return input;
+}
+
+/**
+ * Convert CID/path to proper HTTPS gateway URL with path encoding
+ * Handles spaces and special characters safely
+ */
+export function toGatewayHttps(cidPath: string, preferredGateway: 'thirdweb' | 'ipfs' | 'cloudflare' = 'thirdweb'): string {
+  // If already HTTPS, return as-is (don't convert existing gateway URLs)
+  if (isHttpsGatewayUrl(cidPath)) {
+    return cidPath;
+  }
+  
+  // If it's an IPFS URL, extract the CID/path first
+  const cleanPath = isIpfsUrl(cidPath) ? extractCidPath(cidPath) : cidPath;
+  
+  // Encode path segments to handle spaces: "Mi foto (1).png" → "Mi%20foto%20(1).png"
+  const encodedPath = encodePathSegments(cleanPath);
+  
+  const gatewayMap = {
+    thirdweb: 'https://gateway.thirdweb.com/ipfs/',
+    ipfs: 'https://ipfs.io/ipfs/',
+    cloudflare: 'https://cloudflare-ipfs.com/ipfs/'
+  };
+  
+  return gatewayMap[preferredGateway] + encodedPath;
+}
+
+/**
+ * Safely encode path segments while preserving path structure
+ * Input: "QmXXX/Mi foto (1).png" → Output: "QmXXX/Mi%20foto%20(1).png"
+ */
+export function encodePathSegments(path: string): string {
+  return path.split('/').map(segment => {
+    // Don't encode if it's likely a CID (starts with Qm and no spaces)
+    if (segment.startsWith('Qm') && !segment.includes(' ')) {
+      return segment;
+    }
+    // Encode other segments (filenames with spaces)
+    return encodeURIComponent(segment);
+  }).join('/');
+}
+
 // Initialize client lazily to avoid build-time issues
 let client: ReturnType<typeof createThirdwebClient> | null = null;
 function getThirdwebClient() {
@@ -185,32 +280,29 @@ async function uploadToThirdWeb(file: File): Promise<IPFSUploadResult> {
   try {
     console.log('🔄 Uploading to ThirdWeb IPFS...');
     
-    const rawCid = await upload({
+    const rawResult = await upload({
       client: getThirdwebClient(),
       files: [file],
     });
-    
-    // 🚨 CRITICAL FIX: ThirdWeb returns "ipfs://QmXXX" but we need clean CID
-    const cleanCid = rawCid.startsWith('ipfs://') ? rawCid.replace('ipfs://', '') : rawCid;
     
     console.log('🔧 ThirdWeb client initialized:', { 
       hasClientId: !!getThirdwebClient().clientId,
       clientIdPreview: getThirdwebClient().clientId?.substring(0, 8) + '...'
     });
     
-    // CRITICAL FIX: Include filename for proper gateway access
-    const filename = file.name || 'image.jpg';
-    const url = `https://gateway.thirdweb.com/ipfs/${cleanCid}/${filename}`;
+    // 🚨 SURGICAL FIX: Use robust helpers for clean extraction and URL construction
+    const cleanCidPath = extractCidPath(rawResult); // Handles double prefixes and edge cases
+    const url = toGatewayHttps(cleanCidPath, 'thirdweb'); // Proper encoding for spaces and special chars
     
     console.log('✅ ThirdWeb upload successful:', { 
-      rawCid, 
-      cleanCid, 
+      rawResult, 
+      cleanCidPath, 
       url: url 
     });
     
     return {
       success: true,
-      cid: cleanCid, // FIXED: Return clean CID without ipfs:// prefix
+      cid: cleanCidPath, // ROBUST: Return clean CID/path without ipfs:// prefix
       url,
       provider: UPLOAD_PROVIDERS.THIRDWEB,
       size: file.size
