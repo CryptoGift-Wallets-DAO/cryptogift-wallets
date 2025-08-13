@@ -688,9 +688,23 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       formData.append('file', imageFileToUpload);
       formData.append('filteredUrl', wizardData.filteredImageUrl);
       
+      console.log('🔄 GAS PAID: Starting upload request...', {
+        fileName: imageFileToUpload.name,
+        fileSize: imageFileToUpload.size,
+        fileType: imageFileToUpload.type,
+        hasFilteredUrl: !!wizardData.filteredImageUrl
+      });
+      
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
+      });
+      
+      console.log('📤 GAS PAID: Upload response received:', {
+        status: uploadResponse.status,
+        ok: uploadResponse.ok,
+        statusText: uploadResponse.statusText,
+        headers: Object.fromEntries(uploadResponse.headers.entries())
       });
 
       if (!uploadResponse.ok) {
@@ -698,7 +712,14 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         throw new Error(errorData.message || `Upload failed with status ${uploadResponse.status}`);
       }
 
-      const { ipfsCid, imageIpfsCid } = await uploadResponse.json();
+      const uploadData = await uploadResponse.json();
+      const { ipfsCid, imageIpfsCid } = uploadData;
+      
+      console.log('✅ GAS PAID: Upload successful, CIDs received:', {
+        ipfsCid: ipfsCid?.substring(0, 20) + '...',
+        imageIpfsCid: imageIpfsCid?.substring(0, 20) + '...',
+        fullResponse: uploadData
+      });
       
       // Determine correct image CID to use (prioritize actual image over metadata)
       const actualImageCid = imageIpfsCid || ipfsCid;
@@ -734,6 +755,14 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         creatorAddress: account?.address,
         gasless: false // CRITICAL: Gas-paid fallback
       };
+
+      console.log('🚀 GAS PAID: Sending mint request with:', {
+        apiEndpoint,
+        metadataUri: requestBody.metadataUri,
+        isEscrowEnabled,
+        ipfsCidUsed: ipfsCid?.substring(0, 20) + '...',
+        requestBodyKeys: Object.keys(requestBody)
+      });
 
       const mintResponse = await makeAuthenticatedRequest(apiEndpoint, {
         method: 'POST',

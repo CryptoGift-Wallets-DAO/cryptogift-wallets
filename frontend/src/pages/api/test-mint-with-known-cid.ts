@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       testType: 'mint_with_known_cid',
       timestamp: new Date().toISOString(),
       input: {
-        knownCid,
+        knownCid: knownWorkingCid,
         metadataUri: testMetadataUri,
         requestBody: testRequestBody
       },
