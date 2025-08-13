@@ -452,16 +452,63 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
       // Handle HTTP tokenURI (might be our own endpoint)
       console.log(`🔗 HTTP tokenURI detected: ${onChainTokenURI}`);
       
-      // HARDENING FIX: Transform defunct domains to production domain
-      let correctedTokenURI = onChainTokenURI;
-      if (onChainTokenURI.includes('cryptogift-wallets-cffo2epsv-rafael-godezs-projects.vercel.app') || 
-          onChainTokenURI.includes('cryptogift-wallets-ahrdp0rdw-rafael-godezs-projects.vercel.app')) {
-        correctedTokenURI = onChainTokenURI.replace(/cryptogift-wallets-[^-]+-rafael-godezs-projects\.vercel\.app/, 'cryptogift-wallets.vercel.app');
-        console.log(`🔧 CORRECTED defunct domain: ${correctedTokenURI}`);
-      }
-      
-      try {
-        const response = await fetch(correctedTokenURI, { signal: controller.signal });
+      // CRITICAL FIX: Detect self-calls to prevent infinite recursion
+      if (onChainTokenURI.includes('/api/nft-metadata/') || 
+          onChainTokenURI.includes('/api/metadata/')) {
+        console.log(`🚨 SELF-CALL DETECTED: TokenURI points to our own metadata endpoint`);
+        console.log(`🔄 SKIPPING HTTP fetch to prevent recursion, trying Redis CID lookup`);
+        
+        // 🔧 FASE 3 FIX: Try to reconstruct metadata from Redis CIDs 
+        if (redis) {
+          try {
+            const redisData = await redis.hgetall(cacheKey);
+            if (redisData && redisData.metadataIpfsCid && redisData.imageIpfsCid) {
+              console.log(`🎯 FOUND Redis CIDs for self-call recovery:`, {
+                metadataIpfsCid: redisData.metadataIpfsCid.substring(0, 20) + '...',
+                imageIpfsCid: redisData.imageIpfsCid.substring(0, 20) + '...'
+              });
+              
+              // Reconstruct IPFS metadata URL from CID
+              const ipfsMetadataUrl = `ipfs://${redisData.metadataIpfsCid}`;
+              console.log(`🌐 Attempting direct IPFS fetch: ${ipfsMetadataUrl}`);
+              
+              const directIpfsMetadata = await fetchIPFSMetadata(ipfsMetadataUrl, controller.signal);
+              if (directIpfsMetadata && validateMetadataSchema(directIpfsMetadata)) {
+                // Success! Cache and return the reconstructed metadata
+                await cacheMetadata(cacheKey, directIpfsMetadata, 10);
+                const latency = Date.now() - startTime;
+                
+                console.log(`🎉 SELF-CALL RECOVERED via Redis CIDs for ${contractAddress}:${tokenId} (${latency}ms)`);
+                return {
+                  metadata: directIpfsMetadata,
+                  source: 'ipfs',
+                  cached: false,
+                  latency,
+                  gatewayUsed: 'redis-cid-recovery'
+                };
+              } else {
+                console.warn(`⚠️ Direct IPFS fetch failed for CID recovery`);
+              }
+            } else {
+              console.log(`ℹ️ No Redis CIDs available for self-call recovery, proceeding to transaction log analysis`);
+            }
+          } catch (redisError) {
+            console.warn(`⚠️ Redis CID lookup failed during self-call recovery: ${redisError}`);
+          }
+        }
+        
+        // If Redis CID recovery failed, skip HTTP fetch and go directly to transaction log recovery
+      } else {
+        // HARDENING FIX: Transform defunct domains to production domain
+        let correctedTokenURI = onChainTokenURI;
+        if (onChainTokenURI.includes('cryptogift-wallets-cffo2epsv-rafael-godezs-projects.vercel.app') || 
+            onChainTokenURI.includes('cryptogift-wallets-ahrdp0rdw-rafael-godezs-projects.vercel.app')) {
+          correctedTokenURI = onChainTokenURI.replace(/cryptogift-wallets-[^-]+-rafael-godezs-projects\.vercel\.app/, 'cryptogift-wallets.vercel.app');
+          console.log(`🔧 CORRECTED defunct domain: ${correctedTokenURI}`);
+        }
+        
+        try {
+          const response = await fetch(correctedTokenURI, { signal: controller.signal });
         if (response.ok) {
           const httpMetadata = await response.json();
           if (validateMetadataSchema(httpMetadata)) {
@@ -480,10 +527,11 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
               latency
             };
           }
+          }
+        } catch (httpError) {
+          console.warn(`⚠️ HTTP tokenURI fetch failed for ${correctedTokenURI}: ${httpError}`);
         }
-      } catch (httpError) {
-        console.warn(`⚠️ HTTP tokenURI fetch failed for ${correctedTokenURI}: ${httpError}`);
-      }
+      } // End of non-self-call else block
     }
     
     // Step 4.5: ENHANCED RECOVERY - Extract original IPFS metadata from transaction logs

@@ -66,12 +66,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`📊 Metadata resolved via ${fallbackResult.source} for ${contractAddress}:${tokenId} (${processingTime}ms)`);
     
     // METADATA PROCESSING: Use result from comprehensive fallback system
+    
+    // 🔧 FASE 5E FIX: Ensure image is ALWAYS HTTPS (never ipfs://) for wallets/explorers
+    let normalizedImageUrl = fallbackResult.metadata.image;
+    if (normalizedImageUrl && normalizedImageUrl.startsWith('ipfs://')) {
+      console.log(`🔄 Normalizing ipfs:// image URL to HTTPS for wallet compatibility`);
+      const { pickGatewayUrl } = await import('../../../../utils/ipfs');
+      normalizedImageUrl = await pickGatewayUrl(normalizedImageUrl);
+      console.log(`🔗 Image normalized: ${normalizedImageUrl.substring(0, 50)}...`);
+    }
+    
     const baseScanMetadata: ERC721Metadata = {
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // CRITICAL: Image URL already properly encoded by fallback system
-      image: fallbackResult.metadata.image,
+      // 🔧 FASE 5E: Image URL guaranteed to be HTTPS for universal compatibility
+      image: normalizedImageUrl,
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],
@@ -88,10 +98,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
-    // HARDENING #4: TTL and SWR caching based on source
-    const cacheMaxAge = fallbackResult.source === 'redis' ? 300 : 60;
-    const sMaxAge = fallbackResult.source === 'placeholder' ? 60 : 300;
-    res.setHeader('Cache-Control', `public, max-age=${cacheMaxAge}, s-maxage=${sMaxAge}, stale-while-revalidate=60`);
+    // 🔧 FASE 5F FIX: Prevent cache poisoning for placeholders
+    if (fallbackResult.source === 'placeholder') {
+      console.log('🚫 Placeholder detected - using no-store to prevent cache poisoning');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('X-Served-Placeholder', 'true'); // Debugging header
+    } else {
+      // Normal caching for real metadata
+      const cacheMaxAge = fallbackResult.source === 'redis' ? 300 : 60;
+      const sMaxAge = 300;
+      res.setHeader('Cache-Control', `public, max-age=${cacheMaxAge}, s-maxage=${sMaxAge}, stale-while-revalidate=60`);
+    }
     
     // SECURITY HEADERS
     res.setHeader('X-Content-Type-Options', 'nosniff');

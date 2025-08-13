@@ -1792,6 +1792,37 @@ async function mintNFTEscrowGasPaid(
           console.log(`📍 Original URL: ${metadataUpdateResult.metadataUrl}`);
           console.log(`🔗 Universal URL: ${universalCompatibleUrl}`);
           
+          // 🔧 FASE 5D FIX: Validate FINAL metadata propagation BEFORE updateTokenURI
+          console.log('🔍 VALIDATING final metadata propagation before on-chain update...');
+          try {
+            const { pickGatewayUrl } = await import('../../../utils/ipfs');
+            const validationUrl = await pickGatewayUrl(metadataUpdateResult.metadataUrl);
+            console.log(`🎯 Validation URL selected: ${validationUrl}`);
+            
+            const validationResponse = await fetch(validationUrl, {
+              method: 'GET',
+              signal: AbortSignal.timeout(5000) // 5s timeout for validation
+            });
+            
+            if (!validationResponse.ok) {
+              throw new Error(`Validation failed: ${validationResponse.status}`);
+            }
+            
+            const validationJson = await validationResponse.json();
+            if (!validationJson.tokenId || validationJson.tokenId !== tokenId) {
+              throw new Error(`Final metadata missing tokenId or incorrect: expected ${tokenId}, got ${validationJson.tokenId}`);
+            }
+            
+            console.log('✅ FINAL metadata validation passed - ready for on-chain update');
+            console.log(`🔍 Confirmed tokenId: ${validationJson.tokenId}`);
+            console.log(`🖼️ Confirmed image: ${validationJson.image ? 'present' : 'missing'}`);
+            
+          } catch (validationError) {
+            console.error('❌ FINAL metadata validation FAILED:', validationError.message);
+            // FAIL-FAST: Don't update tokenURI if final metadata isn't ready
+            throw new Error(`Cannot update tokenURI: Final metadata validation failed - ${validationError.message}. Metadata must be accessible via IPFS before updating on-chain tokenURI.`);
+          }
+          
           // Prepare updateTokenURI transaction with Universal-compatible URL
           const updateURITransaction = prepareContractCall({
             contract: nftContract,
@@ -1885,6 +1916,128 @@ async function mintNFTEscrowGasPaid(
         console.error('❌ METADATA UPDATE FAILED (GAS-PAID):', metadataUpdateResult.error);
         // FAIL-FAST: updateTokenURI is critical for BaseScan compatibility
         throw new Error(`TokenURI update failed: ${metadataUpdateResult.error}. Manual tokenURI update required.`);
+      }
+
+      // 🔧 FASE 5B CRITICAL FIX: Store FINAL metadata in Redis (not temporal)
+      // This was moved here to use metadataUpdateResult.metadataUrl (final) instead of metadataUri (temporal)
+      try {
+        console.log('💾 Storing FINAL NFT metadata for wallet display...');
+        
+        // 🚨 CRITICAL FIX: Extract CIDs from FINAL metadata, not temporal
+        let finalImageIpfsCid = '';
+        let finalMetadataIpfsCid = '';
+        
+        const finalMetadataUrl = metadataUpdateResult.metadataUrl;
+        console.log('🎯 Using FINAL metadata URL:', finalMetadataUrl);
+        
+        try {
+          // Extract metadata CID from FINAL metadataUrl (not temporal metadataUri)
+          if (finalMetadataUrl && finalMetadataUrl.startsWith('ipfs://')) {
+            finalMetadataIpfsCid = finalMetadataUrl.replace('ipfs://', '');
+            console.log('✅ FINAL METADATA CID EXTRACTED:', {
+              fullFinalUrl: finalMetadataUrl.substring(0, 50) + '...',
+              extractedFinalCid: finalMetadataIpfsCid.substring(0, 30) + '...'
+            });
+          } else {
+            throw new Error('Final metadataUrl is not a valid IPFS URL');
+          }
+          
+          // 🌐 FASE 5C FIX: Multi-gateway fetch with early-exit (not single ipfs.io)
+          console.log('🌐 Fetching FINAL metadata JSON with multi-gateway strategy...');
+          
+          // Use our robust multi-gateway system
+          const { pickGatewayUrl } = await import('../../../utils/ipfs');
+          const optimalGatewayUrl = await pickGatewayUrl(`ipfs://${finalMetadataIpfsCid}`);
+          console.log(`🎯 Optimal gateway selected: ${optimalGatewayUrl}`);
+          
+          const finalMetadataResponse = await fetch(optimalGatewayUrl);
+          
+          if (finalMetadataResponse.ok) {
+            const finalMetadataJson = await finalMetadataResponse.json();
+            console.log('📋 Final metadata JSON preview:', {
+              name: finalMetadataJson.name,
+              tokenId: finalMetadataJson.tokenId || 'missing',
+              hasImage: !!finalMetadataJson.image
+            });
+            
+            if (finalMetadataJson.image && finalMetadataJson.image.startsWith('ipfs://')) {
+              finalImageIpfsCid = finalMetadataJson.image.replace('ipfs://', '');
+              console.log('✅ FINAL IMAGE CID EXTRACTED from final metadata JSON:', {
+                extractedFinalImageCid: finalImageIpfsCid.substring(0, 30) + '...'
+              });
+            } else {
+              throw new Error('No valid image field in final metadata JSON');
+            }
+          } else {
+            throw new Error(`Failed to fetch final metadata: ${finalMetadataResponse.status}`);
+          }
+          
+          // Store FINAL metadata in Redis
+          console.log('💾 Storing FINAL metadata with tokenId and correct CIDs...');
+          
+          // Determine the final owner of the NFT  
+          const finalOwner = isEscrowMint 
+            ? recipientAddress || creatorAddress // For escrow, track who will claim it
+            : recipientAddress || creatorAddress; // Direct mint goes to user
+          
+          // Create complete attributes array including escrow-specific data
+          const baseAttributes = [
+            { trait_type: "Token ID", value: tokenId },
+            { trait_type: "Creation Date", value: new Date().toISOString() },
+            { trait_type: "Platform", value: "CryptoGift Wallets" },
+            { trait_type: "Gift Type", value: isEscrowMint ? "Temporal Escrow" : "Direct Mint" },
+            { trait_type: "Creator", value: creatorAddress.slice(0, 10) + '...' }
+          ];
+
+          // Add escrow-specific attributes for escrow mints
+          if (isEscrowMint && timeframeIndex !== undefined) {
+            console.log('🔒 ADDING ESCROW ATTRIBUTES FOR METAMASK COMPATIBILITY');
+            
+            // Map timeframe index back to string for display
+            const timeframeMap = {
+              [TIMEFRAME_OPTIONS.FIFTEEN_MINUTES]: 'FIFTEEN_MINUTES',
+              [TIMEFRAME_OPTIONS.SEVEN_DAYS]: 'SEVEN_DAYS', 
+              [TIMEFRAME_OPTIONS.FIFTEEN_DAYS]: 'FIFTEEN_DAYS',
+              [TIMEFRAME_OPTIONS.THIRTY_DAYS]: 'THIRTY_DAYS'
+            };
+            
+            const timeframeString = timeframeMap[timeframeIndex] || 'UNKNOWN';
+            console.log('🔍 ESCROW TIMEFRAME for metadata:', timeframeString);
+            
+            baseAttributes.push(
+              { trait_type: "Timeframe", value: timeframeString },
+              { trait_type: "Expires At", value: new Date((expirationTime || 0) * 1000).toISOString() },
+              { trait_type: "Security", value: "Password Protected" }
+            );
+          }
+          
+          const finalNftMetadata = createNFTMetadata({
+            contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+            tokenId: tokenId,
+            name: `CryptoGift NFT #${tokenId}`,
+            description: giftMessage || "Un regalo cripto único creado con amor",
+            imageIpfsCid: finalImageIpfsCid,    // From FINAL metadata
+            metadataIpfsCid: finalMetadataIpfsCid, // From FINAL metadata  
+            attributes: baseAttributes,
+            mintTransactionHash: result.transactionHash,
+            owner: finalOwner,
+            creatorWallet: creatorAddress
+          });
+          
+          // Store with retry logic
+          await storeMetadataWithRetry(finalNftMetadata, 3);
+          console.log('✅ FINAL NFT metadata stored successfully with correct tokenId and CIDs');
+          
+        } catch (finalMetadataError) {
+          console.error('❌ CRITICAL: Failed to extract CIDs from FINAL metadata:', finalMetadataError.message);
+          
+          // FAIL-FAST: Don't continue with broken metadata
+          throw new Error(`FINAL metadata processing failed: ${finalMetadataError.message}`);
+        }
+        
+      } catch (metadataStoreError) {
+        console.error('❌ Failed to store FINAL NFT metadata:', metadataStoreError);
+        throw new Error(`FINAL metadata storage failed: ${metadataStoreError.message}`);
       }
       
     } catch (metadataError) {
@@ -2469,97 +2622,8 @@ export default async function handler(
       responseData.directMint = true;
     }
 
-    // CRITICAL FIX: Store NFT metadata so it appears in user's wallets
-    try {
-      console.log('💾 Storing NFT metadata for wallet display...');
-      
-      // 🚨 CRITICAL FIX: Extract REAL image CID from metadata JSON, not metadata CID
-      let imageIpfsCid = '';
-      try {
-        // Fetch the metadata JSON to get the real image CID
-        const metadataResponse = await fetch(`https://ipfs.io/ipfs/${metadataUri.replace('ipfs://', '')}`);
-        if (metadataResponse.ok) {
-          const metadataJson = await metadataResponse.json();
-          if (metadataJson.image && metadataJson.image.startsWith('ipfs://')) {
-            imageIpfsCid = metadataJson.image.replace('ipfs://', '');
-            console.log('✅ REAL IMAGE CID EXTRACTED from metadata:', {
-              metadataUri: metadataUri.substring(0, 30) + '...',
-              extractedImageCid: imageIpfsCid.substring(0, 30) + '...'
-            });
-          } else {
-            throw new Error('No valid image field in metadata');
-          }
-        } else {
-          throw new Error(`Failed to fetch metadata: ${metadataResponse.status}`);
-        }
-      } catch (error) {
-        console.error('❌ CRITICAL: Failed to extract real image CID from metadata:', error.message);
-        
-        // FAIL-FAST: Instead of bad fallback, return error to force proper metadata
-        return res.status(500).json({
-          success: false,
-          error: `IMAGE_CID_EXTRACTION_FAILED: Failed to extract image CID from metadata. ${error.message}. Solution: Ensure metadata JSON contains valid image field with ipfs:// URL.`
-        });
-      }
-      
-      // Determine the final owner of the NFT
-      const finalOwner = isEscrowMint 
-        ? recipientAddress || creatorAddress // For escrow, track who will claim it
-        : recipientAddress || creatorAddress; // Direct mint goes to user
-      
-      // CRITICAL FIX: Create complete attributes array including escrow-specific data
-      const baseAttributes = [
-        { trait_type: "Token ID", value: result.tokenId },
-        { trait_type: "Creation Date", value: new Date().toISOString() },
-        { trait_type: "Platform", value: "CryptoGift Wallets" },
-        { trait_type: "Gift Type", value: isEscrowMint ? "Temporal Escrow" : "Direct Mint" },
-        { trait_type: "Creator", value: creatorAddress.slice(0, 10) + '...' }
-      ];
-
-      // METAMASK FIX: Add escrow-specific attributes for escrow mints
-      if (isEscrowMint && timeframeIndex !== undefined) {
-        console.log('🔒 ADDING ESCROW ATTRIBUTES FOR METAMASK COMPATIBILITY');
-        
-        // Map timeframe index back to string for display
-        const timeframeMap = {
-          [TIMEFRAME_OPTIONS.FIFTEEN_MINUTES]: 'FIFTEEN_MINUTES',
-          [TIMEFRAME_OPTIONS.SEVEN_DAYS]: 'SEVEN_DAYS', 
-          [TIMEFRAME_OPTIONS.FIFTEEN_DAYS]: 'FIFTEEN_DAYS',
-          [TIMEFRAME_OPTIONS.THIRTY_DAYS]: 'THIRTY_DAYS'
-        };
-        
-        const timeframeString = timeframeMap[timeframeIndex] || 'UNKNOWN';
-        console.log('🔍 ESCROW TIMEFRAME for metadata:', timeframeString);
-        
-        baseAttributes.push(
-          { trait_type: "Timeframe", value: timeframeString },
-          { trait_type: "Expires At", value: new Date((expirationTime || 0) * 1000).toISOString() },
-          { trait_type: "Security", value: "Password Protected" }
-        );
-      }
-
-      const nftMetadata = createNFTMetadata({
-        contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-        tokenId: result.tokenId,
-        name: `CryptoGift NFT #${result.tokenId}`,
-        description: giftMessage || "Un regalo cripto único creado con amor",
-        imageIpfsCid: imageIpfsCid,
-        metadataIpfsCid: undefined, // Will be updated later with proper metadata
-        attributes: baseAttributes, // Use complete attributes array
-        mintTransactionHash: result.transactionHash,
-        owner: finalOwner,
-        creatorWallet: creatorAddress
-      });
-      
-      // 🔄 ROBUST METADATA STORAGE with retry logic
-      await storeMetadataWithRetry(nftMetadata, 3);
-      console.log('✅ NFT metadata stored and verified successfully');
-      
-    } catch (metadataStoreError) {
-      console.error('⚠️ Failed to store NFT metadata after retries:', metadataStoreError);
-      // Don't fail the whole transaction for metadata storage issues, but log for recovery
-      console.error('📋 Metadata that failed to store - error details:', metadataStoreError.message);
-    }
+    // 🚨 OBSOLETE BLOCK REMOVED: Old temporal metadata storage moved to after metadataUpdateResult
+    // The new logic stores FINAL metadata (with tokenId) instead of temporal metadata
     
     return res.status(200).json(responseData);
     
