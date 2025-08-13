@@ -269,7 +269,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const headStart = Date.now();
     
     const headController = new AbortController();
-    const headTimeout = setTimeout(() => headController.abort(), 5000); // Increased for propagation
+    const headTimeout = setTimeout(() => headController.abort(), 8000); // ENHANCED: Increased for IPFS propagation
     
     try {
       
@@ -300,7 +300,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const getRangeStart = Date.now();
     
     const getRangeController = new AbortController();
-    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 5000); // Increased for propagation
+    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 8000); // ENHANCED: Increased for IPFS propagation
     
     try {
       
@@ -330,7 +330,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const getStart = Date.now();
     
     const getController = new AbortController();
-    const getTimeout = setTimeout(() => getController.abort(), 5000); // Increased from 2s to 5s
+    const getTimeout = setTimeout(() => getController.abort(), 8000); // ENHANCED: Increased for IPFS propagation
     
     try {
       
@@ -394,10 +394,10 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     console.log('🔍 METADATA + IMAGE VALIDATION: Starting comprehensive validation');
     console.log('📋 MetadataURL:', metadataUrl);
     
-    // Step 1: Validate metadata JSON accessibility with IPFS propagation retry
+    // Step 1: Validate metadata JSON accessibility with ENHANCED IPFS propagation retry
     let metadataValidation;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 6; // INCREASED: More attempts for better propagation handling
     
     while (attempts < maxAttempts) {
       metadataValidation = await validateIPFSWithMultipleGateways(metadataUrl);
@@ -409,8 +409,11 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
       
       attempts++;
       if (attempts < maxAttempts) {
-        console.log(`⏳ Metadata validation failed (attempt ${attempts}), retrying in 4s for IPFS propagation...`);
-        await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay for better propagation
+        // ENHANCED: Exponential backoff for better IPFS propagation
+        const delaySeconds = Math.min(4 + (attempts * 2), 12); // 4s, 6s, 8s, 10s, 12s
+        console.log(`⏳ Metadata validation failed (attempt ${attempts}), retrying in ${delaySeconds}s for IPFS propagation...`);
+        console.log(`🌐 IPFS Propagation: Allowing more time for metadata to propagate across gateways`);
+        await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
       }
     }
     
@@ -428,7 +431,7 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     try {
       const response = await fetch(metadataValidation.workingUrl!, { 
         method: 'GET',
-        signal: AbortSignal.timeout(5000)  // 5s timeout
+        signal: AbortSignal.timeout(10000)  // INCREASED: 10s timeout for IPFS propagation
       });
       
       if (!response.ok) {
