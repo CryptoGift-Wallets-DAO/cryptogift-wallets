@@ -244,12 +244,27 @@ function constructGatewayUrls(imageUrl: string, isMetadata: boolean = false): Ar
       console.log('🔧 Converting HTTPS IPFS URL to multiple gateways:', {
         original: imageUrl,
         extractedCid: cid,
-        pathAfterCid
+        pathAfterCid,
+        isMetadata
       });
       
-      // Try all gateways with the extracted CID
+      // 🚨 AUDIT FIX: Add /metadata.json for metadata URLs when missing + encode path
+      let finalPath = pathAfterCid;
+      if (isMetadata && finalPath === '' && !cid.includes('/')) {
+        finalPath = '/metadata.json';
+        console.log('🔧 METADATA FIX: Added /metadata.json to HTTPS URL:', {
+          original: imageUrl,
+          cid,
+          newPath: finalPath
+        });
+      }
+      
+      // 🚨 AUDIT FIX: Encode path segments to handle spaces and special characters
+      const encodedPath = encodeAllPathSegmentsSafe(finalPath);
+      
+      // Try all gateways with the extracted CID and encoded path
       return gateways.map(gateway => ({
-        url: `${gateway}/${cid}${pathAfterCid}`,
+        url: `${gateway}/${cid}${encodedPath}`,
         gateway: gateway.split('/')[2] // Extract domain name  
       }));
     } else {
@@ -280,7 +295,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const headStart = Date.now();
     
     const headController = new AbortController();
-    const headTimeout = setTimeout(() => headController.abort(), 8000); // ENHANCED: Increased for IPFS propagation
+    const headTimeout = setTimeout(() => headController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
     
     try {
       
@@ -311,7 +326,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const getRangeStart = Date.now();
     
     const getRangeController = new AbortController();
-    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 8000); // ENHANCED: Increased for IPFS propagation
+    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
     
     try {
       
@@ -341,7 +356,7 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     const getStart = Date.now();
     
     const getController = new AbortController();
-    const getTimeout = setTimeout(() => getController.abort(), 8000); // ENHANCED: Increased for IPFS propagation
+    const getTimeout = setTimeout(() => getController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
     
     try {
       
@@ -548,7 +563,7 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     try {
       const response = await fetch(metadataValidation.workingUrl!, { 
         method: 'GET',
-        signal: AbortSignal.timeout(10000)  // INCREASED: 10s timeout for IPFS propagation
+        signal: AbortSignal.timeout(3000)  // FAST PROBING: 3s timeout for quick validation
       });
       
       if (!response.ok) {
@@ -579,18 +594,23 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     // Step 4: Validate image accessibility via IPFS gateways
     console.log('🔍 CHECKING IMAGE URL from metadata:', metadataJson.image);
     
-    // 🚨 TEMPORARY: Skip image validation to test rest of pipeline
-    console.log('⚠️ TEMP: Skipping image validation to isolate issue');
-    const imageValidation = { success: true, skipped: true };
+    // 🚨 CRITICAL FIX: Clean image URL if it has double ipfs:// prefix
+    let cleanImageUrl = metadataJson.image;
+    if (cleanImageUrl.startsWith('ipfs://ipfs://')) {
+      cleanImageUrl = cleanImageUrl.replace('ipfs://ipfs://', 'ipfs://');
+      console.log('🔧 FIXED double ipfs:// prefix in image URL:', {
+        original: metadataJson.image,
+        cleaned: cleanImageUrl
+      });
+    }
     
-    // ORIGINAL CODE (temporarily disabled):
-    // const imageValidation = await validateIPFSWithMultipleGateways(metadataJson.image);
-    // if (!imageValidation.success) {
-    //   return {
-    //     success: false,
-    //     error: `Image from metadata not accessible: ${imageValidation.error}`
-    //   };
-    // }
+    const imageValidation = await validateIPFSWithMultipleGateways(cleanImageUrl);
+    if (!imageValidation.success) {
+      return {
+        success: false,
+        error: `Image from metadata not accessible: ${imageValidation.error}`
+      };
+    }
     
     console.log('✅ COMPREHENSIVE VALIDATION SUCCESS: Both metadata and image are accessible');
     return { success: true };
@@ -878,26 +898,17 @@ async function mintNFTEscrowGasless(
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
       
-      // SMART FALLBACK: If tokenURI contains ThirdWeb gateway, allow mint to proceed with warning
-      if (tokenURI.includes('gateway.thirdweb.com') || tokenURI.includes('thirdweb.com')) {
-        console.log('⚠️ SMART FALLBACK: ThirdWeb upload detected - allowing mint despite validation failure');
-        console.log('📝 This fallback prevents blocking when ThirdWeb gateway is temporarily unreachable');
-        
-        // Continue with mint but log the issue for monitoring
-        console.warn('🔍 MONITORING: IPFS validation failed for ThirdWeb upload:', {
-          tokenURI,
-          error: ipfsValidation.error,
-          timestamp: new Date().toISOString(),
-          fallbackReason: 'ThirdWeb gateway temporary unreachability'
-        });
-      } else {
-        // For non-ThirdWeb URLs, maintain strict validation
-        return {
-          success: false,
-          error: 'Image not accessible via any IPFS gateway: ' + ipfsValidation.error,
-          details: ipfsValidation.error
-        };
-      }
+      // FAIL-FAST: No bypasses - if image is not accessible, mint should fail
+      return {
+        success: false,
+        error: 'Image not accessible via any IPFS gateway: ' + ipfsValidation.error,
+        details: {
+          tokenURI: tokenURI.substring(0, 100) + '...',
+          validationError: ipfsValidation.error,
+          solution: 'Ensure image is properly uploaded and propagated to IPFS gateways'
+        },
+        step: 'IPFS_VALIDATION'
+      };
     } else {
       console.log('✅ IPFS validation passed - image accessible via gateways');
     }
@@ -1514,26 +1525,17 @@ async function mintNFTEscrowGasPaid(
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
       
-      // SMART FALLBACK: If tokenURI contains ThirdWeb gateway, allow mint to proceed with warning
-      if (tokenURI.includes('gateway.thirdweb.com') || tokenURI.includes('thirdweb.com')) {
-        console.log('⚠️ SMART FALLBACK: ThirdWeb upload detected - allowing mint despite validation failure');
-        console.log('📝 This fallback prevents blocking when ThirdWeb gateway is temporarily unreachable');
-        
-        // Continue with mint but log the issue for monitoring
-        console.warn('🔍 MONITORING: IPFS validation failed for ThirdWeb upload:', {
-          tokenURI,
-          error: ipfsValidation.error,
-          timestamp: new Date().toISOString(),
-          fallbackReason: 'ThirdWeb gateway temporary unreachability'
-        });
-      } else {
-        // For non-ThirdWeb URLs, maintain strict validation
-        return {
-          success: false,
-          error: 'Image not accessible via any IPFS gateway: ' + ipfsValidation.error,
-          details: ipfsValidation.error
-        };
-      }
+      // FAIL-FAST: No bypasses - if image is not accessible, mint should fail
+      return {
+        success: false,
+        error: 'Image not accessible via any IPFS gateway: ' + ipfsValidation.error,
+        details: {
+          tokenURI: tokenURI.substring(0, 100) + '...',
+          validationError: ipfsValidation.error,
+          solution: 'Ensure image is properly uploaded and propagated to IPFS gateways'
+        },
+        step: 'IPFS_VALIDATION'
+      };
     } else {
       console.log('✅ IPFS validation passed - image accessible via gateways');
     }
@@ -2468,8 +2470,40 @@ export default async function handler(
     try {
       console.log('💾 Storing NFT metadata for wallet display...');
       
-      // Extract image CID from metadataUri for proper metadata storage
-      const imageIpfsCid = metadataUri.replace('ipfs://', '');
+      // 🚨 CRITICAL FIX: Extract REAL image CID from metadata JSON, not metadata CID
+      let imageIpfsCid = '';
+      try {
+        // Fetch the metadata JSON to get the real image CID
+        const metadataResponse = await fetch(`https://ipfs.io/ipfs/${metadataUri.replace('ipfs://', '')}`);
+        if (metadataResponse.ok) {
+          const metadataJson = await metadataResponse.json();
+          if (metadataJson.image && metadataJson.image.startsWith('ipfs://')) {
+            imageIpfsCid = metadataJson.image.replace('ipfs://', '');
+            console.log('✅ REAL IMAGE CID EXTRACTED from metadata:', {
+              metadataUri: metadataUri.substring(0, 30) + '...',
+              extractedImageCid: imageIpfsCid.substring(0, 30) + '...'
+            });
+          } else {
+            throw new Error('No valid image field in metadata');
+          }
+        } else {
+          throw new Error(`Failed to fetch metadata: ${metadataResponse.status}`);
+        }
+      } catch (error) {
+        console.error('❌ CRITICAL: Failed to extract real image CID from metadata:', error.message);
+        
+        // FAIL-FAST: Instead of bad fallback, return error to force proper metadata
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to extract image CID from metadata',
+          details: {
+            metadataUri: metadataUri.substring(0, 50) + '...',
+            errorMessage: error.message,
+            solution: 'Ensure metadata JSON contains valid image field with ipfs:// URL'
+          },
+          step: 'IMAGE_CID_EXTRACTION'
+        });
+      }
       
       // Determine the final owner of the NFT
       const finalOwner = isEscrowMint 
