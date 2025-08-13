@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       pendingRewards: stats.pendingRewards.toString(),
       conversionRate: stats.conversionRate,
       activeReferrals: stats.activeReferrals,
-      referralUrl: `${process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/?ref=${address}`,
+      referralUrl: `${process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || (() => { throw new Error('NEXT_PUBLIC_APP_URL or VERCEL_URL is required for referral URLs'); })()}/?ref=${address}`,
     };
     
     console.log('✅ Real referral data loaded:', {

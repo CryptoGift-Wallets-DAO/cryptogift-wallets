@@ -75,7 +75,7 @@ ${shareUrl || (typeof window !== 'undefined' ? window.location.origin : '')}
 
 Bienvenid@ al futuro de los regalos 💎✨`;
 
-  const shortUrl = shareUrl ? shareUrl.replace('https://', '').replace('http://', '') : (typeof window !== 'undefined' ? window.location.host : 'localhost:3000');
+  const shortUrl = shareUrl ? shareUrl.replace('https://', '').replace('http://', '') : (typeof window !== 'undefined' ? window.location.host : (() => { throw new Error('shareUrl is required for QR sharing'); })());
 
   const handleSocialShare = (platform: string) => {
     const text = encodeURIComponent(shareMessage);

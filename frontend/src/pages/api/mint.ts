@@ -1110,7 +1110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // Also trigger real-time update via API endpoint for dashboard refresh
         try {
-          const activationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/referrals/track-activation`, {
+          const activationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || (() => { throw new Error('NEXT_PUBLIC_BASE_URL or VERCEL_URL is required'); })()}/api/referrals/track-activation`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

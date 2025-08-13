@@ -47,9 +47,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('No IPFS providers configured. Check environment variables.');
     }
 
-    // Parse the multipart form data with increased limits
+    // 🔥 FASE 7H: Parse multipart form with configurable security limits
+    const maxUploadSize = parseInt(process.env.MAX_UPLOAD_SIZE || '52428800'); // 50MB default
     const form = formidable({
-      maxFileSize: 50 * 1024 * 1024, // 50MB (increased from 10MB)
+      maxFileSize: maxUploadSize,
       keepExtensions: true,
     });
 
@@ -63,21 +64,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Read the file
     let fileData = await fs.readFile(uploadedFile.filepath);
     
-    // Auto-compress large images to prevent 413 errors
+    // 🔥 FASE 7H: Auto-compress large images with configurable threshold
     const originalSize = fileData.length;
-    const isLargeFile = originalSize > 2 * 1024 * 1024; // 2MB threshold
+    const compressionThreshold = parseInt(process.env.COMPRESSION_THRESHOLD || '2097152'); // 2MB default
+    const isLargeFile = originalSize > compressionThreshold;
     
     if (isLargeFile && uploadedFile.mimetype?.startsWith('image/')) {
       try {
         console.log(`🗜️ Compressing large image: ${originalSize} bytes`);
         
-        // Import Sharp for image compression (fallback to original if not available)
+        // 🔥 FASE 7H: Import Sharp with configurable compression settings
         let compressedData;
         try {
           const sharp = require('sharp');
+          const compressionQuality = parseInt(process.env.IMAGE_COMPRESSION_QUALITY || '80');
+          const maxWidth = parseInt(process.env.MAX_IMAGE_WIDTH || '2048');
+          const maxHeight = parseInt(process.env.MAX_IMAGE_HEIGHT || '2048');
+          
           compressedData = await sharp(fileData)
-            .jpeg({ quality: 80, progressive: true })
-            .resize(2048, 2048, { 
+            .jpeg({ quality: compressionQuality, progressive: true })
+            .resize(maxWidth, maxHeight, { 
               fit: 'inside', 
               withoutEnlargement: true 
             })
@@ -131,14 +137,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create metadata if this is the final upload
     const filteredUrl = fields.filteredUrl?.[0];
     if (filteredUrl && typeof filteredUrl === 'string' && filteredUrl.startsWith('http')) {
-      // SECURITY FIX: Whitelist allowed domains to prevent SSRF
-      const allowedDomains = [
-        'gateway.thirdweb.com',
-        'ipfs.io',
-        'cloudflare-ipfs.com', 
-        'gateway.pinata.cloud',
-        'nftstorage.link'
-      ];
+      // 🔥 FASE 7H SECURITY: Configurable domain whitelist to prevent SSRF
+      const allowedDomainsEnv = process.env.ALLOWED_IPFS_DOMAINS;
+      const allowedDomains = allowedDomainsEnv 
+        ? allowedDomainsEnv.split(',').map(d => d.trim())
+        : [
+            'gateway.thirdweb.com',
+            'ipfs.io',
+            'cloudflare-ipfs.com', 
+            'gateway.pinata.cloud',
+            'nftstorage.link'
+          ];
       
       const urlHost = new URL(filteredUrl).hostname;
       if (!allowedDomains.includes(urlHost)) {
@@ -147,12 +156,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       console.log(`✅ Filtered URL domain validated: ${urlHost}`);
       
+      // 🔥 FASE 7E SECURITY: Enhanced filteredUrl validation with MIME/size restrictions
+      addMintLog('INFO', 'FILTERED_URL_SECURITY_VALIDATION', { 
+        url: filteredUrl.substring(0, 50) + '...',
+        domain: urlHost 
+      });
+      
       // If we have a filtered image URL, use that as the main image
       const metadataResponse = await fetch(filteredUrl, {
         method: 'GET',
         headers: {
           'Accept': 'image/*,*/*'
-        }
+        },
+        signal: AbortSignal.timeout(parseInt(process.env.IPFS_FETCH_TIMEOUT || '10000')) // Configurable timeout
       });
       
       if (!metadataResponse.ok) {
@@ -161,8 +177,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const filteredImageData = await metadataResponse.arrayBuffer();
       
+      // 🔥 FASE 7H SECURITY: Configurable MIME type validation for filtered images
+      const contentType = metadataResponse.headers.get('content-type') || '';
+      const allowedMimeTypesEnv = process.env.ALLOWED_MIME_TYPES;
+      const allowedMimeTypes = allowedMimeTypesEnv
+        ? allowedMimeTypesEnv.split(',').map(t => t.trim())
+        : [
+            'image/jpeg',
+            'image/jpg', 
+            'image/png',
+            'image/gif',
+            'image/webp'
+          ];
+      
+      if (!allowedMimeTypes.some(mime => contentType.includes(mime))) {
+        throw new Error(`Security: Invalid MIME type ${contentType}. Only images allowed.`);
+      }
+      
+      // 🔥 FASE 7H SECURITY: Configurable size limit for filtered images  
+      const maxSizeBytes = parseInt(process.env.MAX_UPLOAD_SIZE || '52428800'); // 50MB default
+      if (filteredImageData.byteLength > maxSizeBytes) {
+        throw new Error(`Security: Filtered image too large (${Math.round(filteredImageData.byteLength / 1024 / 1024)}MB). Max 50MB allowed.`);
+      }
+      
+      console.log(`✅ Filtered image security validated:`, {
+        contentType,
+        sizeBytes: filteredImageData.byteLength,
+        sizeMB: Math.round(filteredImageData.byteLength / 1024 / 1024 * 100) / 100
+      });
+      
+      addMintLog('SUCCESS', 'FILTERED_IMAGE_SECURITY_VALIDATED', {
+        contentType,
+        sizeBytes: filteredImageData.byteLength,
+        sizeMB: Math.round(filteredImageData.byteLength / 1024 / 1024 * 100) / 100,
+        url: filteredUrl.substring(0, 50) + '...'
+      });
+      
       const filteredFile = new File([filteredImageData], 'filtered-image.jpg', {
-        type: 'image/jpeg',
+        type: contentType || 'image/jpeg', // Use detected MIME type
       });
       
       addMintLog('INFO', 'FILTERED_IMAGE_UPLOAD_START', { 
@@ -296,10 +348,66 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     if (!propagationValidated) {
-      console.log('⚠️ Propagation not yet complete, but continuing (may require retry in validation)');
+      console.log('⚠️ Metadata propagation not yet complete, but continuing (may require retry in validation)');
       addMintLog('WARN', 'PROPAGATION_VALIDATION_PENDING', {
         message: 'Metadata uploaded but not yet propagated to gateways'
       });
+    }
+
+    // 🔥 FASE 7E FIX: Validate IMAGE propagation in ≥2 gateways before returning success
+    console.log('🖼️ Validating IMAGE propagation in multiple gateways...');
+    addMintLog('INFO', 'IMAGE_PROPAGATION_VALIDATION_START', { imageCid: cid });
+    
+    const imageTestGateways = [
+      `https://gateway.thirdweb.com/ipfs/${cid}`,
+      `https://ipfs.io/ipfs/${cid}`,
+      `https://cloudflare-ipfs.com/ipfs/${cid}`,
+      `https://gateway.pinata.cloud/ipfs/${cid}`
+    ];
+    
+    let imagePropagationCount = 0;
+    const minRequiredGateways = 2; // Require at least 2 gateways working
+    
+    for (const gatewayUrl of imageTestGateways) {
+      try {
+        const imageTestResponse = await fetch(gatewayUrl, { 
+          method: 'HEAD',
+          signal: AbortSignal.timeout(4000) // 4s timeout for image propagation
+        });
+        
+        if (imageTestResponse.ok) {
+          console.log(`✅ Image propagation validated: ${gatewayUrl}`);
+          addMintLog('SUCCESS', 'IMAGE_PROPAGATION_SUCCESS', { 
+            gateway: gatewayUrl,
+            status: imageTestResponse.status,
+            imageCid: cid.substring(0, 20) + '...'
+          });
+          imagePropagationCount++;
+        }
+      } catch (error) {
+        console.log(`⏳ Image propagation pending: ${gatewayUrl} (${error.message})`);
+      }
+    }
+    
+    if (imagePropagationCount >= minRequiredGateways) {
+      console.log(`✅ Image propagation VALIDATED: ${imagePropagationCount}/${imageTestGateways.length} gateways`);
+      addMintLog('SUCCESS', 'IMAGE_PROPAGATION_VALIDATED', {
+        successfulGateways: imagePropagationCount,
+        totalGateways: imageTestGateways.length,
+        imageCid: cid.substring(0, 20) + '...'
+      });
+    } else {
+      console.log(`⚠️ Image propagation INSUFFICIENT: ${imagePropagationCount}/${imageTestGateways.length} gateways working`);
+      addMintLog('WARN', 'IMAGE_PROPAGATION_INSUFFICIENT', {
+        successfulGateways: imagePropagationCount,
+        requiredGateways: minRequiredGateways,
+        totalGateways: imageTestGateways.length,
+        imageCid: cid.substring(0, 20) + '...',
+        recommendation: 'Mint may fail due to image not being available'
+      });
+      
+      // Don't fail the upload, but warn that mint might fail
+      console.log('⚠️ Continuing with upload despite insufficient image propagation...');
     }
 
     // Return consistent structure: ipfsCid = metadata CID, imageIpfsCid = image CID

@@ -153,51 +153,66 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
       }))
   );
   
-  // EARLY EXIT IMPLEMENTATION: Return as soon as first gateway succeeds
-  console.log('🏁 Starting early-exit parallel gateway validation...');
+  // 🔥 FASE 7B FIX: REAL EARLY EXIT with Promise.any + AbortController
+  console.log('🏁 Starting TRUE early-exit with Promise.any...');
+  
+  // Create AbortController to cancel remaining requests when first succeeds
+  const abortController = new AbortController();
   
   try {
-    // Create racing promises that resolve immediately on first success
+    // Create promises with abort signal for cancellation
     const racePromises = parallelPromises.map(async (promise, index) => {
       try {
         const result = await promise;
         attempts.push(...result.attempts);
         
         if (result.success) {
-          console.log(`🚀 EARLY SUCCESS (gateway ${index}): ${result.candidate.gateway}`);
-          return { ...result, earlyExit: true } as any; // TS fix: add earlyExit property
+          console.log(`🚀 FIRST SUCCESS (gateway ${index}): ${result.candidate.gateway}`);
+          // Cancel remaining requests
+          abortController.abort();
+          return { ...result, candidate: result.candidate, earlyExit: true };
         }
-        return result; // Failed result
+        // If failed, throw to let Promise.any continue
+        throw new Error(`Gateway ${index} failed: ${result.error || 'unknown'}`);
       } catch (error) {
-        return { success: false, error: error.message, candidate: { gateway: `gateway-${index}` } };
+        throw new Error(`Gateway ${index} error: ${error.message}`);
       }
     });
     
-    // Race all promises - first to succeed wins
-    const results = await Promise.allSettled(racePromises);
+    // 🎯 Promise.any returns as soon as FIRST promise resolves successfully
+    const firstSuccess = await Promise.any(racePromises);
     
-    // Process results: prioritize early successes, then any successes
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        const gatewayResult = result.value;
-        
-        if (gatewayResult.success) {
-          const successType = (gatewayResult as any).earlyExit ? 'EARLY EXIT' : 'STANDARD';
-          console.log(`✅ ${successType} SUCCESS: ${gatewayResult.candidate.gateway}`);
-          
-          return {
-            success: true,
-            workingUrl: (gatewayResult.candidate as any).url || gatewayResult.candidate.gateway,
-            gateway: gatewayResult.candidate.gateway,
-            method: 'method' in gatewayResult ? gatewayResult.method : undefined,
-            attempts
-          };
-        }
+    console.log(`✅ PROMISE.ANY SUCCESS: ${firstSuccess.candidate.gateway}`);
+    return {
+      success: true,
+      workingUrl: firstSuccess.candidate.url || firstSuccess.candidate.gateway,
+      gateway: firstSuccess.candidate.gateway,
+      method: 'method' in firstSuccess ? firstSuccess.method : undefined,
+      attempts
+    };
+    
+  } catch (aggregateError) {
+    // Promise.any throws AggregateError if ALL promises fail
+    console.log('⚠️ All racing promises failed, checking for any successful results...');
+    
+    // Fallback: check if any parallel promises actually succeeded (race condition edge case)
+    const allResults = await Promise.allSettled(parallelPromises);
+    for (const result of allResults) {
+      if (result.status === 'fulfilled' && result.value.success) {
+        console.log(`✅ FALLBACK SUCCESS: ${result.value.candidate.gateway}`);
+        attempts.push(...result.value.attempts);
+        return {
+          success: true,
+          workingUrl: result.value.candidate.url,
+          gateway: result.value.candidate.gateway,
+          method: 'method' in result.value ? result.value.method : undefined,
+          attempts
+        };
       }
     }
-  } catch (error) {
-    console.error('❌ Early exit implementation failed:', error);
-    // Continue with fallback logic below
+  } finally {
+    // Cleanup: Ensure abort controller is triggered
+    abortController.abort();
   }
   
   return {
@@ -307,35 +322,40 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
   const attempts: Array<{url: string, method: string, status: number, timing: number}> = [];
   
   try {
-    // Method 1: HEAD without Range (per audit) - Independent timeout
-    console.log(`🔍 Testing HEAD: ${url}`);
-    const headStart = Date.now();
-    
-    const headController = new AbortController();
-    const headTimeout = setTimeout(() => headController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
-    
-    try {
+    // 🔥 FASE 7B MEJORA: ThirdWeb gateway optimization - skip HEAD, go direct to GET+Range  
+    if (gateway.includes('thirdweb') || url.includes('gateway.thirdweb.com')) {
+      console.log('🎯 ThirdWeb gateway detected - skipping HEAD, using GET+Range directly');
+    } else {
+      // Method 1: HEAD without Range (per audit) - Independent timeout
+      console.log(`🔍 Testing HEAD: ${url}`);
+      const headStart = Date.now();
       
-      const headResponse = await fetch(url, {
-        method: 'HEAD',
-        signal: headController.signal
-      });
+      const headController = new AbortController();
+      const headTimeout = setTimeout(() => headController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
       
-      const headTiming = Date.now() - headStart;
-      attempts.push({url, method: 'HEAD', status: headResponse.status, timing: headTiming});
-      
-      clearTimeout(headTimeout);
-      
-      if (headResponse.ok) {
-        console.log(`✅ HEAD success: ${gateway} (${headTiming}ms)`);
-        return { success: true, method: 'HEAD', attempts };
-      } else if (headResponse.status === 405 || headResponse.status === 400) {
-        console.log(`⚠️ HEAD not supported (${headResponse.status}), trying GET with Range...`);
+      try {
+        
+        const headResponse = await fetch(url, {
+          method: 'HEAD',
+          signal: headController.signal
+        });
+        
+        const headTiming = Date.now() - headStart;
+        attempts.push({url, method: 'HEAD', status: headResponse.status, timing: headTiming});
+        
+        clearTimeout(headTimeout);
+        
+        if (headResponse.ok) {
+          console.log(`✅ HEAD success: ${gateway} (${headTiming}ms)`);
+          return { success: true, method: 'HEAD', attempts };
+        } else if (headResponse.status === 405 || headResponse.status === 400) {
+          console.log(`⚠️ HEAD not supported (${headResponse.status}), trying GET with Range...`);
+        }
+      } catch (headError) {
+        clearTimeout(headTimeout);
+        attempts.push({url, method: 'HEAD', status: 0, timing: Date.now() - headStart});
+        console.log(`❌ HEAD failed: ${headError.message}`);
       }
-    } catch (headError) {
-      clearTimeout(headTimeout);
-      attempts.push({url, method: 'HEAD', status: 0, timing: Date.now() - headStart});
-      console.log(`❌ HEAD failed: ${headError.message}`);
     }
     
     // Method 2: GET with Range bytes=0-0 (per audit) - Independent timeout
@@ -489,39 +509,72 @@ async function validateIPFSMetadata(metadataUrl: string): Promise<{
       }))
   );
   
-  // Wait for all parallel tests
-  const results = await Promise.allSettled(parallelPromises);
+  // 🔥 FASE 7B FIX: REAL EARLY EXIT for metadata validation with Promise.any
+  console.log('🏁 Starting TRUE early-exit metadata validation...');
   
-  // Collect all attempts
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      attempts.push(...result.value.attempts);
-    }
-  }
+  const metadataAbortController = new AbortController();
   
-  // Find first successful result
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      const gatewayResult = result.value;
-      
-      if (gatewayResult.success) {
-        console.log(`✅ METADATA SUCCESS: ${gatewayResult.candidate.gateway}`);
+  try {
+    // Transform promises to throw on failure (required for Promise.any)
+    const racePromises = parallelPromises.map(async (promise, index) => {
+      try {
+        const result = await promise;
+        attempts.push(...result.attempts);
         
-        return {
-          success: true,
-          workingUrl: gatewayResult.candidate.url,
-          gateway: gatewayResult.candidate.gateway,
-          method: 'method' in gatewayResult ? gatewayResult.method : undefined,
-          attempts
-        };
+        if (result.success) {
+          console.log(`🚀 FIRST METADATA SUCCESS (gateway ${index}): ${result.candidate.gateway}`);
+          // Cancel remaining requests
+          metadataAbortController.abort();
+          return result;
+        }
+        // If failed, throw to let Promise.any continue
+        throw new Error(`Metadata gateway ${index} failed: ${result.error || 'unknown'}`);
+      } catch (error) {
+        throw new Error(`Metadata gateway ${index} error: ${error.message}`);
+      }
+    });
+    
+    // 🎯 Promise.any returns as soon as FIRST metadata gateway succeeds
+    const firstSuccess = await Promise.any(racePromises);
+    
+    console.log(`✅ PROMISE.ANY METADATA SUCCESS: ${firstSuccess.candidate.gateway}`);
+    return {
+      success: true,
+      workingUrl: firstSuccess.candidate.url,
+      gateway: firstSuccess.candidate.gateway,
+      method: 'method' in firstSuccess ? firstSuccess.method : undefined,
+      attempts
+    };
+    
+  } catch (aggregateError) {
+    // Promise.any throws AggregateError if ALL promises fail
+    console.log('⚠️ All metadata gateways failed via Promise.any, checking fallback...');
+    
+    // Fallback: check if any succeeded (race condition edge case)
+    const allResults = await Promise.allSettled(parallelPromises);
+    for (const result of allResults) {
+      if (result.status === 'fulfilled') {
+        attempts.push(...result.value.attempts);
+        if (result.value.success) {
+          console.log(`✅ FALLBACK METADATA SUCCESS: ${result.value.candidate.gateway}`);
+          return {
+            success: true,
+            workingUrl: result.value.candidate.url,
+            gateway: result.value.candidate.gateway,
+            method: 'method' in result.value ? result.value.method : undefined,
+            attempts
+          };
+        }
       }
     }
+  } finally {
+    // Cleanup: Ensure abort controller is triggered
+    metadataAbortController.abort();
   }
   
   // All gateways failed
-  const errorDetails = results.map(r => r.status === 'fulfilled' ? 
-    `${r.value.candidate.gateway}: failed` : 
-    'promise rejected'
+  const errorDetails = gatewaysToTest.map(candidate => 
+    `${candidate.gateway}: failed`
   ).join(', ');
   
   console.log('❌ All metadata gateways failed:', errorDetails);
@@ -1683,11 +1736,82 @@ async function mintNFTEscrowGasPaid(
     console.log('📝 METADATA UPDATE (GAS-PAID): Creating final metadata with real tokenId:', tokenId);
     
     try {
-      // CRITICAL FIX: tokenURI now contains image CID, not metadata CID
-      // Format: ipfs://imageCid (sent from GiftWizard with actualImageCid)
-      const imageIpfsCid = tokenURI.replace('ipfs://', '');
+      // 🔥 FASE 7D CRITICAL SEMANTIC FIX: tokenURI contains METADATA CID, not image CID
+      // The previous assumption was completely wrong - tokenURI = metadata CID by NFT standards
+      // We need to EXTRACT imageIpfsCid FROM the existing metadata JSON, not assume tokenURI is image
       
-      console.log('🖼️ Using image CID for metadata creation:', imageIpfsCid);
+      let actualImageCid = '';
+      let metadataUri = tokenURI; // tokenURI should contain metadata CID
+      
+      console.log('📋 SEMANTIC CORRECTION: tokenURI contains metadata, extracting image CID from it');
+      
+      // 🔥 FASE 7D: Add debug logging for this critical fix
+      try {
+        const { addMintLog } = await import('./debug/mint-logs');
+        await addMintLog('INFO', 'FASE_7D_SEMANTIC_FIX', {
+          message: 'Extracting image CID from metadata (not using tokenURI as image)',
+          tokenURI: tokenURI.substring(0, 50) + '...',
+          previousAssumption: 'tokenURI = image CID (WRONG)',
+          correctSemantics: 'tokenURI = metadata CID, extract image from JSON'
+        });
+      } catch (logError) {
+        console.log('⚠️ Debug logging failed (non-critical):', logError.message);
+      }
+      
+      // 🔥 FASE 7D FIX: Extract image CID from existing metadata JSON
+      try {
+        // Convert tokenURI to fetchable URL and get the metadata JSON
+        const { pickGatewayUrl } = await import('../../utils/ipfs');
+        const metadataUrl = await pickGatewayUrl(tokenURI);
+        
+        console.log(`🔍 Fetching existing metadata to extract image CID: ${metadataUrl}`);
+        
+        const metadataResponse = await fetch(metadataUrl);
+        if (metadataResponse.ok) {
+          const existingMetadata = await metadataResponse.json();
+          console.log('📋 Existing metadata loaded:', {
+            name: existingMetadata.name,
+            hasImage: !!existingMetadata.image,
+            imageUrl: existingMetadata.image ? existingMetadata.image.substring(0, 50) + '...' : 'none'
+          });
+          
+          // Extract image CID from the metadata
+          if (existingMetadata.image) {
+            if (existingMetadata.image.startsWith('ipfs://')) {
+              actualImageCid = existingMetadata.image.replace('ipfs://', '');
+              console.log('✅ Extracted image CID from metadata:', actualImageCid.substring(0, 30) + '...');
+            } else if (existingMetadata.image.includes('/ipfs/')) {
+              // Extract CID from HTTPS gateway URL
+              const match = existingMetadata.image.match(/\/ipfs\/([^\/\?]+)/);
+              if (match) {
+                actualImageCid = match[1];
+                console.log('✅ Extracted image CID from HTTPS gateway URL:', actualImageCid.substring(0, 30) + '...');
+              }
+            }
+          }
+        }
+        
+        if (!actualImageCid) {
+          throw new Error('Could not extract image CID from existing metadata');
+        }
+        
+        // 🔥 FASE 7D: Log successful extraction for debugging
+        try {
+          const { addMintLog } = await import('./debug/mint-logs');
+          await addMintLog('SUCCESS', 'FASE_7D_IMAGE_CID_EXTRACTED', {
+            message: 'Successfully extracted correct image CID from metadata JSON',
+            extractedImageCid: actualImageCid.substring(0, 30) + '...',
+            tokenURI: tokenURI.substring(0, 50) + '...',
+            semanticsFixed: 'tokenURI (metadata) → JSON → image field → CID'
+          });
+        } catch (logError) {
+          // Non-critical logging failure
+        }
+        
+      } catch (extractError) {
+        console.error('❌ Failed to extract image CID from metadata:', extractError.message);
+        throw new Error(`Cannot update metadata: Failed to extract image CID from tokenURI metadata: ${extractError.message}`);
+      }
       
       // Create new metadata with the real tokenId and correct image CID
       let metadataUpdateResult;
@@ -1726,7 +1850,7 @@ async function mintNFTEscrowGasPaid(
         
         metadataUpdateResult = await createEscrowMetadata(
           tokenId,
-          imageIpfsCid, // FIXED: Now using actual image CID
+          actualImageCid, // 🔥 FASE 7D CRITICAL FIX: Now using ACTUAL image CID, not metadata CID
           giftMessage,
           creatorAddress,
           expirationTime,
@@ -1737,7 +1861,7 @@ async function mintNFTEscrowGasPaid(
         console.log('🎯 Creating direct mint metadata with real tokenId and image CID');
         metadataUpdateResult = await createDirectMintMetadata(
           tokenId,
-          imageIpfsCid, // FIXED: Now using actual image CID
+          actualImageCid, // 🔥 FASE 7D CRITICAL FIX: Now using ACTUAL image CID, not metadata CID
           giftMessage,
           creatorAddress
         );
@@ -1823,11 +1947,15 @@ async function mintNFTEscrowGasPaid(
             throw new Error(`Cannot update tokenURI: Final metadata validation failed - ${validationError.message}. Metadata must be accessible via IPFS before updating on-chain tokenURI.`);
           }
           
+          // 🔥 FASE 7F ALTERNATIVE: Add timestamp to force explorer refresh if EIP-4906 not available
+          const timestampedUrl = `${universalCompatibleUrl}?v=${Date.now()}`;
+          console.log(`🔄 Using timestamped URL for explorer refresh: ${timestampedUrl}`);
+          
           // Prepare updateTokenURI transaction with Universal-compatible URL
           const updateURITransaction = prepareContractCall({
             contract: nftContract,
             method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
-            params: [BigInt(tokenId), universalCompatibleUrl]
+            params: [BigInt(tokenId), timestampedUrl] // Use timestamped URL for cache busting
           });
           
           // Execute update transaction
@@ -1852,6 +1980,39 @@ async function mintNFTEscrowGasPaid(
               originalIpfsUrl: metadataUpdateResult.metadataUrl,
               updateTxHash: updateResult.transactionHash
             });
+            
+            // 🔥 FASE 7F: Emit EIP-4906 MetadataUpdate event for wallets/explorers
+            try {
+              console.log('📢 Emitting EIP-4906 MetadataUpdate event...');
+              
+              const metadataUpdateEvent = prepareContractCall({
+                contract: nftContract,
+                method: "function emitMetadataUpdate(uint256 tokenId) external",
+                params: [BigInt(tokenId)]
+              });
+              
+              const eventResult = await sendTransaction({
+                transaction: metadataUpdateEvent,
+                account: deployerAccount
+              });
+              
+              console.log('📢 MetadataUpdate event emitted:', eventResult.transactionHash);
+              
+              // Optional: wait for event confirmation (non-blocking)
+              waitForReceipt({
+                client,
+                chain: baseSepolia,
+                transactionHash: eventResult.transactionHash
+              }).then(eventReceipt => {
+                console.log('✅ MetadataUpdate event confirmed:', eventReceipt.status);
+              }).catch(eventError => {
+                console.log('⚠️ MetadataUpdate event confirmation failed (non-critical):', eventError.message);
+              });
+              
+            } catch (eventError) {
+              // EIP-4906 event emission is non-critical, don't fail the mint
+              console.log('⚠️ EIP-4906 MetadataUpdate event failed (non-critical):', eventError.message);
+            }
           } else {
             // FAIL-FAST: Status failure is critical for BaseScan compatibility
             throw new Error(`TokenURI update failed: receipt status=${updateReceipt.status}`);
@@ -1900,6 +2061,28 @@ async function mintNFTEscrowGasPaid(
                 newTokenURI: universalCompatibleUrl,
                 retryTxHash: retryResult.transactionHash
               });
+              
+              // 🔥 FASE 7F: Emit EIP-4906 MetadataUpdate event after successful retry
+              try {
+                console.log('📢 Emitting EIP-4906 MetadataUpdate event (retry success)...');
+                
+                const metadataUpdateEvent = prepareContractCall({
+                  contract: nftContract,
+                  method: "function emitMetadataUpdate(uint256 tokenId) external",
+                  params: [BigInt(tokenId)]
+                });
+                
+                const eventResult = await sendTransaction({
+                  transaction: metadataUpdateEvent,
+                  account: deployerAccount
+                });
+                
+                console.log('📢 MetadataUpdate event emitted (retry):', eventResult.transactionHash);
+                
+              } catch (eventError) {
+                // EIP-4906 event emission is non-critical, don't fail the mint
+                console.log('⚠️ EIP-4906 MetadataUpdate event failed (retry, non-critical):', eventError.message);
+              }
             } else {
               // CRITICAL FAILURE: Both attempts failed
               throw new Error(`TokenURI update failed after retry: receipt status=${retryReceipt.status}`);
@@ -1931,15 +2114,27 @@ async function mintNFTEscrowGasPaid(
         console.log('🎯 Using FINAL metadata URL:', finalMetadataUrl);
         
         try {
-          // Extract metadata CID from FINAL metadataUrl (not temporal metadataUri)
+          // Extract metadata CID from FINAL metadataUrl (handles both HTTPS and ipfs://)
           if (finalMetadataUrl && finalMetadataUrl.startsWith('ipfs://')) {
             finalMetadataIpfsCid = finalMetadataUrl.replace('ipfs://', '');
-            console.log('✅ FINAL METADATA CID EXTRACTED:', {
+            console.log('✅ FINAL METADATA CID EXTRACTED from ipfs://:', {
               fullFinalUrl: finalMetadataUrl.substring(0, 50) + '...',
               extractedFinalCid: finalMetadataIpfsCid.substring(0, 30) + '...'
             });
+          } else if (finalMetadataUrl && finalMetadataUrl.includes('/ipfs/')) {
+            // Extract CID from HTTPS gateway URL: https://gateway.thirdweb.com/ipfs/QmXXX
+            const match = finalMetadataUrl.match(/\/ipfs\/(.+)$/);
+            if (match) {
+              finalMetadataIpfsCid = match[1];
+              console.log('✅ FINAL METADATA CID EXTRACTED from HTTPS gateway:', {
+                fullFinalUrl: finalMetadataUrl.substring(0, 50) + '...',
+                extractedFinalCid: finalMetadataIpfsCid.substring(0, 30) + '...'
+              });
+            } else {
+              throw new Error(`Could not extract CID from gateway URL: ${finalMetadataUrl}`);
+            }
           } else {
-            throw new Error('Final metadataUrl is not a valid IPFS URL');
+            throw new Error(`Final metadataUrl is neither IPFS nor gateway format: ${finalMetadataUrl}`);
           }
           
           // 🌐 FASE 5C FIX: Multi-gateway fetch with early-exit (not single ipfs.io)

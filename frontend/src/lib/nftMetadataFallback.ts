@@ -40,17 +40,78 @@ interface FallbackResult {
   redirectCount?: number;
 }
 
-// Redis client with fail-safe initialization
-const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+// 🔥 FASE 7C FIX: Lazy Redis initialization - no global state
+let redisClient: Redis | null = null;
+let redisInitialized = false;
+let redisError: string | null = null;
+
+/**
+ * Get Redis client with lazy initialization and proper error handling
+ * Returns null if Redis is not available, throws descriptive error if misconfigured
+ */
+function getRedisClient(): Redis | null {
+  // Return cached result if already initialized
+  if (redisInitialized) {
+    if (redisError) {
+      throw new Error(`Redis unavailable: ${redisError}`);
+    }
+    return redisClient;
+  }
+
+  // First-time initialization
+  try {
+    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (!redisUrl || !redisToken) {
+      redisError = 'Environment variables UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured';
+      redisInitialized = true;
+      console.log('⚠️ Redis disabled:', redisError);
+      return null;
+    }
+
+    redisClient = new Redis({
+      url: redisUrl,
+      token: redisToken,
       enableAutoPipelining: false,
       retry: false,
-    })
-  : null;
+    });
 
-console.log('🔧 Redis initialization:', redis ? 'Connected' : 'Disabled (env vars missing)');
+    redisInitialized = true;
+    console.log('✅ Redis client initialized successfully');
+    return redisClient;
+
+  } catch (error) {
+    redisError = `Redis initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    redisInitialized = true;
+    console.error('❌ Redis initialization error:', redisError);
+    throw new Error(redisError);
+  }
+}
+
+/**
+ * 🔥 FASE 7C MEJORA: Check Redis status for 503 Service Unavailable responses
+ * Returns status that can be used by API endpoints
+ */
+export function getRedisStatus(): { available: boolean; error?: string; shouldReturn503: boolean } {
+  try {
+    const redis = getRedisClient();
+    if (!redis) {
+      return { 
+        available: false, 
+        error: redisError || 'Redis not configured',
+        shouldReturn503: false // Not configured is OK, don't return 503
+      };
+    }
+    return { available: true, shouldReturn503: false };
+  } catch (error) {
+    return { 
+      available: false, 
+      error: error instanceof Error ? error.message : 'Unknown Redis error',
+      shouldReturn503: true // Redis is misconfigured, return 503
+    };
+  }
+}
 
 // HARDENING #1: AbortController with 4-5s timeout
 const createTimeoutController = (timeoutMs: number = 4500) => {
@@ -63,6 +124,7 @@ const createTimeoutController = (timeoutMs: number = 4500) => {
 const acquireLock = async (key: string, ttlSeconds: number = 10): Promise<boolean> => {
   try {
     const lockKey = `meta:${key}:lock`;
+    const redis = getRedisClient();
     if (!redis) return true; // Skip locking if Redis unavailable
     const result = await redis.set(lockKey, '1', { nx: true, ex: ttlSeconds });
     return result === 'OK';
@@ -75,6 +137,7 @@ const acquireLock = async (key: string, ttlSeconds: number = 10): Promise<boolea
 const releaseLock = async (key: string): Promise<void> => {
   try {
     const lockKey = `meta:${key}:lock`;
+    const redis = getRedisClient();
     if (redis) await redis.del(lockKey);
   } catch (error) {
     console.warn(`⚠️ Lock release failed for ${key}:`, error);
@@ -345,6 +408,7 @@ const cacheMetadata = async (key: string, metadata: ERC721Metadata, ttlMinutes: 
     if (metadata.animation_url) hashData.animation_url = metadata.animation_url;
     if (metadata.background_color) hashData.background_color = metadata.background_color;
     
+    const redis = getRedisClient();
     if (redis) {
       await redis.hset(key, hashData);
       await redis.expire(key, ttlMinutes * 60);
@@ -368,6 +432,7 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
   
   // Step 1: Try Redis first (if available)
   try {
+    const redis = getRedisClient();
     if (!redis) {
       console.log('⚠️ Redis not available, skipping cache lookup');
     } else {
@@ -459,6 +524,7 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
         console.log(`🔄 SKIPPING HTTP fetch to prevent recursion, trying Redis CID lookup`);
         
         // 🔧 FASE 3 FIX: Try to reconstruct metadata from Redis CIDs 
+        const redis = getRedisClient();
         if (redis) {
           try {
             const redisData = await redis.hgetall(cacheKey);
