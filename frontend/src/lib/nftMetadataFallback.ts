@@ -5,6 +5,7 @@
 import { ethers } from 'ethers';
 import { Redis } from '@upstash/redis';
 import { pickGatewayUrl } from '../utils/ipfs';
+import { ESCROW_CONTRACT_ADDRESS } from './escrowABI';
 
 interface ERC721Metadata {
   name: string;
@@ -17,6 +18,10 @@ interface ERC721Metadata {
   }>;
   external_url?: string;
   background_color?: string;
+  // Additional fields for compatibility with storage
+  contractAddress?: string;
+  tokenId?: string;
+  imageIpfsCid?: string;
 }
 
 interface FallbackConfig {
@@ -28,7 +33,7 @@ interface FallbackConfig {
 
 interface FallbackResult {
   metadata: ERC721Metadata;
-  source: 'redis' | 'on-chain' | 'ipfs' | 'placeholder';
+  source: 'redis' | 'on-chain' | 'ipfs' | 'recovered' | 'placeholder';
   cached: boolean;
   latency: number;
   gatewayUsed?: string;
@@ -94,6 +99,107 @@ const validateMetadataSchema = (data: any): data is ERC721Metadata => {
   if (data.attributes && !Array.isArray(data.attributes)) return false;
   
   return true;
+};
+
+// ENHANCED RECOVERY: Extract original IPFS metadata from mint transaction logs
+const extractMetadataFromTransactionLogs = async (contractAddress: string, tokenId: string, signal: AbortSignal): Promise<ERC721Metadata | null> => {
+  try {
+    console.log(`🔍 Analyzing mint transaction logs for token ${contractAddress}:${tokenId}`);
+    
+    const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || process.env.BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    
+    // Find the Transfer event for this token (from 0x0 to first owner)
+    const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+    
+    // Search for Transfer events in recent blocks (this is expensive, so we limit the range)
+    const currentBlock = await provider.getBlockNumber();
+    const searchFromBlock = Math.max(0, currentBlock - 10000); // Search last ~10k blocks
+    
+    console.log(`🔍 Searching Transfer events from block ${searchFromBlock} to ${currentBlock}`);
+    
+    const filter = {
+      address: contractAddress,
+      topics: [
+        transferEventSignature,
+        '0x0000000000000000000000000000000000000000000000000000000000000000', // from: zero address (mint)
+        null, // to: any address
+        ethers.zeroPadValue(`0x${BigInt(tokenId).toString(16)}`, 32) // tokenId
+      ],
+      fromBlock: searchFromBlock,
+      toBlock: currentBlock
+    };
+    
+    const logs = await provider.getLogs(filter);
+    console.log(`📋 Found ${logs.length} Transfer events for token ${tokenId}`);
+    
+    if (logs.length === 0) {
+      throw new Error(`No mint Transfer event found for token ${tokenId}`);
+    }
+    
+    // Get the mint transaction (should be the first/only one)
+    const mintLog = logs[0];
+    console.log(`🔍 Mint transaction hash: ${mintLog.transactionHash}`);
+    
+    // Get the full transaction to analyze input data
+    const tx = await provider.getTransaction(mintLog.transactionHash);
+    if (!tx) {
+      throw new Error(`Transaction not found: ${mintLog.transactionHash}`);
+    }
+    
+    console.log(`📋 Transaction to: ${tx.to}`);
+    console.log(`📋 Transaction data length: ${tx.data.length}`);
+    
+    // Try to decode the transaction data to extract metadataUri
+    // The mintTo function signature: mintTo(address to, string memory tokenURI)
+    const mintToSelector = '0x449a52f8'; // mintTo(address,string)
+    
+    if (!tx.data.startsWith(mintToSelector)) {
+      console.log(`⚠️ Transaction does not use mintTo function, data starts with: ${tx.data.substring(0, 10)}`);
+    } else {
+      try {
+        // Decode the function call
+        const iface = new ethers.Interface([
+          'function mintTo(address to, string memory tokenURI)'
+        ]);
+        const decoded = iface.decodeFunctionData('mintTo', tx.data);
+        const originalTokenURI = decoded[1]; // second parameter is tokenURI
+        
+        console.log(`🎯 FOUND original tokenURI from transaction: ${originalTokenURI}`);
+        
+        // If it's an IPFS URI, try to fetch the metadata
+        if (originalTokenURI.startsWith('ipfs://')) {
+          console.log(`✅ Original tokenURI is IPFS, attempting to fetch metadata`);
+          const ipfsMetadata = await fetchIPFSMetadata(originalTokenURI, signal);
+          if (ipfsMetadata) {
+            console.log(`🎉 Successfully recovered metadata from original IPFS tokenURI`);
+            return ipfsMetadata;
+          }
+        } else {
+          console.log(`⚠️ Original tokenURI is not IPFS (${originalTokenURI.substring(0, 50)}...), cannot recover`);
+        }
+      } catch (decodeError) {
+        console.log(`⚠️ Failed to decode transaction data: ${decodeError.message}`);
+      }
+    }
+    
+    // If direct extraction failed, try alternative approaches
+    console.log(`🔍 Direct extraction failed, trying alternative recovery methods...`);
+    
+    // Alternative: Check if there are any logs from escrow contract that might contain the original metadata
+    const escrowContract = process.env.ESCROW_CONTRACT_ADDRESS;
+    if (escrowContract) {
+      console.log(`🔍 Checking escrow contract logs for token ${tokenId}`);
+      // This would require knowing the escrow contract ABI and event structure
+      // For now, we'll skip this as it's complex and might not be necessary
+    }
+    
+    return null;
+    
+  } catch (error) {
+    console.warn(`⚠️ Transaction log analysis failed for token ${contractAddress}:${tokenId}:`, error.message);
+    return null;
+  }
 };
 
 // Generate consistent placeholder metadata
@@ -218,17 +324,32 @@ const fetchIPFSMetadata = async (ipfsUrl: string, signal: AbortSignal): Promise<
   }
 };
 
-// HARDENING #4: TTL and SWR caching
+// HARDENING #4: TTL and SWR caching - COMPATIBLE with nftMetadataStore format
 const cacheMetadata = async (key: string, metadata: ERC721Metadata, ttlMinutes: number = 10): Promise<void> => {
   try {
-    const cacheData = {
-      metadata,
+    // Use hash format compatible with nftMetadataStore
+    const hashData: Record<string, string> = {
+      contractAddress: metadata.contractAddress || '',
+      tokenId: metadata.tokenId || '',
+      name: metadata.name || '',
+      description: metadata.description || '',
+      image: metadata.image || '',
+      attributes: JSON.stringify(metadata.attributes || []),
       cached_at: new Date().toISOString(),
       source: 'fallback-system'
     };
     
-    if (redis) await redis.setex(key, ttlMinutes * 60, JSON.stringify(cacheData));
-    console.log(`💾 Cached metadata for ${key} with ${ttlMinutes}min TTL`);
+    // Add optional fields if they exist
+    if (metadata.imageIpfsCid) hashData.imageIpfsCid = metadata.imageIpfsCid;
+    if (metadata.external_url) hashData.external_url = metadata.external_url;
+    if (metadata.animation_url) hashData.animation_url = metadata.animation_url;
+    if (metadata.background_color) hashData.background_color = metadata.background_color;
+    
+    if (redis) {
+      await redis.hset(key, hashData);
+      await redis.expire(key, ttlMinutes * 60);
+    }
+    console.log(`💾 Cached metadata (hash format) for ${key} with ${ttlMinutes}min TTL`);
   } catch (error) {
     console.warn(`⚠️ Failed to cache metadata for ${key}:`, error);
   }
@@ -241,7 +362,7 @@ const cacheMetadata = async (key: string, metadata: ERC721Metadata, ttlMinutes: 
 export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promise<FallbackResult> => {
   const { contractAddress, tokenId, publicBaseUrl, timeout = 4500 } = config;
   const startTime = Date.now();
-  const cacheKey = `nft:${contractAddress}:${tokenId}`;
+  const cacheKey = `nft_metadata:${contractAddress.toLowerCase()}:${tokenId}`;
   
   console.log(`🔍 Starting fallback chain for ${contractAddress}:${tokenId}`);
   
@@ -250,10 +371,21 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
     if (!redis) {
       console.log('⚠️ Redis not available, skipping cache lookup');
     } else {
-      const cachedData = await redis.get(cacheKey);
-      if (cachedData) {
-        const parsed = typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
-        const metadata = parsed.metadata || parsed;
+      const cachedData = await redis.hgetall(cacheKey);
+      if (cachedData && Object.keys(cachedData).length > 0) {
+        // Parse Redis hash data similar to nftMetadataStore.ts
+        const metadata = {
+          contractAddress: cachedData.contractAddress,
+          tokenId: cachedData.tokenId,
+          name: cachedData.name,
+          description: cachedData.description,
+          image: cachedData.image,
+          attributes: cachedData.attributes ? 
+            (typeof cachedData.attributes === 'string' ? 
+              JSON.parse(cachedData.attributes) : cachedData.attributes) : [],
+          imageIpfsCid: cachedData.imageIpfsCid,
+          external_url: cachedData.external_url
+        };
         
         if (validateMetadataSchema(metadata)) {
           // CRITICAL: ALWAYS normalize image URL even from Redis
@@ -343,6 +475,32 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
       } catch (httpError) {
         console.warn(`⚠️ HTTP tokenURI fetch failed: ${httpError}`);
       }
+    }
+    
+    // Step 4.5: ENHANCED RECOVERY - Extract original IPFS metadata from transaction logs
+    console.log(`🔍 HTTP tokenURI failed, attempting transaction log analysis for ${contractAddress}:${tokenId}`);
+    try {
+      const recoveredMetadata = await extractMetadataFromTransactionLogs(contractAddress, tokenId, controller.signal);
+      if (recoveredMetadata && validateMetadataSchema(recoveredMetadata)) {
+        // CRITICAL: ALWAYS normalize image URL from recovered metadata
+        if (recoveredMetadata.image) {
+          recoveredMetadata.image = await pickGatewayUrl(recoveredMetadata.image);
+        }
+        
+        await cacheMetadata(cacheKey, recoveredMetadata, 10);
+        const latency = Date.now() - startTime;
+        console.log(`🎉 RECOVERED metadata from transaction logs for ${contractAddress}:${tokenId} (${latency}ms)`);
+        console.log(`🔗 Recovered image URL: ${recoveredMetadata.image}`);
+        return {
+          metadata: recoveredMetadata,
+          source: 'recovered',
+          cached: false,
+          latency,
+          gatewayUsed: 'recovered-from-tx-logs'
+        };
+      }
+    } catch (recoveryError) {
+      console.warn(`⚠️ Transaction log recovery failed: ${recoveryError.message}`);
     }
     
     // Step 5: All else failed, use placeholder and cache it briefly
