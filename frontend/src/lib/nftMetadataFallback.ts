@@ -464,8 +464,8 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
             const redisData = await redis.hgetall(cacheKey);
             if (redisData && redisData.metadataIpfsCid && redisData.imageIpfsCid) {
               console.log(`🎯 FOUND Redis CIDs for self-call recovery:`, {
-                metadataIpfsCid: redisData.metadataIpfsCid.substring(0, 20) + '...',
-                imageIpfsCid: redisData.imageIpfsCid.substring(0, 20) + '...'
+                metadataIpfsCid: String(redisData.metadataIpfsCid).substring(0, 20) + '...',
+                imageIpfsCid: String(redisData.imageIpfsCid).substring(0, 20) + '...'
               });
               
               // Reconstruct IPFS metadata URL from CID

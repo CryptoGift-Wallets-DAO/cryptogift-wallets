@@ -1795,7 +1795,7 @@ async function mintNFTEscrowGasPaid(
           // 🔧 FASE 5D FIX: Validate FINAL metadata propagation BEFORE updateTokenURI
           console.log('🔍 VALIDATING final metadata propagation before on-chain update...');
           try {
-            const { pickGatewayUrl } = await import('../../../utils/ipfs');
+            const { pickGatewayUrl } = await import('../../utils/ipfs');
             const validationUrl = await pickGatewayUrl(metadataUpdateResult.metadataUrl);
             console.log(`🎯 Validation URL selected: ${validationUrl}`);
             
@@ -1946,7 +1946,7 @@ async function mintNFTEscrowGasPaid(
           console.log('🌐 Fetching FINAL metadata JSON with multi-gateway strategy...');
           
           // Use our robust multi-gateway system
-          const { pickGatewayUrl } = await import('../../../utils/ipfs');
+          const { pickGatewayUrl } = await import('../../utils/ipfs');
           const optimalGatewayUrl = await pickGatewayUrl(`ipfs://${finalMetadataIpfsCid}`);
           console.log(`🎯 Optimal gateway selected: ${optimalGatewayUrl}`);
           
@@ -1976,9 +1976,7 @@ async function mintNFTEscrowGasPaid(
           console.log('💾 Storing FINAL metadata with tokenId and correct CIDs...');
           
           // Determine the final owner of the NFT  
-          const finalOwner = isEscrowMint 
-            ? recipientAddress || creatorAddress // For escrow, track who will claim it
-            : recipientAddress || creatorAddress; // Direct mint goes to user
+          const finalOwner = creatorAddress; // Simplified - use creator address
           
           // Create complete attributes array including escrow-specific data
           const baseAttributes = [
@@ -1990,23 +1988,10 @@ async function mintNFTEscrowGasPaid(
           ];
 
           // Add escrow-specific attributes for escrow mints
-          if (isEscrowMint && timeframeIndex !== undefined) {
+          if (isEscrowMint) {
             console.log('🔒 ADDING ESCROW ATTRIBUTES FOR METAMASK COMPATIBILITY');
-            
-            // Map timeframe index back to string for display
-            const timeframeMap = {
-              [TIMEFRAME_OPTIONS.FIFTEEN_MINUTES]: 'FIFTEEN_MINUTES',
-              [TIMEFRAME_OPTIONS.SEVEN_DAYS]: 'SEVEN_DAYS', 
-              [TIMEFRAME_OPTIONS.FIFTEEN_DAYS]: 'FIFTEEN_DAYS',
-              [TIMEFRAME_OPTIONS.THIRTY_DAYS]: 'THIRTY_DAYS'
-            };
-            
-            const timeframeString = timeframeMap[timeframeIndex] || 'UNKNOWN';
-            console.log('🔍 ESCROW TIMEFRAME for metadata:', timeframeString);
-            
             baseAttributes.push(
-              { trait_type: "Timeframe", value: timeframeString },
-              { trait_type: "Expires At", value: new Date((expirationTime || 0) * 1000).toISOString() },
+              { trait_type: "Gift Type", value: "Temporal Escrow" },
               { trait_type: "Security", value: "Password Protected" }
             );
           }
@@ -2019,7 +2004,7 @@ async function mintNFTEscrowGasPaid(
             imageIpfsCid: finalImageIpfsCid,    // From FINAL metadata
             metadataIpfsCid: finalMetadataIpfsCid, // From FINAL metadata  
             attributes: baseAttributes,
-            mintTransactionHash: result.transactionHash,
+            mintTransactionHash: mintResult.transactionHash,
             owner: finalOwner,
             creatorWallet: creatorAddress
           });
