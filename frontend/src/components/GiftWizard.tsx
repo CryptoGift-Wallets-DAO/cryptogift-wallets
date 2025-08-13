@@ -469,8 +469,11 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
     // CRITICAL FIX: Use metadata CID (ipfsCid) not image CID for metadataUri
     // metadataUri should point to JSON metadata file, not the image directly
+    // 🚨 DOUBLE PREFIX FIX: Handle cases where ipfsCid already has ipfs:// prefix
+    const cleanMetadataUri = ipfsCid.startsWith('ipfs://') ? ipfsCid : `ipfs://${ipfsCid}`;
+    
     const requestBody = isEscrowEnabled ? {
-      metadataUri: `ipfs://${ipfsCid}`,
+      metadataUri: cleanMetadataUri,
       recipientAddress: wizardData.escrowConfig?.recipientAddress || undefined,
       password: wizardData.escrowConfig?.password!,
       timeframeDays: wizardData.escrowConfig?.timeframe!,
@@ -479,7 +482,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       gasless: false // DISABLED: Focus on gas-paid robustness per specialist analysis
     } : {
       // Direct mint (skip escrow) - use metadata CID not image CID
-      metadataUri: `ipfs://${ipfsCid}`,
+      metadataUri: cleanMetadataUri,
       // No password = direct mint
       giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
       creatorAddress: account?.address,
@@ -739,8 +742,11 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       }, 'pending');
 
       // Prepare request body based on escrow configuration (same logic as gasless)
+      // 🚨 CRITICAL FIX: Handle cases where ipfsCid already has ipfs:// prefix
+      const cleanMetadataUri = ipfsCid.startsWith('ipfs://') ? ipfsCid : `ipfs://${ipfsCid}`;
+      
       const requestBody = isEscrowEnabled ? {
-        metadataUri: `ipfs://${ipfsCid}`,
+        metadataUri: cleanMetadataUri,
         recipientAddress: wizardData.escrowConfig?.recipientAddress || undefined,
         password: wizardData.escrowConfig?.password!,
         timeframeDays: wizardData.escrowConfig?.timeframe!,
@@ -749,7 +755,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         gasless: false // CRITICAL: Gas-paid fallback
       } : {
         // Direct mint (skip escrow) - use mint-escrow API but without password
-        metadataUri: `ipfs://${ipfsCid}`,
+        metadataUri: cleanMetadataUri,
         // No password = direct mint
         giftMessage: wizardData.message || 'Un regalo cripto único creado con amor',
         creatorAddress: account?.address,
@@ -760,7 +766,9 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         apiEndpoint,
         metadataUri: requestBody.metadataUri,
         isEscrowEnabled,
-        ipfsCidUsed: ipfsCid?.substring(0, 20) + '...',
+        ipfsCidRaw: ipfsCid?.substring(0, 30) + '...',
+        ipfsCidCleaned: cleanMetadataUri?.substring(0, 30) + '...',
+        hadDoublePrefix: ipfsCid?.startsWith('ipfs://'),
         requestBodyKeys: Object.keys(requestBody)
       });
 
