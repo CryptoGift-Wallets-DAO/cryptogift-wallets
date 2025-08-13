@@ -173,7 +173,7 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
           return { ...result, candidate: result.candidate, earlyExit: true };
         }
         // If failed, throw to let Promise.any continue
-        throw new Error(`Gateway ${index} failed: ${result.error || 'unknown'}`);
+        throw new Error(`Gateway ${index} failed: ${(result as any).error || 'unknown'}`);
       } catch (error) {
         throw new Error(`Gateway ${index} error: ${error.message}`);
       }
@@ -528,7 +528,7 @@ async function validateIPFSMetadata(metadataUrl: string): Promise<{
           return result;
         }
         // If failed, throw to let Promise.any continue
-        throw new Error(`Metadata gateway ${index} failed: ${result.error || 'unknown'}`);
+        throw new Error(`Metadata gateway ${index} failed: ${(result as any).error || 'unknown'}`);
       } catch (error) {
         throw new Error(`Metadata gateway ${index} error: ${error.message}`);
       }
