@@ -91,7 +91,8 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
 }> {
   const attempts: Array<{url: string, method: string, status: number, timing: number}> = [];
   
-  // Step 1: Construct gateway candidates with preserved path
+  // Step 1: Construct gateway candidates with preserved path  
+  // Note: This function is used for both images and metadata validation
   const gatewayUrls = constructGatewayUrls(imageUrl);
   
   console.log('🔍 IPFS VALIDATION: Testing multiple gateways:', {
@@ -193,7 +194,7 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
  * CONSTRUCT GATEWAY URLS - PRESERVE FULL PATH
  * Fixes path loss issue identified in audit
  */
-function constructGatewayUrls(imageUrl: string): Array<{url: string, gateway: string}> {
+function constructGatewayUrls(imageUrl: string, isMetadata: boolean = false): Array<{url: string, gateway: string}> {
   // Priority order per audit recommendation + ThirdWeb gateway for uploads
   const gateways = [
     'https://gateway.thirdweb.com/ipfs', // Add ThirdWeb gateway (primary for recent uploads)
@@ -207,7 +208,17 @@ function constructGatewayUrls(imageUrl: string): Array<{url: string, gateway: st
     // CRITICAL FIX: Preserve full path after CID
     const ipfsPath = imageUrl.replace('ipfs://', '');
     const [cid, ...pathParts] = ipfsPath.split('/');
-    const fullPath = pathParts.length > 0 ? `/${pathParts.join('/')}` : '';
+    let fullPath = pathParts.length > 0 ? `/${pathParts.join('/')}` : '';
+    
+    // 🚨 CRITICAL FIX: Add /metadata.json for metadata files when missing
+    if (isMetadata && fullPath === '' && !ipfsPath.includes('/')) {
+      fullPath = '/metadata.json';
+      console.log('🔧 METADATA FIX: Added /metadata.json to bare CID:', {
+        original: imageUrl,
+        cid,
+        newPath: fullPath
+      });
+    }
     
     // Encode path segments safely (preserve existing logic)
     const encodedPath = encodeAllPathSegmentsSafe(fullPath);
@@ -386,6 +397,111 @@ function encodeAllPathSegmentsSafe(path: string): string {
 }
 
 /**
+ * METADATA-SPECIFIC IPFS VALIDATION
+ * 🚨 CRITICAL FIX: Handles /metadata.json filename for ThirdWeb uploads
+ */
+async function validateIPFSMetadata(metadataUrl: string): Promise<{
+  success: boolean;
+  error?: string;
+  workingUrl?: string;
+  gateway?: string;
+  method?: string;
+  attempts?: Array<{url: string, method: string, status: number, timing: number}>;
+}> {
+  console.log('🔍 METADATA VALIDATION: Testing with /metadata.json handling');
+  console.log('📋 Original URL:', metadataUrl);
+  
+  // Use metadata-specific gateway construction
+  const gatewayUrls = constructGatewayUrls(metadataUrl, true); // isMetadata = true
+  
+  console.log('🌐 Generated metadata gateway URLs:', {
+    originalUrl: metadataUrl,
+    totalCandidates: gatewayUrls.length,
+    gateways: gatewayUrls.map(g => ({ gateway: g.gateway, url: g.url }))
+  });
+  
+  // Use existing gateway testing logic but with metadata-specific URLs
+  const attempts: Array<{url: string, method: string, status: number, timing: number}> = [];
+  
+  // Test ThirdWeb gateway first (most likely to work for recent uploads)
+  const [primaryGateway, ...otherGateways] = gatewayUrls;
+  
+  if (primaryGateway.gateway.includes('thirdweb')) {
+    console.log('🎯 Testing primary metadata gateway (ThirdWeb) first...');
+    const primaryResult = await testGatewayAccess(primaryGateway.url, primaryGateway.gateway);
+    attempts.push(...primaryResult.attempts);
+    
+    if (primaryResult.success) {
+      console.log('✅ Primary metadata gateway succeeded - skipping others');
+      return {
+        success: true,
+        workingUrl: primaryGateway.url,
+        gateway: primaryGateway.gateway,
+        method: primaryResult.method,
+        attempts
+      };
+    }
+    console.log('⚠️ Primary metadata gateway failed - testing others in parallel...');
+  }
+  
+  // Test remaining gateways in parallel
+  const gatewaysToTest = primaryGateway.gateway.includes('thirdweb') ? otherGateways : gatewayUrls;
+  const parallelPromises = gatewaysToTest.map(candidate => 
+    testGatewayAccess(candidate.url, candidate.gateway)
+      .then(result => ({ ...result, candidate }))
+      .catch(error => ({ 
+        success: false, 
+        attempts: [], 
+        candidate, 
+        error: error.message 
+      }))
+  );
+  
+  // Wait for all parallel tests
+  const results = await Promise.allSettled(parallelPromises);
+  
+  // Collect all attempts
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      attempts.push(...result.value.attempts);
+    }
+  }
+  
+  // Find first successful result
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      const gatewayResult = result.value;
+      
+      if (gatewayResult.success) {
+        console.log(`✅ METADATA SUCCESS: ${gatewayResult.candidate.gateway}`);
+        
+        return {
+          success: true,
+          workingUrl: gatewayResult.candidate.url,
+          gateway: gatewayResult.candidate.gateway,
+          method: 'method' in gatewayResult ? gatewayResult.method : undefined,
+          attempts
+        };
+      }
+    }
+  }
+  
+  // All gateways failed
+  const errorDetails = results.map(r => r.status === 'fulfilled' ? 
+    `${r.value.candidate.gateway}: failed` : 
+    'promise rejected'
+  ).join(', ');
+  
+  console.log('❌ All metadata gateways failed:', errorDetails);
+  
+  return {
+    success: false,
+    error: `All gateways failed validation: ${errorDetails}`,
+    attempts
+  };
+}
+
+/**
  * ENHANCED VALIDATION: Validates both metadata JSON and image field within it
  * This addresses audit finding #4: superficial validation
  */
@@ -400,7 +516,8 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     const maxAttempts = 6; // INCREASED: More attempts for better propagation handling
     
     while (attempts < maxAttempts) {
-      metadataValidation = await validateIPFSWithMultipleGateways(metadataUrl);
+      // 🚨 CRITICAL FIX: Use metadata-specific validation with /metadata.json handling
+      metadataValidation = await validateIPFSMetadata(metadataUrl);
       
       if (metadataValidation.success) {
         console.log(`✅ Metadata validation succeeded on attempt ${attempts + 1}`);
