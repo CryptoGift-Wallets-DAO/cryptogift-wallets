@@ -1376,18 +1376,15 @@ async function mintNFTDirectly(
     // Prepare mint transaction for gasless execution
     console.log(`🎨 Preparing gasless direct mint NFT to creator: ${to}...`);
     
-    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction  
-    const baseUrl = publicBaseUrl;
-    if (!baseUrl) {
-      throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL required');
-    }
-    const placeholderTokenURI = `${baseUrl}/api/nft-metadata/placeholder`;
-    console.log(`🔍 Using placeholder tokenURI for direct mint: ${placeholderTokenURI}`);
+    // CRITICAL FIX: Use IPFS tokenURI directly for proper wallet/BaseScan display
+    // SOLVES: Images not appearing in wallets/BaseScan due to HTTP tokenURI instead of IPFS
+    console.log(`🔍 Using IPFS tokenURI for direct mint: ${tokenURI}`);
+    console.log(`🔍 IPFS tokenURI validation: ${tokenURI.startsWith('ipfs://') ? '✅ IPFS' : '❌ NOT IPFS'}`);
     
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [to, placeholderTokenURI]
+      params: [to, tokenURI] // Use actual IPFS URI for proper wallet display
     });
     
     // Execute gasless direct mint transaction
@@ -1563,14 +1560,15 @@ async function mintNFTEscrowGasPaid(
     console.log(`🔍 Is escrow mint: ${isEscrowMint}`);
     console.log(`🔍 Backend deployer: ${creatorAddress}`);
     
-    // CRITICAL FIX: Use placeholder tokenURI for initial mint, will be updated after extraction
-    const placeholderTokenURI = `${publicBaseUrl}/api/nft-metadata/placeholder`;
-    console.log(`🔍 Using placeholder tokenURI for initial mint: ${placeholderTokenURI}`);
+    // CRITICAL FIX: Use IPFS tokenURI directly for proper wallet/BaseScan display
+    // SOLVES: Images not appearing in wallets/BaseScan due to HTTP tokenURI instead of IPFS
+    console.log(`🔍 Using IPFS tokenURI for on-chain storage: ${tokenURI}`);
+    console.log(`🔍 IPFS tokenURI validation: ${tokenURI.startsWith('ipfs://') ? '✅ IPFS' : '❌ NOT IPFS'}`);
     
     const mintTransaction = prepareContractCall({
       contract: nftContract,
       method: "function mintTo(address to, string memory tokenURI) external",
-      params: [targetAddress, placeholderTokenURI] // Use placeholder, update after tokenId extraction
+      params: [targetAddress, tokenURI] // Use actual IPFS URI for proper wallet display
     });
     
     // Step 8: Execute gas-paid mint transaction using deployer account
