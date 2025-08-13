@@ -57,23 +57,40 @@ import { executeMintTransaction } from '../../lib/gasPaidTransactions';
  * Constructs the public-facing base URL for tokenURI generation
  */
 function getPublicBaseUrl(req?: NextApiRequest): string {
-  // Priority 1: Explicit environment configuration
+  // CRITICAL FIX: Always use production URL for tokenURI generation
+  // PROBLEM: VERCEL_URL points to preview deployments during builds, causing broken tokenURIs
+  // SOLUTION: Hardcode production URL to ensure NFTs work in wallets/BaseScan
+  const productionUrl = 'https://cryptogift-wallets.vercel.app';
+  
+  // Priority 1: Check if environment URL is preview domain (never use these for tokenURI)
   const envUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
+  if (envUrl && (envUrl.includes('-projects.vercel.app') || envUrl.includes('localhost'))) {
+    console.log(`🚨 PREVIEW DOMAIN DETECTED: ${envUrl} → Forcing production URL`);
+    return productionUrl;
+  }
+  
+  // Priority 2: Use explicit environment configuration if not preview
   if (envUrl) {
     return envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
   }
   
-  // Priority 2: Runtime detection from request headers
+  // Priority 3: Runtime detection from request headers (validate for preview domains)
   if (req?.headers?.host) {
     const protocol = (req.headers['x-forwarded-proto'] as string) || 'https';
-    return `${protocol}://${req.headers.host}`;
+    const requestUrl = `${protocol}://${req.headers.host}`;
+    
+    // Block preview domains from request headers too
+    if (requestUrl.includes('-projects.vercel.app') || requestUrl.includes('localhost')) {
+      console.log(`🚨 PREVIEW DOMAIN IN HEADERS: ${requestUrl} → Forcing production URL`);
+      return productionUrl;
+    }
+    
+    return requestUrl;
   }
   
-  // Priority 3: FAIL-FAST - Never use localhost in production
-  console.error('🚨 CRITICAL: No public base URL available for tokenURI generation!');
-  console.error('   Environment vars checked: NEXT_PUBLIC_BASE_URL, VERCEL_URL');
-  console.error('   Request headers available:', !!req?.headers?.host);
-  throw new Error('CRITICAL: No public base URL available. Configure NEXT_PUBLIC_BASE_URL in environment variables.');
+  // Priority 4: Final fallback to production URL (should never reach here)
+  console.log('🚨 NO URL SOURCES AVAILABLE → Using production fallback');
+  return productionUrl;
 }
 
 /**
