@@ -147,7 +147,7 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
         
         if (result.success) {
           console.log(`🚀 EARLY SUCCESS (gateway ${index}): ${result.candidate.gateway}`);
-          return { ...result, earlyExit: true };
+          return { ...result, earlyExit: true } as any; // TS fix: add earlyExit property
         }
         return result; // Failed result
       } catch (error) {
@@ -164,12 +164,12 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
         const gatewayResult = result.value;
         
         if (gatewayResult.success) {
-          const successType = gatewayResult.earlyExit ? 'EARLY EXIT' : 'STANDARD';
+          const successType = (gatewayResult as any).earlyExit ? 'EARLY EXIT' : 'STANDARD';
           console.log(`✅ ${successType} SUCCESS: ${gatewayResult.candidate.gateway}`);
           
           return {
             success: true,
-            workingUrl: gatewayResult.candidate.url,
+            workingUrl: (gatewayResult.candidate as any).url || gatewayResult.candidate.gateway,
             gateway: gatewayResult.candidate.gateway,
             method: 'method' in gatewayResult ? gatewayResult.method : undefined,
             attempts
