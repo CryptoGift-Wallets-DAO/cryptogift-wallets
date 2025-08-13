@@ -451,8 +451,17 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
     } else if (onChainTokenURI && onChainTokenURI.startsWith('http')) {
       // Handle HTTP tokenURI (might be our own endpoint)
       console.log(`🔗 HTTP tokenURI detected: ${onChainTokenURI}`);
+      
+      // HARDENING FIX: Transform defunct domains to production domain
+      let correctedTokenURI = onChainTokenURI;
+      if (onChainTokenURI.includes('cryptogift-wallets-cffo2epsv-rafael-godezs-projects.vercel.app') || 
+          onChainTokenURI.includes('cryptogift-wallets-ahrdp0rdw-rafael-godezs-projects.vercel.app')) {
+        correctedTokenURI = onChainTokenURI.replace(/cryptogift-wallets-[^-]+-rafael-godezs-projects\.vercel\.app/, 'cryptogift-wallets.vercel.app');
+        console.log(`🔧 CORRECTED defunct domain: ${correctedTokenURI}`);
+      }
+      
       try {
-        const response = await fetch(onChainTokenURI, { signal: controller.signal });
+        const response = await fetch(correctedTokenURI, { signal: controller.signal });
         if (response.ok) {
           const httpMetadata = await response.json();
           if (validateMetadataSchema(httpMetadata)) {
@@ -473,7 +482,7 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
           }
         }
       } catch (httpError) {
-        console.warn(`⚠️ HTTP tokenURI fetch failed: ${httpError}`);
+        console.warn(`⚠️ HTTP tokenURI fetch failed for ${correctedTokenURI}: ${httpError}`);
       }
     }
     
