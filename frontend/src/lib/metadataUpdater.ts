@@ -35,11 +35,22 @@ export async function createFinalMetadata(
   try {
     console.log('📝 Creating final metadata with real tokenId:', tokenId);
     
+    // 🚨 CRITICAL FIX: Handle imageIpfsCid that may have ipfs:// prefix
+    const cleanImageCid = imageIpfsCid.startsWith('ipfs://') 
+      ? imageIpfsCid.replace('ipfs://', '') 
+      : imageIpfsCid;
+    
+    console.log('🔧 Image CID processing:', {
+      original: imageIpfsCid.substring(0, 30) + '...',
+      cleaned: cleanImageCid.substring(0, 30) + '...',
+      hadPrefix: imageIpfsCid.startsWith('ipfs://')
+    });
+    
     // Create comprehensive metadata with real tokenId
     const finalMetadata: NFTMetadataTemplate = {
       name: `CryptoGift NFT #${tokenId}`,
       description: giftMessage || "Un regalo cripto único creado con amor",
-      image: `https://gateway.thirdweb.com/ipfs/${imageIpfsCid}`, // HTTP URL for wallet/explorer compatibility
+      image: `https://gateway.thirdweb.com/ipfs/${cleanImageCid}`, // HTTP URL for wallet/explorer compatibility
       external_url: getPublicBaseUrl(),
       attributes: [
         {
