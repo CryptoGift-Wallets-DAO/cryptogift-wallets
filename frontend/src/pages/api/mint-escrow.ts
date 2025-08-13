@@ -901,13 +901,7 @@ async function mintNFTEscrowGasless(
       // FAIL-FAST: No bypasses - if image is not accessible, mint should fail
       return {
         success: false,
-        error: 'Image not accessible via any IPFS gateway: ' + ipfsValidation.error,
-        details: {
-          tokenURI: tokenURI.substring(0, 100) + '...',
-          validationError: ipfsValidation.error,
-          solution: 'Ensure image is properly uploaded and propagated to IPFS gateways'
-        },
-        step: 'IPFS_VALIDATION'
+        error: `IPFS_VALIDATION_FAILED: Image not accessible via any IPFS gateway. ${ipfsValidation.error}. Solution: Ensure image is properly uploaded and propagated to IPFS gateways.`
       };
     } else {
       console.log('✅ IPFS validation passed - image accessible via gateways');
@@ -1528,13 +1522,7 @@ async function mintNFTEscrowGasPaid(
       // FAIL-FAST: No bypasses - if image is not accessible, mint should fail
       return {
         success: false,
-        error: 'Image not accessible via any IPFS gateway: ' + ipfsValidation.error,
-        details: {
-          tokenURI: tokenURI.substring(0, 100) + '...',
-          validationError: ipfsValidation.error,
-          solution: 'Ensure image is properly uploaded and propagated to IPFS gateways'
-        },
-        step: 'IPFS_VALIDATION'
+        error: `IPFS_VALIDATION_FAILED: Image not accessible via any IPFS gateway. ${ipfsValidation.error}. Solution: Ensure image is properly uploaded and propagated to IPFS gateways.`
       };
     } else {
       console.log('✅ IPFS validation passed - image accessible via gateways');
@@ -2495,13 +2483,7 @@ export default async function handler(
         // FAIL-FAST: Instead of bad fallback, return error to force proper metadata
         return res.status(500).json({
           success: false,
-          error: 'Failed to extract image CID from metadata',
-          details: {
-            metadataUri: metadataUri.substring(0, 50) + '...',
-            errorMessage: error.message,
-            solution: 'Ensure metadata JSON contains valid image field with ipfs:// URL'
-          },
-          step: 'IMAGE_CID_EXTRACTION'
+          error: `IMAGE_CID_EXTRACTION_FAILED: Failed to extract image CID from metadata. ${error.message}. Solution: Ensure metadata JSON contains valid image field with ipfs:// URL.`
         });
       }
       
