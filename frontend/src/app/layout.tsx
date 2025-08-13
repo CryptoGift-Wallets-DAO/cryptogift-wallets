@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (() => { throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL is required for metadata base URL'); })())),
   title: "CryptoGift Wallets - Regala el Futuro",
   description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
   keywords: "crypto, NFT, wallet, gift, regalo, blockchain, Base, USDC",
