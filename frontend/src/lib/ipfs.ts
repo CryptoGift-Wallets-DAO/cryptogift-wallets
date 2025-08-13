@@ -185,20 +185,32 @@ async function uploadToThirdWeb(file: File): Promise<IPFSUploadResult> {
   try {
     console.log('🔄 Uploading to ThirdWeb IPFS...');
     
-    const cid = await upload({
+    const rawCid = await upload({
       client: getThirdwebClient(),
       files: [file],
     });
     
+    // 🚨 CRITICAL FIX: ThirdWeb returns "ipfs://QmXXX" but we need clean CID
+    const cleanCid = rawCid.startsWith('ipfs://') ? rawCid.replace('ipfs://', '') : rawCid;
+    
+    console.log('🔧 ThirdWeb client initialized:', { 
+      hasClientId: !!getThirdwebClient().clientId,
+      clientIdPreview: getThirdwebClient().clientId?.substring(0, 8) + '...'
+    });
+    
     // CRITICAL FIX: Include filename for proper gateway access
     const filename = file.name || 'image.jpg';
-    const url = `https://gateway.thirdweb.com/ipfs/${cid}/${filename}`;
+    const url = `https://gateway.thirdweb.com/ipfs/${cleanCid}/${filename}`;
     
-    console.log('✅ ThirdWeb upload successful:', { cid, url });
+    console.log('✅ ThirdWeb upload successful:', { 
+      rawCid, 
+      cleanCid, 
+      url: url 
+    });
     
     return {
       success: true,
-      cid,
+      cid: cleanCid, // FIXED: Return clean CID without ipfs:// prefix
       url,
       provider: UPLOAD_PROVIDERS.THIRDWEB,
       size: file.size
