@@ -424,13 +424,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ];
     
     let imagePropagationCount = 0;
-    const minRequiredGateways = 2; // Require at least 2 gateways working
+    const minRequiredGateways = 1; // FIXED: Reduced from 2→1 for IPFS gateway latency tolerance
     
     for (const gatewayUrl of imageTestGateways) {
       try {
         const imageTestResponse = await fetch(gatewayUrl, { 
           method: 'HEAD',
-          signal: AbortSignal.timeout(4000) // 4s timeout for image propagation
+          signal: AbortSignal.timeout(8000) // FIXED: Increased from 4s→8s for slow gateways
         });
         
         if (imageTestResponse.ok) {
@@ -441,6 +441,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             imageCid: cid.substring(0, 20) + '...'
           });
           imagePropagationCount++;
+          
+          // Early exit once we have minimum required gateways (performance optimization)
+          if (imagePropagationCount >= minRequiredGateways) {
+            console.log(`🚀 Early exit: minimum ${minRequiredGateways} gateway(s) validated`);
+            break;
+          }
         }
       } catch (error) {
         console.log(`⏳ Image propagation pending: ${gatewayUrl} (${error.message})`);
