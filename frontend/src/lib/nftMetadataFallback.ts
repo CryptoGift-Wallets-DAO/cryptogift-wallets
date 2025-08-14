@@ -175,25 +175,56 @@ const extractMetadataFromTransactionLogs = async (contractAddress: string, token
     // Find the Transfer event for this token (from 0x0 to first owner)
     const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
     
-    // Search for Transfer events in recent blocks (this is expensive, so we limit the range)
+    // 🔥 CRITICAL FIX: Search with ≤500 block chunks to avoid RPC limits
     const currentBlock = await provider.getBlockNumber();
-    const searchFromBlock = Math.max(0, currentBlock - 10000); // Search last ~10k blocks
+    const maxSearchBlocks = 10000; // Total blocks to search
+    const chunkSize = 500; // RPC limit per request
+    const searchFromBlock = Math.max(0, currentBlock - maxSearchBlocks);
     
-    console.log(`🔍 Searching Transfer events from block ${searchFromBlock} to ${currentBlock}`);
+    console.log(`🔍 Searching Transfer events from block ${searchFromBlock} to ${currentBlock} (${chunkSize} block chunks)`);
     
-    const filter = {
-      address: contractAddress,
-      topics: [
-        transferEventSignature,
-        '0x0000000000000000000000000000000000000000000000000000000000000000', // from: zero address (mint)
-        null, // to: any address
-        ethers.zeroPadValue(`0x${BigInt(tokenId).toString(16)}`, 32) // tokenId
-      ],
-      fromBlock: searchFromBlock,
-      toBlock: currentBlock
-    };
+    let allLogs = [];
+    let searchStart = searchFromBlock;
     
-    const logs = await provider.getLogs(filter);
+    // Iterative search in 500-block chunks
+    while (searchStart <= currentBlock) {
+      const searchEnd = Math.min(searchStart + chunkSize - 1, currentBlock);
+      
+      console.log(`📋 Searching chunk: blocks ${searchStart} to ${searchEnd}`);
+      
+      try {
+        const filter = {
+          address: contractAddress,
+          topics: [
+            transferEventSignature,
+            '0x0000000000000000000000000000000000000000000000000000000000000000', // from: zero address (mint)
+            null, // to: any address
+            ethers.zeroPadValue(`0x${BigInt(tokenId).toString(16)}`, 32) // tokenId
+          ],
+          fromBlock: searchStart,
+          toBlock: searchEnd
+        };
+        
+        const chunkLogs = await provider.getLogs(filter);
+        console.log(`📋 Found ${chunkLogs.length} logs in chunk ${searchStart}-${searchEnd}`);
+        
+        allLogs.push(...chunkLogs);
+        
+        // Early exit if we found the token
+        if (chunkLogs.length > 0) {
+          console.log(`✅ Found Transfer event for token ${tokenId} in blocks ${searchStart}-${searchEnd}`);
+          break;
+        }
+        
+      } catch (chunkError) {
+        console.warn(`⚠️ Chunk search failed for blocks ${searchStart}-${searchEnd}: ${chunkError.message}`);
+        // Continue with next chunk
+      }
+      
+      searchStart = searchEnd + 1;
+    }
+    
+    const logs = allLogs;
     console.log(`📋 Found ${logs.length} Transfer events for token ${tokenId}`);
     
     if (logs.length === 0) {
@@ -452,7 +483,25 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
           external_url: cachedData.external_url
         };
         
-        if (validateMetadataSchema(metadata)) {
+        // 🔥 CRITICAL FIX: Prioritize real data over strict validation
+        console.log(`🔍 Redis data validation for ${contractAddress}:${tokenId}:`, {
+          hasName: !!metadata.name,
+          hasImage: !!metadata.image,
+          hasImageCid: !!metadata.imageIpfsCid,
+          imageValue: metadata.image?.substring(0, 50) + '...'
+        });
+        
+        // If we have imageIpfsCid, use it even if schema validation fails
+        if (metadata.imageIpfsCid && !metadata.image) {
+          console.log(`🔧 Reconstructing image URL from Redis imageIpfsCid: ${metadata.imageIpfsCid.substring(0, 20)}...`);
+          metadata.image = `ipfs://${metadata.imageIpfsCid}`;
+        }
+        
+        // More lenient validation for Redis data - if we have core fields, use it
+        const hasMinimalData = metadata.name && metadata.image && 
+                              (metadata.image.startsWith('ipfs://') || metadata.image.startsWith('https://'));
+        
+        if (hasMinimalData) {
           // CRITICAL: ALWAYS normalize image URL even from Redis
           if (metadata.image) {
             metadata.image = await pickGatewayUrl(metadata.image);
@@ -467,6 +516,12 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
             cached: true,
             latency
           };
+        } else {
+          console.log(`⚠️ Redis data incomplete - missing core fields:`, {
+            hasName: !!metadata.name,
+            hasImage: !!metadata.image,
+            imageValue: metadata.image
+          });
         }
       }
     }

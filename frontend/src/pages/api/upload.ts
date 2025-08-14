@@ -348,10 +348,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     if (!propagationValidated) {
-      console.log('⚠️ Metadata propagation not yet complete, but continuing (may require retry in validation)');
-      addMintLog('WARN', 'PROPAGATION_VALIDATION_PENDING', {
-        message: 'Metadata uploaded but not yet propagated to gateways'
+      console.log('❌ CRITICAL: Metadata propagation failed - BLOCKING upload success');
+      addMintLog('ERROR', 'PROPAGATION_VALIDATION_FAILED', {
+        message: 'Metadata not accessible in any gateway - blocking upload',
+        metadataCid: metadataCid.substring(0, 20) + '...',
+        gateways: testGateways.length
       });
+      
+      // 🔥 BLOCKING: Do NOT return success if metadata isn't accessible
+      throw new Error(`Upload incomplete: Metadata ${metadataCid} not accessible in any IPFS gateway. Please wait for propagation and retry.`);
+    }
+
+    // 🔥 CRITICAL: Validate JSON content has valid image field before continuing
+    console.log('📋 Validating metadata JSON contains valid image field...');
+    try {
+      const jsonValidationUrl = testGateways[0]; // Use the first successful gateway
+      const jsonResponse = await fetch(jsonValidationUrl, { 
+        signal: AbortSignal.timeout(5000) 
+      });
+      
+      if (jsonResponse.ok) {
+        const jsonData = await jsonResponse.json();
+        if (!jsonData.image || !jsonData.image.startsWith('ipfs://')) {
+          console.log('❌ CRITICAL: Metadata JSON missing valid image field');
+          addMintLog('ERROR', 'METADATA_JSON_INVALID', {
+            hasImage: !!jsonData.image,
+            imageValue: jsonData.image?.substring(0, 50) + '...',
+            message: 'Metadata JSON does not contain valid ipfs:// image field'
+          });
+          throw new Error(`Upload incomplete: Metadata JSON at ${metadataCid} does not contain valid image field. Expected ipfs:// URL but got: ${jsonData.image || 'undefined'}`);
+        }
+        console.log('✅ Metadata JSON contains valid image field:', jsonData.image.substring(0, 50) + '...');
+        addMintLog('SUCCESS', 'METADATA_JSON_VALIDATED', {
+          imageField: jsonData.image.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(`Cannot validate JSON content: HTTP ${jsonResponse.status}`);
+      }
+    } catch (jsonError) {
+      console.log('❌ CRITICAL: Failed to validate metadata JSON content');
+      addMintLog('ERROR', 'METADATA_JSON_VALIDATION_FAILED', {
+        error: jsonError.message,
+        metadataCid: metadataCid.substring(0, 20) + '...'
+      });
+      throw new Error(`Upload incomplete: Cannot validate metadata JSON content: ${jsonError.message}`);
     }
 
     // 🔥 FASE 7E FIX: Validate IMAGE propagation in ≥2 gateways before returning success
@@ -397,17 +437,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         imageCid: cid.substring(0, 20) + '...'
       });
     } else {
-      console.log(`⚠️ Image propagation INSUFFICIENT: ${imagePropagationCount}/${imageTestGateways.length} gateways working`);
-      addMintLog('WARN', 'IMAGE_PROPAGATION_INSUFFICIENT', {
+      console.log(`❌ CRITICAL: Image propagation INSUFFICIENT - BLOCKING upload success`);
+      addMintLog('ERROR', 'IMAGE_PROPAGATION_FAILED', {
         successfulGateways: imagePropagationCount,
         requiredGateways: minRequiredGateways,
         totalGateways: imageTestGateways.length,
         imageCid: cid.substring(0, 20) + '...',
-        recommendation: 'Mint may fail due to image not being available'
+        message: 'Image not accessible in minimum required gateways'
       });
       
-      // Don't fail the upload, but warn that mint might fail
-      console.log('⚠️ Continuing with upload despite insufficient image propagation...');
+      // 🔥 BLOCKING: Do NOT return success if image isn't accessible
+      throw new Error(`Upload incomplete: Image ${cid} only accessible in ${imagePropagationCount}/${imageTestGateways.length} gateways. Minimum ${minRequiredGateways} required. Please wait for propagation and retry.`);
     }
 
     // Return consistent structure: ipfsCid = metadata CID, imageIpfsCid = image CID

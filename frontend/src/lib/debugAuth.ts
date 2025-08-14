@@ -13,7 +13,9 @@ interface DebugAuthResult {
 /**
  * Authenticate debug endpoint access
  * In development: always allow
- * In production: require ADMIN_API_TOKEN or disable completely
+ * In production: 
+ *   - GET requests: require admin token (sensitive data)
+ *   - POST requests: allow if from same origin (logging operations)
  */
 export function authenticateDebugEndpoint(req: NextApiRequest): DebugAuthResult {
   // Always allow in development environment
@@ -31,7 +33,21 @@ export function authenticateDebugEndpoint(req: NextApiRequest): DebugAuthResult 
     };
   }
 
-  // If enabled in production, require admin token
+  // 🔥 CRITICAL FIX: Allow POST requests for logging from frontend without token
+  if (req.method === 'POST') {
+    // Check if request is from same origin (frontend logging)
+    const origin = req.headers.origin || req.headers.referer;
+    const isFromOwnDomain = origin && (
+      origin.includes('cryptogift-wallets.vercel.app') ||
+      origin.includes('localhost')
+    );
+    
+    if (isFromOwnDomain) {
+      return { authorized: true, message: 'Frontend logging allowed' };
+    }
+  }
+
+  // For GET requests and external origins, require admin token
   const adminToken = process.env.ADMIN_API_TOKEN;
   const providedToken = req.headers['x-admin-token'] || 
                        req.headers['authorization']?.replace('Bearer ', '') ||
