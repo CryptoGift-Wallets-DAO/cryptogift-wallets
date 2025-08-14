@@ -10,7 +10,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
-import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
+import { createThirdwebClient, getContract, prepareContractCall, sendTransaction, waitForReceipt, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { 
@@ -1875,6 +1875,10 @@ async function mintNFTEscrowGasPaid(
           originalTokenURI: tokenURI
         });
         
+        // 🔥 CRITICAL FIX ERROR #2: Store metadata in Redis BEFORE updateTokenURI to ensure availability
+        console.log('💾 PRE-STORING metadata in Redis BEFORE tokenURI update...');
+        await storeMetadataInRedisEarly(metadataUpdateResult, tokenId, actualImageCid, giftMessage, creatorAddress, isEscrowMint, mintResult.transactionHash);
+        
         // CRITICAL FIX: Update tokenURI on contract with correct metadata
         console.log('🔄 UPDATING CONTRACT TOKEN URI with real tokenId metadata...');
         
@@ -1903,18 +1907,23 @@ async function mintNFTEscrowGasPaid(
           console.warn('⚠️ WARNING: tokenURI should use HTTPS for maximum compatibility');
         }
         
-        // UNIVERSAL COMPATIBILITY: Use validated publicBaseUrl for external access
-        const universalCompatibleUrl = `${publicBaseUrl}/api/nft-metadata/${contractAddress}/${tokenId}`;
+        // 🔥 CRITICAL FIX ERROR #3: Use DIRECT IPFS metadata URL instead of self-call endpoint
+        // This prevents recursion and placeholder loops by pointing directly to IPFS
+        const directIpfsUrl = metadataUpdateResult.metadataUrl; // Use IPFS metadata directly
         
-        console.log('🔒 VALIDATION PASSED: publicBaseUrl safe for tokenURI generation');
-        console.log('🌐 Validated Base URL:', publicBaseUrl);
-        console.log('🔗 Final tokenURI:', universalCompatibleUrl);
+        console.log('🔒 VALIDATION PASSED: Using direct IPFS metadata to prevent self-call recursion');
+        console.log('🌐 Original Base URL (NOT USED):', publicBaseUrl);
+        console.log('🔗 Direct IPFS tokenURI:', directIpfsUrl);
         
         try {
           
-          console.log('🌐 UNIVERSAL FIX: Using BaseScan-optimized endpoint for tokenURI');
-          console.log(`📍 Original URL: ${metadataUpdateResult.metadataUrl}`);
-          console.log(`🔗 Universal URL: ${universalCompatibleUrl}`);
+          console.log('🌐 UNIVERSAL FIX: Using DIRECT IPFS metadata URL for tokenURI');
+          console.log(`📍 Direct IPFS URL: ${directIpfsUrl}`);
+          console.log(`🚫 NO LONGER USING self-call endpoint to prevent recursion`);
+          
+          // 🔥 CRITICAL FIX: Verify token exists on-chain before updating tokenURI
+          console.log('🔍 VERIFYING token exists on-chain before tokenURI update...');
+          await verifyTokenExists(nftContract, tokenId);
           
           // 🔧 FASE 5D FIX: Validate FINAL metadata propagation BEFORE updateTokenURI
           console.log('🔍 VALIDATING final metadata propagation before on-chain update...');
@@ -1949,15 +1958,14 @@ async function mintNFTEscrowGasPaid(
             throw new Error(`Cannot update tokenURI: Final metadata validation failed - ${validationError.message}. Metadata must be accessible via IPFS before updating on-chain tokenURI.`);
           }
           
-          // 🔥 FASE 7F ALTERNATIVE: Add timestamp to force explorer refresh if EIP-4906 not available
-          const timestampedUrl = `${universalCompatibleUrl}?v=${Date.now()}`;
-          console.log(`🔄 Using timestamped URL for explorer refresh: ${timestampedUrl}`);
+          // 🔥 CRITICAL FIX ERROR #3: Use direct IPFS URL (no timestamping needed for IPFS)
+          console.log(`🔄 Using direct IPFS URL (immutable, no cache busting needed): ${directIpfsUrl}`);
           
-          // Prepare updateTokenURI transaction with Universal-compatible URL
+          // Prepare updateTokenURI transaction with DIRECT IPFS URL
           const updateURITransaction = prepareContractCall({
             contract: nftContract,
             method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
-            params: [BigInt(tokenId), timestampedUrl] // Use timestamped URL for cache busting
+            params: [BigInt(tokenId), directIpfsUrl] // Use direct IPFS URL to prevent self-call recursion
           });
           
           // Execute update transaction
@@ -1976,10 +1984,9 @@ async function mintNFTEscrowGasPaid(
           });
           
           if (updateReceipt.status === 'success') {
-            console.log('✅ TOKEN URI UPDATED ON CONTRACT (UNIVERSAL COMPATIBLE):', {
+            console.log('✅ TOKEN URI UPDATED ON CONTRACT (DIRECT IPFS):', {
               tokenId,
-              newTokenURI: universalCompatibleUrl,
-              originalIpfsUrl: metadataUpdateResult.metadataUrl,
+              newTokenURI: directIpfsUrl,
               updateTxHash: updateResult.transactionHash
             });
             
@@ -2043,7 +2050,7 @@ async function mintNFTEscrowGasPaid(
             const retryTransaction = prepareContractCall({
               contract: nftContract,
               method: "function updateTokenURI(uint256 tokenId, string memory uri) external",
-              params: [BigInt(tokenId), universalCompatibleUrl]
+              params: [BigInt(tokenId), directIpfsUrl] // Use direct IPFS URL in retry too
             });
             
             const retryResult = await sendTransaction({
@@ -2060,7 +2067,7 @@ async function mintNFTEscrowGasPaid(
             if (retryReceipt.status === 'success') {
               console.log('✅ TOKEN URI RETRY SUCCESS:', {
                 tokenId,
-                newTokenURI: universalCompatibleUrl,
+                newTokenURI: directIpfsUrl,
                 retryTxHash: retryResult.transactionHash
               });
               
@@ -2830,5 +2837,116 @@ export default async function handler(
       success: false,
       error: error.message || 'Internal server error'
     });
+  }
+}
+
+// 🔥 CRITICAL FIX ERROR #2: Store metadata in Redis early to prevent permanent placeholder
+async function storeMetadataInRedisEarly(
+  metadataUpdateResult: any, 
+  tokenId: string, 
+  actualImageCid: string, 
+  giftMessage: string,
+  creatorAddress: string,
+  isEscrowMint: boolean,
+  mintTransactionHash: string
+): Promise<void> {
+  try {
+    console.log('💾 Early Redis storage: Extracting metadata CIDs...');
+    
+    // Extract metadata CID from FINAL metadataUrl
+    let finalMetadataIpfsCid = '';
+    let finalImageIpfsCid = '';
+    
+    const finalMetadataUrl = metadataUpdateResult.metadataUrl;
+    
+    if (finalMetadataUrl && finalMetadataUrl.startsWith('ipfs://')) {
+      finalMetadataIpfsCid = finalMetadataUrl.replace('ipfs://', '');
+    } else if (finalMetadataUrl && finalMetadataUrl.includes('/ipfs/')) {
+      const match = finalMetadataUrl.match(/\/ipfs\/(.+)$/);
+      if (match) {
+        finalMetadataIpfsCid = match[1];
+      }
+    }
+    
+    // Use actualImageCid as fallback since we have it available
+    finalImageIpfsCid = actualImageCid?.replace('ipfs://', '') || '';
+    
+    console.log('✅ Early Redis storage: CIDs extracted:', {
+      metadataCid: finalMetadataIpfsCid.substring(0, 20) + '...',
+      imageCid: finalImageIpfsCid.substring(0, 20) + '...'
+    });
+    
+    // Create metadata for Redis storage
+    const baseAttributes = [
+      { trait_type: "Token ID", value: tokenId },
+      { trait_type: "Creation Date", value: new Date().toISOString() },
+      { trait_type: "Platform", value: "CryptoGift Wallets" },
+      { trait_type: "Gift Type", value: isEscrowMint ? "Temporal Escrow" : "Direct Mint" },
+      { trait_type: "Creator", value: creatorAddress.slice(0, 10) + '...' }
+    ];
+    
+    if (isEscrowMint) {
+      baseAttributes.push(
+        { trait_type: "Security", value: "Password Protected" }
+      );
+    }
+    
+    const finalNftMetadata = createNFTMetadata({
+      contractAddress: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+      tokenId: tokenId,
+      name: `CryptoGift NFT #${tokenId}`,
+      description: giftMessage || "Un regalo cripto único creado con amor",
+      imageIpfsCid: finalImageIpfsCid,
+      metadataIpfsCid: finalMetadataIpfsCid,
+      attributes: baseAttributes,
+      mintTransactionHash: mintTransactionHash,
+      owner: creatorAddress,
+      creatorWallet: creatorAddress
+    });
+    
+    await storeMetadataWithRetry(finalNftMetadata, 3);
+    console.log('✅ Early Redis storage: Metadata stored successfully before tokenURI update');
+    
+  } catch (error) {
+    console.error('❌ Early Redis storage failed:', error);
+    // Don't throw - we'll try again later in the normal flow
+    console.log('⚠️ Early storage failed, will retry in normal flow');
+  }
+}
+
+// 🔥 CRITICAL FIX: Verify token exists on-chain before updating tokenURI
+async function verifyTokenExists(nftContract: any, tokenId: string, maxRetries: number = 5): Promise<void> {
+  console.log(`🔍 Verifying token ${tokenId} exists on-chain (max ${maxRetries} attempts)...`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔍 Attempt ${attempt}/${maxRetries}: Checking token existence...`);
+      
+      // Try to read the owner of the token
+      const owner = await readContract({
+        contract: nftContract,
+        method: "function ownerOf(uint256 tokenId) view returns (address)",
+        params: [BigInt(tokenId)]
+      });
+      
+      if (owner && owner !== '0x0000000000000000000000000000000000000000') {
+        console.log(`✅ Token ${tokenId} exists on-chain, owner: ${owner}`);
+        return; // Success!
+      } else {
+        throw new Error(`Token exists but has zero address owner: ${owner}`);
+      }
+      
+    } catch (error) {
+      console.log(`⏳ Attempt ${attempt}/${maxRetries} failed: ${(error as Error).message}`);
+      
+      if (attempt === maxRetries) {
+        throw new Error(`Token ${tokenId} does not exist on-chain after ${maxRetries} attempts. Last error: ${(error as Error).message}`);
+      }
+      
+      // Wait with exponential backoff: 1s, 2s, 4s, 8s
+      const delayMs = Math.pow(2, attempt - 1) * 1000;
+      console.log(`⏳ Waiting ${delayMs}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
   }
 }
