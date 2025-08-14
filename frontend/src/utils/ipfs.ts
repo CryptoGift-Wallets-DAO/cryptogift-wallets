@@ -80,23 +80,68 @@ function extractCidFromHttpsUrl(httpsUrl: string): string | null {
 }
 
 /**
+ * 🔥 BASESCAN FIX: Validate that ipfs.io specifically works for BaseScan compatibility
+ * BaseScan and many explorers rely specifically on ipfs.io gateway
+ */
+export async function validateIpfsIoAccess(input: string, timeoutMs: number = 3000): Promise<boolean> {
+  try {
+    const cidPath = getCidPath(input);
+    const ipfsIoUrl = `https://ipfs.io/ipfs/${cidPath}`;
+    
+    console.log(`🔍 BASESCAN: Testing mandatory ipfs.io access: ${ipfsIoUrl.substring(0, 60)}...`);
+    
+    const result = await testGatewayUrl(ipfsIoUrl, AbortSignal.timeout(timeoutMs));
+    
+    if (result.success) {
+      console.log(`✅ BASESCAN: ipfs.io validation SUCCESS`);
+      return true;
+    } else {
+      console.log(`❌ BASESCAN: ipfs.io validation FAILED: ${result.error}`);
+      return false;
+    }
+  } catch (error) {
+    console.log(`❌ BASESCAN: ipfs.io validation EXCEPTION: ${error instanceof Error ? error.message : 'Unknown'}`);
+    return false;
+  }
+}
+
+/**
  * Multi-gateway validation with Promise.any + AbortController
  * Validates that content is accessible in at least N gateways before proceeding
  * 🔥 NEW: Implements Promise.any pattern with configurable minimum gateway requirement
+ * 🔥 BASESCAN: Now includes mandatory ipfs.io validation
  */
 export async function validateMultiGatewayAccess(
   input: string, 
   minGateways: number = 2,
-  timeoutMs: number = 4000
-): Promise<{ success: boolean; workingGateways: string[]; errors: string[] }> {
+  timeoutMs: number = 4000,
+  requireIpfsIo: boolean = true
+): Promise<{ success: boolean; workingGateways: string[]; errors: string[]; ipfsIoWorking?: boolean }> {
   const cidPath = getCidPath(input);
   const candidates = GATEWAYS.map(f => f(cidPath));
   
-  console.log(`🔍 Multi-gateway validation: Testing ${candidates.length} gateways, need ≥${minGateways}`);
+  console.log(`🔍 Multi-gateway validation: Testing ${candidates.length} gateways, need ≥${minGateways}${requireIpfsIo ? ' + mandatory ipfs.io' : ''}`);
   
   const workingGateways: string[] = [];
   const errors: string[] = [];
   const controller = new AbortController();
+  
+  // 🔥 BASESCAN FIX: Test ipfs.io first if required
+  let ipfsIoWorking = false;
+  if (requireIpfsIo) {
+    console.log(`🎯 BASESCAN: Testing mandatory ipfs.io first...`);
+    ipfsIoWorking = await validateIpfsIoAccess(input, 3000);
+    if (!ipfsIoWorking) {
+      console.log(`❌ BASESCAN: ipfs.io MANDATORY test failed - upload will be blocked`);
+      return {
+        success: false,
+        workingGateways: [],
+        errors: ['MANDATORY: ipfs.io gateway not accessible'],
+        ipfsIoWorking: false
+      };
+    }
+    console.log(`✅ BASESCAN: ipfs.io MANDATORY test passed - proceeding with multi-gateway validation`);
+  }
   
   // Set global timeout
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -137,12 +182,13 @@ export async function validateMultiGatewayAccess(
     const successCount = workingGateways.length;
     const success = successCount >= minGateways;
     
-    console.log(`🎯 Multi-gateway validation result: ${successCount}/${candidates.length} working (need ≥${minGateways})`);
+    console.log(`🎯 Multi-gateway validation result: ${successCount}/${candidates.length} working (need ≥${minGateways})${requireIpfsIo ? ` + ipfs.io: ${ipfsIoWorking ? 'OK' : 'FAIL'}` : ''}`);
     
     return {
       success,
       workingGateways,
-      errors
+      errors,
+      ipfsIoWorking
     };
     
   } finally {

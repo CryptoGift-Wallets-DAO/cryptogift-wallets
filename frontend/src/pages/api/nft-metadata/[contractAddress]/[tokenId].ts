@@ -80,10 +80,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Ensure we have both IPFS and HTTPS formats
     if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('ipfs://')) {
-      // Already have IPFS format, convert to HTTPS
+      // Already have IPFS format, convert to HTTPS with FORCED ipfs.io for BaseScan
       ipfsImageUrl = fallbackResult.metadata.image;
-      httpsImageUrl = convertIPFSToHTTPS(fallbackResult.metadata.image);
-      console.log(`🔄 Converted IPFS to HTTPS: ${httpsImageUrl.substring(0, 50)}...`);
+      // 🔥 BASESCAN FIX: Force ipfs.io gateway to avoid nftstorage.link redirects
+      const cidPath = fallbackResult.metadata.image.slice(7); // Remove 'ipfs://'
+      httpsImageUrl = `https://ipfs.io/ipfs/${cidPath}`;
+      console.log(`🔄 BASESCAN: Forced ipfs.io gateway: ${httpsImageUrl.substring(0, 50)}...`);
     } else if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('https://')) {
       // Check for self-call recursion first
       if (selfCallPattern.test(fallbackResult.metadata.image)) {
@@ -104,9 +106,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // 🔥 NEW: Dual image format for maximum compatibility
-      image: ipfsImageUrl,        // IPFS format - preferred by modern systems
-      image_url: httpsImageUrl,   // HTTPS format - fallback for older wallets
+      // 🔥 BASESCAN FIX: BaseScan only reads 'image' field, needs HTTPS not ipfs://
+      image: httpsImageUrl,       // HTTPS format - BaseScan compatible
+      image_url: ipfsImageUrl,    // IPFS format - for systems that support it
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],
