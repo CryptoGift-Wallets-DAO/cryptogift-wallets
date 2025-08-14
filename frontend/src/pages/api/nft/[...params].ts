@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { getNFTMetadata, resolveIPFSUrl } from "../../../lib/nftMetadataStore";
+import { getBestGatewayForCid } from "../../../utils/ipfs";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log("🔍 NFT API LOOKUP STARTED ===========================================");
@@ -69,19 +70,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (tokenURI) {
         let ipfsUrl = tokenURI;
         
-        // Convert IPFS URLs to gateway URLs with fallback strategy
+        // 🔥 CANONICAL FIX: Use getBestGatewayForCid instead of hardcoded gateways
         if (tokenURI.startsWith("ipfs://")) {
-          const cid = tokenURI.replace("ipfs://", "");
-          // Try multiple IPFS gateways for better reliability
-          const gateways = [
-            `https://nftstorage.link/ipfs/${cid}`,
-            `https://ipfs.io/ipfs/${cid}`,
-            `https://gateway.pinata.cloud/ipfs/${cid}`,
-            `https://cloudflare-ipfs.com/ipfs/${cid}`,
-            `https://dweb.link/ipfs/${cid}`
-          ];
+          console.log('🎯 CANONICAL: Using getBestGatewayForCid for tokenURI');
+          const bestGateway = await getBestGatewayForCid(tokenURI, 8000);
           
-          for (const gateway of gateways) {
+          if (bestGateway) {
+            const gateways = [bestGateway.url]; // Use the best gateway found
+            console.log(`✅ CANONICAL: Using best gateway ${bestGateway.gateway}: ${bestGateway.url}`);
+          } else {
+            console.log('⚠️ CANONICAL: No working gateway found, skipping tokenURI metadata');
+            const gateways = []; // Empty array will skip the loop
+          }
+          
+          for (const gateway of (bestGateway ? [bestGateway.url] : [])) {
             try {
               console.log(`🔍 CACHE BYPASS: Trying IPFS gateway: ${gateway}`);
               const controller = new AbortController();
@@ -172,12 +174,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   console.log("✅ DIRECT IPFS: Retrieved JSON metadata:", metadata);
                   console.log("🖼️ DIRECT IPFS: Image field:", metadata.image);
                   
-                  // Process image URL to ensure it's accessible
+                  // 🔥 CANONICAL FIX: Use getBestGatewayForCid for image URL processing  
                   let processedImageUrl = metadata.image;
                   if (processedImageUrl && processedImageUrl.startsWith("ipfs://")) {
-                    const imageCid = processedImageUrl.replace("ipfs://", "");
-                    processedImageUrl = `https://nftstorage.link/ipfs/${imageCid}`;
-                    console.log("🔄 CONVERTED image URL:", processedImageUrl);
+                    console.log('🎯 CANONICAL: Using getBestGatewayForCid for image processing');
+                    const bestImageGateway = await getBestGatewayForCid(processedImageUrl, 6000);
+                    if (bestImageGateway) {
+                      processedImageUrl = bestImageGateway.url;
+                      console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for image: ${processedImageUrl}`);
+                    } else {
+                      console.log('⚠️ CANONICAL: No working gateway found for image, keeping original');
+                    }
                   }
                   
                   // Calculate TBA address for completeness
@@ -296,16 +303,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log("✅ FOUND STORED METADATA!");
       console.log("📄 Complete stored metadata:", JSON.stringify(storedMetadata, null, 2));
       
-      // CRITICAL: Check what image we're actually using
+      // 🔥 CANONICAL FIX: Use getBestGatewayForCid instead of resolveIPFSUrl for stored metadata
       const originalImage = storedMetadata.image;
-      const resolvedImageUrl = resolveIPFSUrl(storedMetadata.image);
+      let finalImageUrl = originalImage;
       
-      console.log("🔗 IMAGE RESOLUTION DEBUG:", {
+      console.log("🔗 IMAGE RESOLUTION DEBUG - BEFORE:", {
         originalImageField: originalImage,
         isIPFSFormat: originalImage?.startsWith('ipfs://'),
         isPlaceholder: originalImage?.includes('placeholder'),
-        resolvedImageUrl: resolvedImageUrl,
         ipfsCid: storedMetadata.imageIpfsCid
+      });
+      
+      // If stored image is in ipfs:// format, use canonical gateway resolution
+      if (originalImage?.startsWith('ipfs://')) {
+        console.log('🎯 CANONICAL: Stored image is ipfs://, using getBestGatewayForCid');
+        const bestImageGateway = await getBestGatewayForCid(originalImage, 6000);
+        if (bestImageGateway) {
+          finalImageUrl = bestImageGateway.url;
+          console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for stored image: ${finalImageUrl}`);
+        } else {
+          console.log('⚠️ CANONICAL: No working gateway found for stored image, using resolveIPFSUrl fallback');
+          finalImageUrl = resolveIPFSUrl(originalImage);
+        }
+      } else if (originalImage?.startsWith('https://')) {
+        // If it's already HTTPS, check if it contains IPFS path and convert to canonical
+        if (originalImage.includes('/ipfs/')) {
+          console.log('🔄 CANONICAL: Stored image is HTTPS IPFS, extracting to ipfs:// format');
+          const ipfsMatch = originalImage.match(/\/ipfs\/([^\/\?#]+.*?)(?:\?|#|$)/);
+          if (ipfsMatch) {
+            const cidPath = ipfsMatch[1];
+            const ipfsFormat = `ipfs://${cidPath}`;
+            console.log('✅ CANONICAL: Extracted ipfs:// format:', ipfsFormat);
+            
+            const bestImageGateway = await getBestGatewayForCid(ipfsFormat, 6000);
+            if (bestImageGateway) {
+              finalImageUrl = bestImageGateway.url;
+              console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for converted image: ${finalImageUrl}`);
+            } else {
+              console.log('⚠️ CANONICAL: No working gateway found for converted image, keeping original');
+              finalImageUrl = originalImage;
+            }
+          }
+        }
+      }
+      
+      console.log("🔗 IMAGE RESOLUTION DEBUG - AFTER:", {
+        originalImageField: originalImage?.substring(0, 60) + '...',
+        finalImageUrl: finalImageUrl?.substring(0, 60) + '...',
+        gatewayChanged: originalImage !== finalImageUrl
       });
       
       // CRITICAL: Detect if we're accidentally serving placeholder from stored metadata
@@ -318,7 +363,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: tokenId,
         name: storedMetadata.name,
         description: storedMetadata.description,
-        image: resolvedImageUrl,
+        image: finalImageUrl, // 🔥 CANONICAL FIX: Use canonical gateway URL
         attributes: storedMetadata.attributes || []
       };
     } else {
@@ -382,10 +427,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const metadata = await metadataResponse.json();
           console.log("✅ Raw metadata from IPFS:", metadata);
           
-          // Handle image URLs
+          // 🔥 CANONICAL FIX: Use getBestGatewayForCid for image URL handling
           let imageUrl = metadata.image || nft.image;
           if (imageUrl && imageUrl.startsWith("ipfs://")) {
-            imageUrl = imageUrl.replace("ipfs://", "https://nftstorage.link/ipfs/");
+            console.log('🎯 CANONICAL: Using getBestGatewayForCid for final image URL');
+            const bestImageGateway = await getBestGatewayForCid(imageUrl, 6000);
+            if (bestImageGateway) {
+              imageUrl = bestImageGateway.url;
+              console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for final image: ${imageUrl}`);
+            } else {
+              console.log('⚠️ CANONICAL: No working gateway found for final image, keeping original');
+            }
           }
           
           nft = {

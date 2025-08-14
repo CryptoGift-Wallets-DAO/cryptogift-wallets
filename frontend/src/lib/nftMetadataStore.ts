@@ -257,20 +257,19 @@ export function createNFTMetadata(params: {
   };
 }
 
-// Utility to convert IPFS URLs to HTTP gateways
+// 🔥 CANONICAL FIX: Use priority order matching canonical system
 export function resolveIPFSUrl(ipfsUrl: string): string {
   if (ipfsUrl.startsWith('ipfs://')) {
     const cid = ipfsUrl.replace('ipfs://', '');
-    // Try multiple gateways for redundancy
+    // Use canonical priority order: dweb.link first (most reliable)
     const gateways = [
-      `https://nftstorage.link/ipfs/${cid}`,
+      `https://dweb.link/ipfs/${cid}`,
       `https://ipfs.io/ipfs/${cid}`,
       `https://gateway.pinata.cloud/ipfs/${cid}`,
-      `https://cloudflare-ipfs.com/ipfs/${cid}`
+      `https://nftstorage.link/ipfs/${cid}`
     ];
     
-    // Return the first gateway for now
-    // In production, you might want to implement gateway health checking
+    // Return the first (most reliable) gateway
     return gateways[0];
   }
   
@@ -284,11 +283,12 @@ export async function resolveIPFSUrlWithFallback(ipfsUrl: string): Promise<strin
   }
   
   const cid = ipfsUrl.replace('ipfs://', '');
+  // 🔥 CANONICAL FIX: Use priority order matching canonical system
   const gateways = [
-    `https://nftstorage.link/ipfs/${cid}`,
+    `https://dweb.link/ipfs/${cid}`,
     `https://ipfs.io/ipfs/${cid}`,
     `https://gateway.pinata.cloud/ipfs/${cid}`,
-    `https://cloudflare-ipfs.com/ipfs/${cid}`
+    `https://nftstorage.link/ipfs/${cid}`
   ];
   
   // Try each gateway with timeout
