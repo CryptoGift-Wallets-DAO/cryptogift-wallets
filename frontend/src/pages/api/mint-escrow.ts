@@ -30,7 +30,6 @@ import { debugLogger } from '../../lib/secureDebugLogger';
 import { validateIPFSConfig } from '../../lib/ipfs';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { storeGiftMapping } from '../../lib/giftMappingStore';
-import { readContract } from 'thirdweb';
 import {
   validateTransactionAttempt,
   registerTransactionAttempt,
