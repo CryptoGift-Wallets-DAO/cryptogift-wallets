@@ -47,12 +47,87 @@ const GATEWAYS = [
   (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}`,    // MOVED TO LAST - DNS issues
 ];
 
-// 🔥 NEW: Gateway performance tracking for bias removal
+// 🔥 CRITICAL: Gateway performance tracking + LRU cache for CID→Gateway mapping
 let gatewayStats = {
   successes: new Map<string, number>(),
   failures: new Map<string, number>(),
   lastUsed: new Map<string, number>()
 };
+
+// 🔥 CRITICAL FIX: LRU Cache por CID para evitar fan-out costoso en cada request
+interface GatewayCacheEntry {
+  url: string;
+  gateway: string;
+  timestamp: number;
+  ttl: number; // TTL en milliseconds
+}
+
+const GATEWAY_CACHE_TTL = 20 * 60 * 1000; // 20 minutos
+const MAX_CACHE_SIZE = 1000; // LRU limit
+let gatewayCidCache = new Map<string, GatewayCacheEntry>();
+
+/**
+ * 🔥 CRITICAL: LRU Cache management - evict expired and maintain size limit
+ */
+function cleanupGatewayCache(): void {
+  const now = Date.now();
+  
+  // Remove expired entries
+  for (const [cid, entry] of gatewayCidCache.entries()) {
+    if (now - entry.timestamp > entry.ttl) {
+      gatewayCidCache.delete(cid);
+    }
+  }
+  
+  // LRU eviction if too large
+  if (gatewayCidCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(gatewayCidCache.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp); // oldest first
+    
+    const toDelete = entries.slice(0, Math.floor(MAX_CACHE_SIZE * 0.2)); // remove 20%
+    for (const [cid] of toDelete) {
+      gatewayCidCache.delete(cid);
+    }
+    console.log(`🧹 LRU CLEANUP: Evicted ${toDelete.length} old gateway cache entries`);
+  }
+}
+
+/**
+ * 🔥 CRITICAL: Get cached gateway for CID or null if expired/missing
+ */
+function getCachedGateway(cidPath: string): GatewayCacheEntry | null {
+  const entry = gatewayCidCache.get(cidPath);
+  if (!entry) return null;
+  
+  const now = Date.now();
+  if (now - entry.timestamp > entry.ttl) {
+    gatewayCidCache.delete(cidPath);
+    return null;
+  }
+  
+  // LRU: update timestamp when accessed
+  entry.timestamp = now;
+  gatewayCidCache.set(cidPath, entry);
+  
+  return entry;
+}
+
+/**
+ * 🔥 CRITICAL: Cache working gateway for CID
+ */
+function cacheWorkingGateway(cidPath: string, url: string, gateway: string): void {
+  cleanupGatewayCache(); // Cleanup before adding
+  
+  const entry: GatewayCacheEntry = {
+    url,
+    gateway,
+    timestamp: Date.now(),
+    ttl: GATEWAY_CACHE_TTL
+  };
+  
+  gatewayCidCache.set(cidPath, entry);
+  console.log(`💾 GATEWAY CACHE: Stored ${gateway} for CID ${cidPath.substring(0, 20)}... (TTL: ${GATEWAY_CACHE_TTL/60000}min)`);
+}
 
 /**
  * Converts IPFS URL to HTTPS with single encoding pass
@@ -87,6 +162,15 @@ function extractCidFromHttpsUrl(httpsUrl: string): string | null {
 export async function getBestGatewayForCid(input: string, timeoutMs: number = 4000): Promise<{ url: string; gateway: string } | null> {
   const cidPath = getCidPath(input);
   
+  // 🔥 CRITICAL: Check cache first to avoid expensive fan-out
+  const cachedGateway = getCachedGateway(cidPath);
+  if (cachedGateway) {
+    console.log(`⚡ CACHE HIT: Using cached gateway ${cachedGateway.gateway} for CID ${cidPath.substring(0, 20)}...`);
+    return { url: cachedGateway.url, gateway: cachedGateway.gateway };
+  }
+  
+  console.log(`🔍 CACHE MISS: Testing gateways for CID: ${cidPath.substring(0, 30)}...`);
+  
   // Priority order: most reliable gateways first
   const priorityGateways = [
     { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
@@ -95,8 +179,6 @@ export async function getBestGatewayForCid(input: string, timeoutMs: number = 40
     { name: 'gateway.pinata', fn: (p: string) => `https://gateway.pinata.cloud/ipfs/${p}` },
     { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` }
   ];
-  
-  console.log(`🎯 BEST GATEWAY: Testing ${priorityGateways.length} gateways for CID: ${cidPath.substring(0, 30)}...`);
   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -110,6 +192,10 @@ export async function getBestGatewayForCid(input: string, timeoutMs: number = 40
         const result = await testGatewayUrl(url, controller.signal);
         if (result.success) {
           console.log(`✅ BEST GATEWAY: ${gateway.name} works - using ${url.substring(0, 60)}...`);
+          
+          // 🔥 CRITICAL: Cache working gateway to avoid future fan-outs
+          cacheWorkingGateway(cidPath, url, gateway.name);
+          
           return { url, gateway: gateway.name };
         } else {
           console.log(`❌ Gateway ${gateway.name} failed: ${result.error}`);
@@ -195,9 +281,20 @@ export async function validateMultiGatewayAccess(
       }
     });
     
-    // 🔥 NEW: Use Promise.allSettled but with early exit capability
-    // Wait for all to complete OR until we get minimum required successes
-    const results = await Promise.allSettled(testPromises);
+    // 🔥 CRITICAL FIX: Don't wait for all - check periodically for minimum threshold
+    // This prevents "false OK" where Promise.any exits too early but we still need ≥minGateways
+    let completedCount = 0;
+    const results = await Promise.allSettled(testPromises.map(async (promise) => {
+      const result = await promise;
+      completedCount++;
+      
+      // Early success check: if we have enough working gateways, we can stop
+      if (workingGateways.length >= minGateways) {
+        console.log(`🎯 THRESHOLD REACHED: ${workingGateways.length}/${minGateways} gateways working, early resolution`);
+      }
+      
+      return result;
+    }));
     
     // Count final successful validations
     const successCount = workingGateways.length;

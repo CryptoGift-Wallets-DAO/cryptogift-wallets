@@ -86,9 +86,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log(`✅ CANONICAL: Using ${bestGateway.gateway} gateway: ${dynamicImageHttps.substring(0, 60)}...`);
       } else {
         console.log(`⚠️ CANONICAL: No working gateway found, will return 503`);
+        // 🔥 CRITICAL: 503 with proper headers to prevent caching and enable retry
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.setHeader('Retry-After', '10'); // Seconds - explorers should retry after 10s
+        res.setHeader('Access-Control-Allow-Origin', '*');
         return res.status(503).json({ 
           error: 'Image not accessible in any gateway',
-          ipfs_url: canonicalImageIpfs
+          ipfs_url: canonicalImageIpfs,
+          retry_after: 10
         });
       }
       
@@ -111,23 +116,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.log(`✅ CANONICAL: Using ${bestGateway.gateway} gateway: ${dynamicImageHttps.substring(0, 60)}...`);
         } else {
           console.log(`⚠️ CANONICAL: No working gateway found, will return 503`);
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+          res.setHeader('Retry-After', '10');
+          res.setHeader('Access-Control-Allow-Origin', '*');
           return res.status(503).json({ 
             error: 'Image not accessible in any gateway',
-            original_url: httpsUrl
+            original_url: httpsUrl,
+            retry_after: 10
           });
         }
       } else {
         console.log(`❌ CANONICAL: Cannot extract CID from HTTPS URL, will return 503`);
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.setHeader('Retry-After', '10');
+        res.setHeader('Access-Control-Allow-Origin', '*');
         return res.status(503).json({ 
           error: 'Invalid image URL format',
-          original_url: httpsUrl
+          original_url: httpsUrl,
+          retry_after: 10
         });
       }
     } else {
       console.log(`❌ CANONICAL: Invalid image format, will return 503`);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Retry-After', '10');
+      res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(503).json({ 
         error: 'Image URL must be ipfs:// or https://',
-        received: fallbackResult.metadata.image
+        received: fallbackResult.metadata.image,
+        retry_after: 10
       });
     }
     
@@ -148,22 +165,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       external_url: `${productionBaseUrl}/nft/${contractAddress}/${tokenId}`,
     };
 
-    // UNIVERSAL HEADERS: Optimized for both wallets and explorers
+    // 🔥 CRITICAL: Headers for public JSON with proper CORS and short TTL
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
-    // 🔧 FASE 5F FIX: Prevent cache poisoning for placeholders
+    // 🔥 CRITICAL: Short TTL for successful responses (60s max) to enable cache refresh
     if (fallbackResult.source === 'placeholder') {
       console.log('🚫 Placeholder detected - using no-store to prevent cache poisoning');
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-      res.setHeader('X-Served-Placeholder', 'true'); // Debugging header
+      res.setHeader('X-Served-Placeholder', 'true');
     } else {
-      // Normal caching for real metadata
-      const cacheMaxAge = fallbackResult.source === 'redis' ? 300 : 60;
-      const sMaxAge = 300;
-      res.setHeader('Cache-Control', `public, max-age=${cacheMaxAge}, s-maxage=${sMaxAge}, stale-while-revalidate=60`);
+      // 🔥 SHORT TTL: Allow quick refresh for gateway changes
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=30');
+      console.log('✅ CANONICAL: Set short TTL (60s) for metadata to allow gateway refresh');
     }
     
     // SECURITY HEADERS
