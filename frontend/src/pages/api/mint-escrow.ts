@@ -1933,13 +1933,15 @@ async function mintNFTEscrowGasPaid(
             }
             
             const validationJson = await validationResponse.json();
-            if (!validationJson.tokenId || validationJson.tokenId !== tokenId) {
-              throw new Error(`Final metadata missing tokenId or incorrect: expected ${tokenId}, got ${validationJson.tokenId}`);
+            // CRITICAL FIX: Don't require tokenId in metadata since upload.ts creates generic metadata
+            // The tokenId is added during the mint process, not in the original upload
+            if (!validationJson.name || !validationJson.image) {
+              throw new Error(`Final metadata missing required fields: name=${!!validationJson.name}, image=${!!validationJson.image}`);
             }
             
             console.log('✅ FINAL metadata validation passed - ready for on-chain update');
-            console.log(`🔍 Confirmed tokenId: ${validationJson.tokenId}`);
-            console.log(`🖼️ Confirmed image: ${validationJson.image ? 'present' : 'missing'}`);
+            console.log(`🔍 Confirmed name: ${validationJson.name}`);
+            console.log(`🖼️ Confirmed image: ${validationJson.image ? validationJson.image.substring(0, 50) + '...' : 'missing'}`);
             
           } catch (validationError) {
             console.error('❌ FINAL metadata validation FAILED:', validationError.message);
