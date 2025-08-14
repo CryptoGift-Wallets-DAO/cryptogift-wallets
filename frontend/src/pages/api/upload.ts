@@ -332,8 +332,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     addMintLog('INFO', 'MULTI_GATEWAY_VALIDATION_START', { metadataCid });
     
     const metadataIpfsUrl = `ipfs://${metadataCid}`;
-    // 🔥 BASESCAN FIX: Require ipfs.io to be working for BaseScan compatibility
-    const metadataValidation = await validateMultiGatewayAccess(metadataIpfsUrl, 2, 6000, true);
+    // 🔥 CANONICAL FORMAT: Require ≥2 gateways working (any gateways)
+    const metadataValidation = await validateMultiGatewayAccess(metadataIpfsUrl, 2, 6000);
     
     if (!metadataValidation.success) {
       console.log('❌ CRITICAL: Multi-gateway metadata validation failed - BLOCKING upload success');
@@ -395,8 +395,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     addMintLog('INFO', 'IMAGE_MULTI_GATEWAY_VALIDATION_START', { imageCid: cid });
     
     const finalImageIpfsUrl = `ipfs://${cid}`;
-    // 🔥 BASESCAN FIX: Require ipfs.io to be working for BaseScan compatibility
-    const imageValidation = await validateMultiGatewayAccess(finalImageIpfsUrl, 2, 8000, true);
+    // 🔥 CANONICAL FORMAT: Require ≥2 gateways working (any gateways)
+    const imageValidation = await validateMultiGatewayAccess(finalImageIpfsUrl, 2, 8000);
     
     if (!imageValidation.success) {
       console.log('❌ CRITICAL: Multi-gateway image validation failed - BLOCKING upload success');

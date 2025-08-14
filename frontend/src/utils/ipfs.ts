@@ -80,81 +80,96 @@ function extractCidFromHttpsUrl(httpsUrl: string): string | null {
 }
 
 /**
- * 🔥 BASESCAN FIX: Validate that ipfs.io specifically works for BaseScan compatibility
- * BaseScan and many explorers rely specifically on ipfs.io gateway
+ * 🔥 CANONICAL FORMAT: Get best working gateway for CID in real-time
+ * Tests multiple gateways and returns the first one that works
+ * Prioritizes reliability over speed for BaseScan compatibility
  */
-export async function validateIpfsIoAccess(input: string, timeoutMs: number = 3000): Promise<boolean> {
+export async function getBestGatewayForCid(input: string, timeoutMs: number = 4000): Promise<{ url: string; gateway: string } | null> {
+  const cidPath = getCidPath(input);
+  
+  // Priority order: most reliable gateways first
+  const priorityGateways = [
+    { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
+    { name: 'ipfs.io', fn: (p: string) => `https://ipfs.io/ipfs/${p}` },
+    { name: 'cloudflare-ipfs', fn: (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}` },
+    { name: 'gateway.pinata', fn: (p: string) => `https://gateway.pinata.cloud/ipfs/${p}` },
+    { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` }
+  ];
+  
+  console.log(`🎯 BEST GATEWAY: Testing ${priorityGateways.length} gateways for CID: ${cidPath.substring(0, 30)}...`);
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
   try {
-    const cidPath = getCidPath(input);
-    const ipfsIoUrl = `https://ipfs.io/ipfs/${cidPath}`;
-    
-    console.log(`🔍 BASESCAN: Testing mandatory ipfs.io access: ${ipfsIoUrl.substring(0, 60)}...`);
-    
-    const result = await testGatewayUrl(ipfsIoUrl, AbortSignal.timeout(timeoutMs));
-    
-    if (result.success) {
-      console.log(`✅ BASESCAN: ipfs.io validation SUCCESS`);
-      return true;
-    } else {
-      console.log(`❌ BASESCAN: ipfs.io validation FAILED: ${result.error}`);
-      return false;
+    for (const gateway of priorityGateways) {
+      const url = gateway.fn(cidPath);
+      console.log(`🔍 Testing gateway: ${gateway.name}...`);
+      
+      try {
+        const result = await testGatewayUrl(url, controller.signal);
+        if (result.success) {
+          console.log(`✅ BEST GATEWAY: ${gateway.name} works - using ${url.substring(0, 60)}...`);
+          return { url, gateway: gateway.name };
+        } else {
+          console.log(`❌ Gateway ${gateway.name} failed: ${result.error}`);
+        }
+      } catch (error) {
+        console.log(`❌ Gateway ${gateway.name} exception: ${error instanceof Error ? error.message : 'Unknown'}`);
+      }
     }
-  } catch (error) {
-    console.log(`❌ BASESCAN: ipfs.io validation EXCEPTION: ${error instanceof Error ? error.message : 'Unknown'}`);
-    return false;
+    
+    console.log(`❌ BEST GATEWAY: All gateways failed for CID: ${cidPath.substring(0, 30)}...`);
+    return null;
+    
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
 /**
- * Multi-gateway validation with Promise.any + AbortController
+ * 🔥 CANONICAL FORMAT: Multi-gateway validation with Promise.any + AbortController
  * Validates that content is accessible in at least N gateways before proceeding
- * 🔥 NEW: Implements Promise.any pattern with configurable minimum gateway requirement
- * 🔥 BASESCAN: Now includes mandatory ipfs.io validation
+ * No specific gateway requirements - just needs ≥N working gateways
  */
 export async function validateMultiGatewayAccess(
   input: string, 
   minGateways: number = 2,
-  timeoutMs: number = 4000,
-  requireIpfsIo: boolean = true
-): Promise<{ success: boolean; workingGateways: string[]; errors: string[]; ipfsIoWorking?: boolean }> {
+  timeoutMs: number = 4000
+): Promise<{ success: boolean; workingGateways: string[]; errors: string[]; gatewayDetails: Array<{name: string; url: string; success: boolean; error?: string}> }> {
   const cidPath = getCidPath(input);
-  const candidates = GATEWAYS.map(f => f(cidPath));
   
-  console.log(`🔍 Multi-gateway validation: Testing ${candidates.length} gateways, need ≥${minGateways}${requireIpfsIo ? ' + mandatory ipfs.io' : ''}`);
+  // Use the same priority gateways as getBestGatewayForCid for consistency
+  const priorityGateways = [
+    { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
+    { name: 'ipfs.io', fn: (p: string) => `https://ipfs.io/ipfs/${p}` },
+    { name: 'cloudflare-ipfs', fn: (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}` },
+    { name: 'gateway.pinata', fn: (p: string) => `https://gateway.pinata.cloud/ipfs/${p}` },
+    { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` }
+  ];
+  
+  console.log(`🔍 CANONICAL: Multi-gateway validation - testing ${priorityGateways.length} gateways, need ≥${minGateways}`);
   
   const workingGateways: string[] = [];
   const errors: string[] = [];
+  const gatewayDetails: Array<{name: string; url: string; success: boolean; error?: string}> = [];
   const controller = new AbortController();
-  
-  // 🔥 BASESCAN FIX: Test ipfs.io first if required
-  let ipfsIoWorking = false;
-  if (requireIpfsIo) {
-    console.log(`🎯 BASESCAN: Testing mandatory ipfs.io first...`);
-    ipfsIoWorking = await validateIpfsIoAccess(input, 3000);
-    if (!ipfsIoWorking) {
-      console.log(`❌ BASESCAN: ipfs.io MANDATORY test failed - upload will be blocked`);
-      return {
-        success: false,
-        workingGateways: [],
-        errors: ['MANDATORY: ipfs.io gateway not accessible'],
-        ipfsIoWorking: false
-      };
-    }
-    console.log(`✅ BASESCAN: ipfs.io MANDATORY test passed - proceeding with multi-gateway validation`);
-  }
   
   // Set global timeout
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   
   try {
-    // 🔥 CRITICAL FIX: Use Promise.any pattern with early cancellation
-    // Create individual promises that can be cancelled when we reach minimum threshold
-    const testPromises = candidates.map(async (url, index) => {
+    // 🔥 CANONICAL FORMAT: Promise.any with structured gateway testing
+    const testPromises = priorityGateways.map(async (gateway, index) => {
+      const url = gateway.fn(cidPath);
+      const detail = { name: gateway.name, url, success: false, error: undefined as string | undefined };
+      
       try {
         const result = await testGatewayUrl(url, controller.signal);
         if (result.success) {
           workingGateways.push(url);
-          console.log(`✅ Gateway ${index + 1}/${candidates.length} working: ${url}`);
+          detail.success = true;
+          console.log(`✅ Gateway ${gateway.name} working: ${url.substring(0, 60)}...`);
           
           // 🔥 EARLY EXIT: Cancel other requests once we have minimum required
           if (workingGateways.length >= minGateways) {
@@ -162,15 +177,21 @@ export async function validateMultiGatewayAccess(
             controller.abort(); // Cancel remaining requests
           }
           
-          return { success: true, url, index };
+          return detail;
         } else {
-          errors.push(`Gateway ${index + 1}: ${result.error}`);
-          return { success: false, url, index, error: result.error };
+          detail.error = result.error;
+          errors.push(`${gateway.name}: ${result.error}`);
+          console.log(`❌ Gateway ${gateway.name} failed: ${result.error}`);
+          return detail;
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        errors.push(`Gateway ${index + 1}: ${errorMsg}`);
-        return { success: false, url, index, error: errorMsg };
+        detail.error = errorMsg;
+        errors.push(`${gateway.name}: ${errorMsg}`);
+        console.log(`❌ Gateway ${gateway.name} exception: ${errorMsg}`);
+        return detail;
+      } finally {
+        gatewayDetails.push(detail);
       }
     });
     
@@ -182,13 +203,14 @@ export async function validateMultiGatewayAccess(
     const successCount = workingGateways.length;
     const success = successCount >= minGateways;
     
-    console.log(`🎯 Multi-gateway validation result: ${successCount}/${candidates.length} working (need ≥${minGateways})${requireIpfsIo ? ` + ipfs.io: ${ipfsIoWorking ? 'OK' : 'FAIL'}` : ''}`);
+    console.log(`🎯 CANONICAL: Multi-gateway validation result: ${successCount}/${priorityGateways.length} working (need ≥${minGateways})`);
+    console.log(`📊 Gateway breakdown: ${gatewayDetails.map(d => `${d.name}=${d.success ? 'OK' : 'FAIL'}`).join(', ')}`);
     
     return {
       success,
       workingGateways,
       errors,
-      ipfsIoWorking
+      gatewayDetails
     };
     
   } finally {
