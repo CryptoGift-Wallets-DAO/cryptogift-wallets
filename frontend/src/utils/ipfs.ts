@@ -38,13 +38,13 @@ export function normalizeCidPath(cidPath: string): string {
 }
 
 // Gateway priority: Balanced selection without bias
-// 🔥 NEW: Optimized gateway order with round-robin capability
+// 🔥 CRITICAL FIX: Reorder gateways - cloudflare-ipfs.com has DNS issues causing BaseScan display failures
 const GATEWAYS = [
-  (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}`,    // Fast, reliable
-  (p: string) => `https://ipfs.io/ipfs/${p}`,                // Standard IPFS gateway
+  (p: string) => `https://ipfs.io/ipfs/${p}`,                // Standard IPFS gateway - WORKS
   (p: string) => `https://gateway.thirdweb.com/ipfs/${p}`,   // ThirdWeb gateway
   (p: string) => `https://gateway.pinata.cloud/ipfs/${p}`,   // Pinata gateway
   (p: string) => `https://nftstorage.link/ipfs/${p}`,        // NFT.Storage gateway
+  (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}`,    // MOVED TO LAST - DNS issues
 ];
 
 // 🔥 NEW: Gateway performance tracking for bias removal
