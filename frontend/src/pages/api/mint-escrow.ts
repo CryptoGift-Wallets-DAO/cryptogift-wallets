@@ -1952,6 +1952,72 @@ async function mintNFTEscrowGasPaid(
             console.log(`🔍 Confirmed name: ${validationJson.name}`);
             console.log(`🖼️ Confirmed image: ${validationJson.image ? validationJson.image.substring(0, 50) + '...' : 'missing'}`);
             
+            // 🚨 BASESCAN VALIDATION: Ensure metadata AND image are accessible on ipfs.io or cloudflare
+            console.log('🔍 BASESCAN VALIDATION: Ensuring metadata/image accessibility for explorers...');
+            
+            // Extract metadata CID from IPFS URL
+            const metadataCid = metadataUpdateResult.metadataUrl.replace('ipfs://', '');
+            
+            // Extract image CID from metadata
+            let imageCid = '';
+            if (validationJson.image && validationJson.image.startsWith('ipfs://')) {
+              imageCid = validationJson.image.replace('ipfs://', '');
+            }
+            
+            // Priority gateways for BaseScan compatibility
+            const basescanGateways = [
+              'https://ipfs.io/ipfs/',
+              'https://cloudflare-ipfs.com/ipfs/'
+            ];
+            
+            // Validation with 4 retries and exponential backoff
+            const validateWithRetries = async (cid: string, resourceType: string) => {
+              const maxRetries = 4;
+              let lastError: Error | null = null;
+              
+              for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                console.log(`🔄 BaseScan validation attempt ${attempt}/${maxRetries} for ${resourceType}...`);
+                
+                for (const gateway of basescanGateways) {
+                  try {
+                    const url = `${gateway}${cid}`;
+                    const response = await fetch(url, {
+                      method: 'HEAD',
+                      signal: AbortSignal.timeout(3000) // 3s timeout per request
+                    });
+                    
+                    if (response.ok || response.status === 206) {
+                      console.log(`✅ ${resourceType} accessible on ${gateway.split('/')[2]}`);
+                      return true; // Success - resource is accessible
+                    }
+                  } catch (error) {
+                    lastError = error as Error;
+                    // Continue to next gateway
+                  }
+                }
+                
+                // All gateways failed this attempt
+                if (attempt < maxRetries) {
+                  const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 4000); // Exponential backoff: 1s, 2s, 4s
+                  console.log(`⏳ Waiting ${backoffMs}ms before retry ${attempt + 1}...`);
+                  await new Promise(resolve => setTimeout(resolve, backoffMs));
+                }
+              }
+              
+              // All retries exhausted
+              throw new Error(`${resourceType} not accessible on ipfs.io or cloudflare after ${maxRetries} retries: ${lastError?.message}`);
+            };
+            
+            // Validate metadata.json accessibility
+            await validateWithRetries(`${metadataCid}/metadata.json`, 'Metadata');
+            
+            // Validate image accessibility (if IPFS format)
+            if (imageCid) {
+              await validateWithRetries(imageCid, 'Image');
+            }
+            
+            console.log('✅ BASESCAN VALIDATION COMPLETE: Both metadata and image are accessible');
+            
           } catch (validationError) {
             console.error('❌ FINAL metadata validation FAILED:', validationError.message);
             // FAIL-FAST: Don't update tokenURI if final metadata isn't ready
