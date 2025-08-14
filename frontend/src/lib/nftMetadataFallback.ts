@@ -483,44 +483,48 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
           external_url: cachedData.external_url
         };
         
-        // 🔥 CRITICAL FIX: Prioritize real data over strict validation
+        // 🔥 CRITICAL FIX: Prioritize real data over strict validation with proper type casting
+        const typedMetadata = metadata as ERC721Metadata;
         console.log(`🔍 Redis data validation for ${contractAddress}:${tokenId}:`, {
-          hasName: !!metadata.name,
-          hasImage: !!metadata.image,
-          hasImageCid: !!metadata.imageIpfsCid,
-          imageValue: metadata.image?.substring(0, 50) + '...'
+          hasName: !!typedMetadata.name,
+          hasImage: !!typedMetadata.image,
+          hasImageCid: !!typedMetadata.imageIpfsCid,
+          imageValue: typedMetadata.image ? String(typedMetadata.image).substring(0, 50) + '...' : 'undefined'
         });
         
         // If we have imageIpfsCid, use it even if schema validation fails
-        if (metadata.imageIpfsCid && !metadata.image) {
-          console.log(`🔧 Reconstructing image URL from Redis imageIpfsCid: ${metadata.imageIpfsCid.substring(0, 20)}...`);
-          metadata.image = `ipfs://${metadata.imageIpfsCid}`;
+        if (typedMetadata.imageIpfsCid && !typedMetadata.image) {
+          const imageCidStr = String(typedMetadata.imageIpfsCid);
+          console.log(`🔧 Reconstructing image URL from Redis imageIpfsCid: ${imageCidStr.substring(0, 20)}...`);
+          typedMetadata.image = `ipfs://${imageCidStr}`;
         }
         
         // More lenient validation for Redis data - if we have core fields, use it
-        const hasMinimalData = metadata.name && metadata.image && 
-                              (metadata.image.startsWith('ipfs://') || metadata.image.startsWith('https://'));
+        const nameStr = String(typedMetadata.name || '');
+        const imageStr = String(typedMetadata.image || '');
+        const hasMinimalData = nameStr && imageStr && 
+                              (imageStr.startsWith('ipfs://') || imageStr.startsWith('https://'));
         
         if (hasMinimalData) {
           // CRITICAL: ALWAYS normalize image URL even from Redis
-          if (metadata.image) {
-            metadata.image = await pickGatewayUrl(metadata.image);
+          if (imageStr) {
+            typedMetadata.image = await pickGatewayUrl(imageStr);
           }
           
           const latency = Date.now() - startTime;
           console.log(`✅ Redis cache hit for ${contractAddress}:${tokenId} (${latency}ms)`);
-          console.log(`🔗 Normalized image URL: ${metadata.image}`);
+          console.log(`🔗 Normalized image URL: ${typedMetadata.image}`);
           return {
-            metadata,
+            metadata: typedMetadata,
             source: 'redis',
             cached: true,
             latency
           };
         } else {
           console.log(`⚠️ Redis data incomplete - missing core fields:`, {
-            hasName: !!metadata.name,
-            hasImage: !!metadata.image,
-            imageValue: metadata.image
+            hasName: !!nameStr,
+            hasImage: !!imageStr,
+            imageValue: imageStr
           });
         }
       }

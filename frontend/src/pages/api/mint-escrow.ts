@@ -2161,21 +2161,21 @@ async function mintNFTEscrowGasPaid(
                 extractedFinalImageCid: finalImageIpfsCid.substring(0, 30) + '...'
               });
             } else {
-              // 🔥 CRITICAL FALLBACK: Use imageIpfsCid from upload if JSON image field is missing/invalid
-              console.log('⚠️ Final metadata JSON missing valid image field, using upload imageIpfsCid as fallback');
+              // 🔥 CRITICAL FALLBACK: Use actualImageCid from upload if JSON image field is missing/invalid
+              console.log('⚠️ Final metadata JSON missing valid image field, using upload actualImageCid as fallback');
               console.log('🔧 Upload data for fallback:', {
-                hasImageIpfsCid: !!imageIpfsCid,
-                imageIpfsCidValue: imageIpfsCid?.substring(0, 30) + '...',
+                hasActualImageCid: !!actualImageCid,
+                actualImageCidValue: actualImageCid?.substring(0, 30) + '...',
                 originalJsonImage: finalMetadataJson.image
               });
               
-              if (imageIpfsCid) {
-                finalImageIpfsCid = imageIpfsCid.replace('ipfs://', '');
-                console.log('✅ FALLBACK: Using imageIpfsCid from upload:', {
+              if (actualImageCid) {
+                finalImageIpfsCid = actualImageCid.replace('ipfs://', '');
+                console.log('✅ FALLBACK: Using actualImageCid from upload:', {
                   fallbackImageCid: finalImageIpfsCid.substring(0, 30) + '...'
                 });
               } else {
-                throw new Error(`No valid image field in final metadata JSON and no imageIpfsCid fallback available. JSON image: ${finalMetadataJson.image}, Upload imageIpfsCid: ${imageIpfsCid}`);
+                throw new Error(`No valid image field in final metadata JSON and no actualImageCid fallback available. JSON image: ${finalMetadataJson.image}, Upload actualImageCid: ${actualImageCid}`);
               }
             }
           } else {
