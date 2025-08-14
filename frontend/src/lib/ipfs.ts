@@ -306,8 +306,10 @@ async function uploadToThirdWeb(file: File): Promise<IPFSUploadResult> {
     if (typeof rawResult === 'string') {
       actualCid = extractCidPath(rawResult);
     } else if (rawResult && typeof rawResult === 'object') {
+      // Type assertion for object with any properties
+      const resultObj = rawResult as any;
       // Try different property names that ThirdWeb might use
-      const possibleUrl = rawResult.uri || rawResult.url || rawResult.ipfsUri || rawResult.ipfsUrl || rawResult.cid;
+      const possibleUrl = resultObj.uri || resultObj.url || resultObj.ipfsUri || resultObj.ipfsUrl || resultObj.cid;
       if (possibleUrl) {
         actualCid = extractCidPath(String(possibleUrl));
       } else {

@@ -132,7 +132,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     shareUrl: '',
     qrCode: '',
     wasGasless: false,
-    escrowConfig: null as EscrowConfig | null
+    escrowConfig: null as EscrowConfig | null,
+    imageCid: '' // 🔥 NEW: Store image CID for wallet_watchAsset
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -311,9 +312,24 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             console.log('📱 Forcing MetaMask NFT refresh for newly minted NFT...');
             
             try {
-              // Method 1: Add NFT to MetaMask explicitly (mobile compatibility)
+              // 🔥 NEW: Enhanced wallet_watchAsset with HTTPS image + symbol/decimals
               const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
               if (contractAddress) {
+                // Get the HTTPS image URL from wizard data
+                let imageHttpsUrl = '';
+                if (wizardData.imageCid) {
+                  // Convert IPFS CID to HTTPS URL for wallet compatibility
+                  imageHttpsUrl = `https://cloudflare-ipfs.com/ipfs/${wizardData.imageCid}`;
+                } else if (wizardData.imageUrl && wizardData.imageUrl.startsWith('http')) {
+                  imageHttpsUrl = wizardData.imageUrl;
+                }
+                
+                console.log('🖼️ Adding NFT to wallet with enhanced metadata:', {
+                  contractAddress,
+                  tokenId: gaslessVerification.tokenId,
+                  imageUrl: imageHttpsUrl?.substring(0, 50) + '...'
+                });
+                
                 await window.ethereum.request({
                   method: 'wallet_watchAsset',
                   params: [{
@@ -321,9 +337,14 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
                     options: {
                       address: contractAddress,
                       tokenId: gaslessVerification.tokenId,
+                      image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
+                      symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
+                      decimals: 0,          // 🔥 NFTs have 0 decimals
                     }
                   }]
                 });
+                
+                console.log('✅ Enhanced wallet_watchAsset completed with image and metadata');
               }
               
               // Method 2: Request account refresh (forces NFT cache update)
@@ -335,6 +356,13 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
               console.log('✅ MetaMask NFT refresh completed for minted NFT');
             } catch (refreshError) {
               console.log('⚠️ MetaMask refresh failed (not critical):', refreshError);
+              // 🔥 NEW: Enhanced error logging for wallet_watchAsset debugging
+              if (refreshError instanceof Error) {
+                console.log('🚨 wallet_watchAsset error details:', {
+                  message: refreshError.message,
+                  name: refreshError.name
+                });
+              }
             }
           }
           
@@ -453,6 +481,9 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
     // Determine correct image CID to use (prioritize actual image over metadata)
     const actualImageCid = imageIpfsCid || ipfsCid;
+    
+    // 🔥 NEW: Store image CID in wizard data for wallet_watchAsset
+    setWizardData(prev => ({ ...prev, imageCid: actualImageCid }));
     
     // Step 3: Always use mint-escrow API (handles both escrow and direct mint)
     const isEscrowEnabled = wizardData.escrowConfig?.enabled;
@@ -623,6 +654,48 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       tokenId,
       wasGasless: true
     }, 'success');
+    
+    // 🔥 NEW: Enhanced wallet_watchAsset for gasless mints
+    if (typeof window !== 'undefined' && window.ethereum && tokenId) {
+      console.log('📱 Adding gasless NFT to wallet with enhanced metadata...');
+      
+      try {
+        const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
+        if (contractAddress) {
+          // Get the HTTPS image URL from wizard data
+          let imageHttpsUrl = '';
+          if (wizardData.imageCid) {
+            imageHttpsUrl = `https://cloudflare-ipfs.com/ipfs/${wizardData.imageCid}`;
+          } else if (wizardData.imageUrl && wizardData.imageUrl.startsWith('http')) {
+            imageHttpsUrl = wizardData.imageUrl;
+          }
+          
+          console.log('🖼️ Adding gasless NFT to wallet:', {
+            contractAddress,
+            tokenId,
+            imageUrl: imageHttpsUrl?.substring(0, 50) + '...'
+          });
+          
+          await window.ethereum.request({
+            method: 'wallet_watchAsset',
+            params: [{
+              type: 'ERC721',
+              options: {
+                address: contractAddress,
+                tokenId: tokenId,
+                image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
+                symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
+                decimals: 0,          // 🔥 NFTs have 0 decimals
+              }
+            }]
+          });
+          
+          console.log('✅ Enhanced wallet_watchAsset completed for gasless NFT');
+        }
+      } catch (walletError) {
+        console.log('⚠️ wallet_watchAsset failed for gasless NFT (not critical):', walletError);
+      }
+    }
     
     setCurrentStep(WizardStep.SUCCESS);
     setIsLoading(false);
@@ -895,6 +968,48 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         wasGasless: gasless || false,
         message: isDirectMint ? message : prev.message // Store direct mint message
       }));
+      
+      // 🔥 NEW: Enhanced wallet_watchAsset for gas-paid mints
+      if (typeof window !== 'undefined' && window.ethereum && tokenId) {
+        console.log('📱 Adding gas-paid NFT to wallet with enhanced metadata...');
+        
+        try {
+          const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
+          if (contractAddress) {
+            // Get the HTTPS image URL from wizard data
+            let imageHttpsUrl = '';
+            if (wizardData.imageCid) {
+              imageHttpsUrl = `https://cloudflare-ipfs.com/ipfs/${wizardData.imageCid}`;
+            } else if (wizardData.imageUrl && wizardData.imageUrl.startsWith('http')) {
+              imageHttpsUrl = wizardData.imageUrl;
+            }
+            
+            console.log('🖼️ Adding gas-paid NFT to wallet:', {
+              contractAddress,
+              tokenId,
+              imageUrl: imageHttpsUrl?.substring(0, 50) + '...'
+            });
+            
+            await window.ethereum.request({
+              method: 'wallet_watchAsset',
+              params: [{
+                type: 'ERC721',
+                options: {
+                  address: contractAddress,
+                  tokenId: tokenId,
+                  image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
+                  symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
+                  decimals: 0,          // 🔥 NFTs have 0 decimals
+                }
+              }]
+            });
+            
+            console.log('✅ Enhanced wallet_watchAsset completed for gas-paid NFT');
+          }
+        } catch (walletError) {
+          console.log('⚠️ wallet_watchAsset failed for gas-paid NFT (not critical):', walletError);
+        }
+      }
       
       setCurrentStep(WizardStep.SUCCESS);
     } catch (err) {

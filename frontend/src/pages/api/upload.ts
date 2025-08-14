@@ -4,6 +4,7 @@ import { promises as fs } from "fs";
 import { upload } from "thirdweb/storage";
 import { uploadToIPFS, uploadMetadata, validateIPFSConfig } from "../../lib/ipfs";
 import { addMintLog } from "./debug/mint-logs";
+import { convertIPFSToHTTPS, validateMultiGatewayAccess } from "../../utils/ipfs";
 
 // Disable the default body parser
 export const config = {
@@ -233,10 +234,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       // CRITICAL FIX: Create temporary metadata without tokenId (will be updated during mint)
       // Real tokenId is generated during mint transaction, not here
+      const imageIpfsUrl = `ipfs://${filteredCid}`;
+      const imageHttpsUrl = convertIPFSToHTTPS(imageIpfsUrl);
+      
       const metadata = {
         name: "CryptoGift NFT", // Generic name, will be updated with real tokenId
         description: "Un regalo cripto único creado con amor",
-        image: `ipfs://${filteredCid}`,
+        image: imageIpfsUrl,        // IPFS native format - preferred
+        image_url: imageHttpsUrl,   // HTTPS format - fallback for wallets
         external_url: process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL required for metadata generation'); })(),
         attributes: [
           {
@@ -279,10 +284,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // CRITICAL FIX: Create metadata JSON even for non-filtered images
     console.log('🔧 Creating metadata JSON for non-filtered image upload');
     
+    const nonFilteredImageIpfsUrl = `ipfs://${cid}`;
+    const nonFilteredImageHttpsUrl = convertIPFSToHTTPS(nonFilteredImageIpfsUrl);
+    
     const metadata = {
       name: "CryptoGift NFT",
       description: "Un regalo cripto único creado con amor",
-      image: `ipfs://${cid}`, // Use the uploaded image CID
+      image: nonFilteredImageIpfsUrl,        // IPFS native format - preferred
+      image_url: nonFilteredImageHttpsUrl,   // HTTPS format - fallback for wallets
       external_url: process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL required for metadata generation'); })(),
       attributes: [
         {
@@ -318,82 +327,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔍 Validating metadata propagation before returning to client...');
     addMintLog('INFO', 'PROPAGATION_VALIDATION_START', { metadataCid });
     
-    // 🔥 CRITICAL FIX ERROR #7: Use SAME gateway priority as pickGatewayUrl() for consistency
-    // Cloudflare first (most reliable), ThirdWeb later (blocks HEAD requests)
-    const testGateways = [
-      `https://cloudflare-ipfs.com/ipfs/${metadataCid}`,  // Most reliable first
-      `https://ipfs.io/ipfs/${metadataCid}`,
-      `https://gateway.thirdweb.com/ipfs/${metadataCid}`, // ThirdWeb last (blocks HEAD)
-      `https://gateway.pinata.cloud/ipfs/${metadataCid}`  // Added for completeness
-    ];
+    // 🔥 NEW: Multi-gateway validation with Promise.any + AbortController
+    console.log('🔍 Starting multi-gateway validation for metadata...');
+    addMintLog('INFO', 'MULTI_GATEWAY_VALIDATION_START', { metadataCid });
     
-    let propagationValidated = false;
-    for (const gatewayUrl of testGateways) {
-      try {
-        // 🔥 FIX ERROR #7: Handle ThirdWeb gateway HEAD blocking like pickGatewayUrl() does
-        if (gatewayUrl.includes('gateway.thirdweb.com')) {
-          console.log(`🔧 ThirdWeb gateway detected in validation, using GET with Range`);
-          const testResponse = await fetch(gatewayUrl, { 
-            method: 'GET',
-            headers: { Range: 'bytes=0-1023' }, // Small range test like pickGatewayUrl()
-            signal: AbortSignal.timeout(5000)
-          });
-          
-          if (testResponse.ok || testResponse.status === 206) {
-            console.log(`✅ Propagation validated via ThirdWeb GET Range: ${gatewayUrl}`);
-            addMintLog('SUCCESS', 'PROPAGATION_VALIDATION_SUCCESS', { 
-              gateway: gatewayUrl,
-              status: testResponse.status,
-              method: 'GET_RANGE'
-            });
-            propagationValidated = true;
-            break;
-          }
-        } else {
-          // Standard HEAD request for non-ThirdWeb gateways
-          const testResponse = await fetch(gatewayUrl, { 
-            method: 'HEAD',
-            signal: AbortSignal.timeout(5000) // 5s timeout for propagation
-          });
-          
-          if (testResponse.ok) {
-            console.log(`✅ Propagation validated: ${gatewayUrl}`);
-            addMintLog('SUCCESS', 'PROPAGATION_VALIDATION_SUCCESS', { 
-              gateway: gatewayUrl,
-              status: testResponse.status,
-              method: 'HEAD'
-            });
-            propagationValidated = true;
-            break;
-          }
-        }
-      } catch (error) {
-        console.log(`⏳ Propagation pending: ${gatewayUrl} (${error.message})`);
-      }
-    }
+    const metadataIpfsUrl = `ipfs://${metadataCid}`;
+    const metadataValidation = await validateMultiGatewayAccess(metadataIpfsUrl, 2, 6000);
     
-    if (!propagationValidated) {
-      console.log('❌ CRITICAL: Metadata propagation failed - BLOCKING upload success');
-      addMintLog('ERROR', 'PROPAGATION_VALIDATION_FAILED', {
-        message: 'Metadata not accessible in any gateway - blocking upload',
+    if (!metadataValidation.success) {
+      console.log('❌ CRITICAL: Multi-gateway metadata validation failed - BLOCKING upload success');
+      addMintLog('ERROR', 'MULTI_GATEWAY_VALIDATION_FAILED', {
+        message: 'Metadata not accessible in minimum required gateways',
         metadataCid: metadataCid.substring(0, 20) + '...',
-        gateways: testGateways.length
+        workingGateways: metadataValidation.workingGateways.length,
+        errors: metadataValidation.errors
       });
       
-      // 🔥 BLOCKING: Do NOT return success if metadata isn't accessible
-      throw new Error(`Upload incomplete: Metadata ${metadataCid} not accessible in any IPFS gateway. Please wait for propagation and retry.`);
+      throw new Error(`Upload incomplete: Metadata ${metadataCid} only accessible in ${metadataValidation.workingGateways.length} gateways. Minimum 2 required. Errors: ${metadataValidation.errors.join(', ')}`);
     }
+    
+    console.log('✅ Multi-gateway metadata validation successful!');
+    addMintLog('SUCCESS', 'MULTI_GATEWAY_VALIDATION_SUCCESS', {
+      metadataCid: metadataCid.substring(0, 20) + '...',
+      workingGateways: metadataValidation.workingGateways.length,
+      gateways: metadataValidation.workingGateways.map(url => new URL(url).hostname)
+    });
 
     // 🔥 CRITICAL: Validate JSON content has valid image field before continuing
     console.log('📋 Validating metadata JSON contains valid image field...');
-    let jsonValidated = false;
-    let lastJsonError = null;
     
-    // Try multiple gateways for JSON validation instead of just the first one
-    for (const gatewayUrl of testGateways) {
+    // Use the working gateways from the previous validation
+    if (metadataValidation.workingGateways.length > 0) {
       try {
-        console.log(`🔍 Trying JSON validation via: ${gatewayUrl}`);
-        const jsonResponse = await fetch(gatewayUrl, { 
+        const testGatewayUrl = metadataValidation.workingGateways[0];
+        console.log(`🔍 Validating JSON content via: ${testGatewayUrl}`);
+        
+        const jsonResponse = await fetch(testGatewayUrl, { 
           signal: AbortSignal.timeout(4000) 
         });
         
@@ -404,130 +373,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             addMintLog('ERROR', 'METADATA_JSON_INVALID', {
               hasImage: !!jsonData.image,
               imageValue: jsonData.image?.substring(0, 50) + '...',
-              message: 'Metadata JSON does not contain valid ipfs:// image field',
-              gateway: gatewayUrl
+              message: 'Metadata JSON does not contain valid ipfs:// image field'
             });
             throw new Error(`Upload incomplete: Metadata JSON at ${metadataCid} does not contain valid image field. Expected ipfs:// URL but got: ${jsonData.image || 'undefined'}`);
           }
-          console.log(`✅ JSON validation successful via ${gatewayUrl}:`, jsonData.image.substring(0, 50) + '...');
+          console.log(`✅ JSON validation successful:`, jsonData.image.substring(0, 50) + '...');
           addMintLog('SUCCESS', 'METADATA_JSON_VALIDATED', {
-            imageField: jsonData.image.substring(0, 50) + '...',
-            gateway: gatewayUrl
+            imageField: jsonData.image.substring(0, 50) + '...'
           });
-          jsonValidated = true;
-          break; // Success! Exit the loop
         } else {
-          console.log(`⏳ JSON validation failed via ${gatewayUrl}: HTTP ${jsonResponse.status}`);
-          lastJsonError = `HTTP ${jsonResponse.status}`;
+          console.warn(`⚠️ JSON validation failed: HTTP ${jsonResponse.status}`);
         }
       } catch (jsonError) {
-        console.log(`⏳ JSON validation error via ${gatewayUrl}: ${jsonError.message}`);
-        lastJsonError = jsonError.message;
-        // Continue to next gateway
+        console.warn(`⚠️ JSON validation error: ${jsonError.message}`);
       }
-    }
-    
-    if (!jsonValidated) {
-      console.log('❌ CRITICAL: Failed to validate metadata JSON content in any gateway');
-      addMintLog('ERROR', 'METADATA_JSON_VALIDATION_FAILED', {
-        error: lastJsonError || 'All gateways failed',
-        metadataCid: metadataCid.substring(0, 20) + '...',
-        gateways: testGateways.length
-      });
-      throw new Error(`Upload incomplete: Cannot validate metadata JSON content in any gateway. Last error: ${lastJsonError || 'All gateways failed'}`);
     }
 
-    // 🔥 FASE 7E FIX: Validate IMAGE propagation in ≥2 gateways before returning success
-    console.log('🖼️ Validating IMAGE propagation in multiple gateways...');
-    addMintLog('INFO', 'IMAGE_PROPAGATION_VALIDATION_START', { imageCid: cid });
+    // 🔥 NEW: Multi-gateway validation for IMAGE with Promise.any + AbortController
+    console.log('🖼️ Starting multi-gateway validation for image...');
+    addMintLog('INFO', 'IMAGE_MULTI_GATEWAY_VALIDATION_START', { imageCid: cid });
     
-    // 🔥 CRITICAL FIX ERROR #7: Use SAME gateway priority for image validation consistency  
-    const imageTestGateways = [
-      `https://cloudflare-ipfs.com/ipfs/${cid}`,      // Most reliable first
-      `https://ipfs.io/ipfs/${cid}`,
-      `https://gateway.thirdweb.com/ipfs/${cid}`,     // ThirdWeb last (blocks HEAD)
-      `https://gateway.pinata.cloud/ipfs/${cid}`
-    ];
+    const finalImageIpfsUrl = `ipfs://${cid}`;
+    const imageValidation = await validateMultiGatewayAccess(finalImageIpfsUrl, 2, 8000);
     
-    let imagePropagationCount = 0;
-    const minRequiredGateways = 1; // FIXED: Reduced from 2→1 for IPFS gateway latency tolerance
-    
-    for (const gatewayUrl of imageTestGateways) {
-      try {
-        // 🔥 FIX ERROR #7: Handle ThirdWeb gateway HEAD blocking for image validation too
-        if (gatewayUrl.includes('gateway.thirdweb.com')) {
-          console.log(`🔧 ThirdWeb gateway detected for image validation, using GET with Range`);
-          const imageTestResponse = await fetch(gatewayUrl, { 
-            method: 'GET',
-            headers: { Range: 'bytes=0-1023' }, // Small range test
-            signal: AbortSignal.timeout(8000)
-          });
-          
-          if (imageTestResponse.ok || imageTestResponse.status === 206) {
-            console.log(`✅ Image propagation validated via ThirdWeb GET Range: ${gatewayUrl}`);
-            addMintLog('SUCCESS', 'IMAGE_PROPAGATION_SUCCESS', { 
-              gateway: gatewayUrl,
-              status: imageTestResponse.status,
-              imageCid: cid.substring(0, 20) + '...',
-              method: 'GET_RANGE'
-            });
-            imagePropagationCount++;
-            
-            // Early exit once we have minimum required gateways (performance optimization)
-            if (imagePropagationCount >= minRequiredGateways) {
-              console.log(`🚀 Early exit: minimum ${minRequiredGateways} gateway(s) validated`);
-              break;
-            }
-          }
-        } else {
-          // Standard HEAD request for non-ThirdWeb gateways
-          const imageTestResponse = await fetch(gatewayUrl, { 
-            method: 'HEAD',
-            signal: AbortSignal.timeout(8000) // FIXED: Increased from 4s→8s for slow gateways
-          });
-          
-          if (imageTestResponse.ok) {
-            console.log(`✅ Image propagation validated: ${gatewayUrl}`);
-            addMintLog('SUCCESS', 'IMAGE_PROPAGATION_SUCCESS', { 
-              gateway: gatewayUrl,
-              status: imageTestResponse.status,
-              imageCid: cid.substring(0, 20) + '...',
-              method: 'HEAD'
-            });
-            imagePropagationCount++;
-            
-            // Early exit once we have minimum required gateways (performance optimization)
-            if (imagePropagationCount >= minRequiredGateways) {
-              console.log(`🚀 Early exit: minimum ${minRequiredGateways} gateway(s) validated`);
-              break;
-            }
-          }
-        }
-      } catch (error) {
-        console.log(`⏳ Image propagation pending: ${gatewayUrl} (${error.message})`);
-      }
-    }
-    
-    if (imagePropagationCount >= minRequiredGateways) {
-      console.log(`✅ Image propagation VALIDATED: ${imagePropagationCount}/${imageTestGateways.length} gateways`);
-      addMintLog('SUCCESS', 'IMAGE_PROPAGATION_VALIDATED', {
-        successfulGateways: imagePropagationCount,
-        totalGateways: imageTestGateways.length,
-        imageCid: cid.substring(0, 20) + '...'
-      });
-    } else {
-      console.log(`❌ CRITICAL: Image propagation INSUFFICIENT - BLOCKING upload success`);
-      addMintLog('ERROR', 'IMAGE_PROPAGATION_FAILED', {
-        successfulGateways: imagePropagationCount,
-        requiredGateways: minRequiredGateways,
-        totalGateways: imageTestGateways.length,
+    if (!imageValidation.success) {
+      console.log('❌ CRITICAL: Multi-gateway image validation failed - BLOCKING upload success');
+      addMintLog('ERROR', 'IMAGE_MULTI_GATEWAY_VALIDATION_FAILED', {
+        message: 'Image not accessible in minimum required gateways',
         imageCid: cid.substring(0, 20) + '...',
-        message: 'Image not accessible in minimum required gateways'
+        workingGateways: imageValidation.workingGateways.length,
+        errors: imageValidation.errors
       });
       
-      // 🔥 BLOCKING: Do NOT return success if image isn't accessible
-      throw new Error(`Upload incomplete: Image ${cid} only accessible in ${imagePropagationCount}/${imageTestGateways.length} gateways. Minimum ${minRequiredGateways} required. Please wait for propagation and retry.`);
+      throw new Error(`Upload incomplete: Image ${cid} only accessible in ${imageValidation.workingGateways.length} gateways. Minimum 2 required. Errors: ${imageValidation.errors.join(', ')}`);
     }
+    
+    console.log('✅ Multi-gateway image validation successful!');
+    addMintLog('SUCCESS', 'IMAGE_MULTI_GATEWAY_VALIDATION_SUCCESS', {
+      imageCid: cid.substring(0, 20) + '...',
+      workingGateways: imageValidation.workingGateways.length,
+      gateways: imageValidation.workingGateways.map(url => new URL(url).hostname)
+    });
 
     // Return consistent structure: ipfsCid = metadata CID, imageIpfsCid = image CID
     res.status(200).json({

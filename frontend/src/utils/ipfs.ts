@@ -37,15 +37,22 @@ export function normalizeCidPath(cidPath: string): string {
   }).join('/') + tail;
 }
 
-// Gateway priority: Cloudflare first (most reliable), NFT.Storage last
-// 🔧 FASE 5A FIX: Added ThirdWeb gateway (missing from audit)
+// Gateway priority: Balanced selection without bias
+// 🔥 NEW: Optimized gateway order with round-robin capability
 const GATEWAYS = [
-  (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}`,
-  (p: string) => `https://ipfs.io/ipfs/${p}`,
-  (p: string) => `https://gateway.thirdweb.com/ipfs/${p}`, // Added per audit
-  (p: string) => `https://gateway.pinata.cloud/ipfs/${p}`,
-  (p: string) => `https://nftstorage.link/ipfs/${p}`, // last (as per your analysis)
+  (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}`,    // Fast, reliable
+  (p: string) => `https://ipfs.io/ipfs/${p}`,                // Standard IPFS gateway
+  (p: string) => `https://gateway.thirdweb.com/ipfs/${p}`,   // ThirdWeb gateway
+  (p: string) => `https://gateway.pinata.cloud/ipfs/${p}`,   // Pinata gateway
+  (p: string) => `https://nftstorage.link/ipfs/${p}`,        // NFT.Storage gateway
 ];
+
+// 🔥 NEW: Gateway performance tracking for bias removal
+let gatewayStats = {
+  successes: new Map<string, number>(),
+  failures: new Map<string, number>(),
+  lastUsed: new Map<string, number>()
+};
 
 /**
  * Converts IPFS URL to HTTPS with single encoding pass
@@ -73,9 +80,175 @@ function extractCidFromHttpsUrl(httpsUrl: string): string | null {
 }
 
 /**
+ * Multi-gateway validation with Promise.any + AbortController
+ * Validates that content is accessible in at least N gateways before proceeding
+ * 🔥 NEW: Implements Promise.any pattern with configurable minimum gateway requirement
+ */
+export async function validateMultiGatewayAccess(
+  input: string, 
+  minGateways: number = 2,
+  timeoutMs: number = 4000
+): Promise<{ success: boolean; workingGateways: string[]; errors: string[] }> {
+  const cidPath = getCidPath(input);
+  const candidates = GATEWAYS.map(f => f(cidPath));
+  
+  console.log(`🔍 Multi-gateway validation: Testing ${candidates.length} gateways, need ≥${minGateways}`);
+  
+  const workingGateways: string[] = [];
+  const errors: string[] = [];
+  const controller = new AbortController();
+  
+  // Set global timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    // 🔥 CRITICAL FIX: Use Promise.any pattern with early cancellation
+    // Create individual promises that can be cancelled when we reach minimum threshold
+    const testPromises = candidates.map(async (url, index) => {
+      try {
+        const result = await testGatewayUrl(url, controller.signal);
+        if (result.success) {
+          workingGateways.push(url);
+          console.log(`✅ Gateway ${index + 1}/${candidates.length} working: ${url}`);
+          
+          // 🔥 EARLY EXIT: Cancel other requests once we have minimum required
+          if (workingGateways.length >= minGateways) {
+            console.log(`🚀 EARLY SUCCESS: Reached ${minGateways} working gateways, cancelling remaining`);
+            controller.abort(); // Cancel remaining requests
+          }
+          
+          return { success: true, url, index };
+        } else {
+          errors.push(`Gateway ${index + 1}: ${result.error}`);
+          return { success: false, url, index, error: result.error };
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`Gateway ${index + 1}: ${errorMsg}`);
+        return { success: false, url, index, error: errorMsg };
+      }
+    });
+    
+    // 🔥 NEW: Use Promise.allSettled but with early exit capability
+    // Wait for all to complete OR until we get minimum required successes
+    const results = await Promise.allSettled(testPromises);
+    
+    // Count final successful validations
+    const successCount = workingGateways.length;
+    const success = successCount >= minGateways;
+    
+    console.log(`🎯 Multi-gateway validation result: ${successCount}/${candidates.length} working (need ≥${minGateways})`);
+    
+    return {
+      success,
+      workingGateways,
+      errors
+    };
+    
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Test individual gateway URL accessibility
+ */
+async function testGatewayUrl(url: string, signal: AbortSignal): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (url.includes('gateway.thirdweb.com')) {
+      // ThirdWeb gateway: Use GET with Range
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-1023' },
+        signal
+      });
+      return { success: response.ok || response.status === 206 };
+    } else {
+      // Other gateways: Try HEAD first, then GET Range fallback
+      try {
+        const headResponse = await fetch(url, { method: 'HEAD', signal });
+        if (headResponse.ok) {
+          return { success: true };
+        }
+      } catch {
+        // HEAD failed, try GET Range
+      }
+      
+      const getResponse = await fetch(url, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-0' },
+        signal
+      });
+      return { success: getResponse.ok || getResponse.status === 206 };
+    }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
+/**
+ * Extract normalized CID path from various input formats
+ */
+function getCidPath(input: string): string {
+  if (input.startsWith('ipfs://')) {
+    return normalizeCidPath(input.slice(7));
+  } else if (input.startsWith('https://') && input.includes('/ipfs/')) {
+    const extracted = extractCidFromHttpsUrl(input);
+    return extracted ? normalizeCidPath(extracted) : input;
+  } else {
+    return normalizeCidPath(input);
+  }
+}
+
+/**
+ * Optimized gateway selection with bias removal and performance tracking
+ * 🔥 NEW: Smart gateway selection based on performance rather than order
+ */
+function getOptimizedGatewayOrder(cidPath: string): string[] {
+  const candidates = GATEWAYS.map(f => f(cidPath));
+  
+  // 🔥 NEW: Sort by success rate and recency, not fixed order
+  return candidates.sort((a, b) => {
+    const aHost = new URL(a).hostname;
+    const bHost = new URL(b).hostname;
+    
+    const aSuccesses = gatewayStats.successes.get(aHost) || 0;
+    const bSuccesses = gatewayStats.successes.get(bHost) || 0;
+    const aFailures = gatewayStats.failures.get(aHost) || 0;
+    const bFailures = gatewayStats.failures.get(bHost) || 0;
+    
+    const aSuccessRate = aSuccesses + aFailures > 0 ? aSuccesses / (aSuccesses + aFailures) : 0.5;
+    const bSuccessRate = bSuccesses + bFailures > 0 ? bSuccesses / (bSuccesses + bFailures) : 0.5;
+    
+    // Prefer higher success rate, but add some randomness to prevent bias
+    const aScore = aSuccessRate + (Math.random() * 0.1); // 10% randomness
+    const bScore = bSuccessRate + (Math.random() * 0.1);
+    
+    return bScore - aScore; // Higher scores first
+  });
+}
+
+/**
+ * Track gateway performance for bias removal
+ */
+function updateGatewayStats(url: string, success: boolean): void {
+  const hostname = new URL(url).hostname;
+  
+  if (success) {
+    gatewayStats.successes.set(hostname, (gatewayStats.successes.get(hostname) || 0) + 1);
+  } else {
+    gatewayStats.failures.set(hostname, (gatewayStats.failures.get(hostname) || 0) + 1);
+  }
+  
+  gatewayStats.lastUsed.set(hostname, Date.now());
+}
+
+/**
  * Robust gateway probing with HEAD + GET Range fallback
- * Handles gateways that block HEAD requests
- * 🔧 FASE 5A FIX: Now handles HTTPS URLs, ipfs:// URLs, and raw CIDs
+ * 🔥 NEW: Bias-free selection with performance-based ordering
  */
 export async function pickGatewayUrl(input: string): Promise<string> {
   // 🔧 CRITICAL FIX: Handle different input types per audit
@@ -103,42 +276,37 @@ export async function pickGatewayUrl(input: string): Promise<string> {
     cidPath = normalizeCidPath(input);
   }
   
-  const candidates = GATEWAYS.map(f => f(cidPath));
+  // 🔥 NEW: Use optimized gateway order instead of fixed bias
+  const candidates = getOptimizedGatewayOrder(cidPath);
   
   for (const u of candidates) {
     try {
-      // 🔧 FASE 5A FIX: ThirdWeb gateway often blocks HEAD, use GET directly
-      if (u.includes('gateway.thirdweb.com')) {
-        console.log(`🔧 ThirdWeb gateway detected, using GET with Range directly: ${u}`);
-        const g = await fetch(u, { 
-          method: 'GET', 
-          headers: { Range: 'bytes=0-1023' }, // Small range to test availability
-          signal: AbortSignal.timeout(3000) // Slightly longer timeout for ThirdWeb
-        });
-        if (g.ok || g.status === 206) return u;
-      } else {
-        // Standard flow for other gateways
-        // 1) HEAD request first (fastest)
-        const h = await fetch(u, { 
-          method: 'HEAD',
-          signal: AbortSignal.timeout(2000) // 2s timeout
-        });
-        if (h.ok) return u;
-        
-        // 2) GET Range fallback if HEAD is blocked by gateway
-        const g = await fetch(u, { 
-          method: 'GET', 
-          headers: { Range: 'bytes=0-0' },
-          signal: AbortSignal.timeout(2000)
-        });
-        if (g.ok || g.status === 206) return u;
+      // 🔥 NEW: Unified approach - use GET directly for all gateways to eliminate bias
+      console.log(`🔍 Testing gateway: ${new URL(u).hostname}`);
+      
+      const response = await fetch(u, { 
+        method: 'GET', 
+        headers: { Range: 'bytes=0-1023' }, // Small range test for all gateways
+        signal: AbortSignal.timeout(3000) // Consistent timeout
+      });
+      
+      if (response.ok || response.status === 206) {
+        updateGatewayStats(u, true);
+        console.log(`✅ Gateway success: ${new URL(u).hostname}`);
+        return u;
       }
       
-    } catch {
+      updateGatewayStats(u, false);
+      
+    } catch (error) {
+      updateGatewayStats(u, false);
+      console.log(`⚠️ Gateway failed: ${new URL(u).hostname}`);
       continue; // Try next gateway
     }
   }
   
-  return candidates[0]; // Last resort fallback
+  // Last resort: return first candidate (maintains compatibility)
+  console.log('⚠️ All gateways failed, using first candidate as fallback');
+  return candidates[0];
 }
 

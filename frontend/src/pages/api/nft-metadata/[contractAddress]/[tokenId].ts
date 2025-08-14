@@ -7,11 +7,13 @@ import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
 import { pickGatewayUrl } from '../../../../utils/ipfs';
 import { getNFTMetadataWithFallback } from '../../../../lib/nftMetadataFallback';
+import { convertIPFSToHTTPS } from '../../../../utils/ipfs';
 
 interface ERC721Metadata {
   name: string;
   description: string;
   image: string;
+  image_url?: string; // HTTPS version for wallet compatibility
   animation_url?: string;
   attributes: Array<{
     trait_type: string;
@@ -67,21 +69,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // METADATA PROCESSING: Use result from comprehensive fallback system
     
-    // 🔧 FASE 5E FIX: Ensure image is ALWAYS HTTPS (never ipfs://) for wallets/explorers
-    let normalizedImageUrl = fallbackResult.metadata.image;
-    if (normalizedImageUrl && normalizedImageUrl.startsWith('ipfs://')) {
-      console.log(`🔄 Normalizing ipfs:// image URL to HTTPS for wallet compatibility`);
-      const { pickGatewayUrl } = await import('../../../../utils/ipfs');
-      normalizedImageUrl = await pickGatewayUrl(normalizedImageUrl);
-      console.log(`🔗 Image normalized: ${normalizedImageUrl.substring(0, 50)}...`);
+    // 🔥 NEW: Support dual image formats (IPFS + HTTPS) for maximum compatibility
+    // CRITICAL: Prevent HTTP→IPFS recursion by detecting self-calls
+    const currentHost = req.headers.host || 'localhost';
+    const selfCallPattern = new RegExp(`${currentHost.replace('.', '\\.')}/api/(nft-)?metadata/`);
+    
+    let ipfsImageUrl = fallbackResult.metadata.image;
+    let httpsImageUrl = fallbackResult.metadata.image;
+    let recursionDetected = false;
+    
+    // Ensure we have both IPFS and HTTPS formats
+    if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('ipfs://')) {
+      // Already have IPFS format, convert to HTTPS
+      ipfsImageUrl = fallbackResult.metadata.image;
+      httpsImageUrl = convertIPFSToHTTPS(fallbackResult.metadata.image);
+      console.log(`🔄 Converted IPFS to HTTPS: ${httpsImageUrl.substring(0, 50)}...`);
+    } else if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('https://')) {
+      // Check for self-call recursion first
+      if (selfCallPattern.test(fallbackResult.metadata.image)) {
+        console.log('🚨 SELF-CALL DETECTED in image URL - preventing recursion');
+        recursionDetected = true;
+        // Force fallback to default IPFS format
+        ipfsImageUrl = fallbackResult.metadata.image; // Keep original for debugging
+        httpsImageUrl = convertIPFSToHTTPS('ipfs://QmDefaultImage'); // Fallback
+      } else {
+        // Already have HTTPS format, keep it
+        httpsImageUrl = fallbackResult.metadata.image;
+        ipfsImageUrl = fallbackResult.metadata.image; // Keep for compatibility
+        console.log(`🔗 Using existing HTTPS image: ${httpsImageUrl.substring(0, 50)}...`);
+      }
     }
     
     const baseScanMetadata: ERC721Metadata = {
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // 🔧 FASE 5E: Image URL guaranteed to be HTTPS for universal compatibility
-      image: normalizedImageUrl,
+      // 🔥 NEW: Dual image format for maximum compatibility
+      image: ipfsImageUrl,        // IPFS format - preferred by modern systems
+      image_url: httpsImageUrl,   // HTTPS format - fallback for older wallets
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],
@@ -126,8 +151,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const etag = `"nft-${contractAddress}-${tokenId}-${fallbackResult.source}"`;
     res.setHeader('ETag', etag);
 
-    console.log(`🔗 IMAGE URL: ${baseScanMetadata.image}`);
+    console.log(`🖼️ DUAL IMAGE URLs:`, {
+      ipfs: baseScanMetadata.image?.substring(0, 50) + '...',
+      https: baseScanMetadata.image_url?.substring(0, 50) + '...'
+    });
     console.log(`✅ METADATA SERVED via ${fallbackResult.source}: ${contractAddress}:${tokenId} (${processingTime}ms)`);
+    
+    // Additional logging for recursion prevention
+    if (recursionDetected) {
+      console.log('🚨 RECURSION PREVENTION: Self-call detected and resolved');
+    }
     
     return res.status(200).json(baseScanMetadata);
 

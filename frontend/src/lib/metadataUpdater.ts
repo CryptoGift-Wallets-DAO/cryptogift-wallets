@@ -6,11 +6,13 @@
 
 import { uploadMetadata } from './ipfs';
 import { getPublicBaseUrl } from './publicBaseUrl';
+import { convertIPFSToHTTPS, validateMultiGatewayAccess } from '../utils/ipfs';
 
 export interface NFTMetadataTemplate {
   name?: string;
   description: string;
   image: string;
+  image_url?: string;  // HTTPS version for wallet compatibility
   external_url?: string;
   attributes: Array<{
     trait_type: string;
@@ -47,12 +49,13 @@ export async function createFinalMetadata(
     });
     
     // Create comprehensive metadata with real tokenId
-    // 🔥 CRITICAL FIX: Use IPFS native format for image URL in metadata
-    // HTTPS URLs can fail, IPFS native format is more reliable
+    // 🔥 CRITICAL FIX: Use DUAL format - IPFS native + HTTPS for maximum compatibility
     const imageUrl = `ipfs://${cleanImageCid}`;
+    const imageHttpsUrl = convertIPFSToHTTPS(imageUrl);
     
-    console.log('🖼️ FINAL IMAGE URL GENERATED:', {
-      imageUrl,
+    console.log('🖼️ DUAL IMAGE URLs GENERATED:', {
+      imageIpfs: imageUrl,
+      imageHttps: imageHttpsUrl,
       cleanImageCid: cleanImageCid.substring(0, 40) + '...',
       originalImageCid: imageIpfsCid.substring(0, 40) + '...'
     });
@@ -60,7 +63,8 @@ export async function createFinalMetadata(
     const finalMetadata: NFTMetadataTemplate = {
       name: `CryptoGift NFT #${tokenId}`,
       description: giftMessage || "Un regalo cripto único creado con amor",
-      image: imageUrl, // HTTP URL for wallet/explorer compatibility
+      image: imageUrl,        // IPFS native format - preferred by most systems
+      image_url: imageHttpsUrl, // HTTPS format - fallback for wallets that don't support IPFS
       external_url: getPublicBaseUrl(),
       attributes: [
         {
@@ -110,33 +114,42 @@ export async function createFinalMetadata(
       reason: 'IPFS native format is most compatible with wallets/explorers'
     });
     
-    // Optional: Test if metadata is accessible via gateways (for logging only)
-    const testGateways = [
-      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}`,
-      `https://ipfs.io/ipfs/${metadataUploadResult.cid}`,
-      `https://gateway.thirdweb.com/ipfs/${metadataUploadResult.cid}`
-    ];
+    // 🔥 NEW: Multi-gateway validation before updateTokenURI with Promise.any+Abort
+    console.log('🔍 Validating metadata accessibility across multiple gateways...');
+    const metadataValidation = await validateMultiGatewayAccess(finalMetadataUrl, 2, 5000);
     
-    for (const testUrl of testGateways) {
-      try {
-        const testResponse = await fetch(testUrl, { 
-          method: 'HEAD',
-          signal: AbortSignal.timeout(2000)
-        });
-        
-        if (testResponse.ok) {
-          console.log(`✅ Metadata accessible via: ${testUrl}`);
-          break;
-        }
-      } catch (error) {
-        console.log(`⚠️ Gateway test failed: ${testUrl}`);
-      }
+    if (!metadataValidation.success) {
+      console.warn('⚠️ Multi-gateway validation failed for metadata:', {
+        workingGateways: metadataValidation.workingGateways.length,
+        errors: metadataValidation.errors
+      });
+      // Don't fail the entire process, but log the issue
+    } else {
+      console.log('✅ Multi-gateway validation successful for metadata:', {
+        workingGateways: metadataValidation.workingGateways.length,
+        gateways: metadataValidation.workingGateways.map(url => new URL(url).hostname)
+      });
+    }
+    
+    // Also validate image accessibility across gateways
+    console.log('🖼️ Validating image accessibility across multiple gateways...');
+    const imageValidation = await validateMultiGatewayAccess(imageUrl, 2, 5000);
+    
+    if (!imageValidation.success) {
+      console.warn('⚠️ Multi-gateway validation failed for image:', {
+        workingGateways: imageValidation.workingGateways.length,
+        errors: imageValidation.errors
+      });
+    } else {
+      console.log('✅ Multi-gateway validation successful for image:', {
+        workingGateways: imageValidation.workingGateways.length,
+        gateways: imageValidation.workingGateways.map(url => new URL(url).hostname)
+      });
     }
     
     console.log('🎯 FINAL METADATA URL FOR TOKENURI:', {
       originalUrl: metadataUploadResult.url,
       finalUrl: finalMetadataUrl,
-      validationSuccess,
       cid: metadataUploadResult.cid
     });
     

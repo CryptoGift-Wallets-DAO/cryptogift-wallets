@@ -226,13 +226,14 @@ async function validateIPFSWithMultipleGateways(imageUrl: string): Promise<{
  * Fixes path loss issue identified in audit
  */
 function constructGatewayUrls(imageUrl: string, isMetadata: boolean = false): Array<{url: string, gateway: string}> {
-  // Priority order per audit recommendation + ThirdWeb gateway for uploads
+  // 🔥 CRITICAL FIX: Reordered gateways to eliminate ThirdWeb bias per audit
+  // Priority based on reliability and performance, not upload source
   const gateways = [
-    'https://gateway.thirdweb.com/ipfs', // Add ThirdWeb gateway (primary for recent uploads)
-    'https://cloudflare-ipfs.com/ipfs',
-    'https://ipfs.io/ipfs', 
-    'https://gateway.pinata.cloud/ipfs',
-    'https://nftstorage.link/ipfs'
+    'https://cloudflare-ipfs.com/ipfs',    // Most reliable first
+    'https://ipfs.io/ipfs',                // Standard IPFS gateway
+    'https://gateway.pinata.cloud/ipfs',   // Professional gateway
+    'https://nftstorage.link/ipfs',        // NFT Storage gateway
+    'https://gateway.thirdweb.com/ipfs'    // ThirdWeb last to prevent bias
   ];
   
   if (imageUrl.startsWith('ipfs://')) {

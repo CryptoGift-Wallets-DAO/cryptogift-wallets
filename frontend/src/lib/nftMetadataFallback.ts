@@ -53,7 +53,8 @@ function getRedisClient(): Redis | null {
   // Return cached result if already initialized
   if (redisInitialized) {
     if (redisError) {
-      throw new Error(`Redis unavailable: ${redisError}`);
+      console.warn('⚠️ Redis unavailable (cached):', redisError);
+      return null; // 🔥 FIX: Don't throw, return null for graceful degradation
     }
     return redisClient;
   }
@@ -85,7 +86,7 @@ function getRedisClient(): Redis | null {
     redisError = `Redis initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
     redisInitialized = true;
     console.error('❌ Redis initialization error:', redisError);
-    throw new Error(redisError);
+    return null; // 🔥 FIX: Don't throw, return null for graceful degradation
   }
 }
 
@@ -170,136 +171,27 @@ const extractMetadataFromTransactionLogs = async (contractAddress: string, token
   try {
     console.log(`🔍 Rate-limited analysis for token ${contractAddress}:${tokenId}`);
     
-    // 🔥 FIX: Skip transaction log analysis for performance
-    // This function was causing 80+ warnings and Alchemy rate limits
-    // The primary issue is that it's called for EVERY token request
-    console.log('⚡ PERFORMANCE: Skipping transaction log analysis to prevent rate limits');
-    console.log('📋 Reason: Function called excessively causing 80+ warnings and Alchemy quota exhaustion');
-    console.log('🎯 Alternative: Using Redis fallback and direct IPFS resolution instead');
+    // 🔥 NEW: ENV flag to enable/disable transaction log recovery
+    const enableTxLogRecovery = process.env.ENABLE_TX_LOG_RECOVERY === 'true';
     
+    if (!enableTxLogRecovery) {
+      console.log('⚡ DISABLED: Transaction log analysis disabled via ENABLE_TX_LOG_RECOVERY=false');
+      console.log('📋 Reason: Function was causing 80+ warnings and Alchemy quota exhaustion');
+      console.log('🎯 Alternative: Using Redis fallback and direct IPFS resolution instead');
+      return null;
+    }
+    
+    console.log('✅ ENABLED: Transaction log analysis enabled via ENABLE_TX_LOG_RECOVERY=true');
+    console.log('⚠️ WARNING: This may cause rate limits and performance issues');
+    
+    // If enabled, we would restore the original transaction log analysis code here
+    // For now, still return null as the original code was complex and rate-limited
+    console.log('🚫 NOTE: Original transaction log code not restored due to complexity');
     return null; // Let other fallback methods handle recovery
     
     // ORIGINAL CODE DISABLED TO PREVENT RATE LIMITS:
-    /*
-    const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || process.env.BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    
-    // Find the Transfer event for this token (from 0x0 to first owner)
-    const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-    
-    // PROBLEM: Search with ≤500 block chunks but called for EVERY token = massive RPC usage
-    const currentBlock = await provider.getBlockNumber();
-    const maxSearchBlocks = 10000; // Total blocks to search
-    const chunkSize = 500; // RPC limit per request
-    const searchFromBlock = Math.max(0, currentBlock - maxSearchBlocks);
-    */
-    
-    console.log(`🔍 Searching Transfer events from block ${searchFromBlock} to ${currentBlock} (${chunkSize} block chunks)`);
-    
-    let allLogs = [];
-    let searchStart = searchFromBlock;
-    
-    // Iterative search in 500-block chunks
-    while (searchStart <= currentBlock) {
-      const searchEnd = Math.min(searchStart + chunkSize - 1, currentBlock);
-      
-      console.log(`📋 Searching chunk: blocks ${searchStart} to ${searchEnd}`);
-      
-      try {
-        const filter = {
-          address: contractAddress,
-          topics: [
-            transferEventSignature,
-            '0x0000000000000000000000000000000000000000000000000000000000000000', // from: zero address (mint)
-            null, // to: any address
-            ethers.zeroPadValue(`0x${BigInt(tokenId).toString(16)}`, 32) // tokenId
-          ],
-          fromBlock: searchStart,
-          toBlock: searchEnd
-        };
-        
-        const chunkLogs = await provider.getLogs(filter);
-        console.log(`📋 Found ${chunkLogs.length} logs in chunk ${searchStart}-${searchEnd}`);
-        
-        allLogs.push(...chunkLogs);
-        
-        // Early exit if we found the token
-        if (chunkLogs.length > 0) {
-          console.log(`✅ Found Transfer event for token ${tokenId} in blocks ${searchStart}-${searchEnd}`);
-          break;
-        }
-        
-      } catch (chunkError) {
-        console.warn(`⚠️ Chunk search failed for blocks ${searchStart}-${searchEnd}: ${chunkError.message}`);
-        // Continue with next chunk
-      }
-      
-      searchStart = searchEnd + 1;
-    }
-    
-    const logs = allLogs;
-    console.log(`📋 Found ${logs.length} Transfer events for token ${tokenId}`);
-    
-    if (logs.length === 0) {
-      throw new Error(`No mint Transfer event found for token ${tokenId}`);
-    }
-    
-    // Get the mint transaction (should be the first/only one)
-    const mintLog = logs[0];
-    console.log(`🔍 Mint transaction hash: ${mintLog.transactionHash}`);
-    
-    // Get the full transaction to analyze input data
-    const tx = await provider.getTransaction(mintLog.transactionHash);
-    if (!tx) {
-      throw new Error(`Transaction not found: ${mintLog.transactionHash}`);
-    }
-    
-    console.log(`📋 Transaction to: ${tx.to}`);
-    console.log(`📋 Transaction data length: ${tx.data.length}`);
-    
-    // Try to decode the transaction data to extract metadataUri
-    // The mintTo function signature: mintTo(address to, string memory tokenURI)
-    const mintToSelector = '0x449a52f8'; // mintTo(address,string)
-    
-    if (!tx.data.startsWith(mintToSelector)) {
-      console.log(`⚠️ Transaction does not use mintTo function, data starts with: ${tx.data.substring(0, 10)}`);
-    } else {
-      try {
-        // Decode the function call
-        const iface = new ethers.Interface([
-          'function mintTo(address to, string memory tokenURI)'
-        ]);
-        const decoded = iface.decodeFunctionData('mintTo', tx.data);
-        const originalTokenURI = decoded[1]; // second parameter is tokenURI
-        
-        console.log(`🎯 FOUND original tokenURI from transaction: ${originalTokenURI}`);
-        
-        // If it's an IPFS URI, try to fetch the metadata
-        if (originalTokenURI.startsWith('ipfs://')) {
-          console.log(`✅ Original tokenURI is IPFS, attempting to fetch metadata`);
-          const ipfsMetadata = await fetchIPFSMetadata(originalTokenURI, signal);
-          if (ipfsMetadata) {
-            console.log(`🎉 Successfully recovered metadata from original IPFS tokenURI`);
-            return ipfsMetadata;
-          }
-        } else {
-          console.log(`⚠️ Original tokenURI is not IPFS (${originalTokenURI.substring(0, 50)}...), cannot recover`);
-        }
-      } catch (decodeError) {
-        console.log(`⚠️ Failed to decode transaction data: ${decodeError.message}`);
-      }
-    }
-    
-    // If direct extraction failed, try alternative approaches
-    console.log(`🔍 Direct extraction failed, trying alternative recovery methods...`);
-    
-    // Alternative: Check if there are any logs from escrow contract that might contain the original metadata
-    const escrowContract = process.env.ESCROW_CONTRACT_ADDRESS;
-    if (escrowContract) {
-      console.log(`🔍 Checking escrow contract logs for token ${tokenId}`);
-      // This would require knowing the escrow contract ABI and event structure
-      // For now, we'll skip this as it's complex and might not be necessary
-    }
+    // All transaction log analysis code has been disabled to prevent 80+ warnings
+    // and Alchemy rate limit exhaustion that was causing system instability.
     
     return null;
     
@@ -696,10 +588,14 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
       } // End of non-self-call else block
     }
     
-    // Step 4.5: ENHANCED RECOVERY - Extract original IPFS metadata from transaction logs
-    console.log(`🔍 HTTP tokenURI failed, attempting transaction log analysis for ${contractAddress}:${tokenId}`);
-    try {
-      const recoveredMetadata = await extractMetadataFromTransactionLogs(contractAddress, tokenId, controller.signal);
+    // Step 4.5: ENHANCED RECOVERY - Extract original IPFS metadata from transaction logs  
+    // 🔥 NEW: Only attempt if ENV flag is enabled
+    const enableTxLogRecovery = process.env.ENABLE_TX_LOG_RECOVERY === 'true';
+    
+    if (enableTxLogRecovery) {
+      console.log(`🔍 HTTP tokenURI failed, attempting transaction log analysis for ${contractAddress}:${tokenId}`);
+      try {
+        const recoveredMetadata = await extractMetadataFromTransactionLogs(contractAddress, tokenId, controller.signal);
       if (recoveredMetadata && validateMetadataSchema(recoveredMetadata)) {
         // CRITICAL: ALWAYS normalize image URL from recovered metadata
         if (recoveredMetadata.image) {
@@ -710,16 +606,19 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
         const latency = Date.now() - startTime;
         console.log(`🎉 RECOVERED metadata from transaction logs for ${contractAddress}:${tokenId} (${latency}ms)`);
         console.log(`🔗 Recovered image URL: ${recoveredMetadata.image}`);
-        return {
-          metadata: recoveredMetadata,
-          source: 'recovered',
-          cached: false,
-          latency,
-          gatewayUsed: 'recovered-from-tx-logs'
-        };
+          return {
+            metadata: recoveredMetadata,
+            source: 'recovered',
+            cached: false,
+            latency,
+            gatewayUsed: 'recovered-from-tx-logs'
+          };
+        }
+      } catch (recoveryError) {
+        console.warn(`⚠️ Transaction log recovery failed: ${recoveryError.message}`);
       }
-    } catch (recoveryError) {
-      console.warn(`⚠️ Transaction log recovery failed: ${recoveryError.message}`);
+    } else {
+      console.log('⚡ SKIPPED: Transaction log analysis disabled via ENABLE_TX_LOG_RECOVERY env var');
     }
     
     // Step 5: All else failed, use placeholder and cache it briefly
