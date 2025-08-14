@@ -361,37 +361,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 🔥 CRITICAL: Validate JSON content has valid image field before continuing
     console.log('📋 Validating metadata JSON contains valid image field...');
-    try {
-      const jsonValidationUrl = testGateways[0]; // Use the first successful gateway
-      const jsonResponse = await fetch(jsonValidationUrl, { 
-        signal: AbortSignal.timeout(5000) 
-      });
-      
-      if (jsonResponse.ok) {
-        const jsonData = await jsonResponse.json();
-        if (!jsonData.image || !jsonData.image.startsWith('ipfs://')) {
-          console.log('❌ CRITICAL: Metadata JSON missing valid image field');
-          addMintLog('ERROR', 'METADATA_JSON_INVALID', {
-            hasImage: !!jsonData.image,
-            imageValue: jsonData.image?.substring(0, 50) + '...',
-            message: 'Metadata JSON does not contain valid ipfs:// image field'
-          });
-          throw new Error(`Upload incomplete: Metadata JSON at ${metadataCid} does not contain valid image field. Expected ipfs:// URL but got: ${jsonData.image || 'undefined'}`);
-        }
-        console.log('✅ Metadata JSON contains valid image field:', jsonData.image.substring(0, 50) + '...');
-        addMintLog('SUCCESS', 'METADATA_JSON_VALIDATED', {
-          imageField: jsonData.image.substring(0, 50) + '...'
+    let jsonValidated = false;
+    let lastJsonError = null;
+    
+    // Try multiple gateways for JSON validation instead of just the first one
+    for (const gatewayUrl of testGateways) {
+      try {
+        console.log(`🔍 Trying JSON validation via: ${gatewayUrl}`);
+        const jsonResponse = await fetch(gatewayUrl, { 
+          signal: AbortSignal.timeout(4000) 
         });
-      } else {
-        throw new Error(`Cannot validate JSON content: HTTP ${jsonResponse.status}`);
+        
+        if (jsonResponse.ok) {
+          const jsonData = await jsonResponse.json();
+          if (!jsonData.image || !jsonData.image.startsWith('ipfs://')) {
+            console.log('❌ CRITICAL: Metadata JSON missing valid image field');
+            addMintLog('ERROR', 'METADATA_JSON_INVALID', {
+              hasImage: !!jsonData.image,
+              imageValue: jsonData.image?.substring(0, 50) + '...',
+              message: 'Metadata JSON does not contain valid ipfs:// image field',
+              gateway: gatewayUrl
+            });
+            throw new Error(`Upload incomplete: Metadata JSON at ${metadataCid} does not contain valid image field. Expected ipfs:// URL but got: ${jsonData.image || 'undefined'}`);
+          }
+          console.log(`✅ JSON validation successful via ${gatewayUrl}:`, jsonData.image.substring(0, 50) + '...');
+          addMintLog('SUCCESS', 'METADATA_JSON_VALIDATED', {
+            imageField: jsonData.image.substring(0, 50) + '...',
+            gateway: gatewayUrl
+          });
+          jsonValidated = true;
+          break; // Success! Exit the loop
+        } else {
+          console.log(`⏳ JSON validation failed via ${gatewayUrl}: HTTP ${jsonResponse.status}`);
+          lastJsonError = `HTTP ${jsonResponse.status}`;
+        }
+      } catch (jsonError) {
+        console.log(`⏳ JSON validation error via ${gatewayUrl}: ${jsonError.message}`);
+        lastJsonError = jsonError.message;
+        // Continue to next gateway
       }
-    } catch (jsonError) {
-      console.log('❌ CRITICAL: Failed to validate metadata JSON content');
+    }
+    
+    if (!jsonValidated) {
+      console.log('❌ CRITICAL: Failed to validate metadata JSON content in any gateway');
       addMintLog('ERROR', 'METADATA_JSON_VALIDATION_FAILED', {
-        error: jsonError.message,
-        metadataCid: metadataCid.substring(0, 20) + '...'
+        error: lastJsonError || 'All gateways failed',
+        metadataCid: metadataCid.substring(0, 20) + '...',
+        gateways: testGateways.length
       });
-      throw new Error(`Upload incomplete: Cannot validate metadata JSON content: ${jsonError.message}`);
+      throw new Error(`Upload incomplete: Cannot validate metadata JSON content in any gateway. Last error: ${lastJsonError || 'All gateways failed'}`);
     }
 
     // 🔥 FASE 7E FIX: Validate IMAGE propagation in ≥2 gateways before returning success
