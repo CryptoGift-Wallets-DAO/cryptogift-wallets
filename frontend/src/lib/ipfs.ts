@@ -290,14 +290,42 @@ async function uploadToThirdWeb(file: File): Promise<IPFSUploadResult> {
       clientIdPreview: getThirdwebClient().clientId?.substring(0, 8) + '...'
     });
     
-    // 🚨 SURGICAL FIX: Use robust helpers for clean extraction and URL construction
-    const cleanCidPath = extractCidPath(rawResult); // Handles double prefixes and edge cases
+    // 🚨 CRITICAL DEBUG: Log the EXACT raw result from ThirdWeb
+    console.log('🔍 RAW THIRDWEB RESULT (FULL):', {
+      rawResult,
+      rawResultType: typeof rawResult,
+      rawResultKeys: rawResult ? Object.keys(rawResult) : 'null',
+      rawResultString: String(rawResult),
+      rawResultJSON: JSON.stringify(rawResult)
+    });
+    
+    // 🔥 EMERGENCY FIX: Handle different ThirdWeb response formats
+    let actualCid: string;
+    
+    // ThirdWeb v5 might return just a string or an object with uri/url property
+    if (typeof rawResult === 'string') {
+      actualCid = extractCidPath(rawResult);
+    } else if (rawResult && typeof rawResult === 'object') {
+      // Try different property names that ThirdWeb might use
+      const possibleUrl = rawResult.uri || rawResult.url || rawResult.ipfsUri || rawResult.ipfsUrl || rawResult.cid;
+      if (possibleUrl) {
+        actualCid = extractCidPath(String(possibleUrl));
+      } else {
+        // Last resort: stringify and extract
+        actualCid = extractCidPath(String(rawResult));
+      }
+    } else {
+      throw new Error(`Unexpected ThirdWeb upload result format: ${typeof rawResult}`);
+    }
+    
+    const cleanCidPath = actualCid; // Now properly extracted
     const url = toGatewayHttps(cleanCidPath, 'thirdweb'); // Proper encoding for spaces and special chars
     
-    console.log('✅ ThirdWeb upload successful:', { 
-      rawResult, 
+    console.log('✅ ThirdWeb upload processed:', { 
+      rawResult: String(rawResult).substring(0, 100) + '...', 
+      extractedCid: actualCid,
       cleanCidPath, 
-      url: url 
+      finalUrl: url 
     });
     
     return {

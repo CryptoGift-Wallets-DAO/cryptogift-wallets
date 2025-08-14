@@ -47,7 +47,9 @@ export async function createFinalMetadata(
     });
     
     // Create comprehensive metadata with real tokenId
-    const imageUrl = `https://gateway.thirdweb.com/ipfs/${cleanImageCid}`;
+    // 🔥 CRITICAL FIX: Use IPFS native format for image URL in metadata
+    // HTTPS URLs can fail, IPFS native format is more reliable
+    const imageUrl = `ipfs://${cleanImageCid}`;
     
     console.log('🖼️ FINAL IMAGE URL GENERATED:', {
       imageUrl,
@@ -96,79 +98,39 @@ export async function createFinalMetadata(
       provider: metadataUploadResult.provider
     });
     
-    // 🔥 CRITICAL FIX: Validate that uploaded metadata is actually accessible before using as tokenURI
-    // This prevents tokenURI corruption that causes wallet/BaseScan display failures
-    console.log('🔍 VALIDATION: Testing metadata accessibility before confirming tokenURI...');
+    // 🔥 CRITICAL FIX: ALWAYS use IPFS native format for tokenURI
+    // This is the ONLY format that works reliably with wallets and BaseScan
+    // HTTPS URLs often fail or point to wrong gateways
+    const finalMetadataUrl = `ipfs://${metadataUploadResult.cid}`;
     
-    let finalMetadataUrl = metadataUploadResult.url;
-    let validationSuccess = false;
+    console.log('🎯 FORCED IPFS NATIVE FORMAT:', {
+      originalUrl: metadataUploadResult.url,
+      cid: metadataUploadResult.cid,
+      finalUrl: finalMetadataUrl,
+      reason: 'IPFS native format is most compatible with wallets/explorers'
+    });
     
-    // Try the returned URL first
-    try {
-      const testResponse = await fetch(finalMetadataUrl, { 
-        method: 'HEAD',
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      if (testResponse.ok) {
-        console.log('✅ VALIDATION: Metadata accessible via returned URL');
-        validationSuccess = true;
-      } else {
-        console.warn(`⚠️ VALIDATION: Returned URL not accessible (${testResponse.status}), trying alternatives`);
-      }
-    } catch (urlError) {
-      console.warn(`⚠️ VALIDATION: Returned URL failed (${urlError.message}), trying alternatives`);
-    }
+    // Optional: Test if metadata is accessible via gateways (for logging only)
+    const testGateways = [
+      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}`,
+      `https://ipfs.io/ipfs/${metadataUploadResult.cid}`,
+      `https://gateway.thirdweb.com/ipfs/${metadataUploadResult.cid}`
+    ];
     
-    // If returned URL fails, try constructing IPFS URL with different gateways
-    if (!validationSuccess) {
-      const testGateways = [
-        `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}`,
-        `https://ipfs.io/ipfs/${metadataUploadResult.cid}`,
-        `https://gateway.pinata.cloud/ipfs/${metadataUploadResult.cid}`,
-        `https://nftstorage.link/ipfs/${metadataUploadResult.cid}`,
-        `ipfs://${metadataUploadResult.cid}` // IPFS native format
-      ];
-      
-      for (const testUrl of testGateways) {
-        try {
-          if (testUrl.startsWith('ipfs://')) {
-            // For IPFS native URLs, we can't test accessibility but they're correct format
-            console.log('✅ VALIDATION: Using IPFS native format (recommended for tokenURI)');
-            finalMetadataUrl = testUrl;
-            validationSuccess = true;
-            break;
-          } else {
-            const testResponse = await fetch(testUrl, { 
-              method: 'HEAD',
-              signal: AbortSignal.timeout(3000)
-            });
-            
-            if (testResponse.ok) {
-              console.log(`✅ VALIDATION: Alternative gateway works: ${testUrl}`);
-              finalMetadataUrl = testUrl;
-              validationSuccess = true;
-              break;
-            }
-          }
-        } catch (testError) {
-          console.log(`⚠️ Testing ${testUrl}: ${testError.message}`);
-          continue;
+    for (const testUrl of testGateways) {
+      try {
+        const testResponse = await fetch(testUrl, { 
+          method: 'HEAD',
+          signal: AbortSignal.timeout(2000)
+        });
+        
+        if (testResponse.ok) {
+          console.log(`✅ Metadata accessible via: ${testUrl}`);
+          break;
         }
+      } catch (error) {
+        console.log(`⚠️ Gateway test failed: ${testUrl}`);
       }
-    }
-    
-    if (!validationSuccess) {
-      console.error('❌ CRITICAL: No accessible metadata URL found - this will cause wallet/BaseScan failures');
-      console.error('📊 Metadata upload details:', {
-        originalUrl: metadataUploadResult.url,
-        cid: metadataUploadResult.cid,
-        provider: metadataUploadResult.provider
-      });
-      
-      // Continue with IPFS native format as last resort
-      finalMetadataUrl = `ipfs://${metadataUploadResult.cid}`;
-      console.log('🚨 FALLBACK: Using IPFS native format as last resort');
     }
     
     console.log('🎯 FINAL METADATA URL FOR TOKENURI:', {

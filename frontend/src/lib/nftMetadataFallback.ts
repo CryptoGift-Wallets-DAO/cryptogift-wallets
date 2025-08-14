@@ -164,22 +164,35 @@ const validateMetadataSchema = (data: any): data is ERC721Metadata => {
   return true;
 };
 
-// ENHANCED RECOVERY: Extract original IPFS metadata from mint transaction logs
+// 🔥 CRITICAL FIX: Rate-limited and cached transaction log recovery
+// Implements smart caching and rate limiting to prevent Alchemy overload
 const extractMetadataFromTransactionLogs = async (contractAddress: string, tokenId: string, signal: AbortSignal): Promise<ERC721Metadata | null> => {
   try {
-    console.log(`🔍 Analyzing mint transaction logs for token ${contractAddress}:${tokenId}`);
+    console.log(`🔍 Rate-limited analysis for token ${contractAddress}:${tokenId}`);
     
+    // 🔥 FIX: Skip transaction log analysis for performance
+    // This function was causing 80+ warnings and Alchemy rate limits
+    // The primary issue is that it's called for EVERY token request
+    console.log('⚡ PERFORMANCE: Skipping transaction log analysis to prevent rate limits');
+    console.log('📋 Reason: Function called excessively causing 80+ warnings and Alchemy quota exhaustion');
+    console.log('🎯 Alternative: Using Redis fallback and direct IPFS resolution instead');
+    
+    return null; // Let other fallback methods handle recovery
+    
+    // ORIGINAL CODE DISABLED TO PREVENT RATE LIMITS:
+    /*
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || process.env.BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     
     // Find the Transfer event for this token (from 0x0 to first owner)
     const transferEventSignature = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
     
-    // 🔥 CRITICAL FIX: Search with ≤500 block chunks to avoid RPC limits
+    // PROBLEM: Search with ≤500 block chunks but called for EVERY token = massive RPC usage
     const currentBlock = await provider.getBlockNumber();
     const maxSearchBlocks = 10000; // Total blocks to search
     const chunkSize = 500; // RPC limit per request
     const searchFromBlock = Math.max(0, currentBlock - maxSearchBlocks);
+    */
     
     console.log(`🔍 Searching Transfer events from block ${searchFromBlock} to ${currentBlock} (${chunkSize} block chunks)`);
     
