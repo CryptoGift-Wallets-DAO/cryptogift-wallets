@@ -767,7 +767,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               )}
             </button>
 
-            {!account && (
+            {!account && giftInfo?.status !== 'claimed' && giftInfo?.status !== 'returned' && !giftInfo?.isExpired && (
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Connect your wallet to claim this gift
               </p>
