@@ -2,7 +2,45 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🚀 LATEST SESSION UPDATES (Agosto 10, 2025)
+## 🚀 LATEST SESSION UPDATES (Agosto 14, 2025) - IPFS/BaseScan/MetaMask Crisis
+
+### 🔴 CRITICAL FINDING - Token #173 Fails in MetaMask
+
+**URGENT**: Token #173 doesn't display in MetaMask while #174 does, despite identical structure.
+- Both have valid on-chain tokenURIs pointing to accessible metadata
+- Issue appears to be timing/cache related, NOT format related
+- See BASESCAN.md for complete analysis
+
+### 📊 Session Summary - Going in Circles
+
+**Problems Addressed**:
+1. ❌ BaseScan never shows images (unsolved)
+2. ⚠️ MetaMask shows images inconsistently (token 173 fails)
+3. ✅ Platform and wallet app work correctly
+
+**Fixes Applied**:
+1. ✅ Eliminated hardcoded nftstorage.link gateways (commit 373bc78)
+2. ✅ Implemented getBestGatewayForCid with LRU cache
+3. ✅ Added data:image URI support for legacy tokens (commit d1ebd01)
+4. ✅ Fixed resolveIPFSUrl to use dweb.link priority
+
+**Root Cause Identified**:
+- MetaMask reads ON-CHAIN tokenURI, not our API endpoint
+- On-chain metadata has ipfs.io hardcoded, we return dweb.link
+- IPFS propagation timing causes intermittent failures
+- BaseScan may need specific User-Agent handling
+
+**Critical Files Modified**:
+- `/api/nft/[...params].ts` - Removed nftstorage.link hardcodes
+- `/lib/nftMetadataStore.ts` - Updated gateway priority
+- `/api/nft-metadata/[contractAddress]/[tokenId].ts` - Added data:image support
+- `/utils/ipfs.ts` - LRU cache and getBestGatewayForCid implementation
+
+**See BASESCAN.md for complete technical analysis and recommendations**
+
+---
+
+## 🚀 PREVIOUS SESSION UPDATES (Agosto 10, 2025)
 
 ### 🚨 CRITICAL PRODUCTION FIX + AUDIT COMPLIANCE TIPO A ✅
 

@@ -49,9 +49,10 @@ export async function createFinalMetadata(
     });
     
     // Create comprehensive metadata with real tokenId
-    // 🔥 CRITICAL FIX: Use DUAL format - IPFS native + HTTPS for maximum compatibility
+    // 🔥 CRITICAL FIX: Use DUAL format - IPFS native + ipfs.io for MetaMask/BaseScan
     const imageUrl = `ipfs://${cleanImageCid}`;
-    const imageHttpsUrl = convertIPFSToHTTPS(imageUrl);
+    // Use ipfs.io specifically for on-chain metadata (MetaMask/BaseScan preference)
+    const imageHttpsUrl = `https://ipfs.io/ipfs/${cleanImageCid}`;
     
     console.log('🖼️ DUAL IMAGE URLs GENERATED:', {
       imageIpfs: imageUrl,
@@ -152,6 +153,44 @@ export async function createFinalMetadata(
       finalUrl: finalMetadataUrl,
       cid: metadataUploadResult.cid
     });
+    
+    // 🔥 CRITICAL FIX: Warm-up IPFS gateways for MetaMask/BaseScan compatibility
+    console.log('🔥 WARMING UP IPFS GATEWAYS for MetaMask/BaseScan...');
+    const warmupPromises = [];
+    
+    // Warm up metadata.json on critical gateways (non-blocking)
+    const metadataWarmupUrls = [
+      `https://ipfs.io/ipfs/${metadataUploadResult.cid}`,
+      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}`,
+      `https://dweb.link/ipfs/${metadataUploadResult.cid}`
+    ];
+    
+    // Warm up image on critical gateways (non-blocking)
+    const imageWarmupUrls = [
+      `https://ipfs.io/ipfs/${cleanImageCid}`,
+      `https://cloudflare-ipfs.com/ipfs/${cleanImageCid}`,
+      `https://dweb.link/ipfs/${cleanImageCid}`
+    ];
+    
+    // Fire and forget - don't wait for responses
+    for (const url of [...metadataWarmupUrls, ...imageWarmupUrls]) {
+      warmupPromises.push(
+        fetch(url, { 
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000) // 5s timeout per request
+        })
+        .then(() => console.log(`✅ Warmed up: ${url.substring(0, 50)}...`))
+        .catch(() => console.log(`⚠️ Warmup failed: ${url.substring(0, 50)}...`))
+      );
+    }
+    
+    // Wait maximum 3 seconds for warmups (don't block if they're slow)
+    await Promise.race([
+      Promise.allSettled(warmupPromises),
+      new Promise(resolve => setTimeout(resolve, 3000))
+    ]);
+    
+    console.log('✅ IPFS warmup completed (best effort)');
     
     return {
       success: true,
