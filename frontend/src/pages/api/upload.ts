@@ -318,29 +318,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🔍 Validating metadata propagation before returning to client...');
     addMintLog('INFO', 'PROPAGATION_VALIDATION_START', { metadataCid });
     
-    // Test metadata accessibility with increased timeout for propagation
+    // 🔥 CRITICAL FIX ERROR #7: Use SAME gateway priority as pickGatewayUrl() for consistency
+    // Cloudflare first (most reliable), ThirdWeb later (blocks HEAD requests)
     const testGateways = [
-      `https://gateway.thirdweb.com/ipfs/${metadataCid}`,
+      `https://cloudflare-ipfs.com/ipfs/${metadataCid}`,  // Most reliable first
       `https://ipfs.io/ipfs/${metadataCid}`,
-      `https://cloudflare-ipfs.com/ipfs/${metadataCid}`
+      `https://gateway.thirdweb.com/ipfs/${metadataCid}`, // ThirdWeb last (blocks HEAD)
+      `https://gateway.pinata.cloud/ipfs/${metadataCid}`  // Added for completeness
     ];
     
     let propagationValidated = false;
     for (const gatewayUrl of testGateways) {
       try {
-        const testResponse = await fetch(gatewayUrl, { 
-          method: 'HEAD',
-          signal: AbortSignal.timeout(5000) // 5s timeout for propagation
-        });
-        
-        if (testResponse.ok) {
-          console.log(`✅ Propagation validated: ${gatewayUrl}`);
-          addMintLog('SUCCESS', 'PROPAGATION_VALIDATION_SUCCESS', { 
-            gateway: gatewayUrl,
-            status: testResponse.status 
+        // 🔥 FIX ERROR #7: Handle ThirdWeb gateway HEAD blocking like pickGatewayUrl() does
+        if (gatewayUrl.includes('gateway.thirdweb.com')) {
+          console.log(`🔧 ThirdWeb gateway detected in validation, using GET with Range`);
+          const testResponse = await fetch(gatewayUrl, { 
+            method: 'GET',
+            headers: { Range: 'bytes=0-1023' }, // Small range test like pickGatewayUrl()
+            signal: AbortSignal.timeout(5000)
           });
-          propagationValidated = true;
-          break;
+          
+          if (testResponse.ok || testResponse.status === 206) {
+            console.log(`✅ Propagation validated via ThirdWeb GET Range: ${gatewayUrl}`);
+            addMintLog('SUCCESS', 'PROPAGATION_VALIDATION_SUCCESS', { 
+              gateway: gatewayUrl,
+              status: testResponse.status,
+              method: 'GET_RANGE'
+            });
+            propagationValidated = true;
+            break;
+          }
+        } else {
+          // Standard HEAD request for non-ThirdWeb gateways
+          const testResponse = await fetch(gatewayUrl, { 
+            method: 'HEAD',
+            signal: AbortSignal.timeout(5000) // 5s timeout for propagation
+          });
+          
+          if (testResponse.ok) {
+            console.log(`✅ Propagation validated: ${gatewayUrl}`);
+            addMintLog('SUCCESS', 'PROPAGATION_VALIDATION_SUCCESS', { 
+              gateway: gatewayUrl,
+              status: testResponse.status,
+              method: 'HEAD'
+            });
+            propagationValidated = true;
+            break;
+          }
         }
       } catch (error) {
         console.log(`⏳ Propagation pending: ${gatewayUrl} (${error.message})`);
@@ -416,10 +441,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('🖼️ Validating IMAGE propagation in multiple gateways...');
     addMintLog('INFO', 'IMAGE_PROPAGATION_VALIDATION_START', { imageCid: cid });
     
+    // 🔥 CRITICAL FIX ERROR #7: Use SAME gateway priority for image validation consistency  
     const imageTestGateways = [
-      `https://gateway.thirdweb.com/ipfs/${cid}`,
+      `https://cloudflare-ipfs.com/ipfs/${cid}`,      // Most reliable first
       `https://ipfs.io/ipfs/${cid}`,
-      `https://cloudflare-ipfs.com/ipfs/${cid}`,
+      `https://gateway.thirdweb.com/ipfs/${cid}`,     // ThirdWeb last (blocks HEAD)
       `https://gateway.pinata.cloud/ipfs/${cid}`
     ];
     
@@ -428,24 +454,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     for (const gatewayUrl of imageTestGateways) {
       try {
-        const imageTestResponse = await fetch(gatewayUrl, { 
-          method: 'HEAD',
-          signal: AbortSignal.timeout(8000) // FIXED: Increased from 4s→8s for slow gateways
-        });
-        
-        if (imageTestResponse.ok) {
-          console.log(`✅ Image propagation validated: ${gatewayUrl}`);
-          addMintLog('SUCCESS', 'IMAGE_PROPAGATION_SUCCESS', { 
-            gateway: gatewayUrl,
-            status: imageTestResponse.status,
-            imageCid: cid.substring(0, 20) + '...'
+        // 🔥 FIX ERROR #7: Handle ThirdWeb gateway HEAD blocking for image validation too
+        if (gatewayUrl.includes('gateway.thirdweb.com')) {
+          console.log(`🔧 ThirdWeb gateway detected for image validation, using GET with Range`);
+          const imageTestResponse = await fetch(gatewayUrl, { 
+            method: 'GET',
+            headers: { Range: 'bytes=0-1023' }, // Small range test
+            signal: AbortSignal.timeout(8000)
           });
-          imagePropagationCount++;
           
-          // Early exit once we have minimum required gateways (performance optimization)
-          if (imagePropagationCount >= minRequiredGateways) {
-            console.log(`🚀 Early exit: minimum ${minRequiredGateways} gateway(s) validated`);
-            break;
+          if (imageTestResponse.ok || imageTestResponse.status === 206) {
+            console.log(`✅ Image propagation validated via ThirdWeb GET Range: ${gatewayUrl}`);
+            addMintLog('SUCCESS', 'IMAGE_PROPAGATION_SUCCESS', { 
+              gateway: gatewayUrl,
+              status: imageTestResponse.status,
+              imageCid: cid.substring(0, 20) + '...',
+              method: 'GET_RANGE'
+            });
+            imagePropagationCount++;
+            
+            // Early exit once we have minimum required gateways (performance optimization)
+            if (imagePropagationCount >= minRequiredGateways) {
+              console.log(`🚀 Early exit: minimum ${minRequiredGateways} gateway(s) validated`);
+              break;
+            }
+          }
+        } else {
+          // Standard HEAD request for non-ThirdWeb gateways
+          const imageTestResponse = await fetch(gatewayUrl, { 
+            method: 'HEAD',
+            signal: AbortSignal.timeout(8000) // FIXED: Increased from 4s→8s for slow gateways
+          });
+          
+          if (imageTestResponse.ok) {
+            console.log(`✅ Image propagation validated: ${gatewayUrl}`);
+            addMintLog('SUCCESS', 'IMAGE_PROPAGATION_SUCCESS', { 
+              gateway: gatewayUrl,
+              status: imageTestResponse.status,
+              imageCid: cid.substring(0, 20) + '...',
+              method: 'HEAD'
+            });
+            imagePropagationCount++;
+            
+            // Early exit once we have minimum required gateways (performance optimization)
+            if (imagePropagationCount >= minRequiredGateways) {
+              console.log(`🚀 Early exit: minimum ${minRequiredGateways} gateway(s) validated`);
+              break;
+            }
           }
         }
       } catch (error) {

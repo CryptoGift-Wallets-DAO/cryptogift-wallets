@@ -342,7 +342,8 @@ const generatePlaceholderMetadata = (contractAddress: string, tokenId: string, p
   };
 };
 
-// Fetch on-chain tokenURI
+// 🔥 CRITICAL FIX ERROR #8: Fetch on-chain tokenURI with transient ownerOf resilience
+// TRY tokenURI() FIRST, only check ownerOf() if tokenURI fails (avoids race conditions)
 const fetchOnChainTokenURI = async (contractAddress: string, tokenId: string, signal: AbortSignal): Promise<string | null> => {
   try {
     const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || process.env.BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
@@ -353,20 +354,43 @@ const fetchOnChainTokenURI = async (contractAddress: string, tokenId: string, si
       "function ownerOf(uint256 tokenId) view returns (address)"
     ], provider);
     
-    // Verify token exists first
-    const owner = await tokenContract.ownerOf(BigInt(tokenId));
-    if (!owner || owner === '0x0000000000000000000000000000000000000000') {
-      throw new Error('Token does not exist');
+    // 🔥 CRITICAL FIX: TRY tokenURI() FIRST - don't block on transient ownerOf state
+    try {
+      console.log(`📋 Attempting direct tokenURI fetch for ${contractAddress}:${tokenId}`);
+      const tokenURI = await tokenContract.tokenURI(BigInt(tokenId));
+      
+      // If tokenURI() succeeds and returns valid data, the token exists
+      if (tokenURI && tokenURI.trim() !== '') {
+        console.log(`✅ TokenURI fetched successfully: ${tokenURI}`);
+        return tokenURI;
+      } else {
+        console.log(`⚠️ TokenURI is empty, checking ownerOf for existence verification`);
+        // Fall through to ownerOf check below
+      }
+    } catch (tokenUriError) {
+      console.log(`⚠️ Direct tokenURI fetch failed: ${tokenUriError.message}, checking ownerOf`);
+      // Fall through to ownerOf check below
     }
     
-    // Get tokenURI
-    const tokenURI = await tokenContract.tokenURI(BigInt(tokenId));
-    console.log(`📋 On-chain tokenURI for ${contractAddress}:${tokenId}: ${tokenURI}`);
-    
-    return tokenURI;
+    // 🔥 FALLBACK: Only check ownerOf if tokenURI failed (avoids transient ownership issues)
+    try {
+      const owner = await tokenContract.ownerOf(BigInt(tokenId));
+      if (!owner || owner === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Token does not exist - ownerOf returned zero address');
+      }
+      console.log(`✅ Token exists (owner: ${owner.slice(0, 10)}...), retrying tokenURI`);
+      
+      // If ownerOf succeeds, retry tokenURI once more
+      const tokenURI = await tokenContract.tokenURI(BigInt(tokenId));
+      console.log(`📋 Retry tokenURI successful: ${tokenURI}`);
+      return tokenURI;
+      
+    } catch (ownerOfError) {
+      throw new Error(`Token existence verification failed: ${ownerOfError.message}`);
+    }
     
   } catch (error) {
-    console.warn(`⚠️ On-chain tokenURI fetch failed for ${contractAddress}:${tokenId}:`, error);
+    console.warn(`⚠️ On-chain tokenURI fetch failed for ${contractAddress}:${tokenId}:`, error.message);
     return null;
   }
 };

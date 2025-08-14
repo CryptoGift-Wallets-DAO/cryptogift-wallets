@@ -105,6 +105,9 @@ export async function storeNFTMetadata(metadata: NFTMetadata): Promise<void> {
     await redis.sadd(contractKey, metadata.tokenId);
     console.log(`📊 Added token ${metadata.tokenId} to contract tracking: ${contractKey}`);
     
+    // 🔥 CRITICAL FIX ERROR #4: Invalidate placeholder cache when storing real metadata
+    await invalidatePlaceholderCache(metadata.contractAddress, metadata.tokenId, redis);
+    
     console.log(`✅ Metadata stored successfully in Redis`);
     
   } catch (error) {
@@ -515,4 +518,37 @@ export async function bulkMigrateMetadata(
   
   console.log(`✅ Bulk migration complete: ${results.successful} successful, ${results.failed.length} failed`);
   return results;
+}
+
+// 🔥 CRITICAL FIX ERROR #4: Invalidate placeholder cache when storing real metadata
+async function invalidatePlaceholderCache(contractAddress: string, tokenId: string, redis: any): Promise<void> {
+  try {
+    // This matches the key pattern used in nftMetadataFallback.ts
+    const fallbackCacheKey = `nft_metadata:${contractAddress.toLowerCase()}:${tokenId}`;
+    
+    console.log(`🗑️ Invalidating placeholder cache for ${contractAddress}:${tokenId}`);
+    console.log(`🔑 Cache key: ${fallbackCacheKey}`);
+    
+    // Check if there's existing cache data
+    const existingData = await redis.hgetall(fallbackCacheKey);
+    if (existingData && Object.keys(existingData).length > 0) {
+      // Check if it's a placeholder by looking for the SVG data signature
+      const isPlaceholder = existingData.image && 
+                           (existingData.image.includes('data:image/svg+xml') ||
+                            existingData.description?.includes('placeholder while metadata is being resolved'));
+      
+      if (isPlaceholder) {
+        await redis.del(fallbackCacheKey);
+        console.log(`✅ Placeholder cache invalidated - real metadata will be served`);
+      } else {
+        console.log(`ℹ️ Existing cache is not placeholder, keeping real metadata`);
+      }
+    } else {
+      console.log(`ℹ️ No existing cache to invalidate`);
+    }
+    
+  } catch (error) {
+    console.warn(`⚠️ Failed to invalidate placeholder cache (non-critical):`, error);
+    // Don't throw - this is a performance optimization, not critical
+  }
 }
