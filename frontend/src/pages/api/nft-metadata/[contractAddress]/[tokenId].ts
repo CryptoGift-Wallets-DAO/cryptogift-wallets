@@ -136,13 +136,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           retry_after: 10
         });
       }
+    } else if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('data:image/')) {
+      // 🔥 COMPATIBILITY FIX: Support data:image URIs for legacy placeholder tokens
+      console.log(`🔄 LEGACY COMPATIBILITY: data:image URI detected for legacy token`);
+      canonicalImageIpfs = fallbackResult.metadata.image; // Keep original data:image
+      dynamicImageHttps = fallbackResult.metadata.image;  // Same for image_url
+      console.log(`✅ LEGACY: Using data:image URI for token ${tokenId}`);
     } else {
       console.log(`❌ CANONICAL: Invalid image format, will return 503`);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       res.setHeader('Retry-After', '10');
       res.setHeader('Access-Control-Allow-Origin', '*');
       return res.status(503).json({ 
-        error: 'Image URL must be ipfs:// or https://',
+        error: 'Image URL must be ipfs://, https://, or data:image/',
         received: fallbackResult.metadata.image,
         retry_after: 10
       });
