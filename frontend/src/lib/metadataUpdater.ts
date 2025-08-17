@@ -6,7 +6,7 @@
 
 import { uploadMetadata } from './ipfs';
 import { getPublicBaseUrl } from './publicBaseUrl';
-import { convertIPFSToHTTPS, validateMultiGatewayAccess } from '../utils/ipfs';
+import { convertIPFSToHTTPS, validateMultiGatewayAccess, getBestGatewayForCid } from '../utils/ipfs';
 
 export interface NFTMetadataTemplate {
   name?: string;
@@ -49,14 +49,25 @@ export async function createFinalMetadata(
     });
     
     // Create comprehensive metadata with real tokenId
-    // 🔥 CRITICAL FIX: Use DUAL format - IPFS native + ipfs.io for MetaMask/BaseScan
+    // 🔥 CANONICAL FORMAT: Use IPFS native + dynamic gateway selection
     const imageUrl = `ipfs://${cleanImageCid}`;
-    // Use ipfs.io specifically for on-chain metadata (MetaMask/BaseScan preference)
-    const imageHttpsUrl = `https://ipfs.io/ipfs/${cleanImageCid}`;
+    
+    // Get best working gateway dynamically (prioritizes ipfs.io if available)
+    let imageHttpsUrl: string;
+    const bestGateway = await getBestGatewayForCid(imageUrl, 4000);
+    if (bestGateway) {
+      imageHttpsUrl = bestGateway.url;
+      console.log(`✅ Using ${bestGateway.gateway} for image_url`);
+    } else {
+      // Fallback if no gateway responds
+      imageHttpsUrl = convertIPFSToHTTPS(imageUrl);
+      console.log('⚠️ Using fallback gateway for image_url');
+    }
     
     console.log('🖼️ DUAL IMAGE URLs GENERATED:', {
       imageIpfs: imageUrl,
       imageHttps: imageHttpsUrl,
+      gateway: bestGateway?.gateway || 'fallback',
       cleanImageCid: cleanImageCid.substring(0, 40) + '...',
       originalImageCid: imageIpfsCid.substring(0, 40) + '...'
     });
@@ -154,18 +165,23 @@ export async function createFinalMetadata(
       cid: metadataUploadResult.cid
     });
     
-    // 🔥 CRITICAL FIX: Warm-up IPFS gateways for MetaMask/BaseScan compatibility
-    console.log('🔥 WARMING UP IPFS GATEWAYS for MetaMask/BaseScan...');
+    // 🔥 CRITICAL FIX: Warm-up EXACT FILES on IPFS gateways for MetaMask/BaseScan
+    console.log('🔥 WARMING UP IPFS GATEWAYS with EXACT paths...');
     const warmupPromises = [];
     
-    // Warm up metadata.json on critical gateways (non-blocking)
+    // Extract filename from cleanImageCid if it contains a path
+    const imageFilename = cleanImageCid.includes('/') 
+      ? cleanImageCid.substring(cleanImageCid.lastIndexOf('/') + 1)
+      : 'image.jpg'; // fallback filename
+    
+    // Warm up EXACT metadata.json file on critical gateways
     const metadataWarmupUrls = [
-      `https://ipfs.io/ipfs/${metadataUploadResult.cid}`,
-      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}`,
-      `https://dweb.link/ipfs/${metadataUploadResult.cid}`
+      `https://ipfs.io/ipfs/${metadataUploadResult.cid}/metadata.json`,
+      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}/metadata.json`,
+      `https://dweb.link/ipfs/${metadataUploadResult.cid}/metadata.json`
     ];
     
-    // Warm up image on critical gateways (non-blocking)
+    // Warm up EXACT image file on critical gateways
     const imageWarmupUrls = [
       `https://ipfs.io/ipfs/${cleanImageCid}`,
       `https://cloudflare-ipfs.com/ipfs/${cleanImageCid}`,

@@ -173,11 +173,12 @@ export async function getBestGatewayForCid(input: string, timeoutMs: number = 40
   
   // Priority order: most reliable gateways first
   const priorityGateways = [
-    { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
     { name: 'ipfs.io', fn: (p: string) => `https://ipfs.io/ipfs/${p}` },
     { name: 'cloudflare-ipfs', fn: (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}` },
+    { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
+    { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` },
     { name: 'gateway.pinata', fn: (p: string) => `https://gateway.pinata.cloud/ipfs/${p}` },
-    { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` }
+    { name: 'gateway.thirdweb', fn: (p: string) => `https://gateway.thirdweb.com/ipfs/${p}` }
   ];
   
   const controller = new AbortController();
@@ -227,11 +228,12 @@ export async function validateMultiGatewayAccess(
   
   // Use the same priority gateways as getBestGatewayForCid for consistency
   const priorityGateways = [
-    { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
     { name: 'ipfs.io', fn: (p: string) => `https://ipfs.io/ipfs/${p}` },
     { name: 'cloudflare-ipfs', fn: (p: string) => `https://cloudflare-ipfs.com/ipfs/${p}` },
+    { name: 'dweb.link', fn: (p: string) => `https://dweb.link/ipfs/${p}` },
+    { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` },
     { name: 'gateway.pinata', fn: (p: string) => `https://gateway.pinata.cloud/ipfs/${p}` },
-    { name: 'nftstorage.link', fn: (p: string) => `https://nftstorage.link/ipfs/${p}` }
+    { name: 'gateway.thirdweb', fn: (p: string) => `https://gateway.thirdweb.com/ipfs/${p}` }
   ];
   
   console.log(`🔍 CANONICAL: Multi-gateway validation - testing ${priorityGateways.length} gateways, need ≥${minGateways}`);
