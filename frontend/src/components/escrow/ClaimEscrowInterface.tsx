@@ -259,9 +259,34 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       
       // 📱 MOBILE: Enhanced error handling for RPC issues
       let errorMessage: string;
-      if (isMobile && isRpcError(err)) {
+      
+      // Check for specific mobile errors
+      if (err?.code === -32603 || err?.message?.includes('Internal JSON-RPC error')) {
+        console.error('📱 Internal JSON-RPC error detected:', err);
+        
+        // Check if it's a network/chain issue
+        if (isMobile) {
+          errorMessage = 'Error de conexión. Por favor:\n1. Verifica estar en Base Sepolia\n2. Cierra y abre MetaMask\n3. Intenta de nuevo';
+          
+          // Try to add more context
+          addNotification({
+            type: 'warning',
+            title: '⚠️ Error de red detectado',
+            message: 'Cambia a Base Sepolia en tu wallet',
+            duration: 10000,
+            action: {
+              label: 'Ver instrucciones',
+              onClick: () => {
+                window.open('https://docs.base.org/network-information/', '_blank');
+              }
+            }
+          });
+        } else {
+          errorMessage = 'Error interno del wallet. Por favor recarga la página e intenta de nuevo.';
+        }
+      } else if (isMobile && isRpcError(err)) {
         console.error('📱 Mobile RPC error detected:', err.message);
-        errorMessage = `Error de conexión móvil: ${err.message}. Por favor, verifica tu conexión e intenta de nuevo.`;
+        errorMessage = `Error móvil: ${err.message}. Verifica tu conexión.`;
       } else {
         errorMessage = parseEscrowError(err);
       }
@@ -296,31 +321,15 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               console.log('✅ [POST-CLAIM] Metadata pre-cached:', metadata);
             }
             
-            // Step 2: 📱 MOBILE-ENHANCED: Request account refresh with mobile delay
+            // Step 2: Add delay for transaction to be fully processed
+            // REMOVED wallet_requestPermissions - was causing duplicate connection prompt
             if (isMobile) {
-              console.log('📱 [POST-CLAIM] Mobile detected - using enhanced refresh sequence...');
-              
+              console.log('📱 [POST-CLAIM] Mobile detected - waiting for transaction to settle...');
               // Mobile wallets need more time to process the transaction
               await new Promise(resolve => setTimeout(resolve, 3000));
-              
-              // Request permissions with mobile-specific approach
-              try {
-                await window.ethereum.request({
-                  method: 'wallet_requestPermissions',
-                  params: [{ eth_accounts: {} }]
-                });
-              } catch (permError) {
-                console.log('📱 [POST-CLAIM] Permission request not supported on this wallet, continuing...');
-              }
-              
-              // Additional mobile delay for NFT registration
-              await new Promise(resolve => setTimeout(resolve, 2000));
             } else {
-              // Desktop approach
-              await window.ethereum.request({
-                method: 'wallet_requestPermissions',
-                params: [{ eth_accounts: {} }]
-              });
+              // Desktop also benefits from a small delay
+              await new Promise(resolve => setTimeout(resolve, 1000));
             }
             
             // Step 3: Add NFT to wallet - Enhanced for mobile
@@ -332,7 +341,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                 type: 'ERC721',
                 options: {
                   address: contractAddress,
-                  tokenId: tokenId,
+                  tokenId: tokenId.toString(), // Ensure it's a string without leading zeros
                 }
               }]
             });
@@ -374,23 +383,35 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               tokenId
             });
             
-            // 📱 MOBILE-ENHANCED: Better error handling and instructions
-            if (watchError.code === 4001 || watchError.message?.includes('denied')) {
+            // Handle the "r is undefined" error specifically
+            if (watchError.code === -32603 || watchError.message?.includes('r is undefined')) {
+              // This is a known MetaMask bug - NFT was claimed successfully
+              console.log('📱 MetaMask watchAsset bug detected, NFT claimed successfully');
               addNotification({
-                type: 'warning',
-                title: '📱 Añadir NFT manualmente',
-                message: `Ve a tu wallet → NFTs → Importar NFT → Pega la dirección del contrato`,
-                duration: 15000,
+                type: 'success',
+                title: '✅ NFT reclamado exitosamente',
+                message: 'El NFT está en tu wallet. Actualiza MetaMask si no aparece.',
+                duration: 8000,
                 action: {
-                  label: 'Copiar Dirección',
+                  label: 'Ver en BaseScan',
                   onClick: () => {
-                    navigator.clipboard.writeText(contractAddress);
-                    addNotification({
-                      type: 'info',
-                      title: '📋 Copiado',
-                      message: `Contrato copiado: ${contractAddress.slice(0,8)}...`,
-                      duration: 3000
-                    });
+                    window.open(`https://sepolia.basescan.org/token/${contractAddress}?a=${account?.address}`, '_blank');
+                  }
+                }
+              });
+            } else if (watchError.code === 4001 || watchError.message?.includes('denied')) {
+              // User denied - still show success since claim worked
+              addNotification({
+                type: 'info',
+                title: '✅ NFT reclamado',
+                message: `NFT #${tokenId} transferido exitosamente a tu wallet`,
+                duration: 8000,
+                action: {
+                  label: 'Ver transacción',
+                  onClick: () => {
+                    if (txResult?.transactionHash) {
+                      window.open(`https://sepolia.basescan.org/tx/${txResult.transactionHash}`, '_blank');
+                    }
                   }
                 }
               });
