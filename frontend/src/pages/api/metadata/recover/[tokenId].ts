@@ -134,7 +134,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recoveredMetadata = {
         name: `CryptoGift NFT #${tokenId}`,
         description: `Un regalo cripto único. Token recuperado automáticamente por el sistema de seguridad.`,
-        image: '/placeholder-nft.png', // Secure fallback image
+        image: '/images/nft-placeholder.png', // Secure fallback image
         attributes: fallbackAttributes,
         // Security metadata
         _recovery: {

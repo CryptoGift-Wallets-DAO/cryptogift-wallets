@@ -85,16 +85,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         dynamicImageHttps = bestGateway.url;
         console.log(`✅ CANONICAL: Using ${bestGateway.gateway} gateway: ${dynamicImageHttps.substring(0, 60)}...`);
       } else {
-        console.log(`⚠️ CANONICAL: No working gateway found, will return 503`);
-        // 🔥 CRITICAL: 503 with proper headers to prevent caching and enable retry
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-        res.setHeader('Retry-After', '10'); // Seconds - explorers should retry after 10s
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        return res.status(503).json({ 
-          error: 'Image not accessible in any gateway',
-          ipfs_url: canonicalImageIpfs,
-          retry_after: 10
-        });
+        console.log(`⚠️ CANONICAL: No working gateway, using placeholder`);
+        // Use absolute placeholder URL instead of 503
+        const placeholderUrl = `${productionBaseUrl}/images/nft-placeholder.png`;
+        dynamicImageHttps = placeholderUrl;
+        console.log('📦 Using placeholder image:', placeholderUrl);
       }
       
     } else if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('https://')) {
@@ -115,26 +110,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           dynamicImageHttps = bestGateway.url;
           console.log(`✅ CANONICAL: Using ${bestGateway.gateway} gateway: ${dynamicImageHttps.substring(0, 60)}...`);
         } else {
-          console.log(`⚠️ CANONICAL: No working gateway found, will return 503`);
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-          res.setHeader('Retry-After', '10');
-          res.setHeader('Access-Control-Allow-Origin', '*');
-          return res.status(503).json({ 
-            error: 'Image not accessible in any gateway',
-            original_url: httpsUrl,
-            retry_after: 10
-          });
+          console.log(`⚠️ CANONICAL: No working gateway, using placeholder`);
+          const placeholderUrl = `${productionBaseUrl}/images/nft-placeholder.png`;
+          dynamicImageHttps = placeholderUrl;
+          console.log('📦 Using placeholder image:', placeholderUrl);
         }
       } else {
-        console.log(`❌ CANONICAL: Cannot extract CID from HTTPS URL, will return 503`);
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-        res.setHeader('Retry-After', '10');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        return res.status(503).json({ 
-          error: 'Invalid image URL format',
-          original_url: httpsUrl,
-          retry_after: 10
-        });
+        console.log(`❌ CANONICAL: Cannot extract CID, using placeholder`);
+        const placeholderUrl = `${productionBaseUrl}/images/nft-placeholder.png`;
+        canonicalImageIpfs = httpsUrl; // Keep original
+        dynamicImageHttps = placeholderUrl;
+        console.log('📦 Using placeholder for invalid format');
       }
     } else if (fallbackResult.metadata.image && fallbackResult.metadata.image.startsWith('data:image/')) {
       // 🔥 COMPATIBILITY FIX: Support data:image URIs for legacy placeholder tokens
@@ -143,24 +129,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       dynamicImageHttps = fallbackResult.metadata.image;  // Same for image_url
       console.log(`✅ LEGACY: Using data:image URI for token ${tokenId}`);
     } else {
-      console.log(`❌ CANONICAL: Invalid image format, will return 503`);
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-      res.setHeader('Retry-After', '10');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      return res.status(503).json({ 
-        error: 'Image URL must be ipfs://, https://, or data:image/',
-        received: fallbackResult.metadata.image,
-        retry_after: 10
-      });
+      console.log(`❌ CANONICAL: Invalid image format, using placeholder`);
+      const placeholderUrl = `${productionBaseUrl}/images/nft-placeholder.png`;
+      canonicalImageIpfs = fallbackResult.metadata.image || placeholderUrl;
+      dynamicImageHttps = placeholderUrl;
+      console.log('📦 Using placeholder for invalid image format');
     }
     
-    const canonicalMetadata: ERC721Metadata = {
+    // BASESCAN FIX: Detect if request is from BaseScan
+    const userAgent = req.headers['user-agent'] || '';
+    const isBaseScan = userAgent.toLowerCase().includes('basescan') || 
+                       userAgent.toLowerCase().includes('etherscan') ||
+                       req.headers['referer']?.includes('basescan.org');
+    
+    // For BaseScan and similar explorers, MUST use HTTPS in image field
+    const imageForExplorer = isBaseScan ? 
+      `https://ipfs.io/ipfs/${canonicalImageIpfs.replace('ipfs://', '')}` : 
+      canonicalImageIpfs;
+    
+    const canonicalMetadata: any = {
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // 🔥 CANONICAL FORMAT: image=ipfs://, image_url=HTTPS (best working gateway)
-      image: canonicalImageIpfs,    // IPFS canonical format - ipfs://CID/file
-      image_url: dynamicImageHttps, // HTTPS best working gateway in real-time
+      // 🔥 BASESCAN COMPATIBLE: image=HTTPS for explorers, IPFS for others
+      image: imageForExplorer,       // HTTPS for BaseScan, IPFS for wallets
+      image_ipfs: canonicalImageIpfs, // Always IPFS format for compatible systems
+      image_url: dynamicImageHttps,   // HTTPS best working gateway
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],

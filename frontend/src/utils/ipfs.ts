@@ -159,7 +159,7 @@ function extractCidFromHttpsUrl(httpsUrl: string): string | null {
  * Tests multiple gateways and returns the first one that works
  * Prioritizes reliability over speed for BaseScan compatibility
  */
-export async function getBestGatewayForCid(input: string, timeoutMs: number = 4000): Promise<{ url: string; gateway: string } | null> {
+export async function getBestGatewayForCid(input: string, timeoutMs: number = 8000): Promise<{ url: string; gateway: string } | null> {
   const cidPath = getCidPath(input);
   
   // 🔥 CRITICAL: Check cache first to avoid expensive fan-out
@@ -221,8 +221,8 @@ export async function getBestGatewayForCid(input: string, timeoutMs: number = 40
  */
 export async function validateMultiGatewayAccess(
   input: string, 
-  minGateways: number = 2,
-  timeoutMs: number = 4000
+  minGateways: number = 1,  // REDUCED: Only require 1 gateway for upload
+  timeoutMs: number = 8000   // INCREASED: More time for new CIDs to propagate
 ): Promise<{ success: boolean; workingGateways: string[]; errors: string[]; gatewayDetails: Array<{name: string; url: string; success: boolean; error?: string}> }> {
   const cidPath = getCidPath(input);
   

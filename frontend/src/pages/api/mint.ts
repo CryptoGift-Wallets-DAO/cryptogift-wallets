@@ -928,7 +928,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       
       // Declare variables outside try block for proper scope
-      const universalTokenURI = `${finalPublicBaseUrl}/api/nft-metadata/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${actualTokenId}`;
+      // FIX #10: Use dynamic contract address from actual NFT contract, not hardcoded env var
+      const dynamicContractAddress = nftDropContract.address || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
+      const universalTokenURI = `${finalPublicBaseUrl}/api/nft-metadata/${dynamicContractAddress}/${actualTokenId}`;
       
       console.log('🌐 UNIVERSAL UPDATE:');
       console.log('  📍 Original URI (IPFS):', metadataUri.substring(0, 80) + '...');

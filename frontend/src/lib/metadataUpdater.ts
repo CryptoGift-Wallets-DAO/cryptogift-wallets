@@ -49,34 +49,26 @@ export async function createFinalMetadata(
     });
     
     // Create comprehensive metadata with real tokenId
-    // 🔥 CANONICAL FORMAT: Use IPFS native + dynamic gateway selection
+    // 🔥 BASESCAN FIX: Use HTTPS for image field, keep IPFS in separate field
     const imageUrl = `ipfs://${cleanImageCid}`;
     
-    // Get best working gateway dynamically (prioritizes ipfs.io if available)
-    let imageHttpsUrl: string;
-    const bestGateway = await getBestGatewayForCid(imageUrl, 4000);
-    if (bestGateway) {
-      imageHttpsUrl = bestGateway.url;
-      console.log(`✅ Using ${bestGateway.gateway} for image_url`);
-    } else {
-      // Fallback if no gateway responds
-      imageHttpsUrl = convertIPFSToHTTPS(imageUrl);
-      console.log('⚠️ Using fallback gateway for image_url');
-    }
+    // CRITICAL: Always use ipfs.io for BaseScan compatibility (not dynamic gateway)
+    const imageHttpsUrl = `https://ipfs.io/ipfs/${cleanImageCid}`;
     
-    console.log('🖼️ DUAL IMAGE URLs GENERATED:', {
-      imageIpfs: imageUrl,
-      imageHttps: imageHttpsUrl,
-      gateway: bestGateway?.gateway || 'fallback',
-      cleanImageCid: cleanImageCid.substring(0, 40) + '...',
-      originalImageCid: imageIpfsCid.substring(0, 40) + '...'
+    console.log('🖼️ BASESCAN-COMPATIBLE IMAGE URLS:', {
+      image: imageHttpsUrl,      // HTTPS for BaseScan (reads 'image' field)
+      image_ipfs: imageUrl,      // IPFS for systems that prefer it
+      image_url: imageHttpsUrl,  // HTTPS backup
+      cleanImageCid: cleanImageCid.substring(0, 40) + '...'
     });
     
-    const finalMetadata: NFTMetadataTemplate = {
+    // Extend the interface to include image_ipfs
+    const finalMetadata: any = {
       name: `CryptoGift NFT #${tokenId}`,
       description: giftMessage || "Un regalo cripto único creado con amor",
-      image: imageUrl,        // IPFS native format - preferred by most systems
-      image_url: imageHttpsUrl, // HTTPS format - fallback for wallets that don't support IPFS
+      image: imageHttpsUrl,     // HTTPS - CRITICAL for BaseScan display
+      image_ipfs: imageUrl,     // IPFS native format for compatible systems
+      image_url: imageHttpsUrl, // HTTPS - redundant but ensures compatibility
       external_url: getPublicBaseUrl(),
       attributes: [
         {

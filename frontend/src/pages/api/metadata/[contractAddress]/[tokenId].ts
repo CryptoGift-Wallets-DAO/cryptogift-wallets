@@ -74,12 +74,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`🔗 Image normalized: ${normalizedImageUrl.substring(0, 50)}...`);
     }
     
-    const directMetadata: ERC721Metadata = {
+    // BASESCAN CRITICAL FIX: Always use HTTPS ipfs.io for image field
+    // Convert any IPFS URL to ipfs.io HTTPS for maximum compatibility
+    let finalImageUrl = normalizedImageUrl;
+    if (normalizedImageUrl.startsWith('ipfs://')) {
+      const cid = normalizedImageUrl.replace('ipfs://', '');
+      finalImageUrl = `https://ipfs.io/ipfs/${cid}`;
+      console.log('🔥 BASESCAN FIX: Converted to ipfs.io HTTPS:', finalImageUrl.substring(0, 60) + '...');
+    }
+    
+    const directMetadata: any = {
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // 🔧 FASE 5E: Image URL guaranteed to be HTTPS for universal compatibility
-      image: normalizedImageUrl,
+      // 🔧 BASESCAN COMPATIBLE: Always HTTPS for image field
+      image: finalImageUrl,
+      image_ipfs: normalizedImageUrl.startsWith('ipfs://') ? normalizedImageUrl : undefined,
+      image_url: finalImageUrl, // Redundant but ensures compatibility
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],
