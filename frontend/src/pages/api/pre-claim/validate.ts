@@ -203,6 +203,17 @@ async function validatePasswordWithContract(
       84532 // Base Sepolia chain ID
     );
     
+    // DEBUG LOGGING FOR PASSWORD VALIDATION ISSUE
+    console.log('🔍 PASSWORD VALIDATION DEBUG:');
+    console.log('  TokenId:', tokenId);
+    console.log('  GiftId:', giftId);
+    console.log('  Password length:', password.length);
+    console.log('  Salt:', salt);
+    console.log('  Contract:', ESCROW_CONTRACT_ADDRESS);
+    console.log('  Provided Hash:', providedHash);
+    console.log('  Expected Hash:', gift.passwordHash);
+    console.log('  Hashes match:', providedHash.toLowerCase() === gift.passwordHash.toLowerCase());
+    
     if (providedHash.toLowerCase() !== gift.passwordHash.toLowerCase()) {
       return { valid: false, error: 'Invalid password' };
     }
