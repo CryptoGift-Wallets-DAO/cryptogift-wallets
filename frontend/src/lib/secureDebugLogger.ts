@@ -80,9 +80,13 @@ function sanitizeLogContext(context?: LogContext): LogContext | undefined {
         sanitized[key] = value;
       }
     }
-    // Numbers and booleans are generally safe
+    // Numbers, booleans, and BigInt are generally safe
     else if (typeof value === 'number' || typeof value === 'boolean') {
       sanitized[key] = value;
+    }
+    // Convert BigInt to Number for JSON compatibility
+    else if (typeof value === 'bigint') {
+      sanitized[key] = Number(value);
     }
     // Sanitize objects recursively
     else if (typeof value === 'object' && value !== null) {

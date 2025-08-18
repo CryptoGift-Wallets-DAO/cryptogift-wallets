@@ -244,8 +244,8 @@ async function validatePasswordWithContract(
       expectedHash: gift.passwordHash,
       hashesMatchExact: providedHash === gift.passwordHash,
       hashesMatchLowercase: providedHash.toLowerCase() === gift.passwordHash.toLowerCase(),
-      giftStatus: gift.status,
-      giftExpirationTime: Number(gift.expirationTime),
+      giftStatus: Number(gift.status), // Convert BigInt to Number
+      giftExpirationTime: Number(gift.expirationTime), // Convert BigInt to Number
       currentTime: Math.floor(Date.now() / 1000)
     };
     
