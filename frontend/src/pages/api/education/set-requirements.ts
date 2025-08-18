@@ -39,7 +39,7 @@ export default async function handler(
   
   try {
     // Verify JWT authentication
-    const token = extractTokenFromHeaders(req);
+    const token = extractTokenFromHeaders(req.headers);
     if (!token) {
       return res.status(401).json({ 
         success: false,

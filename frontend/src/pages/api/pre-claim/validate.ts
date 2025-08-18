@@ -119,7 +119,7 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
     const windowStart = now - RATE_LIMIT_WINDOW;
     
     // Get attempts in current window
-    const attempts = await kv.zrangebyscore(key, windowStart, now);
+    const attempts = await kv.zrange(key, windowStart, now, { byScore: true });
     
     if (attempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
       return { allowed: false, remaining: 0 };
@@ -342,7 +342,7 @@ export default async function handler(
     }
     
     // Log validation attempt (secure - no password logged)
-    secureLogger.log('Pre-claim validation attempt', {
+    secureLogger.info('Pre-claim validation attempt', {
       tokenId,
       passwordHash: ethers.keccak256(ethers.toUtf8Bytes(password)).slice(0, 8) + '...',
       deviceId,

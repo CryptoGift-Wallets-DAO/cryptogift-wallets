@@ -178,7 +178,7 @@ export default async function handler(
     ]);
     
     // Log approval (secure - no private data)
-    secureLogger.log('Education approval signature issued', {
+    secureLogger.info('Education approval signature issued', {
       tokenId,
       giftId,
       claimer: claimer.slice(0, 10) + '...',
