@@ -1117,23 +1117,12 @@ async function mintNFTEscrowGasless(
         
         if (!gateEnvVar || gateEnvVar === '0x0000000000000000000000000000000000000000') {
           console.error('❌ GATE_MISSING: Education modules requested but gate not configured');
-          
-          return res.status(400).json({
-            success: false,
-            error: 'Configuration error',
-            code: 'GATE_MISSING',
-            message: 'Education features temporarily unavailable. Please try without education requirements.',
-            details: 'SimpleApprovalGate address not configured'
-          });
+          throw new Error('GATE_MISSING: Education features temporarily unavailable - SimpleApprovalGate address not configured');
         }
         
         // Validar que es una dirección válida
         if (!ethers.isAddress(gateEnvVar)) {
-          return res.status(500).json({
-            success: false,
-            code: 'GATE_INVALID',
-            error: 'Invalid approval gate address configuration'
-          });
+          throw new Error('GATE_INVALID: Invalid approval gate address configuration');
         }
         
         gateAddress = ethers.getAddress(gateEnvVar); // Normalize with checksum
@@ -2390,23 +2379,12 @@ async function mintNFTEscrowGasPaid(
         
         if (!gateEnvVar || gateEnvVar === '0x0000000000000000000000000000000000000000') {
           console.error('❌ GATE_MISSING (GAS-PAID): Education modules requested but gate not configured');
-          
-          return res.status(400).json({
-            success: false,
-            error: 'Configuration error',
-            code: 'GATE_MISSING',
-            message: 'Education features temporarily unavailable. Please try without education requirements.',
-            details: 'SimpleApprovalGate address not configured'
-          });
+          throw new Error('GATE_MISSING: Education features temporarily unavailable - SimpleApprovalGate address not configured');
         }
         
         // Validar que es una dirección válida
         if (!ethers.isAddress(gateEnvVar)) {
-          return res.status(500).json({
-            success: false,
-            code: 'GATE_INVALID',
-            error: 'Invalid approval gate address configuration'
-          });
+          throw new Error('GATE_INVALID: Invalid approval gate address configuration');
         }
         
         gateAddress = ethers.getAddress(gateEnvVar); // Normalize with checksum

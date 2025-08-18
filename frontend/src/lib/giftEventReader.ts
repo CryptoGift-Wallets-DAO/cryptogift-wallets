@@ -110,7 +110,7 @@ export async function getGiftFromBlockchain(tokenId: string | number): Promise<{
 export async function checkEducationRequirements(tokenId: string | number): Promise<{
   hasEducation: boolean;
   educationModules: number[];
-  source: 'redis' | 'blockchain' | 'heuristic';
+  source: 'redis' | 'blockchain' | 'heuristic' | 'fallback_secure';
 }> {
   try {
     // Try to check Redis first if available
