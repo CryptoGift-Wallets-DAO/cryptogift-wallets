@@ -265,7 +265,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
             contractAddress: giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
             claimerAddress: account.address,
             transactionHash: txResult.transactionHash,
-            giftMessage: validationResult.giftInfo?.giftMessage || formData.giftMessage || '',
+            giftMessage: validationResult.giftInfo?.giftMessage || '',
             imageUrl: nftMetadata?.image || ''
           })
         });
