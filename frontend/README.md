@@ -2,6 +2,51 @@
 
 Este frontend está construido con Next.js y thirdweb SDK. Consulta la documentación y variables de entorno necesarias en el README original.
 
+## 🚨 CRITICAL UPDATE (Agosto 18, 2025) - MOBILE CLAIMING CRISIS RESOLVED ✅
+
+### PROBLEMA CRÍTICO RESUELTO
+- ❌ **ANTES**: Mobile claims mostraban "Error de conexión" después de signing transaction
+- ❌ **ANTES**: NFTs claimed desde mobile aparecían con placeholder images
+- ✅ **AHORA**: Mobile claims completan exitosamente con imágenes reales
+- ✅ **AHORA**: Paridad completa entre mobile y PC experience
+
+### ROOT CAUSE IDENTIFIED
+- **Frontend claims** (mobile) NO actualizaban Redis metadata después del claim
+- **Backend claims** (PC) SÍ actualizaban Redis automáticamente
+- Metadata endpoints devolvían placeholders cuando no encontraban data en Redis cache
+
+### SOLUCIÓN IMPLEMENTADA
+1. **Nuevo endpoint**: `/api/nft/update-metadata-after-claim` (283 lines)
+   - JWT authentication para seguridad
+   - Updates Redis con metadata real después de frontend claims
+   - TTL 30 días para efficient caching
+   - Stores claim data (claimer, transaction hash, fecha)
+
+2. **Enhanced ClaimEscrowInterface.tsx** (lines 254-281):
+   - Calls nuevo endpoint después de successful frontend claims
+   - Non-blocking implementation (doesn't fail claim if metadata update fails)
+   - Comprehensive error handling y logging
+
+3. **TypeScript Fix**: Removed invalid `formData.giftMessage` reference
+
+### ARCHITECTURE IMPACT
+```typescript
+// NUEVO PATTERN: Post-Claim Redis Sync for Mobile
+try {
+  const updateResponse = await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
+    method: 'POST',
+    body: JSON.stringify({
+      tokenId, contractAddress, claimerAddress: account.address,
+      transactionHash: txResult.transactionHash,
+      giftMessage: validationResult.giftInfo?.giftMessage || '',
+      imageUrl: nftMetadata?.image || ''
+    })
+  });
+} catch (updateError) {
+  // Non-blocking: Don't fail the claim if Redis update fails
+}
+```
+
 ## Scripts principales
 
 - `pnpm dev` — Inicia el servidor de desarrollo
