@@ -1113,10 +1113,11 @@ async function mintNFTEscrowGasless(
       let gateAddress: string;
       
       if (educationModules && educationModules.length > 0) {
-        const gateEnvVar = process.env.SIMPLE_APPROVAL_GATE_ADDRESS; // Server-side only, not public
+        // TEMPORARY FALLBACK: Use env var or fallback to deployed contract
+        const gateEnvVar = process.env.SIMPLE_APPROVAL_GATE_ADDRESS || process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS;
         
         if (!gateEnvVar || gateEnvVar === '0x0000000000000000000000000000000000000000') {
-          console.error('❌ GATE_MISSING: Education modules requested but gate not configured');
+          console.warn('⚠️ GATE_MISSING: Education modules requested but gate not configured - using fallback');
           throw new Error('GATE_MISSING: Education features temporarily unavailable - SimpleApprovalGate address not configured');
         }
         
@@ -2375,10 +2376,12 @@ async function mintNFTEscrowGasPaid(
       let gateAddress: string;
       
       if (educationModules && educationModules.length > 0) {
-        const gateEnvVar = process.env.SIMPLE_APPROVAL_GATE_ADDRESS; // Server-side only, not public
+        // TEMPORARY FALLBACK: Use env var or fallback to deployed contract
+        const gateEnvVar = process.env.SIMPLE_APPROVAL_GATE_ADDRESS || process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS;
         
         if (!gateEnvVar || gateEnvVar === '0x0000000000000000000000000000000000000000') {
-          console.error('❌ GATE_MISSING (GAS-PAID): Education modules requested but gate not configured');
+          console.warn('⚠️ GATE_MISSING (GAS-PAID): Education modules requested but gate not configured');
+          
           throw new Error('GATE_MISSING: Education features temporarily unavailable - SimpleApprovalGate address not configured');
         }
         
