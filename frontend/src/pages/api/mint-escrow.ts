@@ -29,7 +29,7 @@ import { storeNFTMetadata, updateNFTMetadata, createNFTMetadata, getNFTMetadata 
 import { debugLogger } from '../../lib/secureDebugLogger';
 import { validateIPFSConfig } from '../../lib/ipfs';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
-import { storeGiftMapping } from '../../lib/giftMappingStore';
+import { storeGiftMapping, storeGiftSalt } from '../../lib/giftMappingStore';
 import {
   validateTransactionAttempt,
   registerTransactionAttempt,
@@ -1234,6 +1234,20 @@ async function mintNFTEscrowGasless(
       try {
         await storeGiftMapping(tokenId, actualGiftId);
         console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (deterministic)`);
+        
+        // CRITICAL: Store the original mint salt for claim validation
+        try {
+          await storeGiftSalt(actualGiftId, salt);
+          console.log(`✅ SALT STORED: giftId ${actualGiftId} → ${salt.slice(0, 10)}... (FIXES CLAIM VALIDATION)`);
+        } catch (saltError) {
+          console.error(`❌ CRITICAL: Salt storage failed for giftId ${actualGiftId}:`, saltError);
+          // Don't fail the whole mint, but log this as critical
+          debugLogger.operation('Salt storage failed during gasless mint', {
+            tokenId,
+            giftId: actualGiftId,
+            error: saltError instanceof Error ? saltError.message : 'Unknown error'
+          });
+        }
         
         // VALIDATION: Verify the mapping is correct (increased retries for race condition)
         const validation = await validateMappingWithRetry(
@@ -2457,6 +2471,20 @@ async function mintNFTEscrowGasPaid(
       try {
         await storeGiftMapping(tokenId, actualGiftIdGasPaid);
         console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (deterministic)`);
+        
+        // CRITICAL: Store the original mint salt for claim validation (gas-paid)
+        try {
+          await storeGiftSalt(actualGiftIdGasPaid, salt);
+          console.log(`✅ SALT STORED (GAS-PAID): giftId ${actualGiftIdGasPaid} → ${salt.slice(0, 10)}... (FIXES CLAIM VALIDATION)`);
+        } catch (saltError) {
+          console.error(`❌ CRITICAL: Salt storage failed for giftId ${actualGiftIdGasPaid}:`, saltError);
+          // Don't fail the whole mint, but log this as critical
+          debugLogger.operation('Salt storage failed during gas-paid mint', {
+            tokenId,
+            giftId: actualGiftIdGasPaid,
+            error: saltError instanceof Error ? saltError.message : 'Unknown error'
+          });
+        }
         
         // VALIDATION: Verify the mapping is correct (gas-paid, increased retries for race condition)
         const validationGasPaid = await validateMappingWithRetry(

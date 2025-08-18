@@ -9,6 +9,7 @@ import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from '
 // Cache keys
 const MAPPING_KEY_PREFIX = 'gift_mapping:';
 const REVERSE_MAPPING_KEY_PREFIX = 'reverse_mapping:';
+const SALT_KEY_PREFIX = 'gift_salt:';
 
 /**
  * Store tokenId → giftId mapping persistently
@@ -186,6 +187,70 @@ export async function batchStoreGiftMappings(mappings: Array<{ tokenId: string |
 }
 
 /**
+ * CRITICAL: Store the original mint salt for a gift
+ * This fixes the core issue where claim process generates new salt instead of using original
+ */
+export async function storeGiftSalt(giftId: string | number, salt: string): Promise<boolean> {
+  const giftIdStr = giftId.toString();
+  
+  if (!salt || !salt.startsWith('0x') || salt.length !== 66) {
+    throw new Error(`Invalid salt format: ${salt}. Expected 0x + 64 hex chars.`);
+  }
+  
+  try {
+    const redis = validateRedisForCriticalOps('Gift salt storage');
+    
+    if (!redis) {
+      console.warn(`⚠️  [DEV MODE] Redis not available for salt storage, giftId: ${giftId}`);
+      return false;
+    }
+
+    const saltKey = `${SALT_KEY_PREFIX}${giftIdStr}`;
+    
+    // Store salt with extended expiry (permanent for security)
+    await redis.set(saltKey, salt, { ex: 86400 * 730 }); // 2 years
+    
+    console.log(`✅ SALT STORED: giftId ${giftId} → ${salt.slice(0, 10)}...`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ CRITICAL: Salt storage failed for giftId ${giftId}:`, error);
+    throw new Error(`Salt storage failed: ${(error as Error).message}. This is critical for password validation.`);
+  }
+}
+
+/**
+ * CRITICAL: Retrieve the original mint salt for a gift
+ * This is essential for claim validation to use the correct salt
+ */
+export async function getGiftSalt(giftId: string | number): Promise<string | null> {
+  const giftIdStr = giftId.toString();
+  
+  try {
+    const redis = validateRedisForCriticalOps('Gift salt lookup');
+    
+    if (!redis) {
+      console.warn(`⚠️  [DEV MODE] Redis not available for salt lookup, giftId: ${giftId}`);
+      return null;
+    }
+
+    const saltKey = `${SALT_KEY_PREFIX}${giftIdStr}`;
+    const salt = await redis.get(saltKey);
+    
+    if (salt && typeof salt === 'string') {
+      console.log(`✅ SALT FOUND: giftId ${giftId} → ${salt.slice(0, 10)}...`);
+      return salt;
+    }
+    
+    console.log(`❌ SALT NOT FOUND: giftId ${giftId}`);
+    return null;
+  } catch (error) {
+    console.error(`❌ CRITICAL: Salt lookup failed for giftId ${giftId}:`, error);
+    throw new Error(`Salt lookup failed: ${(error as Error).message}. Cannot validate without original salt.`);
+  }
+}
+
+/**
  * Clear all gift mappings (admin operation)
  */
 export async function clearAllGiftMappings(): Promise<number> {
@@ -195,13 +260,14 @@ export async function clearAllGiftMappings(): Promise<number> {
 
     const mappingKeys = await redis.keys(`${MAPPING_KEY_PREFIX}*`);
     const reverseMappingKeys = await redis.keys(`${REVERSE_MAPPING_KEY_PREFIX}*`);
-    const allKeys = [...mappingKeys, ...reverseMappingKeys];
+    const saltKeys = await redis.keys(`${SALT_KEY_PREFIX}*`);
+    const allKeys = [...mappingKeys, ...reverseMappingKeys, ...saltKeys];
     
     if (allKeys.length > 0) {
       await redis.del(...allKeys);
     }
     
-    console.log(`✅ CLEARED ${allKeys.length} gift mapping entries`);
+    console.log(`✅ CLEARED ${allKeys.length} gift mapping entries (including salts)`);
     return allKeys.length;
   } catch (error) {
     console.error('❌ CRITICAL: Failed to clear gift mappings:', error);

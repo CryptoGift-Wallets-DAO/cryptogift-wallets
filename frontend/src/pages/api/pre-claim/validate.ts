@@ -20,6 +20,7 @@ import {
   getGiftIdFromTokenId,
   isGiftExpired
 } from '../../../lib/escrowUtils';
+import { getGiftSalt } from '../../../lib/giftMappingStore';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../../lib/escrowABI';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { secureLogger } from '../../../lib/secureLogger';
@@ -153,12 +154,13 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
 
 /**
  * Validate password against contract using private RPC
+ * CRITICAL FIX: Now retrieves and uses the original mint salt
  */
 async function validatePasswordWithContract(
   tokenId: string,
   password: string,
-  salt: string
-): Promise<{ valid: boolean; giftInfo?: EscrowGift; error?: string }> {
+  providedSalt: string
+): Promise<{ valid: boolean; giftInfo?: EscrowGift; error?: string; originalSalt?: string }> {
   try {
     // CRITICAL: Get giftId from tokenId mapping with enhanced logging
     console.log(`🔍 MAPPING: Starting tokenId → giftId lookup for token ${tokenId}`);
@@ -181,6 +183,39 @@ async function validatePasswordWithContract(
     }
     
     console.log(`✅ MAPPING SUCCESS: tokenId ${tokenId} → giftId ${giftId}`);
+    
+    // CRITICAL FIX: Retrieve the original mint salt
+    console.log(`🧂 SALT RETRIEVAL: Getting original mint salt for giftId ${giftId}...`);
+    let originalSalt: string | null = null;
+    
+    try {
+      originalSalt = await getGiftSalt(giftId);
+      if (originalSalt) {
+        console.log(`✅ ORIGINAL SALT FOUND: ${originalSalt.slice(0, 10)}... (length: ${originalSalt.length})`);
+        console.log(`🔍 SALT COMPARISON:`);
+        console.log(`   • Original salt:  ${originalSalt.slice(0, 20)}...`);
+        console.log(`   • Provided salt:  ${providedSalt.slice(0, 20)}...`);
+        console.log(`   • Salts match:    ${originalSalt === providedSalt ? '✅' : '❌'}`);
+        
+        if (originalSalt !== providedSalt) {
+          console.log('🔧 ARCHITECTURAL FIX: Using original mint salt instead of provided claim salt');
+        }
+      } else {
+        console.warn(`⚠️ SALT NOT FOUND: No salt stored for giftId ${giftId}`);
+        console.warn('This could happen if:');
+        console.warn('  1. Gift was minted before salt storage feature');
+        console.warn('  2. Salt storage failed during minting');
+        console.warn('  3. Redis/KV storage is not available');
+        console.warn('🔄 FALLBACK: Will use provided salt from frontend');
+      }
+    } catch (saltError) {
+      console.error(`❌ SALT RETRIEVAL ERROR for giftId ${giftId}:`, saltError);
+      console.error('🔄 FALLBACK: Will use provided salt from frontend');
+    }
+    
+    // Use original salt if available, otherwise fall back to provided salt
+    const saltToUse = originalSalt || providedSalt;
+    console.log(`🔐 SALT SELECTION: Using ${originalSalt ? 'ORIGINAL' : 'PROVIDED'} salt: ${saltToUse.slice(0, 10)}...`);
     
     // Get gift information from smart contract
     console.log(`🔗 CONTRACT: Reading gift data for giftId ${giftId} from contract`);
@@ -220,29 +255,32 @@ async function validatePasswordWithContract(
       return { valid: false, error: 'Gift already claimed' };
     }
     
-    // AUDIT: Hash generation parameters logging
+    // AUDIT: Hash generation parameters logging (updated to use correct salt)
     const hashParams = {
       password: password,
       passwordType: typeof password,
       passwordLength: password.length,
-      salt: salt,
-      saltType: typeof salt,
-      saltLength: salt.length,
+      providedSalt: providedSalt,
+      originalSalt: originalSalt,
+      saltToUse: saltToUse,
+      saltType: typeof saltToUse,
+      saltLength: saltToUse.length,
       giftId: giftId,
       giftIdType: typeof giftId,
       contractAddress: ESCROW_CONTRACT_ADDRESS!,
       contractAddressType: typeof ESCROW_CONTRACT_ADDRESS!,
       chainId: 84532,
       chainIdType: typeof 84532,
+      saltSelection: originalSalt ? 'ORIGINAL_MINT_SALT' : 'FALLBACK_PROVIDED_SALT',
       timestamp: new Date().toISOString()
     };
     
-    console.log('🔐 HASH GENERATION PARAMETERS:', hashParams);
+    console.log('🔐 HASH GENERATION PARAMETERS (FIXED):', hashParams);
     
-    // Validate password hash
+    // Validate password hash using the correct salt
     const providedHash = generatePasswordHash(
       password,
-      salt,
+      saltToUse, // Use the correct salt (original or fallback)
       giftId,
       ESCROW_CONTRACT_ADDRESS!,
       84532 // Base Sepolia chain ID
@@ -255,7 +293,7 @@ async function validatePasswordWithContract(
       timestamp: new Date().toISOString()
     });
     
-    // ENHANCED DEBUG LOGGING - PROTOCOL v2 DEEP ANALYSIS
+    // ENHANCED DEBUG LOGGING - PROTOCOL v2 DEEP ANALYSIS (WITH SALT FIX)
     const debugData = {
       timestamp: new Date().toISOString(),
       tokenId: tokenId,
@@ -263,8 +301,16 @@ async function validatePasswordWithContract(
       passwordLength: password.length,
       passwordFirst3: password.substring(0, 3),
       passwordLast3: password.substring(password.length - 3),
-      saltLength: salt.length,
-      saltPrefix: salt.substring(0, 10),
+      providedSalt: providedSalt,
+      providedSaltLength: providedSalt.length,
+      providedSaltPrefix: providedSalt.substring(0, 10),
+      originalSalt: originalSalt,
+      originalSaltLength: originalSalt?.length || 0,
+      originalSaltPrefix: originalSalt?.substring(0, 10) || 'N/A',
+      saltUsed: saltToUse,
+      saltUsedLength: saltToUse.length,
+      saltUsedPrefix: saltToUse.substring(0, 10),
+      saltSelection: originalSalt ? 'ORIGINAL_MINT_SALT' : 'FALLBACK_PROVIDED_SALT',
       contractAddress: ESCROW_CONTRACT_ADDRESS,
       chainId: 84532,
       providedHash: providedHash,
@@ -273,7 +319,9 @@ async function validatePasswordWithContract(
       hashesMatchLowercase: providedHash.toLowerCase() === gift.passwordHash.toLowerCase(),
       giftStatus: Number(gift.status), // Convert BigInt to Number
       giftExpirationTime: Number(gift.expirationTime), // Convert BigInt to Number
-      currentTime: Math.floor(Date.now() / 1000)
+      currentTime: Math.floor(Date.now() / 1000),
+      saltMismatchDetected: originalSalt && originalSalt !== providedSalt,
+      architecturalFix: originalSalt ? 'SALT_RETRIEVED_FROM_MINT' : 'FALLBACK_TO_PROVIDED_SALT'
     };
     
     // Multiple logging methods to ensure visibility
@@ -292,9 +340,13 @@ async function validatePasswordWithContract(
     console.log(`  • Password Length: ${password.length}`);
     console.log(`  • Password Sample: ${password.substring(0, 3)}...${password.substring(password.length - 3)}`);
     
-    console.log('SALT INFO:');
-    console.log(`  • Salt: ${salt}`);
-    console.log(`  • Salt Length: ${salt.length}`);
+    console.log('SALT INFO (ARCHITECTURAL FIX):');
+    console.log(`  • Provided Salt:  ${providedSalt}`);
+    console.log(`  • Original Salt:  ${originalSalt || 'NOT_FOUND'}`);
+    console.log(`  • Salt Used:      ${saltToUse}`);
+    console.log(`  • Salt Selection: ${originalSalt ? 'ORIGINAL_MINT_SALT' : 'FALLBACK_PROVIDED_SALT'}`);
+    console.log(`  • Salt Length:    ${saltToUse.length}`);
+    console.log(`  • Salt Mismatch:  ${originalSalt && originalSalt !== providedSalt ? 'YES (FIXED)' : 'NO'}`);
     
     console.log('HASH COMPARISON:');
     console.log(`  • Provided:  ${providedHash}`);
@@ -304,7 +356,8 @@ async function validatePasswordWithContract(
     
     console.log('SOLIDITY HASH GENERATION DETAILS:');
     console.log(`  • Types: ['string', 'bytes32', 'uint256', 'address', 'uint256']`);
-    console.log(`  • Values: ['${password}', '${salt}', ${giftId}, '${ESCROW_CONTRACT_ADDRESS}', 84532]`);
+    console.log(`  • Values: ['${password}', '${saltToUse}', ${giftId}, '${ESCROW_CONTRACT_ADDRESS}', 84532]`);
+    console.log(`  • ARCHITECTURAL FIX: ${originalSalt ? 'Using original mint salt' : 'Using provided salt (fallback)'}`);
     
     // Store in debugLogger for persistence
     debugLogger.operation('Password validation deep analysis', debugData);
@@ -343,7 +396,7 @@ async function validatePasswordWithContract(
       return { valid: false, error: 'Invalid password' };
     }
     
-    return { valid: true, giftInfo: gift };
+    return { valid: true, giftInfo: gift, originalSalt: originalSalt || undefined };
     
   } catch (error: any) {
     console.error('💥 CONTRACT VALIDATION ERROR - DETAILED ANALYSIS:');
