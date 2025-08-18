@@ -57,12 +57,20 @@ export async function storeGiftMapping(
       };
       
       // Store both directions for fast lookups with extended expiry for critical mappings
-      await Promise.all([
-        redis.set(mappingKey, JSON.stringify(mappingData), { ex: 86400 * 730 }), // 2 years expiry (extended for stability)
-        redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 730 }),
-        // CACHE OPTIMIZATION: Store timestamp for freshness tracking
-        redis.set(`${mappingKey}:timestamp`, Date.now().toString(), { ex: 86400 * 730 })
-      ]);
+      // CRITICAL FIX: Store each key separately to identify which one fails
+      console.log(`📝 Storing mapping data for key ${mappingKey}:`, mappingData);
+      
+      // Store main mapping with metadata
+      await redis.set(mappingKey, JSON.stringify(mappingData), { ex: 86400 * 730 });
+      console.log(`✅ Main mapping stored: ${mappingKey}`);
+      
+      // Store reverse mapping
+      await redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 730 });
+      console.log(`✅ Reverse mapping stored: ${reverseMappingKey}`);
+      
+      // Store timestamp
+      await redis.set(`${mappingKey}:timestamp`, Date.now().toString(), { ex: 86400 * 730 });
+      console.log(`✅ Timestamp stored for ${mappingKey}`);
       
       // Only log successful storage once to reduce noise
       if (attempt === 1) {

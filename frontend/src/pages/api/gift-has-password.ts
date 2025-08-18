@@ -3,6 +3,7 @@ import { getContract, readContract } from 'thirdweb';
 import { client } from '../../app/client';
 import { baseSepolia } from 'thirdweb/chains';
 import { getGiftIdFromMapping } from '../../lib/giftMappingStore';
+import { getGiftFromBlockchain, checkEducationRequirements } from '../../lib/giftEventReader';
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,18 +23,35 @@ export default async function handler(
     console.log(`🔍 Checking if gift ${tokenId} has password...`);
 
     // Get gift mapping to find actual giftId
-    const giftId = await getGiftIdFromMapping(tokenId);
+    let giftId = await getGiftIdFromMapping(tokenId);
+    let dataSource = 'redis';
     
     if (!giftId) {
-      // CRITICAL FIX: If no mapping, ASSUME PASSWORD EXISTS (all gifts have passwords)
-      // But NO education requirements (since we can't verify)
-      console.log(`⚠️ No gift mapping found for token ${tokenId} - assuming PASSWORD EXISTS but NO education`);
-      return res.status(200).json({
-        success: true,
-        hasPassword: true,  // ALWAYS true - all gifts have passwords
-        hasEducation: false, // Can't verify education without mapping
-        reason: 'no_mapping_assume_password'
-      });
+      console.log(`⚠️ No Redis mapping for token ${tokenId} - trying blockchain fallback...`);
+      
+      // Try blockchain fallback
+      const blockchainData = await getGiftFromBlockchain(tokenId);
+      
+      if (blockchainData) {
+        giftId = blockchainData.giftId;
+        dataSource = 'blockchain';
+        console.log(`✅ Found gift on blockchain: tokenId ${tokenId} → giftId ${giftId}`);
+      } else {
+        // Ultimate fallback: use education requirements check
+        const educationCheck = await checkEducationRequirements(tokenId);
+        
+        console.log(`⚠️ No blockchain data for token ${tokenId} - using heuristic`);
+        console.log(`📚 Education status: ${educationCheck.hasEducation ? 'YES' : 'NO'} (source: ${educationCheck.source})`);
+        
+        return res.status(200).json({
+          success: true,
+          hasPassword: true,  // ALWAYS true - all gifts have passwords
+          hasEducation: educationCheck.hasEducation,
+          reason: 'fallback_' + educationCheck.source,
+          giftId: null,
+          educationModules: educationCheck.educationModules
+        });
+      }
     }
 
     console.log(`✅ Token ${tokenId} maps to Gift ${giftId}`);
@@ -66,18 +84,18 @@ export default async function handler(
     const [creator, nftContract, tokenIdFromContract, expirationTime, passwordHash, message, status] = gift;
     const hasPassword = passwordHash !== '0x0000000000000000000000000000000000000000000000000000000000000000';
     
-    // TEMPORARY WORKAROUND: Check if token > 189 (when education was implemented)
-    // Tokens 190+ were created after education feature was added
-    // This is a temporary solution until mapping is properly stored
-    const tokenNumber = parseInt(tokenId);
-    const hasEducation = hasPassword && tokenNumber >= 190; // Tokens 190+ have education
+    // Check for education requirements using multiple sources
+    const educationCheck = await checkEducationRequirements(tokenId);
+    const hasEducation = educationCheck.hasEducation;
     
     console.log(`📊 Gift ${giftId} requirements:`, {
       tokenId,
+      giftId,
       hasPassword,
       hasEducation,
+      educationSource: educationCheck.source,
       passwordHash: hasPassword ? passwordHash.slice(0, 10) + '...' : 'none',
-      logic: tokenNumber >= 190 ? 'Post-education era token' : 'Pre-education era token'
+      dataSource
     });
 
     return res.status(200).json({
@@ -85,7 +103,9 @@ export default async function handler(
       hasPassword,
       hasEducation,
       giftId,
-      educationModules: hasEducation ? [1] : [] // Default to module 1 if education enabled
+      educationModules: educationCheck.educationModules,
+      dataSource,
+      educationSource: educationCheck.source
     });
 
   } catch (error: any) {

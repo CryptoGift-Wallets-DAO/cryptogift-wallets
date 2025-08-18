@@ -60,6 +60,7 @@ export default function ClaimGiftPage() {
   // New states for education flow
   const [flowState, setFlowState] = useState<ClaimFlowState>(ClaimFlowState.PRE_VALIDATION);
   const [educationSession, setEducationSession] = useState<EducationSession | null>(null);
+  const [educationGateData, setEducationGateData] = useState<string>('0x'); // EIP-712 signature for education approval
 
   // Handle theme hydration
   useEffect(() => {
@@ -89,8 +90,10 @@ export default function ClaimGiftPage() {
         if (data.hasEducation) {
           console.log('📚 Gift has education requirements - showing password validation first');
           setFlowState(ClaimFlowState.PRE_VALIDATION);
+          // educationGateData will be set by handlePreClaimValidation after bypass
         } else {
           console.log('✨ No education requirements - proceeding directly to claim');
+          setEducationGateData('0x'); // Explicitly set empty gate data for no education
           setFlowState(ClaimFlowState.CLAIM);
         }
       }
@@ -199,8 +202,14 @@ export default function ClaimGiftPage() {
   };
 
   // Pre-claim validation handlers
-  const handlePreClaimValidation = async (sessionToken: string, requiresEducation: boolean) => {
-    console.log('✅ Pre-claim validation successful', { sessionToken, requiresEducation });
+  const handlePreClaimValidation = async (sessionToken: string, requiresEducation: boolean, gateData?: string) => {
+    console.log('✅ Pre-claim validation successful', { sessionToken, requiresEducation, gateData: gateData?.slice(0, 20) + '...' });
+    
+    // Store the education gate data for use in claim transaction
+    if (gateData) {
+      setEducationGateData(gateData);
+      console.log('🎓 Education gate data stored for claim:', gateData === '0x' ? 'EMPTY (no education)' : 'EIP-712 SIGNATURE');
+    }
     
     if (requiresEducation) {
       // Get required modules from session
@@ -500,6 +509,7 @@ export default function ClaimGiftPage() {
                   nftMetadata={nftMetadata}
                   onClaimSuccess={handleClaimSuccess}
                   onClaimError={handleClaimError}
+                  educationGateData={educationGateData} // Pass EIP-712 signature or '0x' for no education
                 />
               )}
 

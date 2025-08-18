@@ -47,6 +47,8 @@ interface ClaimEscrowInterfaceProps {
   onClaimSuccess?: (transactionHash: string, giftInfo?: any) => void;
   onClaimError?: (error: string) => void;
   className?: string;
+  // NEW: Education gate data from EIP-712 approval
+  educationGateData?: string;
 }
 
 interface ClaimFormData {
@@ -61,7 +63,8 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   nftMetadata,
   onClaimSuccess,
   onClaimError,
-  className = ''
+  className,
+  educationGateData = '0x' // Default to empty gate data if no education required = ''
 }) => {
   const account = useActiveAccount();
   const auth = useAuth();
@@ -203,11 +206,13 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
 
       // Step 2: Prepare claim transaction using the validated giftId
       console.log('🔧 STEP 2: Preparing claim transaction...');
+      console.log('🎓 EDUCATION GATE DATA:', educationGateData === '0x' ? 'EMPTY (no education required)' : `SIGNATURE PRESENT (${educationGateData.slice(0, 20)}...)`);
+      
       const claimTransaction = prepareClaimGiftByIdCall(
         validationResult.giftId,
         formData.password,
         formData.salt,
-        '0x' // Empty gate data
+        educationGateData // Use education gate data from EIP-712 approval
       );
 
       console.log('✅ STEP 2: Transaction prepared for giftId', validationResult.giftId);

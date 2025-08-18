@@ -1274,7 +1274,19 @@ async function mintNFTEscrowGasless(
         
       } catch (mappingError) {
         console.error('❌ Failed to store/validate gift mapping:', mappingError);
-        throw new Error(`Critical mapping error: ${(mappingError as Error).message}`);
+        // CRITICAL: Don't fail the entire mint, but log this as a severe issue
+        debugLogger.operation('CRITICAL: Gift mapping storage/validation failed', {
+          tokenId,
+          giftId: actualGiftId,
+          error: (mappingError as Error).message,
+          stack: (mappingError as Error).stack,
+          educationModules: educationModules || [],
+          severity: 'CRITICAL'
+        });
+        
+        // Store error in response for monitoring but continue with mint
+        console.error('🚨 MAPPING FAILURE - Education detection will not work for this gift!');
+        // Don't throw - let the mint complete but track the issue
       }
       
       // Step 11: Verify NFT is in escrow contract (should already be there from direct mint)

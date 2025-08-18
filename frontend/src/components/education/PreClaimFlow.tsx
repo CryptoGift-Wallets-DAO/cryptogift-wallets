@@ -12,7 +12,7 @@ import Image from 'next/image';
 
 interface PreClaimFlowProps {
   tokenId: string;
-  onValidationSuccess: (sessionToken: string, requiresEducation: boolean) => void;
+  onValidationSuccess: (sessionToken: string, requiresEducation: boolean, educationGateData?: string) => void;
   giftInfo?: {
     creator: string;
     nftContract: string;
@@ -184,7 +184,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         // If NO education required, proceed immediately
         if (!data.requiresEducation) {
           setTimeout(() => {
-            onValidationSuccess(data.sessionToken, false);
+            onValidationSuccess(data.sessionToken, false, '0x'); // No education = empty gate data
           }, 1500);
         }
         // If education IS required, DON'T call onValidationSuccess yet
@@ -280,9 +280,9 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           duration: 5000
         });
 
-        // Proceed to claim with education bypassed
+        // Proceed to claim with education bypassed, passing the gateData
         setTimeout(() => {
-          onValidationSuccess(validationState.sessionToken!, false); // requiresEducation = false
+          onValidationSuccess(validationState.sessionToken!, false, approvalData.gateData); // Pass gateData from EIP-712 signature
         }, 1500);
       } else {
         throw new Error(approvalData.error || 'Bypass failed');
