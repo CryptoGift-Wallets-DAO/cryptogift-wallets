@@ -34,6 +34,18 @@ contract SimpleApprovalGate is IGate {
     address public credentialContract;
     
     // =============================================================================
+    // EIP-712 DOMAIN SEPARATOR
+    // =============================================================================
+    
+    /// @notice EIP-712 Domain Separator for signature verification
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    
+    /// @notice EIP-712 typehash for approval signatures
+    bytes32 public constant APPROVAL_TYPEHASH = keccak256(
+        "EducationApproval(address claimer,uint256 giftId,uint16 requirementsVersion,uint256 deadline,uint256 chainId,address verifyingContract)"
+    );
+    
+    // =============================================================================
     // ERROR CODES (Gas-efficient)
     // =============================================================================
     
@@ -72,6 +84,17 @@ contract SimpleApprovalGate is IGate {
     constructor(address _approver) {
         require(_approver != address(0), "Invalid approver");
         approver = _approver;
+        
+        // Initialize EIP-712 domain separator
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("SimpleApprovalGate"),
+                keccak256("1"),
+                block.chainid,
+                address(this)
+            )
+        );
     }
     
     // =============================================================================
@@ -82,7 +105,7 @@ contract SimpleApprovalGate is IGate {
      * @dev Check if claimer can proceed with gift claim
      * @param claimer Address attempting to claim
      * @param giftId ID of the gift being claimed
-     * @param data Optional data (can contain required education level)
+     * @param data Optional data (can contain signature, education level, etc.)
      * @return ok True if claimer is approved
      * @return reason Compact error code or success message
      */
@@ -91,21 +114,57 @@ contract SimpleApprovalGate is IGate {
         uint256 giftId,
         bytes calldata data
     ) external view override gasProtected returns (bool ok, string memory reason) {
-        // Option A: Check specific approval for this gift+claimer
+        // Option A: EIP-712 Signature Verification (Primary Route - Stateless)
+        if (data.length >= 97) { // 65 bytes signature + 32 bytes deadline minimum
+            // Extract signature components (v, r, s) and deadline
+            bytes memory signature = data[0:65];
+            uint256 deadline = abi.decode(data[65:97], (uint256));
+            
+            // Check deadline
+            if (block.timestamp <= deadline) {
+                // Reconstruct the digest
+                bytes32 structHash = keccak256(
+                    abi.encode(
+                        APPROVAL_TYPEHASH,
+                        claimer,
+                        giftId,
+                        REQUIREMENTS_VERSION,
+                        deadline,
+                        block.chainid,
+                        address(this)
+                    )
+                );
+                
+                bytes32 digest = keccak256(
+                    abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
+                );
+                
+                // Recover signer
+                address signer = recoverSigner(digest, signature);
+                
+                // Verify signer is the approver
+                if (signer == approver) {
+                    return (true, "0"); // Signature valid - approved
+                }
+            }
+            // Signature invalid or expired - continue to other options
+        }
+        
+        // Option B: Check specific approval mapping (Override/Fallback)
         bytes32 approvalKey = keccak256(abi.encodePacked(giftId, claimer));
         if (approvals[approvalKey]) {
             return (true, "0"); // Code for OK
         }
         
-        // Option B: Check general education level if data provided
-        if (data.length >= 32) {
+        // Option C: Check general education level if data provided
+        if (data.length >= 32 && data.length < 97) {
             uint8 requiredLevel = uint8(bytes1(data[0]));
             if (requiredLevel > 0 && educationLevel[claimer] >= requiredLevel) {
                 return (true, "0"); // Code for OK
             }
         }
         
-        // Option C: Check external credential (SBT/Attestation) if configured
+        // Option D: Check external credential (SBT/Attestation) if configured
         if (credentialContract != address(0)) {
             // Simplified check - assumes credential contract has balanceOf or similar
             (bool success, bytes memory result) = credentialContract.staticcall{gas: 10000}(
@@ -240,5 +299,38 @@ contract SimpleApprovalGate is IGate {
         if (code == 2) return "INVALID_CREDENTIAL";
         if (code == 3) return "GATE_INACTIVE";
         return "UNKNOWN_ERROR";
+    }
+    
+    // =============================================================================
+    // INTERNAL FUNCTIONS
+    // =============================================================================
+    
+    /**
+     * @dev Recover signer address from signature
+     * @param digest The message digest
+     * @param signature The signature bytes (65 bytes: r + s + v)
+     * @return The recovered signer address
+     */
+    function recoverSigner(bytes32 digest, bytes memory signature) internal pure returns (address) {
+        require(signature.length == 65, "Invalid signature length");
+        
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        
+        assembly {
+            r := mload(add(signature, 0x20))
+            s := mload(add(signature, 0x40))
+            v := byte(0, mload(add(signature, 0x60)))
+        }
+        
+        // EIP-2 adjustment
+        if (v < 27) {
+            v += 27;
+        }
+        
+        require(v == 27 || v == 28, "Invalid signature v value");
+        
+        return ecrecover(digest, v, r, s);
     }
 }

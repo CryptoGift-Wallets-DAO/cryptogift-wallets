@@ -510,7 +510,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       timeframeDays: wizardData.escrowConfig?.timeframe!,
       giftMessage: wizardData.escrowConfig?.giftMessage!,
       creatorAddress: account?.address,
-      gasless: false // DISABLED: Focus on gas-paid robustness per specialist analysis
+      gasless: false, // DISABLED: Focus on gas-paid robustness per specialist analysis
+      educationModules: wizardData.escrowConfig?.educationRequired ? wizardData.escrowConfig.educationModules : undefined
     } : {
       // Direct mint (skip escrow) - use metadata CID not image CID
       metadataUri: cleanMetadataUri,
@@ -825,7 +826,8 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         timeframeDays: wizardData.escrowConfig?.timeframe!,
         giftMessage: wizardData.escrowConfig?.giftMessage!,
         creatorAddress: account?.address,
-        gasless: false // CRITICAL: Gas-paid fallback
+        gasless: false, // CRITICAL: Gas-paid fallback
+        educationModules: wizardData.escrowConfig?.educationRequired ? wizardData.escrowConfig.educationModules : undefined
       } : {
         // Direct mint (skip escrow) - use mint-escrow API but without password
         metadataUri: cleanMetadataUri,

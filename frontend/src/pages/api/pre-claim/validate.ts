@@ -238,11 +238,16 @@ async function checkGateRequirements(
       return { requiresEducation: false, modules: [] };
     }
     
-    // Check if user already completed education
+    // Check if user already completed education or has approval
     const completionKey = `education:${claimer}:${giftId}`;
-    const completed = await kv.get<boolean>(completionKey);
+    const approvalKey = `approval:${giftId}:${claimer}`;
     
-    if (completed) {
+    const [completed, approval] = await Promise.all([
+      kv.get<boolean>(completionKey),
+      kv.get<any>(approvalKey)
+    ]);
+    
+    if (completed || approval) {
       return { requiresEducation: false, modules: [] };
     }
     

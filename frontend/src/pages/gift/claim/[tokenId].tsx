@@ -6,10 +6,12 @@ import Head from 'next/head';
 import { useTheme } from 'next-themes';
 import { ClaimEscrowInterface } from '../../../components/escrow/ClaimEscrowInterface';
 import { EscrowGiftStatus } from '../../../components/escrow/EscrowGiftStatus';
+import { PreClaimFlow } from '../../../components/education/PreClaimFlow';
+import { EducationModule } from '../../../components/education/EducationModule';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
-import { NotificationProvider } from '../../../components/ui/NotificationSystem';
+import { NotificationProvider, useNotifications } from '../../../components/ui/NotificationSystem';
 
 interface GiftInfo {
   creator: string;
@@ -27,6 +29,21 @@ interface NFTMetadata {
   image?: string;
 }
 
+// Claim flow states
+enum ClaimFlowState {
+  PRE_VALIDATION = 'pre_validation',
+  EDUCATION = 'education', 
+  CLAIM = 'claim',
+  SUCCESS = 'success'
+}
+
+interface EducationSession {
+  sessionToken: string;
+  requiresEducation: boolean;
+  requiredModules?: number[];
+  currentModuleIndex?: number;
+}
+
 export default function ClaimGiftPage() {
   const router = useRouter();
   const account = useActiveAccount();
@@ -39,6 +56,10 @@ export default function ClaimGiftPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [claimed, setClaimed] = useState(false);
+  
+  // New states for education flow
+  const [flowState, setFlowState] = useState<ClaimFlowState>(ClaimFlowState.PRE_VALIDATION);
+  const [educationSession, setEducationSession] = useState<EducationSession | null>(null);
 
   // Handle theme hydration
   useEffect(() => {
@@ -149,9 +170,80 @@ export default function ClaimGiftPage() {
     }
   };
 
+  // Pre-claim validation handlers
+  const handlePreClaimValidation = async (sessionToken: string, requiresEducation: boolean) => {
+    console.log('✅ Pre-claim validation successful', { sessionToken, requiresEducation });
+    
+    if (requiresEducation) {
+      // Get required modules from session
+      try {
+        const response = await fetch('/api/education/get-requirements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionToken })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setEducationSession({
+            sessionToken,
+            requiresEducation: true,
+            requiredModules: data.modules || [1, 2], // Default to basic modules
+            currentModuleIndex: 0
+          });
+          setFlowState(ClaimFlowState.EDUCATION);
+        } else {
+          // Fallback to default modules
+          setEducationSession({
+            sessionToken,
+            requiresEducation: true,
+            requiredModules: [1, 2], // Wallet basics + Security
+            currentModuleIndex: 0
+          });
+          setFlowState(ClaimFlowState.EDUCATION);
+        }
+      } catch (error) {
+        console.warn('Could not fetch requirements, using defaults:', error);
+        setEducationSession({
+          sessionToken,
+          requiresEducation: true,
+          requiredModules: [1, 2],
+          currentModuleIndex: 0
+        });
+        setFlowState(ClaimFlowState.EDUCATION);
+      }
+    } else {
+      // No education required, proceed directly to claim
+      setEducationSession({
+        sessionToken,
+        requiresEducation: false
+      });
+      setFlowState(ClaimFlowState.CLAIM);
+    }
+  };
+
+  const handleModuleComplete = () => {
+    if (!educationSession || !educationSession.requiredModules) return;
+    
+    const nextIndex = (educationSession.currentModuleIndex || 0) + 1;
+    
+    if (nextIndex < educationSession.requiredModules.length) {
+      // Move to next module
+      setEducationSession({
+        ...educationSession,
+        currentModuleIndex: nextIndex
+      });
+    } else {
+      // All modules completed, proceed to claim
+      console.log('🎓 All education modules completed!');
+      setFlowState(ClaimFlowState.CLAIM);
+    }
+  };
+
   const handleClaimSuccess = (transactionHash: string, giftInfo?: any) => {
     console.log('🎉 Gift claimed successfully!', { transactionHash, giftInfo });
     setClaimed(true);
+    setFlowState(ClaimFlowState.SUCCESS);
     
     // Refresh gift info to show claimed status
     if (tokenId && typeof tokenId === 'string') {
@@ -289,19 +381,41 @@ export default function ClaimGiftPage() {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Dynamic based on flow state */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column: Gift Status */}
-            <div>
-              <EscrowGiftStatus
-                tokenId={tokenId as string}
-                giftInfo={giftInfo}
-                nftMetadata={nftMetadata}
-                isCreator={false}
-                onRefresh={handleRefresh}
-                className="mb-6"
-              />
+          {/* Pre-Validation State */}
+          {flowState === ClaimFlowState.PRE_VALIDATION && tokenId && (
+            <PreClaimFlow
+              tokenId={tokenId as string}
+              onValidationSuccess={handlePreClaimValidation}
+              className="mx-auto"
+            />
+          )}
+          
+          {/* Education State */}
+          {flowState === ClaimFlowState.EDUCATION && educationSession && educationSession.requiredModules && (
+            <EducationModule
+              moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
+              sessionToken={educationSession.sessionToken}
+              tokenId={tokenId as string}
+              onComplete={handleModuleComplete}
+              className="mx-auto"
+            />
+          )}
+          
+          {/* Claim State - Original UI preserved */}
+          {flowState === ClaimFlowState.CLAIM && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column: Gift Status */}
+              <div>
+                <EscrowGiftStatus
+                  tokenId={tokenId as string}
+                  giftInfo={giftInfo}
+                  nftMetadata={nftMetadata}
+                  isCreator={false}
+                  onRefresh={handleRefresh}
+                  className="mb-6"
+                />
               
               {/* Help Section */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
@@ -377,6 +491,38 @@ export default function ClaimGiftPage() {
               </div>
             </div>
           </div>
+          )}
+          
+          {/* Success State */}
+          {flowState === ClaimFlowState.SUCCESS && (
+            <div className="max-w-md mx-auto">
+              <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-500 rounded-2xl p-8 text-center">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">🎉</span>
+                </div>
+                <h2 className="text-3xl font-bold text-green-800 dark:text-green-200 mb-4">
+                  ¡Regalo Reclamado!
+                </h2>
+                <p className="text-green-600 dark:text-green-400 mb-6">
+                  El NFT ha sido transferido exitosamente a tu wallet.
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => router.push('/my-wallets')}
+                    className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    Ver Mis NFT Wallets
+                  </button>
+                  <button
+                    onClick={() => router.push('/')}
+                    className="w-full py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Volver al Inicio
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </NotificationProvider>

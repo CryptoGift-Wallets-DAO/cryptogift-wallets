@@ -751,6 +751,7 @@ interface MintEscrowRequest {
   giftMessage: string;
   creatorAddress: string; // For tracking and returns
   gasless?: boolean;
+  educationModules?: number[]; // Optional education requirements
 }
 
 interface MintEscrowResponse {
@@ -2604,7 +2605,8 @@ export default async function handler(
       timeframeDays,
       giftMessage,
       creatorAddress,
-      gasless = false // 🚨 TEMPORARILY DISABLED: Gasless flow disabled to focus on robust gas-paid implementation
+      gasless = false, // 🚨 TEMPORARILY DISABLED: Gasless flow disabled to focus on robust gas-paid implementation
+      educationModules = [] // Optional education requirements
     }: MintEscrowRequest = req.body;
     
     // 🚨 TEMPORARY GASLESS DISABLE: Force gas-paid for system robustness
@@ -2854,6 +2856,41 @@ export default async function handler(
 
     // 🚨 OBSOLETE BLOCK REMOVED: Old temporal metadata storage moved to after metadataUpdateResult
     // The new logic stores FINAL metadata (with tokenId) instead of temporal metadata
+    
+    // Store education requirements if provided
+    if (educationModules && educationModules.length > 0 && result.giftId !== undefined) {
+      try {
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+        });
+        
+        // Store requirements by giftId
+        const requirementsKey = `gift:${result.giftId}:requirements`;
+        await redis.setex(requirementsKey, 90 * 24 * 60 * 60, educationModules);
+        
+        // Also store extended data by tokenId for easy lookup
+        const tokenRequirementsKey = `token:${result.tokenId}:requirements`;
+        await redis.setex(tokenRequirementsKey, 90 * 24 * 60 * 60, {
+          modules: educationModules,
+          creatorAddress,
+          createdAt: new Date().toISOString(),
+          giftId: result.giftId,
+          tokenId: result.tokenId
+        });
+        
+        console.log(`✅ Education requirements stored: Gift ${result.giftId} requires modules [${educationModules.join(', ')}]`);
+        debugLogger.operation('Education requirements stored', {
+          giftId: result.giftId,
+          tokenId: result.tokenId,
+          modules: educationModules,
+          moduleCount: educationModules.length
+        });
+      } catch (error) {
+        console.warn('⚠️ Failed to store education requirements:', error);
+        // Non-critical error - continue with response
+      }
+    }
     
     return res.status(200).json(responseData);
     
