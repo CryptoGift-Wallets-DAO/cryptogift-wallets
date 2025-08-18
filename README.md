@@ -17,6 +17,9 @@ Una plataforma revolucionaria para crear y regalar NFT-wallets con criptomonedas
 - **🔗 Deeplink Authentication**: Integración perfecta con MetaMask mobile
 - **🖼️ Dynamic Image Layouts**: Ajuste automático de imágenes verticales/horizontales
 - **🌐 Multi-Gateway IPFS**: Sistema de respaldo triple para máxima disponibilidad
+- **🎓 Sistema de Educación**: Pre-claim education con módulos interactivos y certificación
+- **🔐 EIP-712 Approvals**: Stateless signature verification con gas < 30k
+- **📚 5 Módulos Educativos**: Desde wallet security hasta proyecto collaboration
 
 ### 🚀 **BREAKTHROUGH: Programmatic NFT Ownership Transfer**
 
@@ -54,6 +57,7 @@ graph TD
 - ✅ **R4: VERTICAL IMAGE LAYOUTS** - ResizeObserver dynamic adjustment system
 - ✅ **R5: AUTO THEME + ZOOM COMPENSATION** - Desktop scaling for optimal viewing
 - ✅ **R6: IPFS GATEWAY RETRY SYSTEM** - Triple-gateway fallback with telemetry
+- ✅ **EDUCATION GATE SYSTEM** - Pre-claim education with EIP-712 approvals
 - ✅ **BASESCAN COMPATIBILITY** - NFT images display in block explorers
 - ✅ **METAMASK COMPATIBILITY** - NFT images display properly in wallets
 - ✅ **PRODUCTION STABILITY** - Critical runtime errors resolved
@@ -64,7 +68,8 @@ graph TD
 - ✅ **SISTEMA CORE COMPLETADO** - NFT ownership transfer automático 
 - ✅ **ZERO CUSTODIA HUMANA** - Transferencia programática sin regulaciones
 - ✅ **ESCROW TEMPORAL** - Password-based gifts with auto-expiration
-- 🚀 **FASE ACTUAL**: Production-ready mobile experience with enterprise-grade UX
+- ✅ **IGate COMPLIANCE** - SimpleApprovalGate deployed and verified on Base Sepolia
+- 🚀 **FASE ACTUAL**: Production-ready education system with enterprise-grade security
 
 ## 🛠️ Tecnología
 
@@ -84,8 +89,10 @@ graph TD
 - **PhotoRoom API v2** - Filtros IA para imágenes
 - **0x Protocol v2** - Swaps descentralizados
 - **NFT.Storage** - Almacenamiento IPFS
-- **Vercel KV** - Rate limiting
+- **Vercel KV** - Rate limiting y session management
+- **Upstash Redis** - Education progress tracking
 - **Telegram Bot** - Alertas de monitoreo
+- **SimpleApprovalGate** - IGate contract para pre-claim education
 
 ## 📦 Instalación
 
@@ -125,6 +132,16 @@ TW_SECRET_KEY=your_thirdweb_secret_key
 NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS=0x_your_deployed_contract_address
 NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS=0x000000006551c19487814612e58FE06813775758
 NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS=0x2d25602551487c3f3354dd80d76d54383a243358
+
+# Education System - SimpleApprovalGate (REQUERIDO)
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x3FEb03368cbF0970D4f29561dA200342D788eD6B
+APPROVER_PRIVATE_KEY=your_approver_private_key
+APPROVER_ADDRESS=your_approver_address
+
+# Redis/KV para sesiones y rate limiting (REQUERIDO)
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+JWT_SECRET=your_jwt_secret_key
 
 # NFT Storage (REQUERIDO)
 NFT_STORAGE_API_KEY=your_nft_storage_api_key

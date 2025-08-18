@@ -40,6 +40,7 @@ vercel --prod
 
 En el dashboard de Vercel, ve a **Settings > Environment Variables** y añade:
 
+#### 🔧 CORE SYSTEM VARIABLES
 ```
 NEXT_PUBLIC_TW_CLIENT_ID=your_thirdweb_client_id
 TW_SECRET_KEY=your_thirdweb_secret_key
@@ -51,6 +52,29 @@ NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS=0x000000006551c19487814612e58FE06813775758
 NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS=0x2d25602551487c3f3354dd80d76d54383a243358
 ```
 
+#### 🎓 EDUCATION SYSTEM VARIABLES (NUEVO - REQUERIDO)
+```
+# SimpleApprovalGate Contract (Deployed & Verified)
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x3FEb03368cbF0970D4f29561dA200342D788eD6B
+
+# Education System Authentication (CRITICAL)
+APPROVER_PRIVATE_KEY=your_approver_private_key_here
+APPROVER_ADDRESS=your_approver_wallet_address
+
+# Session Management & Rate Limiting
+JWT_SECRET=your_secure_jwt_secret_key
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# WalletConnect Mobile Support
+NEXT_PUBLIC_WC_PROJECT_ID=your_walletconnect_project_id
+```
+
+#### 🔐 SECURITY NOTE
+- Mark **APPROVER_PRIVATE_KEY** as "Sensitive" in Vercel dashboard
+- Mark **JWT_SECRET** as "Sensitive" in Vercel dashboard  
+- Mark **TW_SECRET_KEY** as "Sensitive" in Vercel dashboard
+
 ### 4. 🎯 URL de tu Aplicación
 
 Después del deployment, tu URL será algo como:
@@ -58,10 +82,30 @@ Después del deployment, tu URL será algo como:
 
 ### 5. ✅ Verificar Funcionalidad
 
+#### 🎯 CORE FEATURES
 1. **Homepage**: Debe cargar con el wizard de creación
 2. **Connect Wallet**: Debe conectar con MetaMask/Coinbase
 3. **Create Gift**: Debe abrir el wizard completo
 4. **Referrals**: Panel de referidos funcional
+
+#### 🎓 EDUCATION SYSTEM VERIFICATION
+1. **Create Gift with Education**: Test gift creation with education requirements
+2. **Pre-Claim Flow**: Navigate to gift claim URL → Should show education modules
+3. **Module Completion**: Complete required modules → Should generate EIP-712 signature  
+4. **Gate Verification**: After education → Should allow claim with approved signature
+5. **Admin Functions**: Test set-requirements endpoint with JWT authentication
+
+#### 🔧 TEST COMMANDS (After Deployment)
+```bash
+# Test education system endpoints
+curl -X POST https://your-domain.vercel.app/api/education/get-requirements \
+  -H "Content-Type: application/json" \
+  -d '{"tokenId": "123"}'
+
+# Test gate verification
+curl -X GET https://your-domain.vercel.app/api/education/verify-gate \
+  -d '{"giftId": 789, "claimer": "0x...", "signature": "0x..."}'
+```
 
 ---
 
@@ -117,8 +161,12 @@ Una vez deployado, tendrás:
 ✅ **Mensajes multilingües** en español correcto
 ✅ **Imágenes dinámicas** con ajuste automático vertical/horizontal
 ✅ **Sistema IPFS robusto** con triple-gateway fallback
+✅ **Sistema de Educación** con 5 módulos interactivos
+✅ **EIP-712 Approvals** con verificación stateless <30k gas
+✅ **Rate Limiting** con Redis y session management
+✅ **SimpleApprovalGate** contract deployed en Base Sepolia
 
-**¡Tu plataforma CryptoGift Wallets estará 100% operativa con experiencia mobile perfecta!** 🚀📱
+**¡Tu plataforma CryptoGift Wallets estará 100% operativa con sistema de educación enterprise!** 🚀🎓
 
 ---
 

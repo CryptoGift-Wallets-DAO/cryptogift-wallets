@@ -23,7 +23,7 @@ async function testRealPassword() {
   try {
     console.log('\n🚀 Sending request to production API...');
     
-    const response = await fetch('https://cryptogift-wallets.vercel.app/api/pre-claim/validate', {
+    const response = await fetch('http://localhost:3000/api/pre-claim/validate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

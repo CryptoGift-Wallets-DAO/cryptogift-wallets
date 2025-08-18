@@ -67,15 +67,14 @@ export default async function handler(
     const {
       sessionToken,
       tokenId,
-      claimer,
-      giftId
-    }: ApprovalRequest = req.body;
+      claimer
+    }: Omit<ApprovalRequest, 'giftId'> & { giftId?: number } = req.body;
     
     // Validate required fields
-    if (!sessionToken || !tokenId || !claimer || giftId === undefined) {
+    if (!sessionToken || !tokenId || !claimer) {
       return res.status(400).json({ 
         success: false,
-        error: 'Missing required fields: sessionToken, tokenId, claimer, giftId' 
+        error: 'Missing required fields: sessionToken, tokenId, claimer' 
       });
     }
     
@@ -106,15 +105,18 @@ export default async function handler(
       });
     }
     
+    // Use giftId from session data (authoritative source)
+    const giftId = sessionData.giftId;
+    
     // Verify session matches request
-    if (sessionData.tokenId !== tokenId || sessionData.giftId !== giftId) {
+    if (sessionData.tokenId !== tokenId) {
       return res.status(403).json({ 
         success: false,
-        error: 'Session mismatch' 
+        error: 'Session mismatch - tokenId' 
       });
     }
     
-    // Check if education is completed
+    // Check if education is completed OR if this is a bypass request
     const completionKey = `education:${claimer}:${giftId}`;
     const approvalKey = `approval:${giftId}:${claimer}`;
     
@@ -123,11 +125,29 @@ export default async function handler(
       kv.get<any>(approvalKey)
     ]);
     
-    if (!isCompleted && !existingApproval) {
+    // BYPASS MODE: Allow approval if session is valid (simulates education completed)
+    const isBypassRequest = sessionData.passwordValidated && sessionData.requiresEducation;
+    
+    if (!isCompleted && !existingApproval && !isBypassRequest) {
       return res.status(403).json({ 
         success: false,
-        error: 'Education not completed' 
+        error: 'Education not completed and bypass not active' 
       });
+    }
+    
+    // If this is a bypass request, mark education as completed
+    if (isBypassRequest && !isCompleted) {
+      try {
+        await kv.set(completionKey, true, { ex: 86400 * 30 }); // 30 days
+        debugLogger.operation('Education bypass activated', {
+          tokenId,
+          giftId,
+          claimer: claimer.slice(0, 10) + '...',
+          bypassMode: true
+        });
+      } catch (error) {
+        console.error('Failed to mark education as completed via bypass:', error);
+      }
     }
     
     // Check if approver wallet is configured

@@ -1,8 +1,39 @@
 # Variables de Entorno Requeridas - CryptoGift Wallets
 
-## 🔐 **CONFIGURACIÓN ACTUALIZADA (August 4, 2025)**
+## 🔐 **CONFIGURACIÓN ACTUALIZADA (August 18, 2025) - EDUCATION SYSTEM**
 
 **⚠️ IMPORTANTE**: Este archivo ha sido limpiado de secrets. Ver `.env.example` para valores de ejemplo.
+
+## 🎓 **EDUCATION SYSTEM CONFIGURATION (NUEVO - REQUERIDO)**
+
+### **Sistema de Pre-Claim Education**
+```bash
+# SimpleApprovalGate Contract (Deployed & Verified)
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x3FEb03368cbF0970D4f29561dA200342D788eD6B
+
+# Approver Wallet Configuration (CRITICAL - MARK AS SENSITIVE)
+APPROVER_PRIVATE_KEY=your_approver_private_key_here
+APPROVER_ADDRESS=your_approver_wallet_address
+
+# Session & Authentication Management
+JWT_SECRET=your_secure_jwt_secret_key
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url  
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# Rate Limiting Configuration
+EDUCATION_PASSWORD_ATTEMPTS_LIMIT=5    # Attempts per minute
+EDUCATION_SESSION_TTL=3600            # 1 hour in seconds
+EDUCATION_SIGNATURE_TTL=3600          # 1 hour EIP-712 deadline
+
+# WalletConnect Mobile Support
+NEXT_PUBLIC_WC_PROJECT_ID=your_walletconnect_project_id
+```
+
+### **🔐 SECURITY REQUIREMENTS**
+- **APPROVER_PRIVATE_KEY**: Must be marked as "Sensitive" in Vercel
+- **JWT_SECRET**: Must be unique and marked as "Sensitive" 
+- **Redis credentials**: Required for session management and rate limiting
+- **WalletConnect Project ID**: Required for mobile wallet compatibility
 
 ## 📱 **Mobile UX Features Configuration**
 
@@ -55,7 +86,11 @@ NEXT_PUBLIC_REF_TREASURY_ADDRESS=0x_your_treasury_address
 
 ### **Persistencia de Metadata (REQUERIDOS)**
 ```bash
-# Redis/Upstash para metadata storage
+# Redis/Upstash para metadata storage + education sessions
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# Legacy KV variables (still supported)
 KV_REST_API_URL=your_kv_url
 KV_REST_API_TOKEN=your_kv_token
 ```
@@ -103,11 +138,23 @@ DISABLE_METADATA_CACHE=false  # Set to 'true' for testing
    - `NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS`
    - `PRIVATE_KEY_DEPLOY`
    - Redis/KV variables
+   
+3. **Education System (NUEVO - REQUERIDO)**:
+   - `NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS`
+   - `APPROVER_PRIVATE_KEY` (⚠️ MARK AS SENSITIVE)
+   - `APPROVER_ADDRESS`
+   - `JWT_SECRET` (⚠️ MARK AS SENSITIVE)
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+   - `NEXT_PUBLIC_WC_PROJECT_ID`
 
-3. **Testing mode**:
+4. **Testing mode**:
    ```bash
    # Para testing sin cache
    DISABLE_METADATA_CACHE=true
+   
+   # Para testing education system
+   EDUCATION_SESSION_TTL=300  # 5 minutes for faster testing
    ```
 
 **📖 Para configuración completa, ver `frontend/.env.example` con todos los valores actualizados.**

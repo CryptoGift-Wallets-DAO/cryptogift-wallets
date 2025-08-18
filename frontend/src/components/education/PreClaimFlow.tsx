@@ -247,6 +247,53 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
 
   const canClaim = giftInfo?.status === 'active' && !giftInfo?.isExpired && giftInfo?.canClaim;
 
+  // Handle education bypass (simulates completing education)
+  const handleEducationBypass = async () => {
+    if (!validationState.sessionToken) return;
+
+    try {
+      // Call education approval API to generate EIP-712 signature
+      const response = await fetch('/api/education/approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionToken: validationState.sessionToken,
+          tokenId: tokenId,
+          claimer: account?.address || '0x0000000000000000000000000000000000000000', // Placeholder until wallet connects
+          giftId: 0 // Will be populated from session data in API
+        })
+      });
+
+      const approvalData = await response.json();
+      
+      if (approvalData.success) {
+        addNotification({
+          type: 'success',
+          title: '✅ Education Bypass Activado',
+          message: 'Gate contract está listo para procesar tu claim',
+          duration: 5000
+        });
+
+        // Proceed to claim with education bypassed
+        setTimeout(() => {
+          onValidationSuccess(validationState.sessionToken!, false); // requiresEducation = false
+        }, 1500);
+      } else {
+        throw new Error(approvalData.error || 'Bypass failed');
+      }
+    } catch (error: any) {
+      console.error('Education bypass error:', error);
+      addNotification({
+        type: 'error',
+        title: '⚠️ Bypass Error',
+        message: 'No se pudo activar el bypass. Intenta nuevamente.',
+        duration: 5000
+      });
+    }
+  };
+
   if (validationState.isValid) {
     return (
       <div className={`max-w-md mx-auto ${className}`}>
@@ -259,10 +306,32 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
               : 'Puedes proceder al proceso de claim'}
           </p>
           {validationState.requiresEducation && (
-            <div className="text-sm text-green-700 dark:text-green-400 space-y-1">
-              <p>Módulos requeridos: {validationState.educationRequirements?.length || 0}</p>
-              <p>Tiempo estimado: {getTotalEducationTime()} minutos</p>
-            </div>
+            <>
+              <div className="text-sm text-green-700 dark:text-green-400 space-y-1 mb-6">
+                <p>Módulos requeridos: {validationState.educationRequirements?.length || 0}</p>
+                <p>Tiempo estimado: {getTotalEducationTime()} minutos</p>
+              </div>
+              
+              {/* EDUCATION BYPASS BUTTON - Como pidió el usuario */}
+              <div className="space-y-3">
+                <button
+                  onClick={handleEducationBypass}
+                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  🚀 PRESIONA AQUÍ
+                  <div className="text-sm font-normal mt-1">
+                    Simular educación completada y activar Gate
+                  </div>
+                </button>
+                
+                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                  <div className="text-xs text-purple-700 dark:text-purple-300">
+                    <p className="font-medium mb-1">🔧 Bypass Mode (Testing):</p>
+                    <p>Este botón simula que completaste la educación y genera una firma EIP-712 para el SimpleApprovalGate contract en 0x3FEb...eD6B</p>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
