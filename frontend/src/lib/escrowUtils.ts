@@ -262,10 +262,112 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
     }
     
     console.log(`❌ MAPPING: No giftId found for tokenId ${tokenId} after searching ${processedChunks} chunks`);
-    return null;
+    
+    // CRITICAL FIX: Fallback to systematic gift search
+    console.log(`🔍 FALLBACK: Systematic search for tokenId ${tokenId} in all gifts...`);
+    return await systematicGiftSearch(tokenId);
     
   } catch (error) {
     console.error('❌ MAPPING ERROR:', error);
+    // CRITICAL FIX: Even on error, try systematic search
+    console.log(`🔍 ERROR FALLBACK: Attempting systematic search for tokenId ${tokenId}...`);
+    return await systematicGiftSearch(tokenId);
+  }
+}
+
+/**
+ * CRITICAL FIX: Systematic gift search as last resort fallback
+ * Searches all gifts in contract to find the one containing the target tokenId
+ * This fixes the Token 186 → Gift 215 mapping issue
+ */
+async function systematicGiftSearch(tokenId: string | number): Promise<number | null> {
+  const tokenIdStr = tokenId.toString();
+  
+  try {
+    console.log(`🔍 SYSTEMATIC SEARCH: Starting search for tokenId ${tokenIdStr}`);
+    
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL!);
+    
+    // Get total gift count from contract
+    const giftCounterData = await provider.call({
+      to: ESCROW_CONTRACT_ADDRESS,
+      data: '0x' + ethers.keccak256(ethers.toUtf8Bytes('giftCounter()')).slice(2, 10)
+    });
+    
+    const giftCounter = parseInt(giftCounterData, 16);
+    console.log(`📊 SYSTEMATIC SEARCH: Total gifts in contract: ${giftCounter}`);
+    
+    if (giftCounter === 0) {
+      console.log('❌ SYSTEMATIC SEARCH: No gifts in contract');
+      return null;
+    }
+    
+    // Search starting from recent gifts (reverse order)
+    const maxSearchCount = Math.min(100, giftCounter); // Limit search for performance
+    let searchedCount = 0;
+    
+    for (let giftId = giftCounter; giftId >= 1 && searchedCount < maxSearchCount; giftId--) {
+      try {
+        // Get gift data from contract
+        const giftData = await provider.call({
+          to: ESCROW_CONTRACT_ADDRESS,
+          data: ethers.concat([
+            '0x' + ethers.keccak256(ethers.toUtf8Bytes('getGift(uint256)')).slice(2, 10),
+            ethers.zeroPadValue(ethers.toBeHex(BigInt(giftId)), 32)
+          ])
+        });
+        
+        if (giftData && giftData !== '0x' && giftData.length > 2) {
+          // Decode gift structure: (address creator, uint256 expirationTime, address nftContract, uint256 tokenId, bytes32 passwordHash, uint8 status)
+          const abiCoder = new ethers.AbiCoder();
+          const decoded = abiCoder.decode(
+            ['address', 'uint256', 'address', 'uint256', 'bytes32', 'uint8'],
+            giftData
+          );
+          
+          const giftTokenId = decoded[3].toString();
+          searchedCount++;
+          
+          // Log progress every 20 searches
+          if (searchedCount % 20 === 0) {
+            console.log(`🔍 SYSTEMATIC SEARCH: Checked ${searchedCount} gifts (current: gift ${giftId} → token ${giftTokenId})`);
+          }
+          
+          // Check if this is our target token
+          if (giftTokenId === tokenIdStr) {
+            console.log(`🎯 SYSTEMATIC SEARCH SUCCESS: tokenId ${tokenIdStr} found in giftId ${giftId}`);
+            
+            // Cache this mapping for future use
+            tokenIdToGiftIdCache.set(tokenIdStr, giftId);
+            
+            // Store in persistent storage if available
+            try {
+              await storeGiftMapping(tokenIdStr, giftId);
+              console.log(`💾 STORED MAPPING: tokenId ${tokenIdStr} → giftId ${giftId}`);
+            } catch (storeError) {
+              console.warn(`⚠️ Failed to store mapping: ${storeError.message}`);
+            }
+            
+            return giftId;
+          }
+        }
+        
+        // Rate limiting to avoid overwhelming RPC
+        if (searchedCount % 10 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+      } catch (giftError) {
+        // Skip individual gift read errors
+        console.warn(`⚠️ SYSTEMATIC SEARCH: Error reading gift ${giftId}: ${giftError.message.substring(0, 50)}...`);
+      }
+    }
+    
+    console.log(`❌ SYSTEMATIC SEARCH: tokenId ${tokenIdStr} not found after checking ${searchedCount} gifts`);
+    return null;
+    
+  } catch (error) {
+    console.error(`❌ SYSTEMATIC SEARCH ERROR: ${error.message}`);
     return null;
   }
 }

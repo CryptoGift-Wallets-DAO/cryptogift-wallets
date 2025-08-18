@@ -214,10 +214,30 @@ async function validatePasswordWithContract(
       return { valid: false, error: 'Gift has expired' };
     }
     
-    // Check if already claimed
-    if (gift.status === 1) {
+    // Check if already claimed (normalize BigInt to Number)
+    const giftStatus = Number(gift.status);
+    if (giftStatus === 1) {
       return { valid: false, error: 'Gift already claimed' };
     }
+    
+    // AUDIT: Hash generation parameters logging
+    const hashParams = {
+      password: password,
+      passwordType: typeof password,
+      passwordLength: password.length,
+      salt: salt,
+      saltType: typeof salt,
+      saltLength: salt.length,
+      giftId: giftId,
+      giftIdType: typeof giftId,
+      contractAddress: ESCROW_CONTRACT_ADDRESS!,
+      contractAddressType: typeof ESCROW_CONTRACT_ADDRESS!,
+      chainId: 84532,
+      chainIdType: typeof 84532,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('🔐 HASH GENERATION PARAMETERS:', hashParams);
     
     // Validate password hash
     const providedHash = generatePasswordHash(
@@ -227,6 +247,13 @@ async function validatePasswordWithContract(
       ESCROW_CONTRACT_ADDRESS!,
       84532 // Base Sepolia chain ID
     );
+    
+    console.log('🔐 HASH GENERATION RESULT:', {
+      providedHash,
+      hashLength: providedHash.length,
+      hashType: typeof providedHash,
+      timestamp: new Date().toISOString()
+    });
     
     // ENHANCED DEBUG LOGGING - PROTOCOL v2 DEEP ANALYSIS
     const debugData = {
@@ -423,6 +450,24 @@ export default async function handler(
       salt,
       deviceId
     }: PreClaimValidationRequest = req.body;
+    
+    // AUDIT: Salt reception logging
+    console.log('📨 BACKEND SALT RECEPTION:', {
+      tokenId,
+      passwordLength: password?.length,
+      passwordFirst3: password?.substring(0, 3),
+      passwordLast3: password?.substring(password?.length - 3),
+      salt,
+      saltType: typeof salt,
+      saltLength: salt?.length,
+      saltStartsWith0x: salt?.startsWith('0x'),
+      deviceId,
+      timestamp: new Date().toISOString(),
+      requestHeaders: {
+        contentType: req.headers['content-type'],
+        userAgent: req.headers['user-agent']?.substring(0, 50) + '...'
+      }
+    });
     
     // Validate required fields
     if (!tokenId || !password || !salt) {

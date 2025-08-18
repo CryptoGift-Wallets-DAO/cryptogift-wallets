@@ -77,7 +77,17 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
 
   // Generate salt on mount
   useEffect(() => {
-    setSalt(generateSalt());
+    const newSalt = generateSalt();
+    setSalt(newSalt);
+    
+    // AUDIT: Salt generation logging
+    console.log('🧂 FRONTEND SALT GENERATION:', {
+      salt: newSalt,
+      saltType: typeof newSalt,
+      saltLength: newSalt.length,
+      saltStartsWith0x: newSalt.startsWith('0x'),
+      timestamp: new Date().toISOString()
+    });
   }, []);
 
   // Handle password validation
@@ -100,17 +110,32 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         `device_${Math.random().toString(36).substring(7)}`;
       localStorage.setItem('deviceId', deviceId);
 
+      // AUDIT: Pre-transmission logging
+      const requestPayload = {
+        tokenId,
+        password,
+        salt,
+        deviceId
+      };
+      
+      console.log('🚀 FRONTEND PRE-TRANSMISSION:', {
+        tokenId,
+        passwordLength: password.length,
+        passwordFirst3: password.substring(0, 3),
+        passwordLast3: password.substring(password.length - 3),
+        salt: salt,
+        saltType: typeof salt,
+        saltLength: salt.length,
+        deviceId,
+        timestamp: new Date().toISOString()
+      });
+
       const response = await fetch('/api/pre-claim/validate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          tokenId,
-          password,
-          salt,
-          deviceId
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       const data = await response.json();
