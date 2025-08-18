@@ -272,6 +272,127 @@ export const GiftEscrowConfig: React.FC<GiftEscrowConfigProps> = ({
             </p>
           </div>
 
+          {/* Education Requirements - MOVED OUT OF ADVANCED OPTIONS */}
+          <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/knowledge-logo.png" 
+                  alt="Knowledge" 
+                  className="w-8 h-8 object-contain"
+                />
+                <label className="block text-lg font-medium text-gray-900 dark:text-white">
+                  Education Requirements
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfig(prev => ({ ...prev, educationRequired: !prev.educationRequired }))}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  config.educationRequired 
+                    ? 'bg-purple-600' 
+                    : 'bg-gray-200 dark:bg-gray-700'
+                }`}
+                disabled={isLoading}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    config.educationRequired ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Require recipients to complete educational modules before claiming this gift. This ensures they understand crypto wallet security and best practices.
+            </p>
+            
+            {config.educationRequired && (
+              <div className="space-y-4">
+                {/* Module Selection */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-3">
+                    Select Required Modules:
+                  </h4>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 1, name: 'Crear Wallet Segura', time: '10 min', recommended: true, description: 'Aprende a crear y proteger tu billetera de criptomonedas' },
+                      { id: 2, name: 'Seguridad Básica', time: '8 min', recommended: true, description: 'Mejores prácticas para mantener tus activos seguros' },
+                      { id: 3, name: 'Entender NFTs', time: '12 min', description: 'Qué son los NFTs y cómo funcionan' },
+                      { id: 4, name: 'DeFi Básico', time: '15 min', description: 'Introducción a las finanzas descentralizadas' },
+                      { id: 5, name: 'Proyecto CryptoGift', time: '20 min', special: true, description: 'Conoce nuestra visión y únete como colaborador' }
+                    ].map(module => (
+                      <label 
+                        key={module.id}
+                        className="flex items-start cursor-pointer p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={config.educationModules?.includes(module.id) || false}
+                          onChange={(e) => {
+                            const modules = config.educationModules || [];
+                            if (e.target.checked) {
+                              setConfig(prev => ({ 
+                                ...prev, 
+                                educationModules: [...modules, module.id].sort()
+                              }));
+                            } else {
+                              setConfig(prev => ({ 
+                                ...prev, 
+                                educationModules: modules.filter(m => m !== module.id)
+                              }));
+                            }
+                          }}
+                          className="mt-1 mr-3 text-purple-600 focus:ring-purple-500"
+                          disabled={isLoading}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {module.name}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ({module.time})
+                            </span>
+                            {module.recommended && (
+                              <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
+                                Recomendado
+                              </span>
+                            )}
+                            {module.special && (
+                              <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full">
+                                Colaboradores
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {module.description}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  
+                  {config.educationModules && config.educationModules.length > 0 && (
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="font-medium">{config.educationModules.length}</span> módulos seleccionados
+                      </div>
+                      <div className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                        Tiempo total: {
+                          config.educationModules.reduce((total, id) => {
+                            const times: Record<number, number> = {1: 10, 2: 8, 3: 12, 4: 15, 5: 20};
+                            return total + (times[id] || 0);
+                          }, 0)
+                        } minutos
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Advanced Options */}
           <div>
             <button
@@ -319,106 +440,7 @@ export const GiftEscrowConfig: React.FC<GiftEscrowConfigProps> = ({
                   </p>
                 </div>
 
-                {/* Education Requirements */}
-                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      🎓 Education Requirements
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setConfig(prev => ({ ...prev, educationRequired: !prev.educationRequired }))}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        config.educationRequired 
-                          ? 'bg-purple-600' 
-                          : 'bg-gray-200 dark:bg-gray-700'
-                      }`}
-                      disabled={isLoading}
-                    >
-                      <span
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                          config.educationRequired ? 'translate-x-5' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  
-                  {config.educationRequired && (
-                    <div className="space-y-3">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Recipients must complete educational modules before claiming this gift
-                      </p>
-                      
-                      {/* Module Selection */}
-                      <div className="space-y-2">
-                        {[
-                          { id: 1, name: 'Crear Wallet Segura', time: '10 min', recommended: true },
-                          { id: 2, name: 'Seguridad Básica', time: '8 min', recommended: true },
-                          { id: 3, name: 'Entender NFTs', time: '12 min' },
-                          { id: 4, name: 'DeFi Básico', time: '15 min' },
-                          { id: 5, name: 'Proyecto CryptoGift', time: '20 min', special: true }
-                        ].map(module => (
-                          <label 
-                            key={module.id}
-                            className="flex items-start cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={config.educationModules?.includes(module.id) || false}
-                              onChange={(e) => {
-                                const modules = config.educationModules || [];
-                                if (e.target.checked) {
-                                  setConfig(prev => ({ 
-                                    ...prev, 
-                                    educationModules: [...modules, module.id].sort()
-                                  }));
-                                } else {
-                                  setConfig(prev => ({ 
-                                    ...prev, 
-                                    educationModules: modules.filter(m => m !== module.id)
-                                  }));
-                                }
-                              }}
-                              className="mt-1 mr-3"
-                              disabled={isLoading}
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {module.name}
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  ({module.time})
-                                </span>
-                                {module.recommended && (
-                                  <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
-                                    Recomendado
-                                  </span>
-                                )}
-                                {module.special && (
-                                  <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full">
-                                    Colaboradores
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                      
-                      {config.educationModules && config.educationModules.length > 0 && (
-                        <div className="text-xs text-gray-600 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          Tiempo total estimado: {
-                            config.educationModules.reduce((total, id) => {
-                              const times: Record<number, number> = {1: 10, 2: 8, 3: 12, 4: 15, 5: 20};
-                              return total + (times[id] || 0);
-                            }, 0)
-                          } minutos
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {/* NOTE: Education Requirements moved above Advanced Options */}
               </div>
             )}
           </div>

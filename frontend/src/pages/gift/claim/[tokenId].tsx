@@ -388,6 +388,8 @@ export default function ClaimGiftPage() {
             <PreClaimFlow
               tokenId={tokenId as string}
               onValidationSuccess={handlePreClaimValidation}
+              giftInfo={giftInfo}
+              nftMetadata={nftMetadata}
               className="mx-auto"
             />
           )}
