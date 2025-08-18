@@ -136,25 +136,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('📦 Using placeholder for invalid image format');
     }
     
-    // BASESCAN FIX: Detect if request is from BaseScan
-    const userAgent = req.headers['user-agent'] || '';
-    const isBaseScan = userAgent.toLowerCase().includes('basescan') || 
-                       userAgent.toLowerCase().includes('etherscan') ||
-                       req.headers['referer']?.includes('basescan.org');
-    
-    // For BaseScan and similar explorers, MUST use HTTPS in image field
-    const imageForExplorer = isBaseScan ? 
-      `https://ipfs.io/ipfs/${canonicalImageIpfs.replace('ipfs://', '')}` : 
-      canonicalImageIpfs;
+    // 🔥 MAINNET-READY: Always use HTTPS ipfs.io for image field (Etherscan convention)
+    // Extract CID from canonicalImageIpfs and always use ipfs.io
+    let mainnetImageHttps = dynamicImageHttps; // fallback
+    if (canonicalImageIpfs && canonicalImageIpfs.startsWith('ipfs://')) {
+      const imageCid = canonicalImageIpfs.replace('ipfs://', '');
+      mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
+    } else if (canonicalImageIpfs && canonicalImageIpfs.startsWith('data:image/')) {
+      // Keep data URIs as-is for legacy tokens
+      mainnetImageHttps = canonicalImageIpfs;
+    }
     
     const canonicalMetadata: any = {
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // 🔥 BASESCAN COMPATIBLE: image=HTTPS for explorers, IPFS for others
-      image: imageForExplorer,       // HTTPS for BaseScan, IPFS for wallets
-      image_ipfs: canonicalImageIpfs, // Always IPFS format for compatible systems
-      image_url: dynamicImageHttps,   // HTTPS best working gateway
+      // 🔥 MAINNET CANONICAL FORMAT:
+      image: mainnetImageHttps,        // ALWAYS HTTPS ipfs.io for mainnet explorers
+      image_ipfs: canonicalImageIpfs,  // IPFS native for wallets that prefer it
+      image_url: mainnetImageHttps,    // HTTPS ipfs.io (consistent with image)
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],

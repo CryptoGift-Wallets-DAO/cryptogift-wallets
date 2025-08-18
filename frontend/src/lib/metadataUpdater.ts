@@ -157,37 +157,37 @@ export async function createFinalMetadata(
       cid: metadataUploadResult.cid
     });
     
-    // 🔥 CRITICAL FIX: Warm-up EXACT FILES on IPFS gateways for MetaMask/BaseScan
-    console.log('🔥 WARMING UP IPFS GATEWAYS with EXACT paths...');
+    // 🔥 MAINNET-READY: Warm-up with GET + exact paths (no duplicate metadata.json)
+    console.log('🔥 WARMING UP IPFS GATEWAYS for mainnet readiness...');
     const warmupPromises = [];
     
-    // Extract filename from cleanImageCid if it contains a path
-    const imageFilename = cleanImageCid.includes('/') 
-      ? cleanImageCid.substring(cleanImageCid.lastIndexOf('/') + 1)
-      : 'image.jpg'; // fallback filename
-    
-    // Warm up EXACT metadata.json file on critical gateways
+    // FIX: metadata CID already points to metadata.json, don't duplicate path
     const metadataWarmupUrls = [
-      `https://ipfs.io/ipfs/${metadataUploadResult.cid}/metadata.json`,
-      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}/metadata.json`,
-      `https://dweb.link/ipfs/${metadataUploadResult.cid}/metadata.json`
+      `https://ipfs.io/ipfs/${metadataUploadResult.cid}`,
+      `https://cloudflare-ipfs.com/ipfs/${metadataUploadResult.cid}`,
+      `https://gateway.thirdweb.com/ipfs/${metadataUploadResult.cid}` // Include ThirdWeb for fresh uploads
     ];
     
-    // Warm up EXACT image file on critical gateways
+    // Warm up image file on critical gateways  
     const imageWarmupUrls = [
       `https://ipfs.io/ipfs/${cleanImageCid}`,
       `https://cloudflare-ipfs.com/ipfs/${cleanImageCid}`,
-      `https://dweb.link/ipfs/${cleanImageCid}`
+      `https://gateway.thirdweb.com/ipfs/${cleanImageCid}` // Include ThirdWeb
     ];
     
-    // Fire and forget - don't wait for responses
+    // FIX: Use GET with Range header instead of HEAD for actual cache warming
     for (const url of [...metadataWarmupUrls, ...imageWarmupUrls]) {
       warmupPromises.push(
         fetch(url, { 
-          method: 'HEAD',
+          method: 'GET',
+          headers: { 'Range': 'bytes=0-1023' }, // Small range to warm cache
           signal: AbortSignal.timeout(5000) // 5s timeout per request
         })
-        .then(() => console.log(`✅ Warmed up: ${url.substring(0, 50)}...`))
+        .then(res => {
+          if (res.ok || res.status === 206) {
+            console.log(`✅ Warmed up: ${url.substring(0, 50)}...`);
+          }
+        })
         .catch(() => console.log(`⚠️ Warmup failed: ${url.substring(0, 50)}...`))
       );
     }

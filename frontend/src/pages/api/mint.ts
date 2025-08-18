@@ -12,6 +12,7 @@ import { REFERRAL_COMMISSION_PERCENT } from "../../lib/constants";
 import { generateNeutralGiftAddressServer } from "../../lib/serverConstants";
 import { verifyJWT, extractTokenFromHeaders } from "../../lib/siweAuth";
 import { debugLogger } from "../../lib/secureDebugLogger";
+import { getPublicBaseUrl } from "../../lib/publicBaseUrl";
 
 // Add flow tracking to API
 let currentFlowTrace: any = null;
@@ -914,18 +915,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // CRITICAL ALIGNMENT: Update tokenURI to universal endpoint (same as mint-escrow.ts)
       console.log("🔄 UNIVERSAL ALIGNMENT: Updating tokenURI to public endpoint...");
       try {
-        // Get public base URL (same validation as mint-escrow)
-        const publicBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
-        if (!publicBaseUrl) {
-          throw new Error('CRITICAL: No NEXT_PUBLIC_BASE_URL available for tokenURI generation. Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables');
-        }
-        
-        const finalPublicBaseUrl = publicBaseUrl.startsWith('http') ? publicBaseUrl : `https://${publicBaseUrl}`;
-        
-        // CRITICAL VALIDATION: Prevent localhost URLs in production tokenURIs
-        if (finalPublicBaseUrl.includes('localhost') || finalPublicBaseUrl.includes('127.0.0.1')) {
-          throw new Error(`CRITICAL: Cannot use localhost URL for tokenURI: ${finalPublicBaseUrl}. Set NEXT_PUBLIC_BASE_URL to your production URL in environment variables`);
-        }
+        // Get public base URL using centralized helper
+        const finalPublicBaseUrl = getPublicBaseUrl(req);
       
       // Declare variables outside try block for proper scope
       // FIX #10: Use dynamic contract address from actual NFT contract, not hardcoded env var
@@ -935,6 +926,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('🌐 UNIVERSAL UPDATE:');
       console.log('  📍 Original URI (IPFS):', metadataUri.substring(0, 80) + '...');
       console.log('  🔗 Universal URI:', universalTokenURI);
+      
+      // 🔥 MAINNET-READY: Validate ipfs.io is accessible before updateTokenURI
+      console.log('🔍 Validating ipfs.io accessibility before tokenURI update...');
+      const metadataCid = metadataUri.replace('ipfs://', '');
+      const ipfsIoUrl = `https://ipfs.io/ipfs/${metadataCid}`;
+      let ipfsValidated = false;
+      const backoffDelays = [1000, 2000, 4000, 8000]; // 1s→2s→4s→8s
+      
+      for (let attempt = 0; attempt < backoffDelays.length; attempt++) {
+        if (attempt > 0) {
+          console.log(`⏱️ Waiting ${backoffDelays[attempt - 1]}ms before retry ${attempt}...`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelays[attempt - 1]));
+        }
+        
+        try {
+          const response = await fetch(ipfsIoUrl, {
+            method: 'GET',
+            headers: { 'Range': 'bytes=0-1023' },
+            signal: AbortSignal.timeout(5000)
+          });
+          
+          if (response.ok || response.status === 206) {
+            console.log(`✅ ipfs.io validated on attempt ${attempt + 1}`);
+            ipfsValidated = true;
+            break;
+          }
+        } catch (error) {
+          console.log(`⚠️ ipfs.io validation attempt ${attempt + 1} failed:`, error.message);
+        }
+      }
+      
+      if (!ipfsValidated) {
+        console.warn('⚠️ WARNING: ipfs.io not accessible after backoff, proceeding anyway');
+        addMintLog('WARN', 'IPFS_IO_NOT_ACCESSIBLE', {
+          tokenId: actualTokenId,
+          attempts: backoffDelays.length,
+          url: ipfsIoUrl
+        });
+      }
       
       // Prepare updateTokenURI transaction
       const updateURITransaction = prepareContractCall({
@@ -1069,7 +1099,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Final success
     // Generate share URL and QR code for the NFT
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL;
+    const baseUrl = getPublicBaseUrl(req);
     const shareUrl = `${baseUrl}/token/${process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${tokenId}`;
     const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
 
@@ -1112,7 +1142,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // Also trigger real-time update via API endpoint for dashboard refresh
         try {
-          const activationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || (() => { throw new Error('NEXT_PUBLIC_BASE_URL or VERCEL_URL is required'); })()}/api/referrals/track-activation`, {
+          const activationResponse = await fetch(`${getPublicBaseUrl(req)}/api/referrals/track-activation`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

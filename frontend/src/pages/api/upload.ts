@@ -5,6 +5,7 @@ import { upload } from "thirdweb/storage";
 import { uploadToIPFS, uploadMetadata, validateIPFSConfig } from "../../lib/ipfs";
 import { addMintLog } from "./debug/mint-logs";
 import { convertIPFSToHTTPS, validateMultiGatewayAccess } from "../../utils/ipfs";
+import { getPublicBaseUrl } from "../../lib/publicBaseUrl";
 
 // Disable the default body parser
 export const config = {
@@ -242,7 +243,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description: "Un regalo cripto único creado con amor",
         image: imageIpfsUrl,        // IPFS native format - preferred
         image_url: imageHttpsUrl,   // HTTPS format - fallback for wallets
-        external_url: process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL required for metadata generation'); })(),
+        external_url: getPublicBaseUrl(req), // Use centralized config
         attributes: [
           {
             trait_type: "Creation Date",
@@ -292,7 +293,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       description: "Un regalo cripto único creado con amor",
       image: nonFilteredImageIpfsUrl,        // IPFS native format - preferred
       image_url: nonFilteredImageHttpsUrl,   // HTTPS format - fallback for wallets
-      external_url: process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL required for metadata generation'); })(),
+      external_url: getPublicBaseUrl(req), // Use centralized config
       attributes: [
         {
           trait_type: "Creation Date",
@@ -336,15 +337,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const metadataValidation = await validateMultiGatewayAccess(metadataIpfsUrl, 1, 10000);
     
     if (!metadataValidation.success) {
-      console.log('⚠️ WARNING: Multi-gateway metadata validation failed - continuing anyway');
-      addMintLog('WARN', 'MULTI_GATEWAY_VALIDATION_FAILED', {
-        message: 'Metadata not accessible yet, will propagate',
+      // 🔥 FAIL-FAST: If 0 gateways work, abort the upload
+      if (metadataValidation.workingGateways.length === 0) {
+        console.log('❌ CRITICAL: Zero gateways can access metadata - aborting upload');
+        addMintLog('ERROR', 'ZERO_GATEWAYS_ACCESSIBLE', {
+          message: 'No IPFS gateways can access the uploaded metadata',
+          metadataCid: metadataCid.substring(0, 20) + '...',
+          errors: metadataValidation.errors
+        });
+        throw new Error('Upload failed: Metadata is not accessible from any IPFS gateway. Please try again.');
+      }
+      
+      // If at least 1 gateway works, continue with warning
+      console.log(`⚠️ WARNING: Only ${metadataValidation.workingGateways.length} gateway(s) accessible - continuing`);
+      addMintLog('WARN', 'PARTIAL_GATEWAY_ACCESS', {
+        message: 'Some gateways cannot access metadata yet',
         metadataCid: metadataCid.substring(0, 20) + '...',
         workingGateways: metadataValidation.workingGateways.length,
         errors: metadataValidation.errors
       });
-      
-      // Don't throw - just log the warning and continue
     }
     
     console.log('✅ Multi-gateway metadata validation successful!');
@@ -399,15 +410,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const imageValidation = await validateMultiGatewayAccess(finalImageIpfsUrl, 1, 10000);
     
     if (!imageValidation.success) {
-      console.log('⚠️ WARNING: Multi-gateway image validation failed - continuing anyway');
-      addMintLog('WARN', 'IMAGE_MULTI_GATEWAY_VALIDATION_FAILED', {
-        message: 'Image not accessible yet, will propagate',
+      // 🔥 FAIL-FAST: If 0 gateways work, abort the upload
+      if (imageValidation.workingGateways.length === 0) {
+        console.log('❌ CRITICAL: Zero gateways can access image - aborting upload');
+        addMintLog('ERROR', 'ZERO_GATEWAYS_IMAGE_ACCESSIBLE', {
+          message: 'No IPFS gateways can access the uploaded image',
+          imageCid: cid.substring(0, 20) + '...',
+          errors: imageValidation.errors
+        });
+        throw new Error('Upload failed: Image is not accessible from any IPFS gateway. Please try again.');
+      }
+      
+      // If at least 1 gateway works, continue with warning
+      console.log(`⚠️ WARNING: Only ${imageValidation.workingGateways.length} gateway(s) can access image - continuing`);
+      addMintLog('WARN', 'PARTIAL_IMAGE_GATEWAY_ACCESS', {
+        message: 'Some gateways cannot access image yet',
         imageCid: cid.substring(0, 20) + '...',
         workingGateways: imageValidation.workingGateways.length,
         errors: imageValidation.errors
       });
-      
-      // Don't throw - just log the warning and continue
     }
     
     console.log('✅ Multi-gateway image validation successful!');

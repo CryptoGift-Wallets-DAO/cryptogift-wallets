@@ -63,34 +63,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     console.log(`📊 Direct metadata resolved via ${fallbackResult.source} for ${contractAddress}:${tokenId} (${processingTime}ms) - NO REDIRECT`);
     
-    // METADATA PROCESSING: Use result from comprehensive fallback system
+    // 🔥 MAINNET-READY: Canonical metadata format for mainnet explorers
     
-    // 🔧 FASE 5E FIX: Ensure image is ALWAYS HTTPS (never ipfs://) for wallets/explorers
-    let normalizedImageUrl = fallbackResult.metadata.image;
-    if (normalizedImageUrl && normalizedImageUrl.startsWith('ipfs://')) {
-      console.log(`🔄 Normalizing ipfs:// image URL to HTTPS for wallet compatibility`);
-      const { pickGatewayUrl } = await import('../../../../utils/ipfs');
-      normalizedImageUrl = await pickGatewayUrl(normalizedImageUrl);
-      console.log(`🔗 Image normalized: ${normalizedImageUrl.substring(0, 50)}...`);
-    }
+    // Keep original image URL (should be ipfs://)
+    const originalImageUrl = fallbackResult.metadata.image;
     
-    // BASESCAN CRITICAL FIX: Always use HTTPS ipfs.io for image field
-    // Convert any IPFS URL to ipfs.io HTTPS for maximum compatibility
-    let finalImageUrl = normalizedImageUrl;
-    if (normalizedImageUrl.startsWith('ipfs://')) {
-      const cid = normalizedImageUrl.replace('ipfs://', '');
-      finalImageUrl = `https://ipfs.io/ipfs/${cid}`;
-      console.log('🔥 BASESCAN FIX: Converted to ipfs.io HTTPS:', finalImageUrl.substring(0, 60) + '...');
+    // Always use ipfs.io HTTPS for image field (mainnet explorer convention)
+    let mainnetImageHttps = originalImageUrl; // fallback
+    if (originalImageUrl && originalImageUrl.startsWith('ipfs://')) {
+      const imageCid = originalImageUrl.replace('ipfs://', '');
+      mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
+      console.log('🔥 MAINNET FORMAT: Using ipfs.io for image field:', mainnetImageHttps.substring(0, 60) + '...');
+    } else if (originalImageUrl && originalImageUrl.startsWith('data:image/')) {
+      // Keep data URIs as-is for legacy tokens
+      mainnetImageHttps = originalImageUrl;
+    } else if (originalImageUrl && originalImageUrl.startsWith('https://')) {
+      // Already HTTPS, use as-is
+      mainnetImageHttps = originalImageUrl;
     }
     
     const directMetadata: any = {
       name: fallbackResult.metadata.name,
       description: fallbackResult.metadata.description,
       
-      // 🔧 BASESCAN COMPATIBLE: Always HTTPS for image field
-      image: finalImageUrl,
-      image_ipfs: normalizedImageUrl.startsWith('ipfs://') ? normalizedImageUrl : undefined,
-      image_url: finalImageUrl, // Redundant but ensures compatibility
+      // 🔥 MAINNET CANONICAL FORMAT:
+      image: mainnetImageHttps,        // ALWAYS HTTPS ipfs.io for mainnet explorers
+      image_ipfs: originalImageUrl && originalImageUrl.startsWith('ipfs://') ? originalImageUrl : undefined,
+      image_url: mainnetImageHttps,    // HTTPS ipfs.io (consistent with image)
       
       // Copy all attributes and other fields
       attributes: fallbackResult.metadata.attributes || [],
