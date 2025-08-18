@@ -882,7 +882,8 @@ async function mintNFTEscrowGasless(
   timeframeDays: number,
   giftMessage: string,
   creatorAddress: string,
-  publicBaseUrl: string
+  publicBaseUrl: string,
+  educationModules?: number[]
 ): Promise<{
   success: boolean;
   tokenId?: string;
@@ -1230,10 +1231,16 @@ async function mintNFTEscrowGasless(
         84532 // Base Sepolia chain ID
       );
       
-      // Store the mapping deterministically
+      // Store the mapping deterministically with education metadata
       try {
-        await storeGiftMapping(tokenId, actualGiftId);
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} (deterministic)`);
+        await storeGiftMapping(tokenId, actualGiftId, {
+          educationModules: educationModules || [],
+          creator: creatorAddress,
+          nftContract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          createdAt: Date.now(),
+          salt: salt
+        });
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} with education modules: ${educationModules?.join(',') || 'none'}`);
         
         // CRITICAL: Store the original mint salt for claim validation
         try {
@@ -1509,7 +1516,8 @@ async function mintNFTEscrowGasPaid(
   timeframeDays: number,
   giftMessage: string,
   creatorAddress: string,
-  publicBaseUrl: string  // REQUIRED: Explicit injection instead of req?
+  publicBaseUrl: string,  // REQUIRED: Explicit injection instead of req?
+  educationModules?: number[]
 ): Promise<{
   success: boolean;
   tokenId?: string;
@@ -2467,10 +2475,16 @@ async function mintNFTEscrowGasPaid(
         84532 // Base Sepolia chain ID
       );
       
-      // Store the mapping deterministically (gas-paid)
+      // Store the mapping deterministically (gas-paid) with education metadata
       try {
-        await storeGiftMapping(tokenId, actualGiftIdGasPaid);
-        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (deterministic)`);
+        await storeGiftMapping(tokenId, actualGiftIdGasPaid, {
+          educationModules: educationModules || [],
+          creator: creatorAddress,
+          nftContract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          createdAt: Date.now(),
+          salt: salt
+        });
+        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} with education modules: ${educationModules?.join(',') || 'none'}`);
         
         // CRITICAL: Store the original mint salt for claim validation (gas-paid)
         try {
@@ -2765,7 +2779,8 @@ export default async function handler(
           timeframeIndex!,
           sanitizedGiftMessage,
           creatorAddress,
-          publicBaseUrl
+          publicBaseUrl,
+          educationModules
         );
         
         // If gasless fails, fallback to gas-paid
@@ -2778,7 +2793,8 @@ export default async function handler(
             timeframeIndex!,
             sanitizedGiftMessage,
             creatorAddress,
-            publicBaseUrl
+            publicBaseUrl,
+            educationModules
           );
           result.gasless = false;
         } else {
@@ -2798,7 +2814,8 @@ export default async function handler(
           timeframeIndex!,
           sanitizedGiftMessage,
           creatorAddress,
-          publicBaseUrl
+          publicBaseUrl,
+          educationModules
         );
         result.gasless = false;
       }

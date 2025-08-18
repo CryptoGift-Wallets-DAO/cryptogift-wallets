@@ -70,8 +70,34 @@ export default function ClaimGiftPage() {
   useEffect(() => {
     if (tokenId && typeof tokenId === 'string') {
       loadGiftInfo(tokenId);
+      checkGiftRequirements(tokenId);
     }
   }, [tokenId]);
+
+  // Check if gift has password/education requirements
+  const checkGiftRequirements = async (tokenId: string) => {
+    try {
+      const response = await fetch(`/api/gift-has-password?tokenId=${tokenId}`);
+      const data = await response.json();
+      
+      console.log('🔐 Gift requirements check:', data);
+      
+      if (data.success) {
+        if (data.hasPassword || data.hasEducation) {
+          // Gift has password/education - show PreClaimFlow
+          setFlowState(ClaimFlowState.PRE_VALIDATION);
+        } else {
+          // No password/education - go directly to claim
+          console.log('✨ No password required - proceeding directly to claim');
+          setFlowState(ClaimFlowState.CLAIM);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check gift requirements:', error);
+      // Default to pre-validation for safety
+      setFlowState(ClaimFlowState.PRE_VALIDATION);
+    }
+  };
 
   const loadGiftInfo = async (tokenId: string) => {
     setLoading(true);

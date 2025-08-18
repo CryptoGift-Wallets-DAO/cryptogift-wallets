@@ -12,10 +12,20 @@ const REVERSE_MAPPING_KEY_PREFIX = 'reverse_mapping:';
 const SALT_KEY_PREFIX = 'gift_salt:';
 
 /**
- * Store tokenId → giftId mapping persistently
+ * Store tokenId → giftId mapping persistently with optional metadata
  * Call this immediately after registerGiftMinted succeeds
  */
-export async function storeGiftMapping(tokenId: string | number, giftId: string | number): Promise<boolean> {
+export async function storeGiftMapping(
+  tokenId: string | number, 
+  giftId: string | number,
+  metadata?: {
+    educationModules?: number[];
+    creator?: string;
+    nftContract?: string;
+    createdAt?: number;
+    salt?: string;
+  }
+): Promise<boolean> {
   const tokenIdStr = tokenId.toString();
   const giftIdStr = giftId.toString();
   
@@ -39,9 +49,16 @@ export async function storeGiftMapping(tokenId: string | number, giftId: string 
       const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
       const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
       
+      // Prepare mapping data with metadata if provided
+      const mappingData = {
+        giftId: giftIdStr,
+        tokenId: tokenIdStr,
+        ...(metadata || {})
+      };
+      
       // Store both directions for fast lookups with extended expiry for critical mappings
       await Promise.all([
-        redis.set(mappingKey, giftIdStr, { ex: 86400 * 730 }), // 2 years expiry (extended for stability)
+        redis.set(mappingKey, JSON.stringify(mappingData), { ex: 86400 * 730 }), // 2 years expiry (extended for stability)
         redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 730 }),
         // CACHE OPTIMIZATION: Store timestamp for freshness tracking
         redis.set(`${mappingKey}:timestamp`, Date.now().toString(), { ex: 86400 * 730 })

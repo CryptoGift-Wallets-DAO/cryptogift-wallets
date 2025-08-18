@@ -181,10 +181,14 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           duration: 5000
         });
 
-        // Small delay for UX
-        setTimeout(() => {
-          onValidationSuccess(data.sessionToken, data.requiresEducation);
-        }, 1500);
+        // If NO education required, proceed immediately
+        if (!data.requiresEducation) {
+          setTimeout(() => {
+            onValidationSuccess(data.sessionToken, false);
+          }, 1500);
+        }
+        // If education IS required, DON'T call onValidationSuccess yet
+        // Let the user see and interact with the bypass button
 
       } else {
         setValidationState({
