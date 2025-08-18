@@ -63,6 +63,30 @@ export default async function handler(
     });
   }
   
+  // SECURITY: Rate limiting for education approval endpoint
+  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  const rateLimitKey = `rate_limit:education_approve:${clientIP}:${userAgent.slice(0, 50)}`;
+  
+  try {
+    // Check current rate limit
+    const currentCount = await kv.get<number>(rateLimitKey) || 0;
+    
+    if (currentCount >= 5) { // 5 attempts per minute
+      return res.status(429).json({ 
+        success: false,
+        error: 'Rate limit exceeded - max 5 education approvals per minute' 
+      });
+    }
+    
+    // Increment rate limit counter
+    await kv.setex(rateLimitKey, 60, currentCount + 1); // 60 seconds TTL
+    
+  } catch (rateLimitError) {
+    console.warn('⚠️ Rate limiting failed (proceeding):', rateLimitError);
+    // Continue without rate limiting if Redis fails
+  }
+  
   try {
     const {
       sessionToken,
@@ -113,6 +137,14 @@ export default async function handler(
       return res.status(403).json({ 
         success: false,
         error: 'Session mismatch - tokenId' 
+      });
+    }
+    
+    // SECURITY: Verify claimer matches authenticated address from session
+    if (sessionData.claimer !== claimer) {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Identity mismatch - claimer address does not match session' 
       });
     }
     

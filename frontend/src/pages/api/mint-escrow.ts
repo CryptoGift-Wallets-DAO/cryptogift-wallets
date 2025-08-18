@@ -1109,6 +1109,11 @@ async function mintNFTEscrowGasless(
         throw new Error(`RACE CONDITION DETECTED: ${ownershipResult.error || 'NFT ownership verification failed'}`);
       }
       
+      // CRITICAL: Determine gate address based on education requirements
+      const gateAddress = (educationModules && educationModules.length > 0) 
+        ? process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000'
+        : '0x0000000000000000000000000000000000000000'; // No gate for gifts without education
+      
       // CRITICAL DEBUG: Log tokenId before registerGiftMinted call
       console.log('🔍 CRITICAL DEBUG - BEFORE registerGiftMinted:', {
         tokenId: tokenId,
@@ -1117,7 +1122,9 @@ async function mintNFTEscrowGasless(
         contract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.slice(0,10) + '...',
         creator: creatorAddress.slice(0,10) + '...',
         timeframeDays,
-        giftMessageLength: giftMessage.length
+        giftMessageLength: giftMessage.length,
+        gateAddress: gateAddress === '0x0000000000000000000000000000000000000000' ? 'NO_GATE' : gateAddress.slice(0, 10) + '...',
+        hasEducation: educationModules && educationModules.length > 0
       });
       
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
@@ -1127,7 +1134,8 @@ async function mintNFTEscrowGasless(
         password,
         salt,
         timeframeDays,
-        giftMessage
+        giftMessage,
+        gateAddress // ← NEW: Pass gate address based on education requirements
       );
       
       console.log('🚀 Executing gasless gift registration...');
@@ -2342,6 +2350,11 @@ async function mintNFTEscrowGasPaid(
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
       console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
       
+      // CRITICAL: Determine gate address based on education requirements (gas-paid)
+      const gateAddress = (educationModules && educationModules.length > 0) 
+        ? process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000'
+        : '0x0000000000000000000000000000000000000000'; // No gate for gifts without education
+      
       // CRITICAL DEBUG: Log tokenId before registerGiftMinted call (gas-paid)
       console.log('🔍 CRITICAL DEBUG - BEFORE registerGiftMinted (GAS-PAID):', {
         tokenId: tokenId,
@@ -2350,7 +2363,9 @@ async function mintNFTEscrowGasPaid(
         contract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!.slice(0,10) + '...',
         creator: creatorAddress.slice(0,10) + '...',
         timeframeDays,
-        giftMessageLength: giftMessage.length
+        giftMessageLength: giftMessage.length,
+        gateAddress: gateAddress === '0x0000000000000000000000000000000000000000' ? 'NO_GATE' : gateAddress.slice(0, 10) + '...',
+        hasEducation: educationModules && educationModules.length > 0
       });
       
       const registerGiftTransaction = prepareRegisterGiftMintedCall(
@@ -2360,7 +2375,8 @@ async function mintNFTEscrowGasPaid(
         password,
         salt,
         timeframeDays,
-        giftMessage
+        giftMessage,
+        gateAddress // ← NEW: Pass gate address based on education requirements
       );
       
       console.log('🚀 Executing gas-paid gift registration...');

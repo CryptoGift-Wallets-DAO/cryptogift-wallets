@@ -4,7 +4,7 @@
  * This is the SOURCE OF TRUTH for gift mappings
  */
 
-import { getContract, readContract, getLogs } from 'thirdweb';
+import { getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { createThirdwebClient } from 'thirdweb';
 
@@ -13,8 +13,7 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
 });
 
-// Event signature for GiftMinted
-const GIFT_MINTED_EVENT = '0x6a68e1f4b8a8c4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4'; // Replace with actual
+// Event signature for GiftMinted - removed unused event code
 
 interface GiftMintedEvent {
   tokenId: bigint;
@@ -139,24 +138,16 @@ export async function checkEducationRequirements(tokenId: string | number): Prom
       }
     }
     
-    // Fallback to improved heuristic
-    const tokenNumber = parseInt(tokenId.toString());
+    // SECURITY: No fallback heuristics - must have explicit education data
+    // Using token number thresholds is fragile and "guessable"
+    // Source of truth should ONLY be the flag in KV storage
+    console.warn(`⚠️ No education requirements found in Redis for token ${tokenId}`);
+    console.warn('📋 Defaulting to NO EDUCATION (secure fallback)');
     
-    // Enhanced heuristic based on token creation patterns
-    if (tokenNumber >= 190) {
-      console.log(`📚 Token ${tokenNumber} >= 190 → assuming education required (heuristic)`);
-      return {
-        hasEducation: true,
-        educationModules: [1], // Default to wallet creation module
-        source: 'heuristic'
-      };
-    }
-    
-    console.log(`📚 Token ${tokenNumber} < 190 → assuming no education (heuristic)`);
     return {
       hasEducation: false,
       educationModules: [],
-      source: 'heuristic'
+      source: 'fallback_secure'
     };
     
   } catch (error) {
