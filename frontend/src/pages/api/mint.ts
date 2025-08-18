@@ -1096,6 +1096,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const calculatedTbaAddress = await calculateTBAAddress(tokenId);
     addMintLog('SUCCESS', 'STEP_5_COMPLETE', { tbaAddress: calculatedTbaAddress, tokenId });
     addAPIStep('TBA_ADDRESS_VERIFIED', { tbaAddress: calculatedTbaAddress, tokenId }, 'success');
+    
+    // 🔥 MAINNET-READY: Health probe post-mint (non-blocking)
+    // Fire and forget - ensures metadata is well-propagated
+    const healthProbeMetadata = async () => {
+      const metadataCid = metadataUri.replace('ipfs://', '');
+      const ipfsIoUrl = `https://ipfs.io/ipfs/${metadataCid}`;
+      
+      console.log('🏥 Starting post-mint health probe for metadata...');
+      
+      for (let i = 0; i < 3; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); // 2s, 4s, 6s
+        
+        try {
+          const response = await fetch(ipfsIoUrl, {
+            method: 'GET',
+            headers: { 'Range': 'bytes=0-1023' },
+            signal: AbortSignal.timeout(3000)
+          });
+          
+          if (response.ok || response.status === 206) {
+            console.log(`✅ Health probe ${i + 1}/3: Metadata accessible on ipfs.io`);
+          }
+        } catch (error) {
+          console.log(`⚠️ Health probe ${i + 1}/3 failed:`, error.message);
+        }
+      }
+      
+      console.log('🏥 Health probe completed (best effort)');
+    };
+    
+    // Launch health probe in background (don't await)
+    healthProbeMetadata().catch(err => 
+      console.log('⚠️ Health probe error (non-critical):', err.message)
+    );
 
     // Final success
     // Generate share URL and QR code for the NFT
