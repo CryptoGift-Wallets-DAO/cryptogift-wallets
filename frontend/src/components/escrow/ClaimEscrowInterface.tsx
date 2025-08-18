@@ -49,6 +49,7 @@ interface ClaimEscrowInterfaceProps {
   className?: string;
   // NEW: Education gate data from EIP-712 approval
   educationGateData?: string;
+  hasEducationRequirements?: boolean;
 }
 
 interface ClaimFormData {
@@ -64,7 +65,8 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
   onClaimSuccess,
   onClaimError,
   className,
-  educationGateData = '0x' // Default to empty gate data if no education required = ''
+  educationGateData = '0x', // Default to empty gate data if no education required
+  hasEducationRequirements = false
 }) => {
   const account = useActiveAccount();
   const auth = useAuth();
@@ -158,6 +160,18 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
     if (!auth.isAuthenticated) {
       setError('Please authenticate with your wallet first to claim the gift');
       return;
+    }
+
+    // Guard: Check if education was required but no gate data
+    if (hasEducationRequirements && (!educationGateData || educationGateData === '0x')) {
+      addNotification({
+        type: 'error',
+        title: '⚠️ Aprobación Requerida',
+        message: 'Necesitas completar la validación educativa antes de reclamar',
+        duration: 5000
+      });
+      setError('Education validation required but not completed');
+      return; // Don't proceed with claim
     }
 
     const validationError = validateForm();

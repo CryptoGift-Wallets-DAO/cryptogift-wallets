@@ -34,7 +34,7 @@ const EIP712_DOMAIN = {
   name: 'SimpleApprovalGate',
   version: '1',
   chainId: 84532, // Base Sepolia
-  verifyingContract: process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000'
+  verifyingContract: process.env.SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000' // Server-side only
 };
 
 const EIP712_TYPES = {
@@ -141,6 +141,7 @@ export default async function handler(
     }
     
     // SECURITY: Verify claimer matches authenticated address from session
+    // NOTE: For gasless transactions, claimer should be the smart account (msg.sender), not the EOA
     if (sessionData.claimer !== claimer) {
       return res.status(403).json({ 
         success: false,
@@ -206,15 +207,25 @@ export default async function handler(
     // Calculate deadline (current time + TTL)
     const deadline = Math.floor(Date.now() / 1000) + SIGNATURE_TTL;
     
-    // Prepare EIP-712 message
+    // Prepare EIP-712 message with strict validation
     const message = {
-      claimer,
+      claimer: ethers.getAddress(claimer), // Normalize address with checksum
       giftId: BigInt(giftId),
       requirementsVersion: REQUIREMENTS_VERSION,
       deadline: BigInt(deadline),
       chainId: BigInt(EIP712_DOMAIN.chainId),
-      verifyingContract: EIP712_DOMAIN.verifyingContract
+      verifyingContract: ethers.getAddress(EIP712_DOMAIN.verifyingContract) // Normalize with checksum
     };
+    
+    // CRITICAL: Validate all EIP-712 parameters strictly
+    console.log('🔐 EIP-712 MESSAGE VALIDATION:', {
+      claimer: message.claimer,
+      giftId: giftId,
+      requirementsVersion: REQUIREMENTS_VERSION,
+      deadline: deadline,
+      chainId: EIP712_DOMAIN.chainId,
+      verifyingContract: message.verifyingContract
+    });
     
     // Sign the message
     const signature = await approverWallet.signTypedData(

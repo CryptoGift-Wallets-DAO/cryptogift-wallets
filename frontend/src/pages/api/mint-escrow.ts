@@ -1109,10 +1109,38 @@ async function mintNFTEscrowGasless(
         throw new Error(`RACE CONDITION DETECTED: ${ownershipResult.error || 'NFT ownership verification failed'}`);
       }
       
-      // CRITICAL: Determine gate address based on education requirements
-      const gateAddress = (educationModules && educationModules.length > 0) 
-        ? process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000'
-        : '0x0000000000000000000000000000000000000000'; // No gate for gifts without education
+      // CRITICAL: Validate gate configuration BEFORE proceeding
+      let gateAddress: string;
+      
+      if (educationModules && educationModules.length > 0) {
+        const gateEnvVar = process.env.SIMPLE_APPROVAL_GATE_ADDRESS; // Server-side only, not public
+        
+        if (!gateEnvVar || gateEnvVar === '0x0000000000000000000000000000000000000000') {
+          console.error('❌ GATE_MISSING: Education modules requested but gate not configured');
+          
+          return res.status(400).json({
+            success: false,
+            error: 'Configuration error',
+            code: 'GATE_MISSING',
+            message: 'Education features temporarily unavailable. Please try without education requirements.',
+            details: 'SimpleApprovalGate address not configured'
+          });
+        }
+        
+        // Validar que es una dirección válida
+        if (!ethers.isAddress(gateEnvVar)) {
+          return res.status(500).json({
+            success: false,
+            code: 'GATE_INVALID',
+            error: 'Invalid approval gate address configuration'
+          });
+        }
+        
+        gateAddress = ethers.getAddress(gateEnvVar); // Normalize with checksum
+        console.log(`✅ Gate validated for education requirements: ${gateAddress.slice(0, 10)}...`);
+      } else {
+        gateAddress = '0x0000000000000000000000000000000000000000'; // No gate for gifts without education
+      }
       
       // CRITICAL DEBUG: Log tokenId before registerGiftMinted call
       console.log('🔍 CRITICAL DEBUG - BEFORE registerGiftMinted:', {
@@ -1248,7 +1276,11 @@ async function mintNFTEscrowGasless(
           createdAt: Date.now(),
           salt: salt
         });
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} with education modules: ${educationModules?.join(',') || 'none'}`);
+        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} with education modules:`, {
+          hasEducation: educationModules && educationModules.length > 0,
+          moduleCount: educationModules?.length || 0,
+          policyHash: educationModules?.length ? ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify([...educationModules].sort((a, b) => a - b)))).slice(0, 10) + '...' : 'none'
+        });
         
         // CRITICAL: Store the original mint salt for claim validation
         try {
@@ -2350,10 +2382,38 @@ async function mintNFTEscrowGasPaid(
       // V2 ZERO CUSTODY: Use registerGiftMinted for direct mint-to-escrow
       console.log('✅ V2 ZERO CUSTODY: Using registerGiftMinted (NFT already in escrow)');
       
-      // CRITICAL: Determine gate address based on education requirements (gas-paid)
-      const gateAddress = (educationModules && educationModules.length > 0) 
-        ? process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000'
-        : '0x0000000000000000000000000000000000000000'; // No gate for gifts without education
+      // CRITICAL: Validate gate configuration BEFORE proceeding (gas-paid)
+      let gateAddress: string;
+      
+      if (educationModules && educationModules.length > 0) {
+        const gateEnvVar = process.env.SIMPLE_APPROVAL_GATE_ADDRESS; // Server-side only, not public
+        
+        if (!gateEnvVar || gateEnvVar === '0x0000000000000000000000000000000000000000') {
+          console.error('❌ GATE_MISSING (GAS-PAID): Education modules requested but gate not configured');
+          
+          return res.status(400).json({
+            success: false,
+            error: 'Configuration error',
+            code: 'GATE_MISSING',
+            message: 'Education features temporarily unavailable. Please try without education requirements.',
+            details: 'SimpleApprovalGate address not configured'
+          });
+        }
+        
+        // Validar que es una dirección válida
+        if (!ethers.isAddress(gateEnvVar)) {
+          return res.status(500).json({
+            success: false,
+            code: 'GATE_INVALID',
+            error: 'Invalid approval gate address configuration'
+          });
+        }
+        
+        gateAddress = ethers.getAddress(gateEnvVar); // Normalize with checksum
+        console.log(`✅ Gate validated for education requirements (GAS-PAID): ${gateAddress.slice(0, 10)}...`);
+      } else {
+        gateAddress = '0x0000000000000000000000000000000000000000'; // No gate for gifts without education
+      }
       
       // CRITICAL DEBUG: Log tokenId before registerGiftMinted call (gas-paid)
       console.log('🔍 CRITICAL DEBUG - BEFORE registerGiftMinted (GAS-PAID):', {
@@ -2512,7 +2572,11 @@ async function mintNFTEscrowGasPaid(
           createdAt: Date.now(),
           salt: salt
         });
-        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} with education modules: ${educationModules?.join(',') || 'none'}`);
+        console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} with education modules:`, {
+          hasEducation: educationModules && educationModules.length > 0,
+          moduleCount: educationModules?.length || 0,
+          policyHash: educationModules?.length ? ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify([...educationModules].sort((a, b) => a - b)))).slice(0, 10) + '...' : 'none'
+        });
         
         // CRITICAL: Store the original mint salt for claim validation (gas-paid)
         try {
@@ -2938,26 +3002,52 @@ export default async function handler(
           token: process.env.UPSTASH_REDIS_REST_TOKEN!,
         });
         
-        // Store requirements by giftId
-        const requirementsKey = `gift:${result.giftId}:requirements`;
-        await redis.setex(requirementsKey, 90 * 24 * 60 * 60, educationModules);
+        // NEW: Unified education key with versioned payload
+        const educationKey = `education:gift:${result.giftId}`;
         
-        // Also store extended data by tokenId for easy lookup
-        const tokenRequirementsKey = `token:${result.tokenId}:requirements`;
-        await redis.setex(tokenRequirementsKey, 90 * 24 * 60 * 60, {
-          modules: educationModules,
-          creatorAddress,
-          createdAt: new Date().toISOString(),
+        // DETERMINISTIC HASH: Sort modules for stable hash
+        const sortedModules = [...educationModules].sort((a, b) => a - b);
+        const deterministicPayload = JSON.stringify(sortedModules, Object.keys(sortedModules).sort());
+        
+        const educationData = {
+          hasEducation: true,
+          profileId: educationModules.length > 0 ? 1 : 0, // 1=basic, 2=advanced, etc
+          version: 1, // For invalidating old signatures
+          modules: sortedModules, // Always sorted for consistency
+          policyHash: ethers.keccak256(ethers.toUtf8Bytes(deterministicPayload)),
+          tokenId: result.tokenId,
           giftId: result.giftId,
-          tokenId: result.tokenId
+          createdAt: new Date().toISOString()
+        };
+
+        await redis.setex(educationKey, 90 * 24 * 60 * 60, JSON.stringify(educationData));
+
+        // TEMPORARY: Create alias for backward compatibility (2 weeks)
+        await redis.setex(`education_modules:${result.tokenId}`, 14 * 24 * 60 * 60, JSON.stringify(educationModules));
+        console.warn(`⚠️ DEPRECATED: Using legacy key education_modules:${result.tokenId} - will be removed in 2 weeks`);
+
+        // Log securely (hash only, no PII)
+        console.log('✅ Education requirements stored:', {
+          giftId: result.giftId,
+          hasEducation: true,
+          policyHash: educationData.policyHash.slice(0, 10) + '...',
+          version: educationData.version
         });
         
-        console.log(`✅ Education requirements stored: Gift ${result.giftId} requires modules [${educationModules.join(', ')}]`);
+        // SECURE EDUCATION AUDIT - no module content exposed
+        console.log('📚 EDUCATION AUDIT:', {
+          giftId: result.giftId,
+          hasEducation: educationModules?.length > 0,
+          policyHash: ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify([...educationModules].sort((a, b) => a - b)))).slice(0, 10) + '...',
+          source: 'redis_unified',
+          version: 1,
+          timestamp: new Date().toISOString()
+        });
         debugLogger.operation('Education requirements stored', {
           giftId: result.giftId,
           tokenId: result.tokenId,
-          modules: educationModules,
-          moduleCount: educationModules.length
+          moduleCount: educationModules.length,
+          policyHash: ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify([...educationModules].sort((a, b) => a - b)))).slice(0, 10) + '...'
         });
       } catch (error) {
         console.warn('⚠️ Failed to store education requirements:', error);

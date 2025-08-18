@@ -181,13 +181,12 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           duration: 5000
         });
 
-        // If NO education required, proceed immediately
+        // If NO education required, this should NOT happen in current flow
         if (!data.requiresEducation) {
-          setTimeout(() => {
-            onValidationSuccess(data.sessionToken, false, '0x'); // No education = empty gate data
-          }, 1500);
+          console.error('⚠️ Unexpected: PreClaimFlow shown for gift without education');
+          // Still don't auto-navigate, let user control
         }
-        // If education IS required, DON'T call onValidationSuccess yet
+        // If education IS required, show bypass button (no auto-nav)
         // Let the user see and interact with the bypass button
 
       } else {
@@ -281,9 +280,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         });
 
         // Proceed to claim with education bypassed, passing the gateData
-        setTimeout(() => {
-          onValidationSuccess(validationState.sessionToken!, false, approvalData.gateData); // Pass gateData from EIP-712 signature
-        }, 1500);
+        onValidationSuccess(validationState.sessionToken!, false, approvalData.gateData); // Pass gateData from EIP-712 signature
       } else {
         throw new Error(approvalData.error || 'Bypass failed');
       }

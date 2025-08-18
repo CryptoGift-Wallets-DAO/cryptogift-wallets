@@ -58,9 +58,10 @@ export default function ClaimGiftPage() {
   const [claimed, setClaimed] = useState(false);
   
   // New states for education flow
-  const [flowState, setFlowState] = useState<ClaimFlowState>(ClaimFlowState.PRE_VALIDATION);
+  const [flowState, setFlowState] = useState<ClaimFlowState | null>(null); // Start with null to prevent race conditions
   const [educationSession, setEducationSession] = useState<EducationSession | null>(null);
   const [educationGateData, setEducationGateData] = useState<string>('0x'); // EIP-712 signature for education approval
+  const [hasEducationRequirements, setHasEducationRequirements] = useState<boolean>(false);
 
   // Handle theme hydration
   useEffect(() => {
@@ -84,22 +85,24 @@ export default function ClaimGiftPage() {
       console.log('🔐 Gift requirements check:', data);
       
       if (data.success) {
-        // CORRECTED LOGIC:
-        // - If hasEducation → show PreClaimFlow (validate password first)
-        // - If NO education → go directly to ClaimEscrowInterface (skip password validation)
+        // CORRECTED FINAL LOGIC:
+        // - NO education → go directly to ClaimEscrowInterface (NO password pre-validation)
+        // - HAS education → go to PreClaimFlow (password + bypass button)
+        
         if (data.hasEducation) {
-          console.log('📚 Gift has education requirements - showing password validation first');
+          console.log('📚 Gift has education requirements - showing password validation with bypass');
+          setHasEducationRequirements(true);
           setFlowState(ClaimFlowState.PRE_VALIDATION);
-          // educationGateData will be set by handlePreClaimValidation after bypass
         } else {
           console.log('✨ No education requirements - proceeding directly to claim');
-          setEducationGateData('0x'); // Explicitly set empty gate data for no education
+          setHasEducationRequirements(false);
+          setEducationGateData('0x'); // No gate data needed
           setFlowState(ClaimFlowState.CLAIM);
         }
       }
     } catch (error) {
       console.error('Failed to check gift requirements:', error);
-      // Default to claim (assume no education) 
+      // Default to direct claim (safest option)
       setFlowState(ClaimFlowState.CLAIM);
     }
   };
@@ -420,6 +423,14 @@ export default function ClaimGiftPage() {
 
         {/* Main Content - Dynamic based on flow state */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Loading state while determining flow */}
+          {flowState === null && (
+            <div className="text-center py-12">
+              <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-300">Verificando requisitos del regalo...</p>
+            </div>
+          )}
+          
           {/* Pre-Validation State */}
           {flowState === ClaimFlowState.PRE_VALIDATION && tokenId && (
             <PreClaimFlow
@@ -510,6 +521,7 @@ export default function ClaimGiftPage() {
                   onClaimSuccess={handleClaimSuccess}
                   onClaimError={handleClaimError}
                   educationGateData={educationGateData} // Pass EIP-712 signature or '0x' for no education
+                  hasEducationRequirements={hasEducationRequirements}
                 />
               )}
 

@@ -4,6 +4,7 @@ import { client } from '../../app/client';
 import { baseSepolia } from 'thirdweb/chains';
 import { getGiftIdFromMapping } from '../../lib/giftMappingStore';
 import { getGiftFromBlockchain, checkEducationRequirements } from '../../lib/giftEventReader';
+import { Redis } from '@upstash/redis';
 
 export default async function handler(
   req: NextApiRequest,
@@ -45,7 +46,7 @@ export default async function handler(
         
         return res.status(200).json({
           success: true,
-          hasPassword: true,  // ALWAYS true - all gifts have passwords
+          hasPassword: true, // INVARIANT: Always true - password verification happens on-chain
           hasEducation: educationCheck.hasEducation,
           reason: 'fallback_' + educationCheck.source,
           giftId: null,
@@ -55,6 +56,60 @@ export default async function handler(
     }
 
     console.log(`✅ Token ${tokenId} maps to Gift ${giftId}`);
+
+    // PRIMARY: Try new unified education key
+    if (giftId) {
+      try {
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+        });
+
+        const educationKey = `education:gift:${giftId}`;
+        const educationData = await redis.get(educationKey);
+
+        if (educationData) {
+          const parsed = JSON.parse(educationData as string);
+          console.log('✅ Education data found (new key):', {
+            giftId,
+            hasEducation: parsed.hasEducation,
+            source: 'redis_unified',
+            version: parsed.version
+          });
+
+          return res.status(200).json({
+            success: true,
+            hasPassword: true, // INVARIANT: Always true - password verification happens on-chain // INVARIANT: Always true - password verification happens on-chain
+            hasEducation: parsed.hasEducation,
+            educationModules: parsed.modules,
+            giftId,
+            dataSource: 'redis_unified',
+            version: parsed.version
+          });
+        }
+
+        // FALLBACK: Try legacy keys (with deprecation warning)
+        const legacyKey = `education_modules:${tokenId}`;
+        const legacyModules = await redis.get(legacyKey);
+
+        if (legacyModules) {
+          console.warn(`⚠️ DEPRECATED: Using legacy key ${legacyKey} - migrate to education:gift:${giftId}`);
+          const modules = JSON.parse(legacyModules as string);
+
+          return res.status(200).json({
+            success: true,
+            hasPassword: true, // INVARIANT: Always true - password verification happens on-chain
+            hasEducation: modules.length > 0,
+            educationModules: modules,
+            giftId,
+            dataSource: 'redis_legacy'
+          });
+        }
+      } catch (redisError) {
+        console.warn('⚠️ Redis education lookup failed:', redisError);
+        // Continue to blockchain fallback
+      }
+    }
 
     // Get escrow contract
     const escrowAddress = process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS;
@@ -74,39 +129,47 @@ export default async function handler(
       address: escrowAddress as `0x${string}`
     });
 
-    // Check if gift has password (passwordHash != 0x0)
-    const gift = await readContract({
-      contract: escrowContract,
-      method: "function getGift(uint256 giftId) view returns (address creator, address nftContract, uint256 tokenId, uint256 expirationTime, bytes32 passwordHash, string message, uint8 status)",
-      params: [BigInt(giftId)]
-    }) as readonly [string, string, bigint, bigint, string, string, number];
+    // BLOCKCHAIN FALLBACK: Read gift.gate to determine education requirements
+    try {
+      const gift = await readContract({
+        contract: escrowContract,
+        method: "function getGift(uint256 giftId) view returns (address creator, address nftContract, uint256 tokenId, uint256 expirationTime, bytes32 passwordHash, string message, uint8 status, address gate)",
+        params: [BigInt(giftId)]
+      }) as readonly [string, string, bigint, bigint, string, string, number, string];
 
-    const [creator, nftContract, tokenIdFromContract, expirationTime, passwordHash, message, status] = gift;
-    const hasPassword = passwordHash !== '0x0000000000000000000000000000000000000000000000000000000000000000';
-    
-    // Check for education requirements using multiple sources
-    const educationCheck = await checkEducationRequirements(tokenId);
-    const hasEducation = educationCheck.hasEducation;
-    
-    console.log(`📊 Gift ${giftId} requirements:`, {
-      tokenId,
-      giftId,
-      hasPassword,
-      hasEducation,
-      educationSource: educationCheck.source,
-      passwordHash: hasPassword ? passwordHash.slice(0, 10) + '...' : 'none',
-      dataSource
-    });
-
-    return res.status(200).json({
-      success: true,
-      hasPassword,
-      hasEducation,
-      giftId,
-      educationModules: educationCheck.educationModules,
-      dataSource,
-      educationSource: educationCheck.source
-    });
+      const [creator, nftContract, tokenIdFromContract, expirationTime, passwordHash, message, status, gateAddress] = gift;
+      
+      // gate != 0x0 ⇒ hasEducation = true
+      // gate == 0x0 ⇒ hasEducation = false
+      const hasEducationOnChain = gateAddress !== '0x0000000000000000000000000000000000000000';
+      
+      console.log(`📡 BLOCKCHAIN FALLBACK: Gift ${giftId} gate=${gateAddress.slice(0, 10)}... → hasEducation=${hasEducationOnChain}`);
+      
+      return res.status(200).json({
+        success: true,
+        hasPassword: true, // INVARIANT: Always true
+        hasEducation: hasEducationOnChain,
+        educationModules: hasEducationOnChain ? [1, 2] : [], // Default modules if gate exists
+        giftId,
+        dataSource: 'blockchain_gate',
+        gateAddress: gateAddress
+      });
+      
+    } catch (blockchainError) {
+      console.error('❌ Blockchain fallback failed:', blockchainError);
+      
+      // ULTIMATE FALLBACK: No education (secure default)
+      console.log(`⚠️ No education data found for token ${tokenId} - using secure fallback`);
+      
+      return res.status(200).json({
+        success: true,
+        hasPassword: true, // INVARIANT: Always true
+        hasEducation: false, // Secure default
+        educationModules: [],
+        giftId,
+        dataSource: 'fallback_none'
+      });
+    }
 
   } catch (error: any) {
     console.error('❌ Error checking gift password:', error);
