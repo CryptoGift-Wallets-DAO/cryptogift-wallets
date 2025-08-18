@@ -251,6 +251,35 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         gasUsed: receipt.gasUsed?.toString()
       });
       
+      // 🔥 MOBILE FIX: Update metadata in Redis after successful frontend claim
+      // This was missing and causing placeholders to be served
+      try {
+        console.log('📱 Updating metadata in Redis after frontend claim...');
+        const updateResponse = await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            tokenId,
+            contractAddress: giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
+            claimerAddress: account.address,
+            transactionHash: txResult.transactionHash,
+            giftMessage: validationResult.giftInfo?.giftMessage || formData.giftMessage || '',
+            imageUrl: nftMetadata?.image || ''
+          })
+        });
+        
+        if (updateResponse.ok) {
+          console.log('✅ Metadata updated in Redis successfully');
+        } else {
+          console.warn('⚠️ Failed to update metadata in Redis:', await updateResponse.text());
+        }
+      } catch (updateError) {
+        console.error('❌ Error updating metadata in Redis:', updateError);
+        // Don't fail the claim, just log the error
+      }
+      
       // Mobile redirect popup disabled - no reset needed
       setClaimStep('success');
 
