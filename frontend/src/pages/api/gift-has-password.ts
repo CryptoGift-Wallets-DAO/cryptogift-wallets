@@ -25,12 +25,14 @@ export default async function handler(
     const giftId = await getGiftIdFromMapping(tokenId);
     
     if (!giftId) {
-      console.log(`⚠️ No gift mapping found for token ${tokenId} - assuming no password`);
+      // CRITICAL FIX: If no mapping, ASSUME PASSWORD EXISTS (all gifts have passwords)
+      // But NO education requirements (since we can't verify)
+      console.log(`⚠️ No gift mapping found for token ${tokenId} - assuming PASSWORD EXISTS but NO education`);
       return res.status(200).json({
         success: true,
-        hasPassword: false,
-        hasEducation: false,
-        reason: 'no_mapping'
+        hasPassword: true,  // ALWAYS true - all gifts have passwords
+        hasEducation: false, // Can't verify education without mapping
+        reason: 'no_mapping_assume_password'
       });
     }
 
@@ -64,14 +66,18 @@ export default async function handler(
     const [creator, nftContract, tokenIdFromContract, expirationTime, passwordHash, message, status] = gift;
     const hasPassword = passwordHash !== '0x0000000000000000000000000000000000000000000000000000000000000000';
     
-    // For now, assume if password exists, education is enabled (since user mentioned they enabled it)
-    // TODO: Store education modules in mapping metadata for accurate detection
-    const hasEducation = hasPassword; // Simplified for now
-
-    console.log(`📊 Gift ${giftId} password status:`, {
+    // TEMPORARY WORKAROUND: Check if token > 189 (when education was implemented)
+    // Tokens 190+ were created after education feature was added
+    // This is a temporary solution until mapping is properly stored
+    const tokenNumber = parseInt(tokenId);
+    const hasEducation = hasPassword && tokenNumber >= 190; // Tokens 190+ have education
+    
+    console.log(`📊 Gift ${giftId} requirements:`, {
+      tokenId,
       hasPassword,
       hasEducation,
-      passwordHash: hasPassword ? passwordHash.slice(0, 10) + '...' : 'none'
+      passwordHash: hasPassword ? passwordHash.slice(0, 10) + '...' : 'none',
+      logic: tokenNumber >= 190 ? 'Post-education era token' : 'Pre-education era token'
     });
 
     return res.status(200).json({

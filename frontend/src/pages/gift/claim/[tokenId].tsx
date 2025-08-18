@@ -74,7 +74,7 @@ export default function ClaimGiftPage() {
     }
   }, [tokenId]);
 
-  // Check if gift has password/education requirements
+  // Check if gift has education requirements (ALL gifts have passwords)
   const checkGiftRequirements = async (tokenId: string) => {
     try {
       const response = await fetch(`/api/gift-has-password?tokenId=${tokenId}`);
@@ -83,19 +83,21 @@ export default function ClaimGiftPage() {
       console.log('🔐 Gift requirements check:', data);
       
       if (data.success) {
-        if (data.hasPassword || data.hasEducation) {
-          // Gift has password/education - show PreClaimFlow
+        // CORRECTED LOGIC:
+        // - If hasEducation → show PreClaimFlow (validate password first)
+        // - If NO education → go directly to ClaimEscrowInterface (skip password validation)
+        if (data.hasEducation) {
+          console.log('📚 Gift has education requirements - showing password validation first');
           setFlowState(ClaimFlowState.PRE_VALIDATION);
         } else {
-          // No password/education - go directly to claim
-          console.log('✨ No password required - proceeding directly to claim');
+          console.log('✨ No education requirements - proceeding directly to claim');
           setFlowState(ClaimFlowState.CLAIM);
         }
       }
     } catch (error) {
       console.error('Failed to check gift requirements:', error);
-      // Default to pre-validation for safety
-      setFlowState(ClaimFlowState.PRE_VALIDATION);
+      // Default to claim (assume no education) 
+      setFlowState(ClaimFlowState.CLAIM);
     }
   };
 
