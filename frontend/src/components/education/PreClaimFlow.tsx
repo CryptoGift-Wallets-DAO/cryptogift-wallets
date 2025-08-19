@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { generateSalt } from '../../lib/escrowUtils';
@@ -79,11 +79,29 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showEducationalModule, setShowEducationalModule] = useState(false);
+  const [forceRender, setForceRender] = useState(0);
   
   // Debug logging for state changes
   React.useEffect(() => {
     console.log('🔍 STATE CHANGE: showEducationalModule =', showEducationalModule);
+    // Force re-render when showEducationalModule changes
+    if (showEducationalModule) {
+      setForceRender(prev => prev + 1);
+    }
   }, [showEducationalModule]);
+
+  // Stable handler for opening educational module
+  const handleOpenEducationalModule = useCallback(() => {
+    console.log('🎓 BUTTON CLICKED! Starting educational module...');
+    setShowEducationalModule(true);
+    console.log('🎓 State updated, showEducationalModule should be true now');
+    
+    // Additional force render trigger
+    setTimeout(() => {
+      setForceRender(prev => prev + 1);
+      console.log('🔄 FORCE RENDER TRIGGERED');
+    }, 100);
+  }, []);
 
   // Generate salt on mount
   useEffect(() => {
@@ -341,11 +359,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
               {/* EDUCATION MODULE BUTTON */}
               <div className="space-y-3">
                 <button
-                  onClick={() => {
-                    console.log('🎓 BUTTON CLICKED! Starting educational module...');
-                    setShowEducationalModule(true);
-                    console.log('🎓 State updated, showEducationalModule should be true now');
-                  }}
+                  onClick={handleOpenEducationalModule}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:scale-105 transition-all font-bold shadow-lg"
                   style={{
                     animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -644,10 +658,10 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       
       {/* Educational Masterclass Module */}
       {(() => {
-        console.log('🔍 RENDER CHECK: About to check showEducationalModule =', showEducationalModule);
+        console.log('🔍 RENDER CHECK: About to check showEducationalModule =', showEducationalModule, 'forceRender =', forceRender);
         return null;
       })()}
-      {showEducationalModule && (
+      {(showEducationalModule || forceRender > 0) && showEducationalModule && (
         <div>
           {(() => {
             console.log('🔍 RENDERING EDUCATIONAL MODULE:', { 
