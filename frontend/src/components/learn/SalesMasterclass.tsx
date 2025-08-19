@@ -423,26 +423,6 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 }) => {
   console.log('🚀 SALES MASTERCLASS INIT:', { educationalMode, hasOnEducationComplete: !!onEducationComplete });
   
-  // Educational Mode Initialization
-  useEffect(() => {
-    if (educationalMode) {
-      console.log('🎓 EDUCATIONAL MODE ACTIVATED - Setting optimized flow');
-      // In educational mode, reduce timers and enable smoother progression
-      setCanProceed(true); // Allow immediate progression if needed
-      
-      // Reduce block duration for educational mode (faster pace)
-      const currentBlockDuration = SALES_BLOCKS[currentBlock].duration;
-      const educationalDuration = Math.min(currentBlockDuration, 15); // Max 15 seconds per block
-      setTimeLeft(educationalDuration);
-      
-      console.log('⏱️ Educational mode timing:', {
-        originalDuration: currentBlockDuration,
-        educationalDuration,
-        currentBlock: SALES_BLOCKS[currentBlock].id
-      });
-    }
-  }, [educationalMode, currentBlock]);
-  
   // State
   const [currentBlock, setCurrentBlock] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SALES_BLOCKS[0].duration);
@@ -469,6 +449,26 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   
   const router = useRouter();
   const timerRef = useRef<NodeJS.Timeout>();
+
+  // Educational Mode Initialization
+  useEffect(() => {
+    if (educationalMode) {
+      console.log('🎓 EDUCATIONAL MODE ACTIVATED - Setting optimized flow');
+      // In educational mode, reduce timers and enable smoother progression
+      setCanProceed(true); // Allow immediate progression if needed
+      
+      // Reduce block duration for educational mode (faster pace)
+      const currentBlockDuration = SALES_BLOCKS[currentBlock].duration;
+      const educationalDuration = Math.min(currentBlockDuration, 15); // Max 15 seconds per block
+      setTimeLeft(educationalDuration);
+      
+      console.log('⏱️ Educational mode timing:', {
+        originalDuration: currentBlockDuration,
+        educationalDuration,
+        currentBlock: SALES_BLOCKS[currentBlock].id
+      });
+    }
+  }, [educationalMode, currentBlock]);
 
   // QR Generation
   const generateDemoGiftUrl = useCallback(() => {
