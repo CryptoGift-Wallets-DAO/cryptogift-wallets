@@ -3015,13 +3015,27 @@ export default async function handler(
     // 🚨 OBSOLETE BLOCK REMOVED: Old temporal metadata storage moved to after metadataUpdateResult
     // The new logic stores FINAL metadata (with tokenId) instead of temporal metadata
     
+    // CRITICAL AUDIT LOG: What education modules are we receiving?
+    console.log('🎓 EDUCATION AUDIT - MINT RECEIVED:', {
+      educationModules: educationModules,
+      hasModules: !!(educationModules && educationModules.length > 0),
+      moduleCount: educationModules?.length || 0,
+      giftId: result.giftId,
+      tokenId: result.tokenId,
+      timestamp: new Date().toISOString()
+    });
+    
     // Store education requirements if provided
     if (educationModules && educationModules.length > 0 && result.giftId !== undefined) {
       try {
-        const redis = new Redis({
-          url: process.env.UPSTASH_REDIS_REST_URL!,
-          token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-        });
+        // CRITICAL FIX: Use centralized Redis configuration
+        const { validateRedisForCriticalOps } = await import('../../lib/redisConfig');
+        const redis = validateRedisForCriticalOps('Education requirements storage');
+        
+        if (!redis) {
+          console.error('❌ Redis not available for education storage');
+          throw new Error('Redis required for education requirements');
+        }
         
         // NEW: Unified education key with versioned payload
         const educationKey = `education:gift:${result.giftId}`;
@@ -3041,7 +3055,8 @@ export default async function handler(
           createdAt: new Date().toISOString()
         };
 
-        await redis.setex(educationKey, 90 * 24 * 60 * 60, JSON.stringify(educationData));
+        // Use set with ex option instead of setex
+        await redis.set(educationKey, JSON.stringify(educationData), { ex: 90 * 24 * 60 * 60 });
 
         // Log securely (hash only, no PII)
         console.log('✅ Education requirements stored:', {

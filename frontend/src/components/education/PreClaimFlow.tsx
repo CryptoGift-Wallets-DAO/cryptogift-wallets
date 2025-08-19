@@ -116,7 +116,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         password,
         salt,
         deviceId,
-        claimer: account?.address || '0x0000000000000000000000000000000000000000' // CRITICAL FIX A1: Add claimer address
+        claimer: account?.address || null // Send null if not connected, API will handle
       };
       
       console.log('🚀 FRONTEND PRE-TRANSMISSION:', {
@@ -258,6 +258,17 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
   const handleEducationBypass = async () => {
     if (!validationState.sessionToken) return;
 
+    // CRITICAL FIX: Require wallet connection before bypass
+    if (!account?.address) {
+      addNotification({
+        type: 'error',
+        title: 'Wallet Required',
+        message: 'Please connect your wallet before bypassing education requirements',
+        duration: 5000
+      });
+      return;
+    }
+
     try {
       // Call education approval API to generate EIP-712 signature
       const response = await fetch('/api/education/approve', {
@@ -268,7 +279,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         body: JSON.stringify({
           sessionToken: validationState.sessionToken,
           tokenId: tokenId,
-          claimer: account?.address || '0x0000000000000000000000000000000000000000', // Placeholder until wallet connects
+          claimer: account.address, // ALWAYS use real address, never placeholder
           giftId: 0 // Will be populated from session data in API
         })
       });

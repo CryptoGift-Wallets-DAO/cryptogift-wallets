@@ -64,12 +64,12 @@ export default async function handler(
       
       return res.status(200).json({
         success: true,
-        hasPassword: null, // TRI-STATE: Unknown due to legacy format
-        hasEducation: null, // Cannot determine from legacy data
+        hasPassword: true, // ALWAYS TRUE: All gifts have passwords by design
+        hasEducation: false, // Default to false for legacy format
         giftId: null,
         reason: 'legacy_incompatible',
         status: 'unsupported',
-        message: 'Token uses legacy format. Password/education detection unavailable.',
+        message: 'Token uses legacy format. Education detection unavailable.',
         fallback: 'blockchain_required'
       });
     }
@@ -101,8 +101,8 @@ export default async function handler(
       // Ultimate fallback: secure defaults
       return res.status(200).json({
         success: true,
-        hasPassword: null, // TRI-STATE: Unknown due to mapping failure
-        hasEducation: null,
+        hasPassword: true, // ALWAYS TRUE: All gifts have passwords by design
+        hasEducation: false, // Default to false if unknown
         giftId: null,
         reason: mappingResult.reason,
         status: 'error',
@@ -117,8 +117,8 @@ export default async function handler(
     // Default fallback on error (maintains invariant)
     return res.status(200).json({
       success: true,
-      hasPassword: null, // TRI-STATE: Unknown due to system error
-      hasEducation: null,
+      hasPassword: true, // ALWAYS TRUE: All gifts have passwords by design
+      hasEducation: false, // Default to false on error
       reason: 'error',
       status: 'error',
       dataSource: 'error_fallback',

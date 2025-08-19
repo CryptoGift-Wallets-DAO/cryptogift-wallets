@@ -128,8 +128,8 @@ export async function checkEducationRequirements(giftIdInput: string | number): 
       };
     }
 
-    // Try to check Redis first if available
-    if (process.env.KV_REST_API_URL) {
+    // Try to check Redis first if available (support both KV and UPSTASH)
+    if (process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL) {
       const { validateRedisForCriticalOps } = await import('./redisConfig');
       
       try {
@@ -137,7 +137,14 @@ export async function checkEducationRequirements(giftIdInput: string | number): 
         if (redis) {
           // CRITICAL FIX: Use correct key format with giftId
           const educationKey = `education:gift:${giftId}`;
+          console.log(`🔍 EDUCATION LOOKUP: Checking Redis key "${educationKey}" for giftId ${giftId}`);
           const educationDataRaw = await redis.get(educationKey);
+          console.log(`📊 EDUCATION RAW DATA:`, { 
+            key: educationKey,
+            found: !!educationDataRaw,
+            type: typeof educationDataRaw,
+            dataPreview: educationDataRaw ? JSON.stringify(educationDataRaw).slice(0, 100) + '...' : null
+          });
           
           if (educationDataRaw) {
             try {

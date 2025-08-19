@@ -273,6 +273,30 @@ export default async function handler(
       });
     }
     
+    // CRITICAL: Check if this gift has education requirements
+    try {
+      const { getGiftIdFromMapping } = await import('../../lib/giftMappingStore');
+      const { checkEducationRequirements } = await import('../../lib/giftEventReader');
+      
+      const mappingResult = await getGiftIdFromMapping(tokenId);
+      if (mappingResult.reason === 'json_ok' && mappingResult.giftId) {
+        const edu = await checkEducationRequirements(mappingResult.giftId);
+        
+        // If gift has education requirements, gateData is MANDATORY
+        if (edu.reason === 'ok' && edu.hasEducation && (!gateData || gateData === '0x')) {
+          console.error('❌ VALIDATION FAILED: Gift has education requirements but no gateData provided');
+          return res.status(400).json({
+            success: false,
+            valid: false,
+            error: 'Education requirements not completed. Please complete the education modules first.'
+          });
+        }
+      }
+    } catch (eduCheckError) {
+      console.warn('⚠️ Could not verify education requirements:', eduCheckError);
+      // Continue without blocking if check fails
+    }
+    
     console.log('🔍 VALIDATE CLAIM REQUEST:', {
       tokenId,
       claimerAddress: claimerAddress.slice(0, 10) + '...',
