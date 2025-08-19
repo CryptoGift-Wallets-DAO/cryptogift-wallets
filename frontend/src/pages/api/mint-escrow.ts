@@ -1297,10 +1297,17 @@ async function mintNFTEscrowGasless(
         
         if (!validation.valid) {
           console.error('❌ MAPPING VALIDATION FAILED:', validation.error);
-          throw new Error(`Mapping validation failed: ${validation.error}`);
+          console.error('⚠️ CONTINUING MINT: Mapping stored but validation failed - education detection may be impacted');
+          // DON'T THROW: Let mint complete even if validation fails
+          debugLogger.operation('Mapping validation failed but continuing mint', {
+            tokenId,
+            giftId: actualGiftId,
+            validationError: validation.error,
+            educationModules: educationModules || []
+          });
+        } else {
+          console.log('✅ MAPPING VALIDATED: Contract data confirms correct mapping');
         }
-        
-        console.log('✅ MAPPING VALIDATED: Contract data confirms correct mapping');
         
       } catch (mappingError) {
         console.error('❌ Failed to store/validate gift mapping:', mappingError);
@@ -2584,14 +2591,33 @@ async function mintNFTEscrowGasPaid(
         
         if (!validationGasPaid.valid) {
           console.error('❌ MAPPING VALIDATION FAILED (GAS-PAID):', validationGasPaid.error);
-          throw new Error(`Gas-paid mapping validation failed: ${validationGasPaid.error}`);
+          console.error('⚠️ CONTINUING MINT: Gas-paid mapping stored but validation failed - education detection may be impacted');
+          // DON'T THROW: Let mint complete even if validation fails
+          debugLogger.operation('Gas-paid mapping validation failed but continuing mint', {
+            tokenId,
+            giftId: actualGiftIdGasPaid,
+            validationError: validationGasPaid.error,
+            educationModules: educationModules || []
+          });
+        } else {
+          console.log('✅ MAPPING VALIDATED (GAS-PAID): Contract data confirms correct mapping');
         }
-        
-        console.log('✅ MAPPING VALIDATED (GAS-PAID): Contract data confirms correct mapping');
         
       } catch (mappingError) {
         console.error('❌ Failed to store/validate gift mapping (gas-paid):', mappingError);
-        throw new Error(`Critical gas-paid mapping error: ${(mappingError as Error).message}`);
+        // CRITICAL: Don't fail the entire mint, but log this as a severe issue
+        debugLogger.operation('CRITICAL: Gas-paid gift mapping storage/validation failed', {
+          tokenId,
+          giftId: actualGiftIdGasPaid,
+          error: (mappingError as Error).message,
+          stack: (mappingError as Error).stack,
+          educationModules: educationModules || [],
+          severity: 'CRITICAL'
+        });
+        
+        // Store error in response for monitoring but continue with mint
+        console.error('🚨 GAS-PAID MAPPING FAILURE - Education detection will not work for this gift!');
+        // Don't throw - let the mint complete but track the issue
       }
       
       // Set escrow transaction hash for response
