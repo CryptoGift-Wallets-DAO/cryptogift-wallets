@@ -707,6 +707,13 @@ export default async function handler(
     // Generate session token for tracking (use placeholder if needed)
     const sessionToken = generateSessionToken(tokenId, claimer);
     
+    console.log(`🎫 Session token generated:`, {
+      tokenId,
+      claimer: claimer ? `${claimer.slice(0, 10)}...` : 'null',
+      sessionToken,
+      sessionKey: `preclaim:session:${sessionToken}`
+    });
+    
     // UNIFIED REDIS: Store session using redisConfig client
     const redis = validateRedisForCriticalOps('Session storage');
     

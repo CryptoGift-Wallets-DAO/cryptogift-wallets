@@ -131,7 +131,18 @@ export default async function handler(
     }
     
     const sessionKey = `preclaim:session:${sessionToken}`;
+    
+    console.log(`🔍 Looking for session with key: ${sessionKey}`);
+    console.log(`Session token received: ${sessionToken}`);
+    
     const sessionDataRaw = await redis.get(sessionKey);
+    
+    console.log(`📦 Raw session data retrieved:`, {
+      exists: !!sessionDataRaw,
+      type: typeof sessionDataRaw,
+      isString: typeof sessionDataRaw === 'string',
+      length: sessionDataRaw ? String(sessionDataRaw).length : 0
+    });
     
     let sessionData: {
       tokenId: string;
