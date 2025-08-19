@@ -339,7 +339,15 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
               {/* EDUCATION MODULE BUTTON */}
               <div className="space-y-3">
                 <button
-                  onClick={() => setShowEducationalModule(true)}
+                  onClick={() => {
+                    console.log('🎓 STARTING EDUCATIONAL MODULE:', {
+                      showEducationalModule,
+                      sessionToken: validationState.sessionToken,
+                      hasSessionToken: !!validationState.sessionToken,
+                      validationState
+                    });
+                    setShowEducationalModule(true);
+                  }}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:scale-105 transition-all font-bold shadow-lg"
                   style={{
                     animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -637,17 +645,45 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       />
       
       {/* Educational Masterclass Module */}
-      {showEducationalModule && validationState.sessionToken && (
-        <EducationalMasterclass
-          tokenId={tokenId}
-          sessionToken={validationState.sessionToken}
-          onComplete={(gateData) => {
-            setShowEducationalModule(false);
-            // Proceed with claim after education is complete
-            onValidationSuccess(validationState.sessionToken!, false, gateData);
-          }}
-          onClose={() => setShowEducationalModule(false)}
-        />
+      {showEducationalModule && (
+        <>
+          {console.log('🔍 EDUCATIONAL MODULE RENDER CHECK:', {
+            showEducationalModule,
+            sessionToken: validationState.sessionToken,
+            hasSessionToken: !!validationState.sessionToken,
+            tokenId,
+            validationState
+          })}
+          {validationState.sessionToken ? (
+            <EducationalMasterclass
+              tokenId={tokenId}
+              sessionToken={validationState.sessionToken}
+              onComplete={(gateData) => {
+                console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
+                setShowEducationalModule(false);
+                // Proceed with claim after education is complete
+                onValidationSuccess(validationState.sessionToken!, false, gateData);
+              }}
+              onClose={() => {
+                console.log('❌ EDUCATIONAL MODULE CLOSED');
+                setShowEducationalModule(false);
+              }}
+            />
+          ) : (
+            <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg">
+                <h3 className="text-lg font-bold mb-2">⚠️ Error</h3>
+                <p>Session token not available. Please validate password again.</p>
+                <button 
+                  onClick={() => setShowEducationalModule(false)}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
