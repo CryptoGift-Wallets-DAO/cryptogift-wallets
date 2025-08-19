@@ -246,7 +246,7 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
         // Fallback: individual stores
         for (const [tokenId, giftId] of mappings.entries()) {
           try {
-            await storeGiftMapping(tokenId, giftId);
+            await storeGiftMapping(tokenId, giftId, process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!, 84532);
             tokenIdToGiftIdCache.set(tokenId, giftId);
           } catch (individualError) {
             console.warn(`⚠️ Failed to store mapping ${tokenId}→${giftId}:`, individualError.message);
@@ -343,7 +343,7 @@ async function systematicGiftSearch(tokenId: string | number): Promise<number | 
             
             // Store in persistent storage if available
             try {
-              await storeGiftMapping(tokenIdStr, giftId);
+              await storeGiftMapping(tokenIdStr, giftId, process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!, 84532);
               console.log(`💾 STORED MAPPING: tokenId ${tokenIdStr} → giftId ${giftId}`);
             } catch (storeError) {
               console.warn(`⚠️ Failed to store mapping: ${storeError.message}`);

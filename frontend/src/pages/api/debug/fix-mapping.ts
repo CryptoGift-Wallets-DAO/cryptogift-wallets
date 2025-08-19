@@ -25,7 +25,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     debugLogger.operation(`🔧 FIXING MAPPING: tokenId ${tokenId} → giftId ${correctGiftId}`);
     
     // Store the corrected mapping
-    const success = await storeGiftMapping(tokenId, correctGiftId);
+    const success = await storeGiftMapping(tokenId, correctGiftId, process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!, 84532);
     
     if (success) {
       debugLogger.operation(`✅ MAPPING FIXED: tokenId ${tokenId} → giftId ${correctGiftId}`);

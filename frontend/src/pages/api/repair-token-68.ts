@@ -31,7 +31,7 @@ export default async function handler(
     
     // Step 2: Force store the mapping in Redis/KV
     try {
-      await storeGiftMapping(targetTokenId, knownGiftId);
+      await storeGiftMapping(targetTokenId, knownGiftId, process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!, 84532);
       console.log(`✅ REPAIR: Stored mapping tokenId ${targetTokenId} → giftId ${knownGiftId} in Redis`);
     } catch (storeError) {
       console.error(`❌ REPAIR: Failed to store mapping:`, storeError);

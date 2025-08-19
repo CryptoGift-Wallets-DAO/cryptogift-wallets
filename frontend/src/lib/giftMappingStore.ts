@@ -351,7 +351,7 @@ export async function batchStoreGiftMappings(mappings: Array<{ tokenId: string |
     let stored = 0;
     
     for (const mapping of mappings) {
-      const success = await storeGiftMapping(mapping.tokenId, mapping.giftId);
+      const success = await storeGiftMapping(mapping.tokenId, mapping.giftId, process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!, 84532);
       if (success) stored++;
     }
     
