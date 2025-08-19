@@ -154,16 +154,23 @@ export default async function handler(
       timestamp: number;
     } | null = null;
     
-    if (sessionDataRaw && typeof sessionDataRaw === 'string') {
-      try {
-        sessionData = JSON.parse(sessionDataRaw);
-        console.log(`✅ Session retrieved for ${sessionToken.slice(0, 10)}...`);
-      } catch (parseError) {
-        console.error(`❌ Invalid session JSON for ${sessionToken}:`, parseError);
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid session data format'
-        });
+    // Handle both string (JSON) and direct object formats from Redis
+    if (sessionDataRaw) {
+      if (typeof sessionDataRaw === 'string') {
+        try {
+          sessionData = JSON.parse(sessionDataRaw);
+          console.log(`✅ Session retrieved (from JSON) for ${sessionToken.slice(0, 10)}...`);
+        } catch (parseError) {
+          console.error(`❌ Invalid session JSON for ${sessionToken}:`, parseError);
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid session data format'
+          });
+        }
+      } else if (typeof sessionDataRaw === 'object') {
+        // Redis/KV sometimes returns the object directly
+        sessionData = sessionDataRaw as any;
+        console.log(`✅ Session retrieved (direct object) for ${sessionToken.slice(0, 10)}...`);
       }
     }
     
@@ -218,16 +225,22 @@ export default async function handler(
       redis.get(approvalKey)
     ]);
     
+    // Handle both string and boolean/object formats from Redis
     const isCompleted = completionRaw === 'true' || completionRaw === true;
+    
     let existingApproval: any = null;
-    if (approvalRaw && typeof approvalRaw === 'string') {
-      try {
-        existingApproval = JSON.parse(approvalRaw);
-      } catch (e) {
+    if (approvalRaw) {
+      if (typeof approvalRaw === 'string') {
+        try {
+          existingApproval = JSON.parse(approvalRaw);
+        } catch (e) {
+          // If JSON parse fails, use as string
+          existingApproval = approvalRaw;
+        }
+      } else {
+        // Direct object or other type from Redis
         existingApproval = approvalRaw;
       }
-    } else if (approvalRaw) {
-      existingApproval = approvalRaw;
     }
     
     // BYPASS MODE: Allow approval if session is valid (simulates education completed)
