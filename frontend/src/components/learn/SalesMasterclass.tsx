@@ -421,6 +421,28 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   educationalMode = false,
   onEducationComplete
 }) => {
+  console.log('🚀 SALES MASTERCLASS INIT:', { educationalMode, hasOnEducationComplete: !!onEducationComplete });
+  
+  // Educational Mode Initialization
+  useEffect(() => {
+    if (educationalMode) {
+      console.log('🎓 EDUCATIONAL MODE ACTIVATED - Setting optimized flow');
+      // In educational mode, reduce timers and enable smoother progression
+      setCanProceed(true); // Allow immediate progression if needed
+      
+      // Reduce block duration for educational mode (faster pace)
+      const currentBlockDuration = SALES_BLOCKS[currentBlock].duration;
+      const educationalDuration = Math.min(currentBlockDuration, 15); // Max 15 seconds per block
+      setTimeLeft(educationalDuration);
+      
+      console.log('⏱️ Educational mode timing:', {
+        originalDuration: currentBlockDuration,
+        educationalDuration,
+        currentBlock: SALES_BLOCKS[currentBlock].id
+      });
+    }
+  }, [educationalMode, currentBlock]);
+  
   // State
   const [currentBlock, setCurrentBlock] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SALES_BLOCKS[0].duration);
@@ -475,14 +497,22 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       timerRef.current = setTimeout(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0 && currentBlock < SALES_BLOCKS.length - 1 && canProceed) {
+    } else if (timeLeft === 0 && currentBlock < SALES_BLOCKS.length - 1) {
+      // FIXED: Remove canProceed dependency for auto-advance
+      // In educational mode, allow auto-advance regardless of interaction
+      console.log('⏰ TIME UP - Auto-advancing to next block:', {
+        currentBlock,
+        nextBlock: currentBlock + 1,
+        canProceed,
+        educationalMode
+      });
       handleNextBlock();
     }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [timeLeft, isPaused, currentBlock, showQuestionFeedback, canProceed]);
+  }, [timeLeft, isPaused, currentBlock, showQuestionFeedback, educationalMode]);
 
   // Answer Handler
   const handleAnswerSelect = useCallback((optionIndex: number) => {
@@ -517,12 +547,37 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   // Block Navigation
   const handleNextBlock = useCallback(() => {
     const nextBlock = currentBlock + 1;
+    
+    console.log('🎬 BLOCK NAVIGATION:', {
+      currentBlock,
+      currentBlockId: SALES_BLOCKS[currentBlock].id,
+      nextBlock,
+      nextBlockId: nextBlock < SALES_BLOCKS.length ? SALES_BLOCKS[nextBlock].id : 'END',
+      totalBlocks: SALES_BLOCKS.length,
+      educationalMode
+    });
+    
     if (nextBlock < SALES_BLOCKS.length) {
       setCurrentBlock(nextBlock);
-      setTimeLeft(SALES_BLOCKS[nextBlock].duration);
+      
+      // Set appropriate duration for educational vs normal mode
+      const blockDuration = educationalMode 
+        ? Math.min(SALES_BLOCKS[nextBlock].duration, 15) // Max 15s in educational mode
+        : SALES_BLOCKS[nextBlock].duration; // Full duration in normal mode
+        
+      setTimeLeft(blockDuration);
       setSelectedAnswer(null);
       setShowQuestionFeedback(false);
-      setCanProceed(false);
+      
+      // In educational mode, keep canProceed true for smooth flow
+      setCanProceed(educationalMode);
+      
+      console.log('⏱️ Next block timing:', {
+        blockId: SALES_BLOCKS[nextBlock].id,
+        originalDuration: SALES_BLOCKS[nextBlock].duration,
+        actualDuration: blockDuration,
+        educationalMode
+      });
       
       // Track metrics
       setMetrics(prev => ({
@@ -539,7 +594,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         startClaimMonitoring();
       }
     }
-  }, [currentBlock]);
+  }, [currentBlock, educationalMode]);
 
   // Claim Monitoring
   const startClaimMonitoring = useCallback(() => {
@@ -557,13 +612,17 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Lead Submission
   const handleLeadSubmit = useCallback(async (data: any) => {
+    console.log('📝 LEAD SUBMIT:', { data, educationalMode, hasOnEducationComplete: !!onEducationComplete });
+    
     // In educational mode, skip lead capture and complete immediately
     if (educationalMode) {
+      console.log('🎓 EDUCATIONAL MODE COMPLETION - Triggering celebration and completion');
       setMetrics(prev => ({ ...prev, leadSubmitted: true }));
       celebrate();
       
       // Trigger education completion
       if (onEducationComplete) {
+        console.log('✅ Calling onEducationComplete callback in 2 seconds');
         setTimeout(() => {
           onEducationComplete();
         }, 2000);
@@ -630,6 +689,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   // Render Block Content
   const renderBlockContent = () => {
     const block = SALES_BLOCKS[currentBlock];
+    
+    console.log('🎬 RENDERING BLOCK:', {
+      currentBlock,
+      blockId: block.id,
+      blockType: block.type,
+      educationalMode,
+      totalBlocks: SALES_BLOCKS.length
+    });
 
     switch (block.type) {
       case 'opening':
