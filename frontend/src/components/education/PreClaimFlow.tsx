@@ -79,6 +79,11 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showEducationalModule, setShowEducationalModule] = useState(false);
+  
+  // Debug logging for state changes
+  React.useEffect(() => {
+    console.log('🔍 STATE CHANGE: showEducationalModule =', showEducationalModule);
+  }, [showEducationalModule]);
 
   // Generate salt on mount
   useEffect(() => {
@@ -638,6 +643,10 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       />
       
       {/* Educational Masterclass Module */}
+      {(() => {
+        console.log('🔍 RENDER CHECK: About to check showEducationalModule =', showEducationalModule);
+        return null;
+      })()}
       {showEducationalModule && (
         <div>
           {(() => {
@@ -648,19 +657,41 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
             });
             return null;
           })()}
-          <EducationalMasterclass
-            tokenId={tokenId}
-            sessionToken={validationState.sessionToken || 'test-session'}
-            onComplete={(gateData) => {
-              console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
-              setShowEducationalModule(false);
-              onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
-            }}
-            onClose={() => {
-              console.log('❌ EDUCATIONAL MODULE CLOSED');
-              setShowEducationalModule(false);
-            }}
-          />
+          {(() => {
+            try {
+              return (
+                <EducationalMasterclass
+                  tokenId={tokenId}
+                  sessionToken={validationState.sessionToken || 'test-session'}
+                  onComplete={(gateData) => {
+                    console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
+                    setShowEducationalModule(false);
+                    onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
+                  }}
+                  onClose={() => {
+                    console.log('❌ EDUCATIONAL MODULE CLOSED');
+                    setShowEducationalModule(false);
+                  }}
+                />
+              );
+            } catch (error) {
+              console.error('❌ ERROR RENDERING EDUCATIONAL MODULE:', error);
+              return (
+                <div className="fixed inset-0 z-[9999] bg-red-500/80 flex items-center justify-center text-white">
+                  <div className="bg-black p-6 rounded-lg">
+                    <h3 className="text-lg font-bold mb-2">⚠️ Error Loading Educational Module</h3>
+                    <p>Error: {String(error)}</p>
+                    <button 
+                      onClick={() => setShowEducationalModule(false)}
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+          })()}
         </div>
       )}
     </div>
