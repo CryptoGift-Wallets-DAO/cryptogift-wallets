@@ -450,20 +450,79 @@ async function checkGateRequirements(
     const educationKey = `education:gift:${giftId}`;
     const educationDataRaw = await redis.get(educationKey);
     
-    if (educationDataRaw && typeof educationDataRaw === 'string') {
-      try {
-        const educationData = JSON.parse(educationDataRaw);
-        console.log(`✅ Education data found for giftId ${giftId}:`, {
-          hasEducation: educationData.hasEducation,
-          moduleCount: educationData.modules?.length || 0
+    // Handle multiple data formats for backward compatibility
+    if (educationDataRaw) {
+      console.log(`🔍 Raw education data for giftId ${giftId}:`, {
+        type: typeof educationDataRaw,
+        isArray: Array.isArray(educationDataRaw),
+        value: educationDataRaw
+      });
+      
+      // FORMAT 1: Direct array (legacy or simplified format)
+      if (Array.isArray(educationDataRaw) && educationDataRaw.length > 0) {
+        console.log(`✅ Education data found (array format) for giftId ${giftId}:`, {
+          hasEducation: true,
+          modules: educationDataRaw,
+          moduleCount: educationDataRaw.length
         });
         
         return {
-          requiresEducation: educationData.hasEducation || false,
-          modules: educationData.modules || []
+          requiresEducation: true,
+          modules: educationDataRaw
         };
-      } catch (parseError) {
-        console.error(`❌ Invalid education JSON for giftId ${giftId}:`, parseError);
+      }
+      
+      // FORMAT 2: JSON string with full object
+      if (typeof educationDataRaw === 'string') {
+        try {
+          const educationData = JSON.parse(educationDataRaw);
+          
+          // If parsed to array, handle as array
+          if (Array.isArray(educationData) && educationData.length > 0) {
+            console.log(`✅ Education data found (parsed array) for giftId ${giftId}:`, {
+              hasEducation: true,
+              modules: educationData,
+              moduleCount: educationData.length
+            });
+            
+            return {
+              requiresEducation: true,
+              modules: educationData
+            };
+          }
+          
+          // If parsed to object with hasEducation field
+          if (educationData && typeof educationData === 'object') {
+            console.log(`✅ Education data found (object format) for giftId ${giftId}:`, {
+              hasEducation: educationData.hasEducation || false,
+              modules: educationData.modules || [],
+              moduleCount: educationData.modules?.length || 0
+            });
+            
+            return {
+              requiresEducation: educationData.hasEducation || false,
+              modules: educationData.modules || []
+            };
+          }
+        } catch (parseError) {
+          console.error(`❌ Invalid education JSON for giftId ${giftId}:`, parseError);
+          console.error(`Raw value was:`, educationDataRaw);
+        }
+      }
+      
+      // FORMAT 3: Direct object (shouldn't happen but handle it)
+      if (typeof educationDataRaw === 'object' && !Array.isArray(educationDataRaw)) {
+        const eduObj = educationDataRaw as any;
+        console.log(`✅ Education data found (direct object) for giftId ${giftId}:`, {
+          hasEducation: eduObj.hasEducation || false,
+          modules: eduObj.modules || [],
+          moduleCount: eduObj.modules?.length || 0
+        });
+        
+        return {
+          requiresEducation: eduObj.hasEducation || false,
+          modules: eduObj.modules || []
+        };
       }
     }
     
