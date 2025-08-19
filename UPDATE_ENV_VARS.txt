@@ -1,0 +1,9 @@
+
+# Update environment variables for new SimpleApprovalGate
+
+# Add to frontend/.env.local:
+SIMPLE_APPROVAL_GATE_ADDRESS=0x99cCBE808cf4c01382779755DEf1562905ceb0d2
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x99cCBE808cf4c01382779755DEf1562905ceb0d2
+
+# Verified approver for this contract:
+# 0x75e32B5BA0817fEF917f21902EC5a84005d00943

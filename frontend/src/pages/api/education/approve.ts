@@ -13,6 +13,7 @@ import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { kv } from '@vercel/kv';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { secureLogger } from '../../../lib/secureLogger';
+import { getApproverWallet, validateApproverConfig, APPROVAL_GATE_ADDRESS } from '../../../lib/approverConfig';
 
 interface ApprovalRequest {
   sessionToken: string;
@@ -31,13 +32,12 @@ interface ApprovalResponse {
 }
 
 // EIP-712 Domain Configuration
+// Use the constant from approverConfig to ensure consistency
 const EIP712_DOMAIN = {
   name: 'SimpleApprovalGate',
   version: '1',
   chainId: 84532, // Base Sepolia
-  verifyingContract: process.env.SIMPLE_APPROVAL_GATE_ADDRESS || 
-                     process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || 
-                     '0x3FEb03368cbF0970D4f29561dA200342D788eD6B' // Fallback to known contract
+  verifyingContract: APPROVAL_GATE_ADDRESS // Always use the deployed contract address
 };
 
 const EIP712_TYPES = {
@@ -270,31 +270,29 @@ export default async function handler(
       }
     }
     
-    // Check if approver wallet is configured
-    const approverPrivateKey = process.env.APPROVER_PRIVATE_KEY;
-    if (!approverPrivateKey) {
-      // Fallback: Return success without signature (use mapping override)
-      console.error('❌ CRITICAL: APPROVER_PRIVATE_KEY not configured in environment');
-      console.error('Please set APPROVER_PRIVATE_KEY in Vercel environment variables');
-      console.error('The private key must correspond to an authorized approver in the SimpleApprovalGate contract');
+    // Get the properly configured approver wallet
+    const approverWallet = getApproverWallet();
+    
+    if (!approverWallet) {
+      // Log the configuration issue
+      const configValidation = validateApproverConfig();
+      console.error('❌ CRITICAL: Approver wallet not properly configured');
+      console.error('Validation result:', configValidation);
       
-      debugLogger.operation('Approval requested but no signer configured', {
+      debugLogger.operation('Approval requested but approver not configured', {
         tokenId,
         giftId,
         claimer: claimer.slice(0, 10) + '...',
-        fallback: 'mapping',
-        error: 'NO_APPROVER_KEY'
+        error: configValidation.error || 'NO_VALID_APPROVER',
+        requiredApprover: '0x1dBa3F54F9ef623b94398D96323B6a27F2A7b37B'
       });
       
       return res.status(500).json({
         success: false,
-        error: 'Education approval system not configured. Please contact support.',
-        message: 'APPROVER_PRIVATE_KEY environment variable is missing'
+        error: 'Education approval system not configured correctly.',
+        message: 'The approver private key must match the deployed contract approver: 0x1dBa3F54F9ef623b94398D96323B6a27F2A7b37B'
       });
     }
-    
-    // Create signer wallet
-    const approverWallet = new ethers.Wallet(approverPrivateKey);
     
     console.log('🔑 APPROVER CONFIGURATION:', {
       approverAddress: approverWallet.address,
