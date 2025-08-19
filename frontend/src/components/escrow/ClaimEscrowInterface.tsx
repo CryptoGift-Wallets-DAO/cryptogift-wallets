@@ -203,7 +203,8 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           tokenId,
           password: formData.password,
           salt: formData.salt,
-          claimerAddress: account.address
+          claimerAddress: account.address,
+          gateData: educationGateData // FIX: Include education bypass signature
         })
       });
 

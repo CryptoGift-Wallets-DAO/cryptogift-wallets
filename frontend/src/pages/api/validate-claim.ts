@@ -29,6 +29,7 @@ interface ValidateClaimRequest {
   password: string;
   salt: string;
   claimerAddress: string;
+  gateData?: string; // Optional EIP-712 signature from education bypass
 }
 
 interface ValidateClaimResponse {
@@ -250,7 +251,8 @@ export default async function handler(
       tokenId,
       password,
       salt,
-      claimerAddress
+      claimerAddress,
+      gateData
     }: ValidateClaimRequest = req.body;
     
     // Validate required fields
@@ -306,7 +308,7 @@ export default async function handler(
         giftId: validation.giftId!,
         password,
         salt,
-        gateData: '0x' // Default empty gate data
+        gateData: gateData || '0x' // FIX: Use provided gateData or default to empty
       },
       contractAddress: ESCROW_CONTRACT_ADDRESS
     };

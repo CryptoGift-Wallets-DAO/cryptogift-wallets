@@ -4,7 +4,7 @@ import { client } from '../../app/client';
 import { baseSepolia } from 'thirdweb/chains';
 import { getGiftIdFromMapping } from '../../lib/giftMappingStore';
 import { getGiftFromBlockchain, checkEducationRequirements } from '../../lib/giftEventReader';
-import { Redis } from '@upstash/redis';
+import { getRedisConnection } from '../../lib/redisConfig';
 
 export default async function handler(
   req: NextApiRequest,
@@ -60,10 +60,7 @@ export default async function handler(
     // PRIMARY: Try new unified education key
     if (giftId) {
       try {
-        const redis = new Redis({
-          url: process.env.UPSTASH_REDIS_REST_URL!,
-          token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-        });
+        const redis = getRedisConnection(); // FIX: Use centralized Redis client
 
         const educationKey = `education:gift:${giftId}`;
         const educationData = await redis.get(educationKey);
@@ -117,7 +114,7 @@ export default async function handler(
       console.error('❌ ESCROW_CONTRACT_ADDRESS not configured');
       return res.status(200).json({
         success: true,
-        hasPassword: false,
+        hasPassword: true, // FIX: Maintain invariant - all gifts have passwords
         hasEducation: false,
         reason: 'no_escrow_config'
       });
@@ -149,7 +146,7 @@ export default async function handler(
         success: true,
         hasPassword: true, // INVARIANT: Always true
         hasEducation: hasEducationOnChain,
-        educationModules: hasEducationOnChain ? [1, 2] : [], // Default modules if gate exists
+        educationModules: [], // FIX: Don't assume modules, return empty if not in Redis
         giftId,
         dataSource: 'blockchain_gate',
         gateAddress: gateAddress
@@ -174,10 +171,10 @@ export default async function handler(
   } catch (error: any) {
     console.error('❌ Error checking gift password:', error);
     
-    // Default to no password if error
+    // Default fallback on error (maintains invariant)
     return res.status(200).json({
       success: true,
-      hasPassword: false,
+      hasPassword: true, // FIX: Maintain invariant - all gifts have passwords
       hasEducation: false,
       reason: 'error',
       error: error.message

@@ -887,6 +887,7 @@ async function mintNFTEscrowGasless(
 ): Promise<{
   success: boolean;
   tokenId?: string;
+  giftId?: number; // CRITICAL: Add giftId to return type
   transactionHash?: string;
   escrowTransactionHash?: string;
   salt?: string;
@@ -897,6 +898,7 @@ async function mintNFTEscrowGasless(
 }> {
   let transactionNonce = '';
   let passwordHash: string | undefined;
+  let actualGiftId: number; // Declare giftId variable in scope
   
   try {
     console.log('🚀 MINT ESCROW GASLESS: Starting atomic operation with anti-double minting');
@@ -1245,7 +1247,7 @@ async function mintNFTEscrowGasless(
         throw new Error(`Failed to extract giftId from transaction: ${eventResult.success === false ? eventResult.error : 'Unknown error'}`);
       }
       
-      const actualGiftId = eventResult.giftId;
+      actualGiftId = eventResult.giftId;
       console.log(`✅ DETERMINISTIC: tokenId ${tokenId} → giftId ${actualGiftId} (from event)`);
       
       // Generate password hash now that we have the giftId
@@ -1397,6 +1399,7 @@ async function mintNFTEscrowGasless(
     return {
       success: true,
       tokenId,
+      giftId: actualGiftId, // CRITICAL FIX: Return giftId to enable education requirements storage
       transactionHash: mintResult.transactionHash,
       escrowTransactionHash: escrowTransactionHash,
       salt,
@@ -1570,6 +1573,7 @@ async function mintNFTEscrowGasPaid(
 ): Promise<{
   success: boolean;
   tokenId?: string;
+  giftId?: number; // CRITICAL: Add giftId to return type
   transactionHash?: string;
   escrowTransactionHash?: string;
   salt?: string;
@@ -1579,6 +1583,7 @@ async function mintNFTEscrowGasPaid(
 }> {
   let transactionNonce = '';
   let passwordHash: string | undefined;
+  let actualGiftIdGasPaid: number; // Declare giftId variable in scope
   
   try {
     // PROTOCOL V2 TYPE C: Validate publicBaseUrl early (no broken URLs)
@@ -2539,7 +2544,7 @@ async function mintNFTEscrowGasPaid(
         throw new Error(`Failed to extract giftId from gas-paid transaction: ${eventResultGasPaid.success === false ? eventResultGasPaid.error : 'Unknown error'}`);
       }
       
-      const actualGiftIdGasPaid = eventResultGasPaid.giftId;
+      actualGiftIdGasPaid = eventResultGasPaid.giftId;
       console.log(`✅ DETERMINISTIC (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} (from event)`);
       
       // Generate password hash now that we have the giftId
@@ -2647,6 +2652,7 @@ async function mintNFTEscrowGasPaid(
     return {
       success: true,
       tokenId,
+      giftId: actualGiftIdGasPaid, // CRITICAL FIX: Return giftId to enable education requirements storage
       transactionHash: mintResult.transactionHash,
       escrowTransactionHash: escrowTransactionHash,
       salt,
