@@ -130,14 +130,10 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
       return { allowed: false, remaining: 0 };
     }
     
-    // Check burst limit (recent attempts)
-    const recentWindowStart = now - (RATE_LIMIT_WINDOW / 4); // Last 15 seconds
-    const recentAttempts = attempts.filter((timestamp: any) => 
-      Number(timestamp) > recentWindowStart
-    );
-    
-    if (recentAttempts.length >= BURST_LIMIT) {
-      return { allowed: false, remaining: MAX_ATTEMPTS_PER_WINDOW - attempts.length };
+    // Simplified burst limit check for Redis compatibility
+    // Since we're using simple counter, apply basic burst protection
+    if (attempts >= BURST_LIMIT) {
+      return { allowed: false, remaining: MAX_ATTEMPTS_PER_WINDOW - attempts };
     }
     
     // Add current attempt (simplified)
@@ -339,7 +335,7 @@ async function validatePasswordWithContract(
     
     console.log('PASSWORD INFO:');
     console.log(`  • Password Length: ${password.length}`);
-    console.log(`  • Password Hash: ${hashFromContract.slice(0, 10)}...`);
+    console.log(`  • Password Hash: ${gift.passwordHash.slice(0, 10)}...`);
     // SECURITY: Password fragments removed from logs
     
     console.log('SALT INFO (ARCHITECTURAL FIX):');
@@ -636,6 +632,8 @@ export default async function handler(
     if (!claimer || !ethers.isAddress(claimer)) {
       return res.status(400).json({
         success: false,
+        valid: false,
+        requiresEducation: false,
         error: 'MISSING_CLAIMER_ADDRESS',
         message: 'Valid claimer wallet address is required for education validation'
       });
