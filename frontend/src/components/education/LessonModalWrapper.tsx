@@ -1,0 +1,333 @@
+/**
+ * LESSON MODAL WRAPPER - SISTEMA UNIFICADO KNOWLEDGE ↔ EDUCATIONAL
+ * Modal universal que usa EXACTAMENTE las mismas lecciones de Knowledge 
+ * en Educational Requirements sin modificación alguna
+ * 
+ * Estructura modal idéntica a GiftWizard con fixed inset-0 bg-black/60
+ * 
+ * Made by mbxarts.com The Moon in a Box property
+ * Co-Author: Godez22
+ */
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Import dinámico para evitar SSR issues con animaciones y confetti
+const SalesMasterclass = dynamic(
+  () => import('../learn/SalesMasterclass'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-xl">Cargando Sales Masterclass...</p>
+        </div>
+      </div>
+    )
+  }
+);
+
+// Simple confetti implementation matching existing celebration
+function triggerConfetti(options?: any) {
+  const duration = 3000;
+  const animationEnd = Date.now() + duration;
+
+  function randomInRange(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  const interval = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+
+    if (timeLeft <= 0) {
+      return clearInterval(interval);
+    }
+
+    const particleCount = 50 * (timeLeft / duration);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const confettiEl = document.createElement('div');
+      confettiEl.style.position = 'fixed';
+      confettiEl.style.width = '10px';
+      confettiEl.style.height = '10px';
+      confettiEl.style.backgroundColor = ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1'][Math.floor(Math.random() * 5)];
+      confettiEl.style.left = Math.random() * 100 + '%';
+      confettiEl.style.top = '-10px';
+      confettiEl.style.opacity = '1';
+      confettiEl.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiEl.style.zIndex = '10000';
+      confettiEl.className = 'confetti-particle';
+      
+      document.body.appendChild(confettiEl);
+      
+      confettiEl.animate([
+        { 
+          transform: `translateY(0) rotate(0deg)`,
+          opacity: 1 
+        },
+        { 
+          transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`,
+          opacity: 0
+        }
+      ], {
+        duration: randomInRange(2000, 4000),
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      }).onfinish = () => confettiEl.remove();
+    }
+  }, 250);
+  
+  console.log('🎉 CELEBRATION CONFETTI:', options);
+}
+
+export interface LessonModalWrapperProps {
+  lessonId: string;
+  mode: 'knowledge' | 'educational';
+  isOpen: boolean;
+  onClose: () => void;
+  
+  // Educational mode specific props
+  tokenId?: string;
+  sessionToken?: string;
+  onComplete?: (gateData: string) => void;
+}
+
+export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
+  lessonId,
+  mode,
+  isOpen,
+  onClose,
+  tokenId,
+  sessionToken,
+  onComplete
+}) => {
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleLessonComplete = async () => {
+    console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode });
+    
+    // En mode educational, necesitamos manejar la completion con API
+    if (mode === 'educational' && onComplete) {
+      setShowSuccess(true);
+      
+      // Trigger celebration - PRESERVAR EXACTAMENTE como está
+      triggerConfetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#FFA500', '#FF6347']
+      });
+
+      try {
+        if (sessionToken && tokenId) {
+          // Call education approval API to mark as completed
+          const response = await fetch('/api/education/approve', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              sessionToken: sessionToken,
+              tokenId: tokenId,
+              educationCompleted: true,
+              module: lessonId
+            })
+          });
+
+          const approvalData = await response.json();
+          
+          if (approvalData.success) {
+            // Wait for celebration, then more confetti!
+            setTimeout(() => {
+              triggerConfetti({
+                particleCount: 200,
+                startVelocity: 30,
+                spread: 360,
+                ticks: 60,
+                origin: {
+                  x: Math.random(),
+                  y: Math.random() - 0.2
+                },
+                colors: ['#FFD700', '#FF69B4', '#00CED1', '#FF6347', '#ADFF2F']
+              });
+              
+              // Call completion callback with gate data
+              onComplete(approvalData.gateData);
+            }, 2000);
+          } else {
+            throw new Error(approvalData.error || 'Approval failed');
+          }
+        } else {
+          // Fallback for missing session data
+          setTimeout(() => onComplete('0x'), 3000);
+        }
+      } catch (error) {
+        console.error('Education completion error:', error);
+        // Still proceed even if API fails
+        setTimeout(() => onComplete && onComplete('0x'), 3000);
+      }
+    } else if (mode === 'knowledge') {
+      // En knowledge mode, simplemente mostrar celebración y cerrar
+      triggerConfetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#FFA500', '#FF6347']
+      });
+      
+      setTimeout(() => {
+        onClose();
+      }, 3000);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{ transform: 'scale(0.92)', transformOrigin: 'center' }}
+      >
+        <motion.div
+          className="bg-gradient-to-br from-black via-gray-900 to-black rounded-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: "spring", damping: 20, stiffness: 300 }}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-700 flex-shrink-0">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-white">
+                {mode === 'educational' ? '🎓 Módulo Educativo Requerido' : '📚 Knowledge Academy'}
+              </h1>
+              <p className="text-gray-400 text-sm">
+                {lessonId === 'sales-masterclass' ? 'Sales Masterclass - De $0 a $100M en 15 minutos' : 'Lección Interactive'}
+              </p>
+            </div>
+            
+            {/* Close button - solo mostrar en development o knowledge mode */}
+            {(process.env.NODE_ENV === 'development' || mode === 'knowledge') && !showSuccess && (
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
+                title="Cerrar"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Success Overlay para Educational Mode */}
+          {showSuccess && mode === 'educational' && (
+            <motion.div
+              className="absolute inset-0 z-[10001] bg-gradient-to-br from-green-900 via-black to-purple-900 flex items-center justify-center"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="text-center text-white max-w-2xl mx-auto p-8">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", delay: 0.2 }}
+                >
+                  <div className="text-8xl mb-6">🎓</div>
+                </motion.div>
+                
+                <motion.h1
+                  className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-400 to-green-400 bg-clip-text text-transparent"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  ¡EDUCACIÓN COMPLETADA!
+                </motion.h1>
+                
+                <motion.p
+                  className="text-2xl mb-8 text-gray-300"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  Ahora entiendes el poder de CryptoGift
+                </motion.p>
+                
+                <motion.div
+                  className="space-y-4"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <div className="bg-green-900/30 border border-green-500/50 rounded-xl p-4">
+                    <p className="text-green-400 font-bold text-xl">
+                      ✅ Sales Masterclass - COMPLETADO
+                    </p>
+                    <p className="text-green-300 text-sm mt-2">
+                      Has completado exitosamente el módulo educativo
+                    </p>
+                  </div>
+                  
+                  <motion.div
+                    className="px-12 py-4 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-bold text-xl rounded-xl"
+                    animate={{ 
+                      boxShadow: [
+                        '0 0 20px rgba(255, 215, 0, 0.5)',
+                        '0 0 40px rgba(255, 215, 0, 0.8)',
+                        '0 0 20px rgba(255, 215, 0, 0.5)'
+                      ]
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    🎁 RECLAMAR MI REGALO AHORA
+                  </motion.div>
+                  
+                  <p className="text-gray-400 text-sm">
+                    Redirigiendo al claim en 3 segundos...
+                  </p>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Lesson Content */}
+          {!showSuccess && (
+            <div className="flex-1 overflow-y-auto">
+              {lessonId === 'sales-masterclass' ? (
+                <SalesMasterclass
+                  educationalMode={mode === 'educational'}
+                  onEducationComplete={handleLessonComplete}
+                />
+              ) : (
+                <div className="flex items-center justify-center py-20">
+                  <div className="text-center text-white">
+                    <div className="text-6xl mb-4">📚</div>
+                    <h2 className="text-2xl font-bold mb-2">Lección no encontrada</h2>
+                    <p className="text-gray-400">La lección "{lessonId}" no está disponible.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Footer - Educational mode progress indicator */}
+          {mode === 'educational' && !showSuccess && (
+            <div className="border-t border-gray-700 p-4 flex-shrink-0">
+              <div className="flex items-center justify-between text-sm text-gray-400">
+                <span>Módulo Educativo Requerido</span>
+                <span>🎯 Completa para desbloquear tu regalo</span>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export default LessonModalWrapper;

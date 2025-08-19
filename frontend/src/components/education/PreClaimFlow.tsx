@@ -11,8 +11,8 @@ import { NFTImageModal } from '../ui/NFTImageModal';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
-// Import EducationalMasterclass directly
-import { EducationalMasterclass } from './EducationalMasterclass';
+// Import LessonModalWrapper - Sistema Unificado Knowledge ↔ Educational
+import { LessonModalWrapper } from './LessonModalWrapper';
 
 interface PreClaimFlowProps {
   tokenId: string;
@@ -382,22 +382,23 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           </div>
         </div>
 
-        {/* Educational Masterclass Module - MOVED INSIDE VALIDATION SUCCESS BLOCK */}
-        {showEducationalModule && (
-          <EducationalMasterclass
-            tokenId={tokenId}
-            sessionToken={validationState.sessionToken || 'test-session'}
-            onComplete={(gateData) => {
-              console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
-              setShowEducationalModule(false);
-              onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
-            }}
-            onClose={() => {
-              console.log('❌ EDUCATIONAL MODULE CLOSED');
-              setShowEducationalModule(false);
-            }}
-          />
-        )}
+        {/* LESSON MODAL WRAPPER - SISTEMA UNIFICADO usando Sales Masterclass exacta de Knowledge */}
+        <LessonModalWrapper
+          lessonId="sales-masterclass"
+          mode="educational"
+          isOpen={showEducationalModule}
+          tokenId={tokenId}
+          sessionToken={validationState.sessionToken || 'test-session'}
+          onComplete={(gateData) => {
+            console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
+            setShowEducationalModule(false);
+            onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
+          }}
+          onClose={() => {
+            console.log('❌ EDUCATIONAL MODULE CLOSED');
+            setShowEducationalModule(false);
+          }}
+        />
       </>
     );
   }

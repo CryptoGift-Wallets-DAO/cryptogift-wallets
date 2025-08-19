@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LessonModalWrapper } from '../../components/education/LessonModalWrapper';
+import { getAllLessons, getLessonsByCategory } from '../../lib/lessonRegistry';
 
 interface KnowledgeModule {
   id: string;
@@ -19,6 +21,17 @@ interface KnowledgeModule {
 export default function KnowledgePage() {
   const [selectedCategory, setSelectedCategory] = useState('sales-masterclass');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Sistema Unificado: LessonModalWrapper states
+  const [showLessonModal, setShowLessonModal] = useState(false);
+  const [currentLessonId, setCurrentLessonId] = useState('');
+
+  // Handler para abrir lecciones en modal (preserva la Sales Masterclass)
+  const handleOpenLesson = (lessonId: string) => {
+    console.log('📚 Opening lesson in Knowledge mode:', lessonId);
+    setCurrentLessonId(lessonId);
+    setShowLessonModal(true);
+  };
 
   const knowledgeModules: Record<string, KnowledgeModule[]> = {
     'sales-masterclass': [
@@ -269,8 +282,8 @@ export default function KnowledgePage() {
                 </div>
               </div>
 
-              <Link
-                href="/knowledge/sales-masterclass"
+              <button
+                onClick={() => handleOpenLesson('sales-masterclass')}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 
                          text-black font-bold rounded-xl hover:scale-105 transition-all duration-300 shadow-lg"
                 style={{
@@ -278,7 +291,7 @@ export default function KnowledgePage() {
                 }}
               >
                 🚀 INICIAR MASTERCLASS AHORA
-              </Link>
+              </button>
             </div>
             
             <div className="hidden lg:block ml-8">
@@ -378,19 +391,26 @@ export default function KnowledgePage() {
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    href={module.id === 'sales-masterclass' ? '/knowledge/sales-masterclass' : `/knowledge/${module.id}`}
-                    className={`block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 ${
-                      module.id === 'sales-masterclass' 
-                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold shadow-lg'
-                        : 'bg-gradient-to-r from-purple-500 to-pink-500 dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary'
-                    }`}
-                    style={module.id === 'sales-masterclass' ? {
-                      animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                    } : {}}
-                  >
-                    {module.id === 'sales-masterclass' ? '🚀 INICIAR MASTERCLASS' : '🚀 Comenzar Lección'}
-                  </Link>
+                  module.id === 'sales-masterclass' ? (
+                    <button
+                      onClick={() => handleOpenLesson('sales-masterclass')}
+                      className="block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 
+                               bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold shadow-lg"
+                      style={{
+                        animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                      }}
+                    >
+                      🚀 INICIAR MASTERCLASS
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/knowledge/${module.id}`}
+                      className="block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 
+                               bg-gradient-to-r from-purple-500 to-pink-500 dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary"
+                    >
+                      🚀 Comenzar Lección
+                    </Link>
+                  )
                 )}
               </div>
             </div>
@@ -449,6 +469,18 @@ export default function KnowledgePage() {
           </div>
         </div>
       </div>
+
+      {/* LESSON MODAL WRAPPER - SISTEMA UNIFICADO */}
+      <LessonModalWrapper
+        lessonId={currentLessonId}
+        mode="knowledge"
+        isOpen={showLessonModal}
+        onClose={() => {
+          console.log('📚 Closing lesson modal in Knowledge mode');
+          setShowLessonModal(false);
+          setCurrentLessonId('');
+        }}
+      />
     </div>
   );
 }
