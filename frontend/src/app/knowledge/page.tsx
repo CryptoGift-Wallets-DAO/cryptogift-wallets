@@ -17,10 +17,21 @@ interface KnowledgeModule {
 }
 
 export default function KnowledgePage() {
-  const [selectedCategory, setSelectedCategory] = useState('getting-started');
+  const [selectedCategory, setSelectedCategory] = useState('sales-masterclass');
   const [searchQuery, setSearchQuery] = useState('');
 
   const knowledgeModules: Record<string, KnowledgeModule[]> = {
+    'sales-masterclass': [
+      {
+        id: 'sales-masterclass',
+        title: '🚀 SALES MASTERCLASS',
+        description: 'De $0 a $100M en 15 minutos - La presentación definitiva para captar colaboradores, inversores y comunidad',
+        icon: '💎',
+        level: 'Avanzado',
+        duration: '15 min',
+        topics: ['Psicología de Ventas', 'AIDA Framework', 'Demo Live', 'Captación de Leads', 'ROI $100M+']
+      }
+    ],
     'getting-started': [
       {
         id: 'crypto-basics',
@@ -126,6 +137,7 @@ export default function KnowledgePage() {
   };
 
   const categories = [
+    { id: 'sales-masterclass', name: '⭐ MASTERCLASS', icon: '🚀', color: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold shadow-lg' },
     { id: 'getting-started', name: 'Primeros Pasos', icon: '🚀', color: 'bg-blue-50 text-blue-700' },
     { id: 'platform-guide', name: 'Guía CryptoGift', icon: '🎁', color: 'bg-purple-50 text-purple-700' },
     { id: 'advanced-crypto', name: 'Crypto Avanzado', icon: '⚡', color: 'bg-yellow-50 text-yellow-700' },
@@ -219,6 +231,69 @@ export default function KnowledgePage() {
           ))}
         </div>
 
+        {/* Featured Sales Masterclass */}
+        <div className="mb-12 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 
+                       border border-yellow-500/30 rounded-3xl p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4">
+            <span className="inline-flex items-center px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full animate-pulse">
+              ⭐ MÓDULO ESTRELLA
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="text-6xl">🚀</div>
+                <div>
+                  <h2 className="text-4xl font-bold text-black mb-2">
+                    SALES MASTERCLASS
+                  </h2>
+                  <p className="text-lg text-gray-700">
+                    De $0 a $100M en Regalos Cripto - 15 minutos que cambiarán tu visión del futuro
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white/50 p-3 rounded-lg text-center">
+                  <div className="font-bold text-black">15 minutos</div>
+                  <div className="text-sm text-gray-600">Duración</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg text-center">
+                  <div className="font-bold text-black">AIDA + SPIN</div>
+                  <div className="text-sm text-gray-600">Frameworks</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg text-center">
+                  <div className="font-bold text-black">Demo Live</div>
+                  <div className="text-sm text-gray-600">QR Interactivo</div>
+                </div>
+              </div>
+
+              <Link
+                href="/knowledge/sales-masterclass"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 
+                         text-black font-bold rounded-xl hover:scale-105 transition-all duration-300 shadow-lg"
+                style={{
+                  animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                }}
+              >
+                🚀 INICIAR MASTERCLASS AHORA
+              </Link>
+            </div>
+            
+            <div className="hidden lg:block ml-8">
+              <div className="w-32 h-32 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full 
+                            flex items-center justify-center text-4xl animate-spin-slow">
+                💎
+              </div>
+            </div>
+          </div>
+          
+          {/* Background decoration */}
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-br from-yellow-500/30 to-orange-500/30 rounded-full blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-orange-500/30 to-red-500/30 rounded-full blur-3xl" />
+        </div>
+
         {/* Quick Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-12">
           <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
@@ -304,12 +379,17 @@ export default function KnowledgePage() {
                   </div>
                 ) : (
                   <Link
-                    href={`/knowledge/${module.id}`}
-                    className="block w-full text-center py-3 bg-gradient-to-r from-purple-500 to-pink-500 
-                             dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary 
-                             rounded-lg font-medium hover:opacity-90 transition-all duration-300"
+                    href={module.id === 'sales-masterclass' ? '/knowledge/sales-masterclass' : `/knowledge/${module.id}`}
+                    className={`block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 ${
+                      module.id === 'sales-masterclass' 
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold shadow-lg'
+                        : 'bg-gradient-to-r from-purple-500 to-pink-500 dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary'
+                    }`}
+                    style={module.id === 'sales-masterclass' ? {
+                      animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    } : {}}
                   >
-                    🚀 Comenzar Lección
+                    {module.id === 'sales-masterclass' ? '🚀 INICIAR MASTERCLASS' : '🚀 Comenzar Lección'}
                   </Link>
                 )}
               </div>

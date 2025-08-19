@@ -50,7 +50,8 @@ const config: Config = {
         'theme-transition': 'theme-fade 0.3s ease-in-out',
         'sun-rotate': 'rotate 20s linear infinite',
         'moon-glow': 'glow 2s ease-in-out infinite alternate',
-        'panel-slide': 'slide-down 0.2s ease-out'
+        'panel-slide': 'slide-down 0.2s ease-out',
+        'spin-slow': 'spin 6s linear infinite'
       },
       keyframes: {
         'fade-in': {
