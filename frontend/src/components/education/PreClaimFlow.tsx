@@ -640,11 +640,14 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       {/* Educational Masterclass Module */}
       {showEducationalModule && (
         <div>
-          {console.log('🔍 RENDERING EDUCATIONAL MODULE:', { 
-            showEducationalModule, 
-            tokenId,
-            sessionToken: validationState.sessionToken 
-          })}
+          {(() => {
+            console.log('🔍 RENDERING EDUCATIONAL MODULE:', { 
+              showEducationalModule, 
+              tokenId,
+              sessionToken: validationState.sessionToken 
+            });
+            return null;
+          })()}
           <EducationalMasterclass
             tokenId={tokenId}
             sessionToken={validationState.sessionToken || 'test-session'}
