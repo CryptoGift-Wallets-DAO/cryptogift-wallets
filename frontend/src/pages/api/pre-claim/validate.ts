@@ -10,6 +10,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
+import { kv } from '@vercel/kv';
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { 
@@ -55,6 +56,7 @@ interface PreClaimValidationResponse {
   sessionToken?: string; // For tracking education progress
   error?: string;
   errorCode?: string;
+  message?: string;
   remainingAttempts?: number;
 }
 
@@ -120,9 +122,11 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
     const windowStart = now - RATE_LIMIT_WINDOW;
     
     // Get attempts in current window
-    const attempts = await kv.zrange(key, windowStart, now, { byScore: true });
+    // Note: Using simpler rate limiting for unified Redis compatibility
+    const attemptKey = `rate_limit_simple:${key}`;
+    const attempts = await kv.get<number>(attemptKey) || 0;
     
-    if (attempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
+    if (attempts >= MAX_ATTEMPTS_PER_WINDOW) {
       return { allowed: false, remaining: 0 };
     }
     
@@ -136,15 +140,12 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
       return { allowed: false, remaining: MAX_ATTEMPTS_PER_WINDOW - attempts.length };
     }
     
-    // Add current attempt
-    await kv.zadd(key, { score: now, member: now.toString() });
-    
-    // Set expiry for cleanup
-    await kv.expire(key, RATE_LIMIT_WINDOW / 1000);
+    // Add current attempt (simplified)
+    await kv.setex(attemptKey, RATE_LIMIT_WINDOW / 1000, attempts + 1);
     
     return { 
       allowed: true, 
-      remaining: MAX_ATTEMPTS_PER_WINDOW - attempts.length - 1 
+      remaining: MAX_ATTEMPTS_PER_WINDOW - attempts - 1 
     };
   } catch (error) {
     console.warn('Rate limit check failed, allowing request:', error);
@@ -338,7 +339,7 @@ async function validatePasswordWithContract(
     
     console.log('PASSWORD INFO:');
     console.log(`  • Password Length: ${password.length}`);
-    console.log(`  • Password Hash: ${passwordHash.slice(0, 10)}...`);
+    console.log(`  • Password Hash: ${hashFromContract.slice(0, 10)}...`);
     // SECURITY: Password fragments removed from logs
     
     console.log('SALT INFO (ARCHITECTURAL FIX):');

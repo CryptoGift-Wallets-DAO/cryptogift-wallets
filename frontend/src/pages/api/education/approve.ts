@@ -10,6 +10,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
+import { kv } from '@vercel/kv';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { secureLogger } from '../../../lib/secureLogger';
 
@@ -76,9 +77,9 @@ export default async function handler(
     try {
       // Check current rate limit
       const currentCount = await redisRateLimit.get(rateLimitKey);
-      const count = typeof currentCount === 'string' ? parseInt(currentCount) : (currentCount || 0);
+      const count = typeof currentCount === 'string' ? parseInt(currentCount) : (currentCount as number || 0);
       
-      if (count >= 5) { // 5 attempts per minute
+      if ((count as number) >= 5) { // 5 attempts per minute
         return res.status(429).json({ 
           success: false,
           error: 'Rate limit exceeded - max 5 education approvals per minute' 
@@ -86,7 +87,7 @@ export default async function handler(
       }
       
       // Increment rate limit counter
-      await redisRateLimit.setex(rateLimitKey, 60, count + 1); // 60 seconds TTL
+      await redisRateLimit.setex(rateLimitKey, 60, (count as number) + 1); // 60 seconds TTL
       
     } catch (rateLimitError) {
       console.warn('⚠️ Rate limiting failed:', rateLimitError);
@@ -186,10 +187,23 @@ export default async function handler(
     const completionKey = `education:${claimer}:${giftId}`;
     const approvalKey = `approval:${giftId}:${claimer}`;
     
-    const [isCompleted, existingApproval] = await Promise.all([
-      kv.get<boolean>(completionKey),
-      kv.get<any>(approvalKey)
+    // Check completion and approval status with unified Redis
+    const [completionRaw, approvalRaw] = await Promise.all([
+      redis.get(completionKey),
+      redis.get(approvalKey)
     ]);
+    
+    const isCompleted = completionRaw === 'true' || completionRaw === true;
+    let existingApproval: any = null;
+    if (approvalRaw && typeof approvalRaw === 'string') {
+      try {
+        existingApproval = JSON.parse(approvalRaw);
+      } catch (e) {
+        existingApproval = approvalRaw;
+      }
+    } else if (approvalRaw) {
+      existingApproval = approvalRaw;
+    }
     
     // BYPASS MODE: Allow approval if session is valid (simulates education completed)
     const isBypassRequest = sessionData.passwordValidated && sessionData.requiresEducation;
@@ -204,7 +218,7 @@ export default async function handler(
     // If this is a bypass request, mark education as completed
     if (isBypassRequest && !isCompleted) {
       try {
-        await kv.set(completionKey, true, { ex: 86400 * 30 }); // 30 days
+        await redis.setex(completionKey, 86400 * 30, 'true'); // 30 days
         debugLogger.operation('Education bypass activated', {
           tokenId,
           giftId,
