@@ -79,28 +79,11 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showEducationalModule, setShowEducationalModule] = useState(false);
-  const [forceRender, setForceRender] = useState(0);
-  
-  // Debug logging for state changes
-  React.useEffect(() => {
-    console.log('🔍 STATE CHANGE: showEducationalModule =', showEducationalModule);
-    // Force re-render when showEducationalModule changes
-    if (showEducationalModule) {
-      setForceRender(prev => prev + 1);
-    }
-  }, [showEducationalModule]);
 
-  // Stable handler for opening educational module
+  // Handler for opening educational module
   const handleOpenEducationalModule = useCallback(() => {
-    console.log('🎓 BUTTON CLICKED! Starting educational module...');
+    console.log('🎓 Opening Educational Module');
     setShowEducationalModule(true);
-    console.log('🎓 State updated, showEducationalModule should be true now');
-    
-    // Additional force render trigger
-    setTimeout(() => {
-      setForceRender(prev => prev + 1);
-      console.log('🔄 FORCE RENDER TRIGGERED');
-    }, 100);
   }, []);
 
   // Generate salt on mount
@@ -340,63 +323,82 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
 
   if (validationState.isValid) {
     return (
-      <div className={`max-w-md mx-auto ${className}`}>
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-6 text-center">
-          <div className="text-4xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">¡Contraseña Correcta!</h2>
-          <p className="text-green-600 dark:text-green-400 mb-4">
-            {validationState.requiresEducation 
-              ? 'Necesitas completar algunos módulos educativos antes de reclamar'
-              : 'Puedes proceder al proceso de claim'}
-          </p>
-          {validationState.requiresEducation && (
-            <>
-              <div className="text-sm text-green-700 dark:text-green-400 space-y-1 mb-6">
-                <p>Módulos requeridos: {validationState.educationRequirements?.length || 0}</p>
-                <p>Tiempo estimado: {getTotalEducationTime()} minutos</p>
-              </div>
-              
-              {/* EDUCATION MODULE BUTTON */}
-              <div className="space-y-3">
-                <button
-                  onClick={handleOpenEducationalModule}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:scale-105 transition-all font-bold shadow-lg"
-                  style={{
-                    animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                  }}
-                >
-                  <div className="text-2xl mb-1">🎓 INICIAR MÓDULO EDUCATIVO</div>
-                  <div className="text-sm font-normal">
-                    Proyecto CryptoGift - 7 minutos
-                  </div>
-                </button>
-                
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                  <div className="text-sm text-purple-700 dark:text-purple-300">
-                    <p className="font-bold mb-2">📚 Módulo Requerido:</p>
-                    <div className="space-y-1">
-                      <p>✨ Proyecto CryptoGift - Introducción completa</p>
-                      <p>⏱️ Duración: 7 minutos interactivos</p>
-                      <p>🎯 Aprenderás: Qué es, cómo funciona y por qué es revolucionario</p>
-                      <p>🎁 Al completar: Desbloquearás tu regalo</p>
-                    </div>
-                  </div>
+      <>
+        <div className={`max-w-md mx-auto ${className}`}>
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-6 text-center">
+            <div className="text-4xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">¡Contraseña Correcta!</h2>
+            <p className="text-green-600 dark:text-green-400 mb-4">
+              {validationState.requiresEducation 
+                ? 'Necesitas completar algunos módulos educativos antes de reclamar'
+                : 'Puedes proceder al proceso de claim'}
+            </p>
+            {validationState.requiresEducation && (
+              <>
+                <div className="text-sm text-green-700 dark:text-green-400 space-y-1 mb-6">
+                  <p>Módulos requeridos: {validationState.educationRequirements?.length || 0}</p>
+                  <p>Tiempo estimado: {getTotalEducationTime()} minutos</p>
                 </div>
                 
-                {/* Dev bypass button (hidden in production) */}
-                {process.env.NODE_ENV === 'development' && (
+                {/* EDUCATION MODULE BUTTON */}
+                <div className="space-y-3">
                   <button
-                    onClick={handleEducationBypass}
-                    className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                    onClick={handleOpenEducationalModule}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:scale-105 transition-all font-bold shadow-lg"
+                    style={{
+                      animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    }}
                   >
-                    [DEV] Bypass Education
+                    <div className="text-2xl mb-1">🎓 INICIAR MÓDULO EDUCATIVO</div>
+                    <div className="text-sm font-normal">
+                      Proyecto CryptoGift - 7 minutos
+                    </div>
                   </button>
-                )}
-              </div>
-            </>
-          )}
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                    <div className="text-sm text-purple-700 dark:text-purple-300">
+                      <p className="font-bold mb-2">📚 Módulo Requerido:</p>
+                      <div className="space-y-1">
+                        <p>✨ Proyecto CryptoGift - Introducción completa</p>
+                        <p>⏱️ Duración: 7 minutos interactivos</p>
+                        <p>🎯 Aprenderás: Qué es, cómo funciona y por qué es revolucionario</p>
+                        <p>🎁 Al completar: Desbloquearás tu regalo</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Dev bypass button (hidden in production) */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <button
+                      onClick={handleEducationBypass}
+                      className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                    >
+                      [DEV] Bypass Education
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Educational Masterclass Module - MOVED INSIDE VALIDATION SUCCESS BLOCK */}
+        {showEducationalModule && (
+          <EducationalMasterclass
+            tokenId={tokenId}
+            sessionToken={validationState.sessionToken || 'test-session'}
+            onComplete={(gateData) => {
+              console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
+              setShowEducationalModule(false);
+              onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
+            }}
+            onClose={() => {
+              console.log('❌ EDUCATIONAL MODULE CLOSED');
+              setShowEducationalModule(false);
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -656,58 +658,6 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         }}
       />
       
-      {/* Educational Masterclass Module */}
-      {(() => {
-        console.log('🔍 RENDER CHECK: About to check showEducationalModule =', showEducationalModule, 'forceRender =', forceRender);
-        return null;
-      })()}
-      {(showEducationalModule || forceRender > 0) && showEducationalModule && (
-        <div>
-          {(() => {
-            console.log('🔍 RENDERING EDUCATIONAL MODULE:', { 
-              showEducationalModule, 
-              tokenId,
-              sessionToken: validationState.sessionToken 
-            });
-            return null;
-          })()}
-          {(() => {
-            try {
-              return (
-                <EducationalMasterclass
-                  tokenId={tokenId}
-                  sessionToken={validationState.sessionToken || 'test-session'}
-                  onComplete={(gateData) => {
-                    console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
-                    setShowEducationalModule(false);
-                    onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
-                  }}
-                  onClose={() => {
-                    console.log('❌ EDUCATIONAL MODULE CLOSED');
-                    setShowEducationalModule(false);
-                  }}
-                />
-              );
-            } catch (error) {
-              console.error('❌ ERROR RENDERING EDUCATIONAL MODULE:', error);
-              return (
-                <div className="fixed inset-0 z-[9999] bg-red-500/80 flex items-center justify-center text-white">
-                  <div className="bg-black p-6 rounded-lg">
-                    <h3 className="text-lg font-bold mb-2">⚠️ Error Loading Educational Module</h3>
-                    <p>Error: {String(error)}</p>
-                    <button 
-                      onClick={() => setShowEducationalModule(false)}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-          })()}
-        </div>
-      )}
     </div>
   );
 };
