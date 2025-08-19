@@ -105,14 +105,29 @@ export async function getGiftFromBlockchain(tokenId: string | number): Promise<{
 
 /**
  * Check if a gift has education requirements
- * This checks both Redis and blockchain with improved logic
+ * This checks Redis using the correct giftId-based key
  */
-export async function checkEducationRequirements(tokenId: string | number): Promise<{
+type EduReason = 'ok' | 'missing_requirements' | 'invalid_payload' | 'redis_error';
+
+export async function checkEducationRequirements(giftIdInput: string | number): Promise<{
   hasEducation: boolean;
   educationModules: number[];
   source: 'redis' | 'blockchain' | 'heuristic' | 'fallback_secure';
+  reason: EduReason;
 }> {
   try {
+    // Validate giftId input
+    const giftId = parseInt(giftIdInput.toString());
+    if (isNaN(giftId) || giftId <= 0) {
+      console.error(`❌ Invalid giftId provided: ${giftIdInput}`);
+      return { 
+        hasEducation: false, 
+        educationModules: [], 
+        source: 'validation_error' as any,
+        reason: 'invalid_payload' 
+      };
+    }
+
     // Try to check Redis first if available
     if (process.env.KV_REST_API_URL) {
       const { validateRedisForCriticalOps } = await import('./redisConfig');
@@ -120,34 +135,65 @@ export async function checkEducationRequirements(tokenId: string | number): Prom
       try {
         const redis = validateRedisForCriticalOps('Education requirements lookup');
         if (redis) {
-          const educationKey = `education_modules:${tokenId}`;
-          const moduleData = await redis.get(educationKey);
+          // CRITICAL FIX: Use correct key format with giftId
+          const educationKey = `education:gift:${giftId}`;
+          const educationDataRaw = await redis.get(educationKey);
           
-          if (moduleData) {
-            const modules = JSON.parse(moduleData as string);
-            console.log(`✅ Education modules found in Redis for token ${tokenId}:`, modules);
+          if (educationDataRaw) {
+            try {
+              // Parse the education data object
+              const educationData = typeof educationDataRaw === 'string' 
+                ? JSON.parse(educationDataRaw)
+                : educationDataRaw;
+              
+              // Extract modules from the structured data
+              const modules = educationData.modules || [];
+              console.log(`✅ Education requirements found in Redis for giftId ${giftId}:`, modules);
+              
+              return {
+                hasEducation: modules.length > 0,
+                educationModules: modules,
+                source: 'redis',
+                reason: 'ok'
+              };
+            } catch (parseError) {
+              console.error(`❌ Failed to parse education data for giftId ${giftId}:`, parseError);
+              return {
+                hasEducation: false,
+                educationModules: [],
+                source: 'fallback_secure',
+                reason: 'invalid_payload'
+              };
+            }
+          } else {
+            console.log(`📋 No education requirements found for giftId ${giftId}`);
             return {
-              hasEducation: modules.length > 0,
-              educationModules: modules,
-              source: 'redis'
+              hasEducation: false,
+              educationModules: [],
+              source: 'fallback_secure',
+              reason: 'missing_requirements'
             };
           }
         }
       } catch (redisError) {
-        console.warn('⚠️ Redis lookup failed for education modules:', redisError);
+        console.warn('⚠️ Redis lookup failed for education requirements:', redisError);
+        return {
+          hasEducation: false,
+          educationModules: [],
+          source: 'fallback_secure',
+          reason: 'redis_error'
+        };
       }
     }
     
-    // SECURITY: No fallback heuristics - must have explicit education data
-    // Using token number thresholds is fragile and "guessable"
-    // Source of truth should ONLY be the flag in KV storage
-    console.warn(`⚠️ No education requirements found in Redis for token ${tokenId}`);
-    console.warn('📋 Defaulting to NO EDUCATION (secure fallback)');
+    // No Redis configured
+    console.warn(`⚠️ No Redis configured for education requirements check (giftId ${giftId})`);
     
     return {
       hasEducation: false,
       educationModules: [],
-      source: 'fallback_secure'
+      source: 'fallback_secure',
+      reason: 'redis_error'
     };
     
   } catch (error) {
@@ -157,38 +203,9 @@ export async function checkEducationRequirements(tokenId: string | number): Prom
     return {
       hasEducation: false,
       educationModules: [],
-      source: 'heuristic'
+      source: 'heuristic',
+      reason: 'redis_error'
     };
   }
 }
 
-/**
- * Store education modules for a token
- * This provides a backup storage mechanism
- */
-export async function storeEducationModules(tokenId: string | number, modules: number[]): Promise<boolean> {
-  try {
-    if (!process.env.KV_REST_API_URL) {
-      console.warn('⚠️ No Redis configured - cannot store education modules');
-      return false;
-    }
-    
-    const { validateRedisForCriticalOps } = await import('./redisConfig');
-    const redis = validateRedisForCriticalOps('Education modules storage');
-    
-    if (!redis) {
-      console.warn('⚠️ Redis not available for education storage');
-      return false;
-    }
-    
-    const educationKey = `education_modules:${tokenId}`;
-    await redis.set(educationKey, JSON.stringify(modules), { ex: 86400 * 365 }); // 1 year
-    
-    console.log(`✅ Education modules stored for token ${tokenId}:`, modules);
-    return true;
-    
-  } catch (error) {
-    console.error('❌ Failed to store education modules:', error);
-    return false;
-  }
-}

@@ -30,17 +30,31 @@ export default async function handler(
     if (mappingResult.reason === 'json_ok' && mappingResult.giftId) {
       console.log(`✅ JSON mapping found: tokenId ${tokenId} → giftId ${mappingResult.giftId}`);
       
-      // Check education requirements for this giftId
-      const hasEducation = await checkEducationRequirements(mappingResult.giftId.toString());
+      // Check education requirements using giftId (not tokenId)
+      const edu = await checkEducationRequirements(mappingResult.giftId);
       
+      if (edu.reason === 'ok') {
+        return res.status(200).json({
+          success: true,
+          hasPassword: true,
+          hasEducation: edu.hasEducation,
+          giftId: mappingResult.giftId,
+          reason: 'education_ok',
+          dataSource: 'redis_education',
+          educationModules: edu.educationModules
+        });
+      }
+      
+      // Education check failed but mapping exists
+      console.log(`📋 Education check result for giftId ${mappingResult.giftId}: ${edu.reason}`);
       return res.status(200).json({
         success: true,
-        hasPassword: true,
-        hasEducation: hasEducation.hasEducation,
+        hasPassword: true, // We know there's a password because mapping exists
+        hasEducation: false, // Default to false if can't determine
         giftId: mappingResult.giftId,
-        reason: mappingResult.reason,
-        dataSource: 'redis_json_schema',
-        educationModules: hasEducation.educationModules
+        reason: `education_${edu.reason}`,
+        dataSource: 'mapping_only',
+        educationModules: []
       });
     }
     
@@ -70,14 +84,17 @@ export default async function handler(
       if (blockchainData) {
         console.log(`✅ Blockchain fallback success: tokenId ${tokenId} → giftId ${blockchainData.giftId}`);
         
+        // Try to check education requirements with the giftId from blockchain
+        const edu = await checkEducationRequirements(blockchainData.giftId);
+        
         return res.status(200).json({
           success: true,
           hasPassword: true,
-          hasEducation: false, // Safe default - blockchain can't determine education
+          hasEducation: edu.reason === 'ok' ? edu.hasEducation : false,
           giftId: blockchainData.giftId,
-          reason: mappingResult.reason,
+          reason: edu.reason === 'ok' ? 'blockchain_with_education' : mappingResult.reason,
           dataSource: 'blockchain_fallback',
-          educationModules: []
+          educationModules: edu.reason === 'ok' ? edu.educationModules : []
         });
       }
       

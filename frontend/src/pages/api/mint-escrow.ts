@@ -3043,10 +3043,6 @@ export default async function handler(
 
         await redis.setex(educationKey, 90 * 24 * 60 * 60, JSON.stringify(educationData));
 
-        // TEMPORARY: Create alias for backward compatibility (2 weeks)
-        await redis.setex(`education_modules:${result.tokenId}`, 14 * 24 * 60 * 60, JSON.stringify(educationModules));
-        console.warn(`⚠️ DEPRECATED: Using legacy key education_modules:${result.tokenId} - will be removed in 2 weeks`);
-
         // Log securely (hash only, no PII)
         console.log('✅ Education requirements stored:', {
           giftId: result.giftId,
