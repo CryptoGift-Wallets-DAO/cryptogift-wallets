@@ -10,7 +10,62 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { useActiveAccount } from 'thirdweb/react';
-import confetti from 'canvas-confetti';
+
+// Simple confetti implementation to avoid external dependency
+function triggerConfetti(options?: any) {
+  // Visual confetti effect using CSS animation
+  const duration = 3000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+  function randomInRange(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  const interval = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+
+    if (timeLeft <= 0) {
+      return clearInterval(interval);
+    }
+
+    const particleCount = 50 * (timeLeft / duration);
+    
+    // Create confetti elements
+    for (let i = 0; i < particleCount; i++) {
+      const confettiEl = document.createElement('div');
+      confettiEl.style.position = 'fixed';
+      confettiEl.style.width = '10px';
+      confettiEl.style.height = '10px';
+      confettiEl.style.backgroundColor = ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1'][Math.floor(Math.random() * 5)];
+      confettiEl.style.left = Math.random() * 100 + '%';
+      confettiEl.style.top = '-10px';
+      confettiEl.style.opacity = '1';
+      confettiEl.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiEl.style.zIndex = '10000';
+      confettiEl.className = 'confetti-particle';
+      
+      document.body.appendChild(confettiEl);
+      
+      // Animate falling
+      confettiEl.animate([
+        { 
+          transform: `translateY(0) rotate(0deg)`,
+          opacity: 1 
+        },
+        { 
+          transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`,
+          opacity: 0
+        }
+      ], {
+        duration: randomInRange(2000, 4000),
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      }).onfinish = () => confettiEl.remove();
+    }
+  }, 250);
+  
+  console.log('🎉 Confetti effect triggered!', options);
+}
 
 // Dynamic import to avoid SSR issues
 const SalesMasterclass = dynamic(
@@ -53,7 +108,7 @@ export const EducationalMasterclass: React.FC<EducationalMasterclassProps> = ({
     setIsCompleted(true);
     
     // Trigger celebration
-    confetti({
+    triggerConfetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
@@ -86,7 +141,7 @@ export const EducationalMasterclass: React.FC<EducationalMasterclassProps> = ({
         // Wait a bit for celebration
         setTimeout(() => {
           // More confetti!
-          confetti({
+          triggerConfetti({
             particleCount: 200,
             startVelocity: 30,
             spread: 360,
