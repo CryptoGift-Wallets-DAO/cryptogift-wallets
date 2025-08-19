@@ -9,7 +9,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
-import { kv } from '@vercel/kv';
+import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { 
@@ -338,7 +338,8 @@ async function validatePasswordWithContract(
     
     console.log('PASSWORD INFO:');
     console.log(`  • Password Length: ${password.length}`);
-    console.log(`  • Password Sample: ${password.substring(0, 3)}...${password.substring(password.length - 3)}`);
+    console.log(`  • Password Hash: ${passwordHash.slice(0, 10)}...`);
+    // SECURITY: Password fragments removed from logs
     
     console.log('SALT INFO (ARCHITECTURAL FIX):');
     console.log(`  • Provided Salt:  ${providedSalt}`);
@@ -441,32 +442,47 @@ async function checkGateRequirements(
   claimer: string
 ): Promise<{ requiresEducation: boolean; modules: number[] }> {
   try {
-    // For now, return hardcoded requirements based on gift configuration
-    // In production, this would check the actual gate contract
+    // UNIFIED REDIS CLIENT: Use redisConfig instead of @vercel/kv
+    const redis = validateRedisForCriticalOps('Education requirements lookup');
     
-    // Check if this gift has education requirements in KV
-    const requirementsKey = `gift:${giftId}:requirements`;
-    const requirements = await kv.get<number[]>(requirementsKey);
-    
-    if (!requirements || requirements.length === 0) {
-      // No education required
+    if (!redis) {
+      console.warn('⚠️ Redis not available - defaulting to no education requirements');
       return { requiresEducation: false, modules: [] };
     }
     
-    // Check if user already completed education or has approval
-    const completionKey = `education:${claimer}:${giftId}`;
-    const approvalKey = `approval:${giftId}:${claimer}`;
+    // UNIFIED KEY FORMAT: Use education:gift:{giftId} key format
+    const educationKey = `education:gift:${giftId}`;
+    const educationDataRaw = await redis.get(educationKey);
     
-    const [completed, approval] = await Promise.all([
-      kv.get<boolean>(completionKey),
-      kv.get<any>(approvalKey)
-    ]);
-    
-    if (completed || approval) {
-      return { requiresEducation: false, modules: [] };
+    if (educationDataRaw && typeof educationDataRaw === 'string') {
+      try {
+        const educationData = JSON.parse(educationDataRaw);
+        console.log(`✅ Education data found for giftId ${giftId}:`, {
+          hasEducation: educationData.hasEducation,
+          moduleCount: educationData.modules?.length || 0
+        });
+        
+        return {
+          requiresEducation: educationData.hasEducation || false,
+          modules: educationData.modules || []
+        };
+      } catch (parseError) {
+        console.error(`❌ Invalid education JSON for giftId ${giftId}:`, parseError);
+      }
     }
     
-    return { requiresEducation: true, modules: requirements };
+    // FALLBACK: Check legacy key format for backward compatibility
+    const legacyKey = `gift:${giftId}:requirements`;
+    const requirements = await redis.get(legacyKey);
+    
+    if (requirements && Array.isArray(requirements) && requirements.length > 0) {
+      console.log(`⚠️ Using legacy education requirements for giftId ${giftId}:`, requirements);
+      return { requiresEducation: true, modules: requirements };
+    }
+    
+    // SECURE DEFAULT: No education requirements found
+    console.log(`🛡️ No education requirements found for giftId ${giftId} - defaulting to no education`);
+    return { requiresEducation: false, modules: [] };
     
   } catch (error) {
     console.warn('Gate check failed, assuming no requirements:', error);
@@ -612,20 +628,30 @@ export default async function handler(
       });
     }
     
-    // For demo, use a placeholder claimer address
-    // In production, this would come from the authenticated user
-    const claimer = '0x0000000000000000000000000000000000000000';
+    // CRITICAL FIX: Use real claimer address from request
+    // Extract claimer from headers or body (authenticated user)
+    const claimer = req.body?.claimer || req.headers['x-wallet-address'] as string;
+    
+    if (!claimer || !ethers.isAddress(claimer)) {
+      return res.status(400).json({
+        success: false,
+        error: 'MISSING_CLAIMER_ADDRESS',
+        message: 'Valid claimer wallet address is required for education validation'
+      });
+    }
+    
+    console.log(`✅ Real claimer address provided: ${claimer.slice(0, 10)}...`);
     
     const gateCheck = await checkGateRequirements(giftId, claimer);
     
     // Generate session token for tracking
     const sessionToken = generateSessionToken(tokenId, claimer);
     
-    // Store session in KV for later use
-    await kv.setex(
-      `preclaim:session:${sessionToken}`,
-      3600, // 1 hour TTL
-      JSON.stringify({
+    // UNIFIED REDIS: Store session using redisConfig client
+    const redis = validateRedisForCriticalOps('Session storage');
+    
+    if (redis) {
+      const sessionData = {
         tokenId,
         giftId,
         claimer,
@@ -633,8 +659,22 @@ export default async function handler(
         requiresEducation: gateCheck.requiresEducation,
         modules: gateCheck.modules,
         timestamp: Date.now()
-      })
-    );
+      };
+      
+      await redis.setex(
+        `preclaim:session:${sessionToken}`,
+        3600, // 1 hour TTL
+        JSON.stringify(sessionData)
+      );
+      
+      console.log(`✅ Session stored for token ${tokenId}:`, {
+        sessionToken: sessionToken.slice(0, 10) + '...',
+        requiresEducation: gateCheck.requiresEducation,
+        moduleCount: gateCheck.modules.length
+      });
+    } else {
+      console.warn('⚠️ Redis not available - session not stored (development mode)');
+    }
     
     debugLogger.operation('Pre-claim validation success', {
       tokenId,

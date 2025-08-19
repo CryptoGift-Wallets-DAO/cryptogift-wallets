@@ -7,7 +7,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { kv } from '@vercel/kv';
+import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 
 interface CompleteModuleRequest {
@@ -62,9 +62,20 @@ export default async function handler(
       });
     }
     
-    // Get session data
+    // UNIFIED REDIS: Get session data with proper JSON parsing
+    const redis = validateRedisForCriticalOps('Session retrieval');
+    
+    if (!redis) {
+      return res.status(503).json({
+        success: false,
+        error: 'Session storage not available'
+      });
+    }
+    
     const sessionKey = `preclaim:session:${sessionToken}`;
-    const sessionData = await kv.get<{
+    const sessionDataRaw = await redis.get(sessionKey);
+    
+    let sessionData: {
       tokenId: string;
       giftId: number;
       claimer: string;
@@ -72,7 +83,20 @@ export default async function handler(
       requiresEducation: boolean;
       modules: number[];
       timestamp: number;
-    }>(sessionKey);
+    } | null = null;
+    
+    if (sessionDataRaw && typeof sessionDataRaw === 'string') {
+      try {
+        sessionData = JSON.parse(sessionDataRaw);
+        console.log(`✅ Session retrieved for module completion: ${sessionToken.slice(0, 10)}...`);
+      } catch (parseError) {
+        console.error(`❌ Invalid session JSON for ${sessionToken}:`, parseError);
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid session data format'
+        });
+      }
+    }
     
     if (!sessionData) {
       return res.status(401).json({ 
@@ -118,19 +142,29 @@ export default async function handler(
     const completionKey = `education:${sessionData.claimer}:${sessionData.giftId}:module:${moduleId}`;
     const progressKey = `education:${sessionData.claimer}:${sessionData.giftId}:progress`;
     
-    await kv.setex(completionKey, 90 * 24 * 60 * 60, {
+    await redis.setex(completionKey, 90 * 24 * 60 * 60, JSON.stringify({
       moduleId,
       score,
       completedAt: new Date().toISOString(),
       sessionToken,
       tokenId
-    });
+    }));
     
-    // Get current progress
-    let completedModules = await kv.get<number[]>(progressKey) || [];
+    // Get current progress with proper JSON parsing
+    const progressDataRaw = await redis.get(progressKey);
+    let completedModules: number[] = [];
+    
+    if (progressDataRaw && typeof progressDataRaw === 'string') {
+      try {
+        completedModules = JSON.parse(progressDataRaw);
+      } catch (e) {
+        console.warn('Invalid progress JSON, starting fresh:', e);
+      }
+    }
+    
     if (!completedModules.includes(moduleId)) {
       completedModules.push(moduleId);
-      await kv.setex(progressKey, 90 * 24 * 60 * 60, completedModules);
+      await redis.setex(progressKey, 90 * 24 * 60 * 60, JSON.stringify(completedModules));
     }
     
     // Check if all modules completed
@@ -142,20 +176,20 @@ export default async function handler(
     if (allCompleted) {
       // Grant approval for this gift + claimer combination
       const approvalKey = `approval:${sessionData.giftId}:${sessionData.claimer}`;
-      await kv.setex(approvalKey, 90 * 24 * 60 * 60, {
+      await redis.setex(approvalKey, 90 * 24 * 60 * 60, JSON.stringify({
         grantedAt: new Date().toISOString(),
         sessionToken,
         tokenId,
         completedModules,
         giftId: sessionData.giftId,
         claimer: sessionData.claimer
-      });
+      }));
       
       approvalGranted = true;
       
       // Mark overall education as completed for this gift
       const completionFlagKey = `education:${sessionData.claimer}:${sessionData.giftId}`;
-      await kv.setex(completionFlagKey, 90 * 24 * 60 * 60, true);
+      await redis.setex(completionFlagKey, 90 * 24 * 60 * 60, 'true');
       
       // Request EIP-712 signature for stateless approval
       try {
@@ -175,7 +209,7 @@ export default async function handler(
           if (approvalData.gateData) {
             // Store gate data for frontend use
             const gateDataKey = `gatedata:${sessionData.giftId}:${sessionData.claimer}`;
-            await kv.setex(gateDataKey, 3600, approvalData.gateData); // 1 hour TTL
+            await redis.setex(gateDataKey, 3600, approvalData.gateData); // 1 hour TTL
           }
         }
       } catch (error) {

@@ -9,7 +9,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
-import { kv } from '@vercel/kv';
+import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { secureLogger } from '../../../lib/secureLogger';
 
@@ -63,28 +63,37 @@ export default async function handler(
     });
   }
   
-  // SECURITY: Rate limiting for education approval endpoint
-  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  // SECURITY: Rate limiting for education approval endpoint  
+  // FIXED: Use req.socket.remoteAddress instead of deprecated req.connection
+  const clientIP = (req.headers['x-forwarded-for'] as string) || req.socket?.remoteAddress || 'unknown';
   const userAgent = req.headers['user-agent'] || 'unknown';
   const rateLimitKey = `rate_limit:education_approve:${clientIP}:${userAgent.slice(0, 50)}`;
   
-  try {
-    // Check current rate limit
-    const currentCount = await kv.get<number>(rateLimitKey) || 0;
-    
-    if (currentCount >= 5) { // 5 attempts per minute
-      return res.status(429).json({ 
-        success: false,
-        error: 'Rate limit exceeded - max 5 education approvals per minute' 
-      });
+  // UNIFIED REDIS: Rate limiting with redisConfig client
+  const redisRateLimit = validateRedisForCriticalOps('Rate limiting');
+  
+  if (redisRateLimit) {
+    try {
+      // Check current rate limit
+      const currentCount = await redisRateLimit.get(rateLimitKey);
+      const count = typeof currentCount === 'string' ? parseInt(currentCount) : (currentCount || 0);
+      
+      if (count >= 5) { // 5 attempts per minute
+        return res.status(429).json({ 
+          success: false,
+          error: 'Rate limit exceeded - max 5 education approvals per minute' 
+        });
+      }
+      
+      // Increment rate limit counter
+      await redisRateLimit.setex(rateLimitKey, 60, count + 1); // 60 seconds TTL
+      
+    } catch (rateLimitError) {
+      console.warn('⚠️ Rate limiting failed:', rateLimitError);
+      // Continue without rate limiting in case of Redis issues
     }
-    
-    // Increment rate limit counter
-    await kv.setex(rateLimitKey, 60, currentCount + 1); // 60 seconds TTL
-    
-  } catch (rateLimitError) {
-    console.warn('⚠️ Rate limiting failed (proceeding):', rateLimitError);
-    // Continue without rate limiting if Redis fails
+  } else {
+    console.warn('⚠️ Rate limiting disabled - Redis not available');
   }
   
   try {
@@ -110,9 +119,20 @@ export default async function handler(
       });
     }
     
-    // Get session data to verify completion
+    // UNIFIED REDIS: Get session data with proper JSON parsing
+    const redis = validateRedisForCriticalOps('Session retrieval');
+    
+    if (!redis) {
+      return res.status(503).json({
+        success: false,
+        error: 'Session storage not available'
+      });
+    }
+    
     const sessionKey = `preclaim:session:${sessionToken}`;
-    const sessionData = await kv.get<{
+    const sessionDataRaw = await redis.get(sessionKey);
+    
+    let sessionData: {
       tokenId: string;
       giftId: number;
       claimer: string;
@@ -120,7 +140,20 @@ export default async function handler(
       requiresEducation: boolean;
       modules: number[];
       timestamp: number;
-    }>(sessionKey);
+    } | null = null;
+    
+    if (sessionDataRaw && typeof sessionDataRaw === 'string') {
+      try {
+        sessionData = JSON.parse(sessionDataRaw);
+        console.log(`✅ Session retrieved for ${sessionToken.slice(0, 10)}...`);
+      } catch (parseError) {
+        console.error(`❌ Invalid session JSON for ${sessionToken}:`, parseError);
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid session data format'
+        });
+      }
+    }
     
     if (!sessionData) {
       return res.status(401).json({ 
