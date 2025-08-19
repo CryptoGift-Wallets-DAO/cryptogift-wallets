@@ -113,6 +113,18 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       return;
     }
 
+    // CRITICAL FIX: Si el gift tiene education requirements, requerir wallet connection
+    // antes de la validación para evitar el error en education/approve
+    if (!account?.address) {
+      addNotification({
+        type: 'error',
+        title: 'Wallet Requerida',
+        message: 'Para gifts con módulos educativos, debes conectar tu wallet antes de validar la contraseña',
+        duration: 8000
+      });
+      return;
+    }
+
     setValidationState({ ...validationState, isValidating: true, error: undefined });
 
     try {
@@ -494,7 +506,29 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           </div>
         )}
 
-        {/* REMOVIDO: Authentication Section - NO DEBE PEDIR AUTENTICACIÓN EN PÁGINA INICIAL */}
+        {/* Wallet Connection Section - CRÍTICO para gifts con education requirements */}
+        {!account?.address && (
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-start">
+              <div className="text-blue-600 dark:text-blue-400 text-lg mr-3">💎</div>
+              <div>
+                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-2">
+                  Wallet Requerida para Módulos Educativos
+                </h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                  Este gift incluye contenido educativo. Conecta tu wallet antes de validar la contraseña.
+                </p>
+                <ConnectAndAuthButton 
+                  onAuthenticated={() => {
+                    console.log('✅ Wallet connected for education flow');
+                  }}
+                  requireAuth={false}
+                  compact={true}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Validation Form - COPIADO DE ClaimEscrowInterface pero adaptado para validación */}
         {canClaim ? (

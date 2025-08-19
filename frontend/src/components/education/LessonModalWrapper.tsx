@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useActiveAccount } from 'thirdweb/react';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
 const SalesMasterclass = dynamic(
@@ -104,9 +105,10 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   onComplete
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
+  const account = useActiveAccount();
 
   const handleLessonComplete = async () => {
-    console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode });
+    console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
     
     // En mode educational, necesitamos manejar la completion con API
     if (mode === 'educational' && onComplete) {
@@ -121,7 +123,15 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
       });
 
       try {
-        if (sessionToken && tokenId) {
+        // CRITICAL FIX: Verificar que todos los campos requeridos estén presentes
+        if (sessionToken && tokenId && account?.address) {
+          console.log('🎓 Submitting education completion with all required fields:', {
+            sessionToken: sessionToken.substring(0, 10) + '...',
+            tokenId,
+            claimer: account.address.substring(0, 10) + '...',
+            module: lessonId
+          });
+
           // Call education approval API to mark as completed
           const response = await fetch('/api/education/approve', {
             method: 'POST',
@@ -131,12 +141,15 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
             body: JSON.stringify({
               sessionToken: sessionToken,
               tokenId: tokenId,
+              claimer: account.address, // CRITICAL FIX: Agregar claimer requerido
+              giftId: 0, // Will be populated from session data in API
               educationCompleted: true,
               module: lessonId
             })
           });
 
           const approvalData = await response.json();
+          console.log('🎓 Education API response:', { success: approvalData.success, hasGateData: !!approvalData.gateData });
           
           if (approvalData.success) {
             // Wait for celebration, then more confetti!
@@ -154,19 +167,27 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
               });
               
               // Call completion callback with gate data
-              onComplete(approvalData.gateData);
+              onComplete(approvalData.gateData || '0x');
             }, 2000);
           } else {
             throw new Error(approvalData.error || 'Approval failed');
           }
         } else {
-          // Fallback for missing session data
-          setTimeout(() => onComplete('0x'), 3000);
+          // CRITICAL FIX: Si falta wallet, mostrar error específico
+          const missingFields = [];
+          if (!sessionToken) missingFields.push('sessionToken');
+          if (!tokenId) missingFields.push('tokenId');
+          if (!account?.address) missingFields.push('wallet connection');
+          
+          console.error('❌ Missing required fields for education completion:', missingFields);
+          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
       } catch (error) {
         console.error('Education completion error:', error);
-        // Still proceed even if API fails
-        setTimeout(() => onComplete && onComplete('0x'), 3000);
+        // CRITICAL FIX: NO hacer fallback silencioso a '0x' - esto causa el error final
+        // En su lugar, mostrar el error al usuario y mantener modal abierto
+        alert(`Error completing education: ${error.message}. Please ensure your wallet is connected and try again.`);
+        setShowSuccess(false); // Volver al estado normal para permitir reintentos
       }
     } else if (mode === 'knowledge') {
       // En knowledge mode, simplemente mostrar celebración y cerrar
