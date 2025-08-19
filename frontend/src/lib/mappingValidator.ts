@@ -110,7 +110,8 @@ async function performValidation(
       expirationTime: giftData[1],
       nftContract: giftData[2],
       tokenId: giftData[3],
-      passwordHash: giftData[4] ? giftData[4].toString().slice(0, 10) + '...' : 'null',
+      // SECURITY C1 FIX: Removed password hash fragments from logs
+      passwordHashPresent: !!giftData[4],
       status: giftData[5]
     });
     

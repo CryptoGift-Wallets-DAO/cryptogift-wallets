@@ -7,7 +7,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { kv } from '@vercel/kv';
+import { getRedisConnection } from '../../../lib/redisConfig';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 
 interface GetRequirementsRequest {
@@ -81,9 +81,12 @@ export default async function handler(
       });
     }
     
-    // Get session data
+    // Get session data - UNIFIED REDIS CLIENT (B1 FIX)  
+    const redis = getRedisConnection();
     const sessionKey = `preclaim:session:${sessionToken}`;
-    const sessionData = await kv.get<{
+    const sessionDataRaw = await redis.get(sessionKey);
+    
+    let sessionData: {
       tokenId: string;
       giftId: number;
       claimer: string;
@@ -91,7 +94,20 @@ export default async function handler(
       requiresEducation: boolean;
       modules: number[];
       timestamp: number;
-    }>(sessionKey);
+    } | null = null;
+    
+    if (sessionDataRaw && typeof sessionDataRaw === 'string') {
+      try {
+        sessionData = JSON.parse(sessionDataRaw);
+        console.log(`✅ Session retrieved for ${sessionToken.slice(0, 10)}...`);
+      } catch (parseError) {
+        console.error(`❌ Invalid session JSON for ${sessionToken}:`, parseError);
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid session data format'
+        });
+      }
+    }
     
     if (!sessionData) {
       return res.status(401).json({ 
@@ -111,9 +127,19 @@ export default async function handler(
       });
     }
     
-    // Get progress
+    // Get progress - UNIFIED REDIS CLIENT (B1 FIX)
     const progressKey = `education:${sessionData.claimer}:${sessionData.giftId}:progress`;
-    const completedModules = await kv.get<number[]>(progressKey) || [];
+    const progressDataRaw = await redis.get(progressKey);
+    let completedModules: number[] = [];
+    
+    if (progressDataRaw && typeof progressDataRaw === 'string') {
+      try {
+        completedModules = JSON.parse(progressDataRaw);
+      } catch (parseError) {
+        console.warn(`❌ Invalid progress JSON for ${progressKey}:`, parseError);
+        completedModules = [];
+      }
+    }
     
     // Calculate remaining modules
     const remainingModules = sessionData.modules.filter(m => !completedModules.includes(m));

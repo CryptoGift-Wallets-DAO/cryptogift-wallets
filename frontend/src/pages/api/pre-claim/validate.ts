@@ -296,8 +296,7 @@ async function validatePasswordWithContract(
       tokenId: tokenId,
       giftId: giftId,
       passwordLength: password.length,
-      passwordFirst3: password.substring(0, 3),
-      passwordLast3: password.substring(password.length - 3),
+      // SECURITY C1 FIX: Removed password fragments from logs
       providedSalt: providedSalt,
       providedSaltLength: providedSalt.length,
       providedSaltPrefix: providedSalt.substring(0, 10),
@@ -335,7 +334,7 @@ async function validatePasswordWithContract(
     
     console.log('PASSWORD INFO:');
     console.log(`  • Password Length: ${password.length}`);
-    console.log(`  • Password Hash: ${gift.passwordHash.slice(0, 10)}...`);
+    // SECURITY C1 FIX: Removed password hash fragments from logs
     // SECURITY: Password fragments removed from logs
     
     console.log('SALT INFO (ARCHITECTURAL FIX):');
@@ -521,8 +520,7 @@ export default async function handler(
     console.log('📨 BACKEND SALT RECEPTION:', {
       tokenId,
       passwordLength: password?.length,
-      passwordFirst3: password?.substring(0, 3),
-      passwordLast3: password?.substring(password?.length - 3),
+      // SECURITY C1 FIX: Removed password fragments from logs
       salt,
       saltType: typeof salt,
       saltLength: salt?.length,
@@ -590,7 +588,7 @@ export default async function handler(
     // Log validation attempt (secure - no password logged)
     secureLogger.info('Pre-claim validation attempt', {
       tokenId,
-      passwordHash: ethers.keccak256(ethers.toUtf8Bytes(password)).slice(0, 8) + '...',
+      // SECURITY C1 FIX: Removed password hash fragments from logs
       deviceId,
       remaining
     });

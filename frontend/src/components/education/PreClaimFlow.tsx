@@ -115,18 +115,20 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         tokenId,
         password,
         salt,
-        deviceId
+        deviceId,
+        claimer: account?.address || '0x0000000000000000000000000000000000000000' // CRITICAL FIX A1: Add claimer address
       };
       
       console.log('🚀 FRONTEND PRE-TRANSMISSION:', {
         tokenId,
         passwordLength: password.length,
-        passwordFirst3: password.substring(0, 3),
-        passwordLast3: password.substring(password.length - 3),
+        // SECURITY C1 FIX: Removed password fragments from logs
         salt: salt,
         saltType: typeof salt,
         saltLength: salt.length,
         deviceId,
+        claimer: requestPayload.claimer,
+        claimerConnected: !!account?.address,
         timestamp: new Date().toISOString()
       });
 
@@ -181,10 +183,12 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           duration: 5000
         });
 
-        // If NO education required, this should NOT happen in current flow
+        // If NO education required, proceed directly to claim
         if (!data.requiresEducation) {
-          console.error('⚠️ Unexpected: PreClaimFlow shown for gift without education');
-          // Still don't auto-navigate, let user control
+          console.log('✅ No education required, proceeding to claim');
+          // CRITICAL FIX A2: Call onValidationSuccess for no-education flow  
+          // CRITICAL FIX A3: Pass gateData for consistent interface
+          onValidationSuccess(data.sessionToken!, false, '0x'); // No education needed, empty gate data
         }
         // If education IS required, show bypass button (no auto-nav)
         // Let the user see and interact with the bypass button

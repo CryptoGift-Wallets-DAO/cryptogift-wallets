@@ -8,7 +8,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { kv } from '@vercel/kv';
+import { getRedisConnection } from '../../../lib/redisConfig';
 import { verifyJWT, extractTokenFromHeaders } from '../../../lib/siweAuth';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 
@@ -88,22 +88,24 @@ export default async function handler(
       });
     }
     
-    // Store education requirements in KV
-    const requirementsKey = `gift:${giftId}:requirements`;
-    const tokenRequirementsKey = `token:${tokenId}:requirements`;
+    // Store education requirements - UNIFIED REDIS CLIENT & KEYS (B2 FIX)
+    const redis = getRedisConnection();
+    const educationKey = `education:gift:${giftId}`;
     
-    // Store by both giftId and tokenId for easy lookup
-    const requirementsData = {
+    // Unified versioned payload format matching mint-escrow.ts
+    const educationData = {
+      version: '1.0',
       modules: educationModules,
       creatorAddress,
       createdAt: new Date().toISOString(),
       giftId,
-      tokenId
+      tokenId,
+      // DETERMINISTIC HASH: Sort modules for stable hash
+      modulesHash: educationModules.sort((a, b) => a - b).join(',')
     };
     
     // Store with 90 day TTL (longer than max escrow time)
-    await kv.setex(requirementsKey, 90 * 24 * 60 * 60, educationModules);
-    await kv.setex(tokenRequirementsKey, 90 * 24 * 60 * 60, requirementsData);
+    await redis.setex(educationKey, 90 * 24 * 60 * 60, JSON.stringify(educationData));
     
     debugLogger.operation('Education requirements set', {
       giftId,
