@@ -175,8 +175,22 @@ export default async function handler(
     }
     
     // SECURITY: Verify claimer matches authenticated address from session
-    // NOTE: For gasless transactions, claimer should be the smart account (msg.sender), not the EOA
-    if (sessionData.claimer !== claimer) {
+    // NOTE: Session might have 'pending' if wallet wasn't connected during validation
+    // We update the session claimer to the real address for bypass
+    if (sessionData.claimer === 'pending' || sessionData.claimer === null) {
+      // Update session with real claimer address
+      sessionData.claimer = claimer;
+      
+      // Update stored session with real claimer
+      await redis.setex(
+        sessionKey,
+        3600, // Keep same TTL
+        JSON.stringify(sessionData)
+      );
+      
+      console.log(`✅ Session updated with real claimer: ${claimer.slice(0, 10)}...`);
+    } else if (sessionData.claimer !== claimer) {
+      // If session already has a different claimer, that's an error
       return res.status(403).json({ 
         success: false,
         error: 'Identity mismatch - claimer address does not match session' 

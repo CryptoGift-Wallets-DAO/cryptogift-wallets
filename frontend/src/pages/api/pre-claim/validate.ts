@@ -547,9 +547,13 @@ async function checkGateRequirements(
 
 /**
  * Generate session token for education tracking
+ * IMPORTANT: Token should NOT include claimer address to maintain session
+ * across wallet connection states
  */
 function generateSessionToken(tokenId: string, claimer: string): string {
-  const data = `${tokenId}:${claimer}:${Date.now()}`;
+  // Use only tokenId and timestamp - NOT the claimer address
+  // This ensures the session persists when user connects wallet later
+  const data = `${tokenId}:session:${Date.now()}`;
   return Buffer.from(data).toString('base64url');
 }
 
