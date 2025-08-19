@@ -35,7 +35,9 @@ const EIP712_DOMAIN = {
   name: 'SimpleApprovalGate',
   version: '1',
   chainId: 84532, // Base Sepolia
-  verifyingContract: process.env.SIMPLE_APPROVAL_GATE_ADDRESS || '0x0000000000000000000000000000000000000000' // Server-side only
+  verifyingContract: process.env.SIMPLE_APPROVAL_GATE_ADDRESS || 
+                     process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS || 
+                     '0x3FEb03368cbF0970D4f29561dA200342D788eD6B' // Fallback to known contract
 };
 
 const EIP712_TYPES = {
@@ -272,22 +274,35 @@ export default async function handler(
     const approverPrivateKey = process.env.APPROVER_PRIVATE_KEY;
     if (!approverPrivateKey) {
       // Fallback: Return success without signature (use mapping override)
+      console.error('❌ CRITICAL: APPROVER_PRIVATE_KEY not configured in environment');
+      console.error('Please set APPROVER_PRIVATE_KEY in Vercel environment variables');
+      console.error('The private key must correspond to an authorized approver in the SimpleApprovalGate contract');
+      
       debugLogger.operation('Approval requested but no signer configured', {
         tokenId,
         giftId,
         claimer: claimer.slice(0, 10) + '...',
-        fallback: 'mapping'
+        fallback: 'mapping',
+        error: 'NO_APPROVER_KEY'
       });
       
-      return res.status(200).json({
-        success: true,
-        message: 'Approval granted via mapping (signature not available)',
-        gateData: '' // Empty - will trigger mapping check in contract
+      return res.status(500).json({
+        success: false,
+        error: 'Education approval system not configured. Please contact support.',
+        message: 'APPROVER_PRIVATE_KEY environment variable is missing'
       });
     }
     
     // Create signer wallet
     const approverWallet = new ethers.Wallet(approverPrivateKey);
+    
+    console.log('🔑 APPROVER CONFIGURATION:', {
+      approverAddress: approverWallet.address,
+      verifyingContract: EIP712_DOMAIN.verifyingContract,
+      chainId: EIP712_DOMAIN.chainId,
+      giftId: giftId,
+      requirementsVersion: REQUIREMENTS_VERSION
+    });
     
     // Calculate deadline (current time + TTL)
     const deadline = Math.floor(Date.now() / 1000) + SIGNATURE_TTL;
