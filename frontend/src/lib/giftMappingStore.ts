@@ -248,18 +248,23 @@ export async function getGiftIdFromMapping(tokenId: string | number): Promise<Ma
       return { giftId: null, reason: 'legacy_incompatible' };
     }
     
-    // UNEXPECTED TYPE
-    if (typeof mappingDataRaw !== 'string') {
-      console.error(`❌ UNEXPECTED TYPE: tokenId ${tokenId} has type "${typeof mappingDataRaw}"`);
-      return { giftId: null, reason: 'invalid_mapping_format' };
-    }
-    
-    // STRICT JSON PARSING
+    // HANDLE REDIS AUTO-DESERIALIZATION
     let mappingData: GiftMappingSchema;
-    try {
-      mappingData = JSON.parse(mappingDataRaw);
-    } catch (parseError) {
-      console.error(`❌ JSON PARSE FAILED: tokenId ${tokenId} - ${parseError.message}`);
+    
+    if (typeof mappingDataRaw === 'string') {
+      // Redis returned raw string - need to parse JSON
+      try {
+        mappingData = JSON.parse(mappingDataRaw);
+      } catch (parseError) {
+        console.error(`❌ JSON PARSE FAILED: tokenId ${tokenId} - ${parseError.message}`);
+        return { giftId: null, reason: 'invalid_mapping_format' };
+      }
+    } else if (typeof mappingDataRaw === 'object' && mappingDataRaw !== null) {
+      // Redis auto-deserialized JSON - use directly
+      mappingData = mappingDataRaw as GiftMappingSchema;
+      console.log(`🔄 REDIS AUTO-DESERIALIZED: tokenId ${tokenId} received object directly`);
+    } else {
+      console.error(`❌ UNEXPECTED TYPE: tokenId ${tokenId} has type "${typeof mappingDataRaw}"`);
       return { giftId: null, reason: 'invalid_mapping_format' };
     }
     
