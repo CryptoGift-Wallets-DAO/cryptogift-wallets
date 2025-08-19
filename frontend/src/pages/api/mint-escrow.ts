@@ -1261,12 +1261,16 @@ async function mintNFTEscrowGasless(
       
       // Store the mapping deterministically with education metadata
       try {
-        await storeGiftMapping(tokenId, actualGiftId, {
-          educationModules: educationModules || [],
-          creator: creatorAddress,
-          nftContract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-          createdAt: Date.now(),
-          salt: salt
+        await storeGiftMapping(
+          tokenId, 
+          actualGiftId, 
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          parseInt(process.env.NEXT_PUBLIC_CHAIN_ID!),
+          {
+            educationModules: educationModules || [],
+            creator: creatorAddress,
+            createdAt: Date.now(),
+            salt: salt
         });
         console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${actualGiftId} with education modules:`, {
           hasEducation: educationModules && educationModules.length > 0,
@@ -2558,11 +2562,15 @@ async function mintNFTEscrowGasPaid(
       
       // Store the mapping deterministically (gas-paid) with education metadata
       try {
-        await storeGiftMapping(tokenId, actualGiftIdGasPaid, {
-          educationModules: educationModules || [],
-          creator: creatorAddress,
-          nftContract: process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
-          createdAt: Date.now(),
+        await storeGiftMapping(
+          tokenId, 
+          actualGiftIdGasPaid, 
+          process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!,
+          parseInt(process.env.NEXT_PUBLIC_CHAIN_ID!),
+          {
+            educationModules: educationModules || [],
+            creator: creatorAddress,
+            createdAt: Date.now(),
           salt: salt
         });
         console.log(`✅ MAPPING STORED (GAS-PAID): tokenId ${tokenId} → giftId ${actualGiftIdGasPaid} with education modules:`, {

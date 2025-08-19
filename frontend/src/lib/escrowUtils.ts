@@ -8,7 +8,7 @@ import { createThirdwebClient, getContract, prepareContractCall, readContract, s
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { baseSepolia } from 'thirdweb/chains';
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from './escrowABI';
-import { getGiftIdFromMapping, storeGiftMapping, batchStoreGiftMappings } from './giftMappingStore';
+import { getGiftIdFromMapping, getGiftIdFromMappingLegacy, storeGiftMapping, batchStoreGiftMappings } from './giftMappingStore';
 
 // Initialize ThirdWeb client lazily to avoid build-time issues
 let client: ReturnType<typeof createThirdwebClient> | null = null;
@@ -127,7 +127,8 @@ export async function getGiftIdFromTokenId(tokenId: string | number): Promise<nu
 
   // Try persistent storage (Redis/KV) - avoids RPC calls if available
   try {
-    const persistentGiftId = await getGiftIdFromMapping(tokenId);
+    // BACKWARD COMPATIBILITY: Use legacy wrapper that returns giftId directly
+    const persistentGiftId = await getGiftIdFromMappingLegacy(tokenId);
     if (persistentGiftId !== null) {
       // Cache in memory for future requests
       tokenIdToGiftIdCache.set(tokenIdStr, persistentGiftId);

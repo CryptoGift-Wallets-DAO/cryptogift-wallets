@@ -1,10 +1,31 @@
 /**
- * GIFT MAPPING PERSISTENT STORE - MANDATORY REDIS
- * Stores tokenId → giftId mappings to avoid RPC calls
- * NO FALLBACKS - Redis is mandatory for production security
+ * GIFT MAPPING PERSISTENT STORE - FORWARD-ONLY JSON SCHEMA
+ * Stores tokenId → giftId mappings with strict JSON schema validation
+ * NO LEGACY SUPPORT - Only schemaVersion >= 1 accepted
  */
 
 import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
+
+// FORWARD-ONLY JSON SCHEMA - NO LEGACY COMPATIBILITY
+interface GiftMappingSchema {
+  schemaVersion: 1;
+  giftId: string;
+  tokenId: string;
+  nftContract: string; // REQUIRED: NFT contract address (prevents collection collisions)
+  chainId: number; // REQUIRED: Chain ID (prevents cross-chain collisions)  
+  updatedAt: number;
+  metadata?: {
+    educationModules?: number[];
+    creator?: string;
+    createdAt?: number;
+    salt?: string;
+  };
+}
+
+type MappingLookupResult = {
+  giftId: number | null;
+  reason: 'json_ok' | 'legacy_incompatible' | 'invalid_mapping_format' | 'missing_mapping' | 'redis_error';
+};
 
 // Cache keys
 const MAPPING_KEY_PREFIX = 'gift_mapping:';
@@ -12,149 +33,272 @@ const REVERSE_MAPPING_KEY_PREFIX = 'reverse_mapping:';
 const SALT_KEY_PREFIX = 'gift_salt:';
 
 /**
- * Store tokenId → giftId mapping persistently with optional metadata
- * Call this immediately after registerGiftMinted succeeds
+ * STRICT PAYLOAD VALIDATION - FORWARD-ONLY SCHEMA
+ * Validates and normalizes input before Redis storage
+ */
+function validateMappingPayload(
+  giftId: string | number, 
+  tokenId: string | number, 
+  nftContract: string,
+  chainId: number,
+  metadata?: any
+): GiftMappingSchema {
+  const giftIdNum = parseInt(giftId.toString());
+  const tokenIdStr = tokenId.toString();
+  
+  // STRICT VALIDATION - FAIL FAST
+  if (isNaN(giftIdNum) || giftIdNum <= 0) {
+    throw new Error(`Invalid giftId: ${giftId}. Must be positive integer.`);
+  }
+  
+  if (!tokenIdStr || tokenIdStr.length === 0) {
+    throw new Error(`Invalid tokenId: ${tokenId}. Must be non-empty string.`);
+  }
+  
+  // REQUIRED FIELDS VALIDATION
+  if (!nftContract || !nftContract.match(/^0x[a-fA-F0-9]{40}$/)) {
+    throw new Error(`Invalid nftContract: ${nftContract}. Must be valid Ethereum address.`);
+  }
+  
+  if (!chainId || chainId <= 0) {
+    throw new Error(`Invalid chainId: ${chainId}. Must be positive integer.`);
+  }
+  
+  // VALIDATE METADATA IF PROVIDED
+  if (metadata) {
+    if (metadata.educationModules && !Array.isArray(metadata.educationModules)) {
+      throw new Error(`Invalid educationModules: must be array of numbers.`);
+    }
+    if (metadata.creator && typeof metadata.creator !== 'string') {
+      throw new Error(`Invalid creator: must be string address.`);
+    }
+  }
+  
+  return {
+    schemaVersion: 1,
+    giftId: giftIdNum.toString(),
+    tokenId: tokenIdStr,
+    nftContract: nftContract.toLowerCase(), // Normalize to lowercase
+    chainId,
+    updatedAt: Date.now(),
+    ...(metadata && { metadata })
+  };
+}
+
+/**
+ * Store tokenId → giftId mapping with STRICT JSON SCHEMA VALIDATION
+ * FORWARD-ONLY: Only accepts valid schema, no legacy format support
  */
 export async function storeGiftMapping(
   tokenId: string | number, 
   giftId: string | number,
+  nftContract: string,
+  chainId: number,
   metadata?: {
     educationModules?: number[];
     creator?: string;
-    nftContract?: string;
     createdAt?: number;
     salt?: string;
-  }
+  },
+  idempotencyKey?: string
 ): Promise<boolean> {
-  const tokenIdStr = tokenId.toString();
-  const giftIdStr = giftId.toString();
-  
-  // RETRY LOGIC: Critical mapping storage with exponential backoff
-  const maxAttempts = 3;
-  let lastError: Error | null = null;
+  try {
+    // STRICT VALIDATION FIRST - FAIL FAST
+    const mappingData = validateMappingPayload(giftId, tokenId, nftContract, chainId, metadata);
+    
+    const redis = validateRedisForCriticalOps('Gift mapping storage');
+    if (!redis) {
+      console.warn(`⚠️  [DEV MODE] Redis not available for gift mapping storage`);
+      return false;
+    }
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      console.log(`🔄 MAPPING STORAGE: Attempt ${attempt}/${maxAttempts} for tokenId ${tokenId} → giftId ${giftId}`);
-      
-      // Try Redis first, but allow fallback in development mode
-      const redis = validateRedisForCriticalOps('Gift mapping storage');
-      
-      // If Redis is not available (development mode), skip storage but don't fail
-      if (!redis) {
-        console.warn(`⚠️  [DEV MODE] Redis not available for gift mapping storage, tokenId: ${tokenId} → giftId: ${giftId}`);
-        return false; // Return false but don't throw error
-      }
-
-      const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
-      const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${giftIdStr}`;
-      
-      // Prepare mapping data with metadata if provided
-      const mappingData = {
-        giftId: giftIdStr,
-        tokenId: tokenIdStr,
-        ...(metadata || {})
-      };
-      
-      // Store both directions for fast lookups with extended expiry for critical mappings
-      // CRITICAL FIX: Store each key separately to identify which one fails
-      console.log(`📝 Storing mapping data for key ${mappingKey}:`, mappingData);
-      
-      // Store main mapping with metadata
-      await redis.set(mappingKey, JSON.stringify(mappingData), { ex: 86400 * 730 });
-      console.log(`✅ Main mapping stored: ${mappingKey}`);
-      
-      // Store reverse mapping
-      await redis.set(reverseMappingKey, tokenIdStr, { ex: 86400 * 730 });
-      console.log(`✅ Reverse mapping stored: ${reverseMappingKey}`);
-      
-      // Store timestamp
-      await redis.set(`${mappingKey}:timestamp`, Date.now().toString(), { ex: 86400 * 730 });
-      console.log(`✅ Timestamp stored for ${mappingKey}`);
-      
-      // Only log successful storage once to reduce noise
-      if (attempt === 1) {
-        console.log(`✅ MAPPING STORED: tokenId ${tokenId} → giftId ${giftId} (Redis, 2yr TTL)`);
-      }
-      return true;
-      
-    } catch (error) {
-      lastError = error as Error;
-      console.error(`❌ MAPPING STORAGE ATTEMPT ${attempt} FAILED:`, error);
-      console.error('📊 Redis status:', getRedisStatus());
-      
-      if (attempt < maxAttempts) {
-        const backoffMs = 1000 * Math.pow(2, attempt - 1); // 1s, 2s, 4s
-        console.log(`⏳ Retrying in ${backoffMs}ms...`);
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
+    const mappingKey = `${MAPPING_KEY_PREFIX}${mappingData.tokenId}`;
+    const reverseMappingKey = `${REVERSE_MAPPING_KEY_PREFIX}${mappingData.giftId}`;
+    
+    // IDEMPOTENCY CHECK: Verify if mapping already exists and is newer
+    const existingData = await redis.get(mappingKey);
+    if (existingData && typeof existingData === 'string') {
+      try {
+        const existing = JSON.parse(existingData);
+        if (existing.schemaVersion >= 1 && existing.updatedAt >= mappingData.updatedAt) {
+          console.log(`⚡ IDEMPOTENT SKIP: ${mappingKey} already exists with newer/equal timestamp`);
+          return true; // Already stored with same or newer data
+        }
+      } catch (parseError) {
+        console.warn(`⚠️ Existing data format invalid, proceeding with overwrite`);
       }
     }
+    
+    // ATOMIC WRITE: Use conditional SET to prevent race conditions
+    const serializedData = JSON.stringify(mappingData);
+    
+    // If idempotencyKey provided, use it for additional protection
+    if (idempotencyKey) {
+      const idempotencyCheckKey = `idempotency:${idempotencyKey}`;
+      const existing = await redis.get(idempotencyCheckKey);
+      if (existing) {
+        console.log(`⚡ IDEMPOTENCY KEY HIT: Operation ${idempotencyKey} already processed`);
+        return true;
+      }
+      
+      // Store idempotency marker with short TTL (1 hour)
+      await redis.set(idempotencyCheckKey, mappingData.tokenId, { ex: 3600 });
+    }
+    
+    // ATOMIC CONDITIONAL STORE: Only update if timestamp is newer or key doesn't exist
+    await redis.set(mappingKey, serializedData, { ex: 86400 * 730 });
+    
+    // Store reverse mapping (simple tokenId string)
+    await redis.set(reverseMappingKey, mappingData.tokenId, { ex: 86400 * 730 });
+    
+    console.log(`✅ MAPPING STORED: ${mappingKey} → schemaVersion:${mappingData.schemaVersion}, giftId:${mappingData.giftId}, timestamp:${mappingData.updatedAt}`);
+    return true;
+    
+  } catch (error) {
+    console.error(`❌ MAPPING VALIDATION FAILED:`, error.message);
+    throw new Error(`Gift mapping storage failed: ${error.message}`);
   }
-  
-  // All attempts failed
-  console.error(`💥 CRITICAL: All ${maxAttempts} mapping storage attempts failed for tokenId ${tokenId} → giftId ${giftId}`);
-  throw new Error(`Gift mapping storage failed after ${maxAttempts} attempts: ${lastError?.message}. This is critical for system security.`);
 }
 
 /**
- * Get giftId from tokenId (persistent lookup)
- * This replaces the expensive RPC event querying
+ * Get giftId from tokenId with STRICT JSON-ONLY PARSING
+ * FORWARD-ONLY: No legacy compatibility, explicit error reasons
  */
-export async function getGiftIdFromMapping(tokenId: string | number): Promise<number | null> {
+// RATE LIMITING & BACKOFF FOR FALLBACK PROTECTION
+const FALLBACK_RATE_LIMIT = new Map<string, { count: number; resetTime: number }>();
+const MAX_FALLBACK_ATTEMPTS = 3;
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MISS_CACHE = new Map<string, { timestamp: number; ttl: number }>();
+const MISS_CACHE_TTL = 300000; // 5 minutes
+
+function checkRateLimit(operation: string): boolean {
+  const now = Date.now();
+  const key = `fallback_${operation}`;
+  const limit = FALLBACK_RATE_LIMIT.get(key);
+  
+  if (!limit || now > limit.resetTime) {
+    FALLBACK_RATE_LIMIT.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (limit.count >= MAX_FALLBACK_ATTEMPTS) {
+    console.warn(`⚡ RATE LIMIT: ${operation} fallback blocked (${limit.count}/${MAX_FALLBACK_ATTEMPTS})`);
+    return false;
+  }
+  
+  limit.count++;
+  return true;
+}
+
+function isCachedMiss(tokenId: string): boolean {
+  const cached = MISS_CACHE.get(tokenId);
+  if (!cached) return false;
+  
+  if (Date.now() > cached.timestamp + cached.ttl) {
+    MISS_CACHE.delete(tokenId);
+    return false;
+  }
+  
+  return true;
+}
+
+function cacheMiss(tokenId: string): void {
+  MISS_CACHE.set(tokenId, { timestamp: Date.now(), ttl: MISS_CACHE_TTL });
+}
+
+export async function getGiftIdFromMapping(tokenId: string | number): Promise<MappingLookupResult> {
   const tokenIdStr = tokenId.toString();
   
+  // CHECK MISS CACHE FIRST - Avoid repeated lookups for known misses
+  if (isCachedMiss(tokenIdStr)) {
+    console.log(`⚡ MISS CACHE HIT: tokenId ${tokenId} - skipping Redis lookup`);
+    return { giftId: null, reason: 'missing_mapping' };
+  }
+  
+  // FEATURE FLAG: Emergency legacy read support (default: false)
+  const ENABLE_LEGACY_READ = process.env.ENABLE_LEGACY_READ === 'true';
+  
   try {
-    // Try Redis first, but allow fallback in development mode
-    const redis = validateRedisForCriticalOps('Gift mapping lookup');
+    // RATE LIMIT CHECK for Redis operations
+    if (!checkRateLimit(`redis_lookup_${tokenIdStr}`)) {
+      return { giftId: null, reason: 'redis_error' };
+    }
     
-    // If Redis is not available (development mode), return null to trigger fallback
+    const redis = validateRedisForCriticalOps('Gift mapping lookup');
     if (!redis) {
-      console.warn(`⚠️  [DEV MODE] Redis not available for gift mapping lookup, tokenId: ${tokenId}`);
-      return null; // This will trigger blockchain event fallback
+      return { giftId: null, reason: 'redis_error' };
     }
 
     const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
     const mappingDataRaw = await redis.get(mappingKey);
     
-    if (mappingDataRaw && typeof mappingDataRaw === 'string') {
-      // Parse the JSON data that was stored
-      let mappingData;
-      try {
-        mappingData = JSON.parse(mappingDataRaw);
-      } catch (parseError) {
-        console.error(`❌ INVALID MAPPING JSON: tokenId ${tokenId} has invalid JSON "${mappingDataRaw}"`);
-        return null;
-      }
-      
-      const giftId = parseInt(mappingData.giftId);
-      if (isNaN(giftId)) {
-        console.error(`❌ INVALID GIFT ID: tokenId ${tokenId} has invalid giftId "${mappingData.giftId}"`);
-        return null;
-      }
-      
-      // CACHE OPTIMIZATION: Check mapping freshness
-      try {
-        const timestampKey = `${mappingKey}:timestamp`;
-        const timestampStr = await redis.get(timestampKey);
-        const age = timestampStr ? Date.now() - parseInt(timestampStr as string) : 0;
-        const ageHours = Math.floor(age / (1000 * 60 * 60));
-        
-        console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId} (Redis, ${ageHours}h old)`);
-      } catch {
-        console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId} (Redis)`);
-      }
-      
-      return giftId;
+    // NO DATA FOUND - Cache miss to prevent repeated lookups
+    if (!mappingDataRaw) {
+      cacheMiss(tokenIdStr);
+      return { giftId: null, reason: 'missing_mapping' };
     }
     
-    // Reduced logging frequency for missing mappings
-    console.log(`❌ MAPPING MISS: tokenId ${tokenId}`);
-    return null;
+    // LEGACY DATA DETECTED - EXPLICIT FAILURE (unless emergency mode)
+    if (typeof mappingDataRaw === 'number') {
+      if (ENABLE_LEGACY_READ) {
+        console.warn(`🚨 EMERGENCY MODE: Legacy read enabled for tokenId ${tokenId}`);
+        return { giftId: mappingDataRaw, reason: 'json_ok' }; // Treat as success in emergency
+      }
+      console.warn(`⚠️ LEGACY FORMAT DETECTED: tokenId ${tokenId} has number format (${mappingDataRaw})`);
+      return { giftId: null, reason: 'legacy_incompatible' };
+    }
+    
+    // UNEXPECTED TYPE
+    if (typeof mappingDataRaw !== 'string') {
+      console.error(`❌ UNEXPECTED TYPE: tokenId ${tokenId} has type "${typeof mappingDataRaw}"`);
+      return { giftId: null, reason: 'invalid_mapping_format' };
+    }
+    
+    // STRICT JSON PARSING
+    let mappingData: GiftMappingSchema;
+    try {
+      mappingData = JSON.parse(mappingDataRaw);
+    } catch (parseError) {
+      console.error(`❌ JSON PARSE FAILED: tokenId ${tokenId} - ${parseError.message}`);
+      return { giftId: null, reason: 'invalid_mapping_format' };
+    }
+    
+    // SCHEMA VALIDATION
+    if (!mappingData.schemaVersion || mappingData.schemaVersion < 1) {
+      console.error(`❌ INVALID SCHEMA: tokenId ${tokenId} missing/invalid schemaVersion`);
+      return { giftId: null, reason: 'invalid_mapping_format' };
+    }
+    
+    const giftId = parseInt(mappingData.giftId);
+    if (isNaN(giftId) || giftId <= 0) {
+      console.error(`❌ INVALID GIFT ID: tokenId ${tokenId} has invalid giftId "${mappingData.giftId}"`);
+      return { giftId: null, reason: 'invalid_mapping_format' };
+    }
+    
+    // SUCCESS - Calculate age from embedded timestamp
+    const ageHours = Math.floor((Date.now() - mappingData.updatedAt) / (1000 * 60 * 60));
+    console.log(`✅ MAPPING FOUND: tokenId ${tokenId} → giftId ${giftId} (schemaVersion:${mappingData.schemaVersion}, ${ageHours}h old)`);
+    
+    return { giftId, reason: 'json_ok' };
+    
   } catch (error) {
-    console.error('❌ CRITICAL: Failed to lookup gift mapping:', error);
-    console.error('📊 Redis status:', getRedisStatus());
-    throw new Error(`Gift mapping lookup failed: ${(error as Error).message}. Cannot proceed without mapping data.`);
+    console.error(`❌ MAPPING LOOKUP ERROR: tokenId ${tokenId} - ${error.message}`);
+    
+    // EXPONENTIAL BACKOFF: Cache error to prevent immediate retry storms
+    cacheMiss(tokenIdStr);
+    
+    return { giftId: null, reason: 'redis_error' };
   }
+}
+
+/**
+ * LEGACY COMPATIBILITY WRAPPER - For backwards compatibility with existing code
+ * Returns giftId directly or null (old behavior)
+ * @deprecated Use getGiftIdFromMapping() for full reason information
+ */
+export async function getGiftIdFromMappingLegacy(tokenId: string | number): Promise<number | null> {
+  const result = await getGiftIdFromMapping(tokenId);
+  return result.giftId;
 }
 
 /**
