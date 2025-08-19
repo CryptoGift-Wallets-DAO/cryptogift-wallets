@@ -114,12 +114,21 @@ export async function getGiftIdFromMapping(tokenId: string | number): Promise<nu
     }
 
     const mappingKey = `${MAPPING_KEY_PREFIX}${tokenIdStr}`;
-    const giftIdStr = await redis.get(mappingKey);
+    const mappingDataRaw = await redis.get(mappingKey);
     
-    if (giftIdStr && typeof giftIdStr === 'string') {
-      const giftId = parseInt(giftIdStr);
+    if (mappingDataRaw && typeof mappingDataRaw === 'string') {
+      // Parse the JSON data that was stored
+      let mappingData;
+      try {
+        mappingData = JSON.parse(mappingDataRaw);
+      } catch (parseError) {
+        console.error(`❌ INVALID MAPPING JSON: tokenId ${tokenId} has invalid JSON "${mappingDataRaw}"`);
+        return null;
+      }
+      
+      const giftId = parseInt(mappingData.giftId);
       if (isNaN(giftId)) {
-        console.error(`❌ INVALID GIFT ID: tokenId ${tokenId} has invalid giftId "${giftIdStr}"`);
+        console.error(`❌ INVALID GIFT ID: tokenId ${tokenId} has invalid giftId "${mappingData.giftId}"`);
         return null;
       }
       
