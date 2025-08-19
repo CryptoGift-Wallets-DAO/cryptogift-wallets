@@ -9,6 +9,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Educational Masterclass
+const EducationalMasterclass = dynamic(
+  () => import('./EducationalMasterclass'),
+  { ssr: false }
+);
 
 interface PreClaimFlowProps {
   tokenId: string;
@@ -74,6 +81,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     contractAddress: string;
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showEducationalModule, setShowEducationalModule] = useState(false);
 
   // Generate salt on mount
   useEffect(() => {
@@ -328,24 +336,42 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
                 <p>Tiempo estimado: {getTotalEducationTime()} minutos</p>
               </div>
               
-              {/* EDUCATION BYPASS BUTTON - Como pidió el usuario */}
+              {/* EDUCATION MODULE BUTTON */}
               <div className="space-y-3">
                 <button
-                  onClick={handleEducationBypass}
-                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  onClick={() => setShowEducationalModule(true)}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:scale-105 transition-all font-bold shadow-lg"
+                  style={{
+                    animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                  }}
                 >
-                  🚀 PRESIONA AQUÍ
-                  <div className="text-sm font-normal mt-1">
-                    Simular educación completada y activar Gate
+                  <div className="text-2xl mb-1">🎓 INICIAR MÓDULO EDUCATIVO</div>
+                  <div className="text-sm font-normal">
+                    Proyecto CryptoGift - 7 minutos
                   </div>
                 </button>
                 
-                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                  <div className="text-xs text-purple-700 dark:text-purple-300">
-                    <p className="font-medium mb-1">🔧 Bypass Mode (Testing):</p>
-                    <p>Este botón simula que completaste la educación y genera una firma EIP-712 para el SimpleApprovalGate contract en 0x3FEb...eD6B</p>
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                  <div className="text-sm text-purple-700 dark:text-purple-300">
+                    <p className="font-bold mb-2">📚 Módulo Requerido:</p>
+                    <div className="space-y-1">
+                      <p>✨ Proyecto CryptoGift - Introducción completa</p>
+                      <p>⏱️ Duración: 7 minutos interactivos</p>
+                      <p>🎯 Aprenderás: Qué es, cómo funciona y por qué es revolucionario</p>
+                      <p>🎁 Al completar: Desbloquearás tu regalo</p>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Dev bypass button (hidden in production) */}
+                {process.env.NODE_ENV === 'development' && (
+                  <button
+                    onClick={handleEducationBypass}
+                    className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    [DEV] Bypass Education
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -609,6 +635,20 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           ]
         }}
       />
+      
+      {/* Educational Masterclass Module */}
+      {showEducationalModule && validationState.sessionToken && (
+        <EducationalMasterclass
+          tokenId={tokenId}
+          sessionToken={validationState.sessionToken}
+          onComplete={(gateData) => {
+            setShowEducationalModule(false);
+            // Proceed with claim after education is complete
+            onValidationSuccess(validationState.sessionToken!, false, gateData);
+          }}
+          onClose={() => setShowEducationalModule(false)}
+        />
+      )}
     </div>
   );
 };
