@@ -449,6 +449,8 @@ export default function ClaimGiftPage() {
               sessionToken={educationSession.sessionToken}
               tokenId={tokenId as string}
               onComplete={handleModuleComplete}
+              giftInfo={giftInfo}
+              nftMetadata={nftMetadata}
               className="mx-auto"
             />
           )}

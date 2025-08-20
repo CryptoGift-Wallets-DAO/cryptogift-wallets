@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useNotifications } from '../ui/NotificationSystem';
+import { ConnectButton, useActiveAccount } from 'thirdweb/react';
+import { client } from '../../app/client';
+import { useAuth } from '../../hooks/useAuth';
 
 interface EducationModuleProps {
   moduleId: number;
@@ -10,6 +13,8 @@ interface EducationModuleProps {
   tokenId: string;
   onComplete: () => void;
   className?: string;
+  giftInfo?: any; // Para poder acceder a la información del regalo
+  nftMetadata?: any; // Para mostrar la información del NFT
 }
 
 interface ModuleContent {
@@ -184,10 +189,14 @@ export const EducationModule: React.FC<EducationModuleProps> = ({
   sessionToken,
   tokenId,
   onComplete,
-  className = ''
+  className = '',
+  giftInfo,
+  nftMetadata
 }) => {
   const router = useRouter();
   const { addNotification } = useNotifications();
+  const account = useActiveAccount();
+  const auth = useAuth();
   
   const [currentSection, setCurrentSection] = useState(0);
   const [sectionProgress, setSectionProgress] = useState<Record<string, boolean>>({});
@@ -196,6 +205,9 @@ export const EducationModule: React.FC<EducationModuleProps> = ({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [showExplanations, setShowExplanations] = useState(false);
+  const [isProcessingClaim, setIsProcessingClaim] = useState(false);
+  const [educationCompleted, setEducationCompleted] = useState(false);
+  const [waitingForWallet, setWaitingForWallet] = useState(false);
 
   const module = MODULE_DATABASE[moduleId];
   
@@ -260,6 +272,8 @@ export const EducationModule: React.FC<EducationModuleProps> = ({
 
     if (score >= module.passingScore) {
       // Module completed successfully
+      setEducationCompleted(true);
+      
       addNotification({
         type: 'success',
         title: '🎉 ¡Módulo Completado!',
@@ -283,10 +297,10 @@ export const EducationModule: React.FC<EducationModuleProps> = ({
         console.error('Failed to record module completion:', error);
       }
 
-      // Navigate to next module or claim
-      setTimeout(() => {
-        onComplete();
-      }, 2000);
+      // NO navegamos automáticamente - ahora el usuario debe conectar wallet y reclamar
+      // setTimeout(() => {
+      //   onComplete();
+      // }, 2000);
     } else {
       // Failed - need to retry
       addNotification({
@@ -303,7 +317,111 @@ export const EducationModule: React.FC<EducationModuleProps> = ({
     setQuizSubmitted(false);
     setQuizScore(0);
     setShowExplanations(false);
+    setEducationCompleted(false);
   };
+
+  // Handle claim with wallet connection - EJECUTA TODO EL PROCESO EN ESTA PÁGINA
+  const handleCompleteEducationAndClaim = async () => {
+    // Esta función se llama SOLO cuando el wallet ya está conectado
+    // El botón maneja la conexión primero si es necesario
+    
+    if (!account) {
+      // Esto no debería pasar porque el botón maneja la conexión primero
+      console.error('No account found when trying to claim');
+      return;
+    }
+
+    setIsProcessingClaim(true);
+
+    try {
+      // PASO 1: Solicitar aprobación educativa con EIP-712
+      console.log('🎓 PASO 1: Solicitando aprobación educativa con wallet conectada...');
+      addNotification({
+        type: 'info',
+        title: '📝 Generando firma EIP-712',
+        message: 'Confirmando que completaste los requisitos educativos...',
+        duration: 3000
+      });
+
+      const approvalResponse = await fetch('/api/education/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokenId,
+          sessionToken,
+          claimerAddress: account.address
+        })
+      });
+
+      const approvalData = await approvalResponse.json();
+
+      if (!approvalData.success || !approvalData.educationGateData) {
+        throw new Error(approvalData.error || 'No se pudo obtener la aprobación educativa');
+      }
+
+      console.log('✅ PASO 1 COMPLETADO: EIP-712 signature obtenida:', approvalData.educationGateData);
+      
+      // PASO 2: Proceder con el claim usando la firma EIP-712
+      console.log('🎁 PASO 2: Procesando reclamo del NFT con educational gate data...');
+      addNotification({
+        type: 'info',
+        title: '🎁 Reclamando tu regalo',
+        message: 'Transfiriendo el NFT a tu wallet...',
+        duration: 3000
+      });
+
+      // Llamar al endpoint de claim con la firma educativa
+      const claimResponse = await fetch('/api/claim-nft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokenId,
+          sessionToken,
+          educationGateData: approvalData.educationGateData,
+          claimerAddress: account.address
+        })
+      });
+
+      const claimData = await claimResponse.json();
+
+      if (claimData.success) {
+        console.log('✅ PASO 2 COMPLETADO: NFT reclamado exitosamente');
+        addNotification({
+          type: 'success',
+          title: '🎉 ¡Regalo Reclamado!',
+          message: 'El NFT ha sido transferido exitosamente a tu wallet',
+          duration: 5000
+        });
+        
+        // Esperar un momento y luego llamar onComplete para actualizar la UI
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      } else {
+        throw new Error(claimData.error || 'Error al reclamar el NFT');
+      }
+    } catch (error) {
+      console.error('❌ Error en el proceso de reclamo:', error);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Error al procesar la solicitud',
+        duration: 5000
+      });
+    } finally {
+      setIsProcessingClaim(false);
+    }
+  };
+
+  // Efecto para detectar cuando se conecta la wallet después de hacer clic en el botón
+  useEffect(() => {
+    // SOLO procesar si estábamos esperando una wallet
+    if (waitingForWallet && account && educationCompleted && !isProcessingClaim) {
+      console.log('🔗 Wallet conectada después de completar educación, procesando claim automáticamente...');
+      setWaitingForWallet(false);
+      handleCompleteEducationAndClaim();
+    }
+  }, [account, waitingForWallet]); // Se ejecuta cuando cambia el account Y estábamos esperando
 
   // Progress calculation
   const totalSteps = module.sections.length + 1; // +1 for quiz
@@ -526,6 +644,100 @@ export const EducationModule: React.FC<EducationModuleProps> = ({
                     >
                       Intentar Nuevamente
                     </button>
+                  )}
+
+                  {/* NUEVO: Botón para completar educación y reclamar cuando aprueba */}
+                  {educationCompleted && quizScore >= module.passingScore && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <div className="flex items-start">
+                          <span className="text-2xl mr-3 flex-shrink-0">🎯</span>
+                          <div>
+                            <h4 className="font-bold text-purple-800 dark:text-purple-300 mb-1">
+                              ¡Felicidades! 🎉
+                            </h4>
+                            <p className="text-sm text-purple-700 dark:text-purple-400">
+                              Tu puntuación: <span className="font-bold">{quizAnswers && Object.keys(quizAnswers).filter(qId => {
+                                const q = module.quiz.find(question => question.id === qId);
+                                return q && quizAnswers[qId] === q.correctAnswer;
+                              }).length}/{module.quiz.length}</span> respuestas correctas
+                            </p>
+                            <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
+                              Has completado exitosamente los requisitos educativos. 
+                              Ahora puedes reclamar tu regalo.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* UN SOLO BOTÓN QUE MANEJA TODO */}
+                      {!account ? (
+                        // Si NO hay wallet conectada, el botón conecta la wallet
+                        <div onClick={() => setWaitingForWallet(true)}>
+                          <ConnectButton
+                            client={client}
+                            appMetadata={{
+                              name: "CryptoGift Wallets",
+                              url: typeof window !== 'undefined' ? window.location.origin : '',
+                            }}
+                            connectButton={{
+                              label: "🎁 Completar Educación y Reclamar Regalo",
+                              className: "w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                            }}
+                            walletConnect={{
+                              projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "e9e9be7c66f8a4fb50b54b5a6f39a0cf"
+                            }}
+                          />
+                        </div>
+                      ) : isProcessingClaim ? (
+                        // Mientras procesa, muestra el estado de carga
+                        <button
+                          disabled
+                          className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white 
+                                   font-bold rounded-lg opacity-75 cursor-not-allowed"
+                        >
+                          <div className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Procesando reclamo...
+                          </div>
+                        </button>
+                      ) : (
+                        // Si YA hay wallet conectada, el botón procesa el claim
+                        <button
+                          onClick={handleCompleteEducationAndClaim}
+                          className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white 
+                                   font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 
+                                   transition-all duration-200 shadow-lg hover:shadow-xl 
+                                   transform hover:-translate-y-0.5"
+                        >
+                          <span className="flex items-center justify-center">
+                            <span className="mr-2">🎁</span>
+                            Completar Educación y Reclamar Regalo
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Trust indicators */}
+                      <div className="flex justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          100% Seguro
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="text-blue-500">🔒</span>
+                          Blockchain verificado
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="text-purple-500">💎</span>
+                          NFT con valor real
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

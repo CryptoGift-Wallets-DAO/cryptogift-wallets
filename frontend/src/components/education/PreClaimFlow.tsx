@@ -11,6 +11,9 @@ import { NFTImageModal } from '../ui/NFTImageModal';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
+// Import EscrowGiftStatus para el panel izquierdo
+import { EscrowGiftStatus } from '../escrow/EscrowGiftStatus';
+
 // Import LessonModalWrapper - Sistema Unificado Knowledge ↔ Educational
 import { LessonModalWrapper } from './LessonModalWrapper';
 
@@ -101,581 +104,473 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     });
   }, []);
 
-  // Handle password validation
-  const handleValidation = async () => {
-    if (!password || password.length < 6) {
-      addNotification({
-        type: 'error',
-        title: 'Contraseña Inválida',
-        message: 'La contraseña debe tener al menos 6 caracteres',
-        duration: 5000
-      });
+  // Check if password is required
+  useEffect(() => {
+    const checkPasswordRequirement = async () => {
+      try {
+        const response = await fetch(`/api/gift-has-password?tokenId=${tokenId}`);
+        const data = await response.json();
+        
+        if (data.hasPassword && data.requiresEducation) {
+          console.log('🎓 Gift requires education modules:', data.educationModules);
+        }
+      } catch (error) {
+        console.error('Error checking password requirement:', error);
+      }
+    };
+    
+    if (tokenId) {
+      checkPasswordRequirement();
+    }
+  }, [tokenId]);
+
+  // Validate password with backend
+  const handlePasswordValidation = async () => {
+    if (!password) {
+      setValidationState(prev => ({
+        ...prev,
+        error: 'Por favor, ingresa la contraseña del regalo'
+      }));
       return;
     }
 
-    // CRITICAL FIX: Si el gift tiene education requirements, requerir wallet connection
-    // antes de la validación para evitar el error en education/approve
-    if (!account?.address) {
-      addNotification({
-        type: 'error',
-        title: 'Wallet Requerida',
-        message: 'Para gifts con módulos educativos, debes conectar tu wallet antes de validar la contraseña',
-        duration: 8000
-      });
-      return;
-    }
-
-    setValidationState({ ...validationState, isValidating: true, error: undefined });
+    setValidationState(prev => ({
+      ...prev,
+      isValidating: true,
+      error: undefined
+    }));
 
     try {
-      // Get device ID for rate limiting
-      const deviceId = localStorage.getItem('deviceId') || 
-        `device_${Math.random().toString(36).substring(7)}`;
-      localStorage.setItem('deviceId', deviceId);
-
-      // AUDIT: Pre-transmission logging
-      const requestPayload = {
+      // Include claimer address in the validation request
+      const validationPayload = {
         tokenId,
         password,
         salt,
-        deviceId,
-        claimer: account?.address || null // Send null if not connected, API will handle
+        claimerAddress: account?.address || '0x0000000000000000000000000000000000000000'
       };
-      
-      console.log('🚀 FRONTEND PRE-TRANSMISSION:', {
-        tokenId,
-        passwordLength: password.length,
-        // SECURITY C1 FIX: Removed password fragments from logs
-        salt: salt,
-        saltType: typeof salt,
-        saltLength: salt.length,
-        deviceId,
-        claimer: requestPayload.claimer,
-        claimerConnected: !!account?.address,
-        timestamp: new Date().toISOString()
-      });
+
+      console.log('🔐 Validating password for token:', tokenId);
 
       const response = await fetch('/api/pre-claim/validate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestPayload)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validationPayload)
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        // Handle rate limiting
-        if (response.status === 429) {
-          setValidationState({
-            ...validationState,
-            isValidating: false,
-            error: 'Demasiados intentos. Por favor espera un momento.',
-            remainingAttempts: data.remainingAttempts
-          });
-          
-          addNotification({
-            type: 'error',
-            title: '⏱️ Límite de Intentos',
-            message: `Por favor espera 1 minuto antes de intentar nuevamente. Intentos restantes: ${data.remainingAttempts || 0}`,
-            duration: 10000
-          });
-          return;
-        }
-
-        throw new Error(data.error || 'Validation failed');
-      }
+      console.log('📊 Password validation response:', {
+        valid: data.valid,
+        requiresEducation: data.requiresEducation,
+        hasEducationGateData: !!data.educationGateData
+      });
 
       if (data.valid) {
         setValidationState({
           isValidating: false,
           isValid: true,
-          requiresEducation: data.requiresEducation,
+          requiresEducation: data.requiresEducation || false,
           educationRequirements: data.educationRequirements,
           sessionToken: data.sessionToken
         });
 
-        // Show success notification
-        addNotification({
-          type: 'success',
-          title: '✅ Contraseña Correcta',
-          message: data.requiresEducation 
-            ? 'Ahora necesitas completar algunos módulos educativos'
-            : 'Puedes proceder a reclamar tu regalo',
-          duration: 5000
-        });
-
-        // If NO education required, proceed directly to claim
-        if (!data.requiresEducation) {
-          console.log('✅ No education required, proceeding to claim');
-          // CRITICAL FIX A2: Call onValidationSuccess for no-education flow  
-          // CRITICAL FIX A3: Pass gateData for consistent interface
-          onValidationSuccess(data.sessionToken!, false, '0x'); // No education needed, empty gate data
-        }
-        // If education IS required, show bypass button (no auto-nav)
-        // Let the user see and interact with the bypass button
-
+        // FIX: Pass the educationGateData from validation
+        onValidationSuccess(
+          data.sessionToken,
+          data.requiresEducation || false,
+          data.educationGateData || '0x'
+        );
       } else {
         setValidationState({
-          ...validationState,
           isValidating: false,
-          error: data.error || 'Contraseña incorrecta',
+          isValid: false,
+          requiresEducation: false,
+          error: data.message || 'Contraseña incorrecta',
           remainingAttempts: data.remainingAttempts
         });
-
-        addNotification({
-          type: 'error',
-          title: '❌ Validación Fallida',
-          message: data.error || 'La contraseña no es correcta',
-          duration: 5000
-        });
       }
-
-    } catch (error: any) {
-      console.error('Validation error:', error);
+    } catch (error) {
+      console.error('Error validating password:', error);
       setValidationState({
-        ...validationState,
         isValidating: false,
-        error: error.message || 'Error al validar la contraseña'
-      });
-
-      addNotification({
-        type: 'error',
-        title: '⚠️ Error de Conexión',
-        message: 'No se pudo validar la contraseña. Intenta nuevamente.',
-        duration: 5000
+        isValid: false,
+        requiresEducation: false,
+        error: 'Error al validar la contraseña. Por favor, intenta de nuevo.'
       });
     }
   };
 
-  // Calculate total education time
-  const getTotalEducationTime = () => {
-    if (!validationState.educationRequirements) return 0;
-    return validationState.educationRequirements.reduce((total, req) => total + req.estimatedTime, 0);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
-      case 'expired': return 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30';
-      case 'claimed': return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30';
-      case 'returned': return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50';
-      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/50';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return '🟢';
-      case 'expired': return '⏰';
-      case 'claimed': return '✅';
-      case 'returned': return '↩️';
-      default: return '❓';
-    }
-  };
-
-  const canClaim = giftInfo?.status === 'active' && !giftInfo?.isExpired && giftInfo?.canClaim;
-
-  // Handle education bypass (simulates completing education)
-  const handleEducationBypass = async () => {
-    if (!validationState.sessionToken) return;
-
-    // CRITICAL FIX: Require wallet connection before bypass
-    if (!account?.address) {
-      addNotification({
-        type: 'error',
-        title: 'Wallet Required',
-        message: 'Please connect your wallet before bypassing education requirements',
-        duration: 5000
-      });
+  // Handle educational bypass approval
+  const handleEducationalBypass = useCallback(async () => {
+    if (!validationState.sessionToken) {
+      console.error('No session token available for bypass');
       return;
     }
 
     try {
-      // Call education approval API to generate EIP-712 signature
+      console.log('🎓 Requesting educational bypass approval...');
       const response = await fetch('/api/education/approve', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          tokenId,
           sessionToken: validationState.sessionToken,
-          tokenId: tokenId,
-          claimer: account.address, // ALWAYS use real address, never placeholder
-          giftId: 0 // Will be populated from session data in API
+          claimerAddress: account?.address || '0x0000000000000000000000000000000000000000'
         })
       });
 
-      const approvalData = await response.json();
-      
-      if (approvalData.success) {
+      const data = await response.json();
+
+      if (data.success && data.educationGateData) {
+        console.log('✅ Educational bypass approved, proceeding to claim');
+        onValidationSuccess(
+          validationState.sessionToken,
+          false, // No education needed anymore
+          data.educationGateData // EIP-712 signature
+        );
+      } else {
+        console.error('Failed to get bypass approval:', data.error);
         addNotification({
-          type: 'success',
-          title: '✅ Education Bypass Activado',
-          message: 'Gate contract está listo para procesar tu claim',
+          type: 'error',
+          title: 'Error',
+          message: data.error || 'No se pudo obtener la aprobación educativa',
           duration: 5000
         });
-
-        // Proceed to claim with education bypassed, passing the gateData
-        onValidationSuccess(validationState.sessionToken!, false, approvalData.gateData); // Pass gateData from EIP-712 signature
-      } else {
-        throw new Error(approvalData.error || 'Bypass failed');
       }
-    } catch (error: any) {
-      console.error('Education bypass error:', error);
+    } catch (error) {
+      console.error('Error requesting bypass:', error);
       addNotification({
         type: 'error',
-        title: '⚠️ Bypass Error',
-        message: 'No se pudo activar el bypass. Intenta nuevamente.',
+        title: 'Error',
+        message: 'Error al procesar la solicitud. Por favor, intenta de nuevo.',
         duration: 5000
       });
     }
-  };
+  }, [validationState.sessionToken, tokenId, account, onValidationSuccess, addNotification]);
 
-  if (validationState.isValid) {
-    return (
-      <>
-        <div className={`max-w-md mx-auto ${className}`}>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-6 text-center">
-            <div className="text-4xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">¡Contraseña Correcta!</h2>
-            <p className="text-green-600 dark:text-green-400 mb-4">
-              {validationState.requiresEducation 
-                ? 'Necesitas completar algunos módulos educativos antes de reclamar'
-                : 'Puedes proceder al proceso de claim'}
-            </p>
-            {validationState.requiresEducation && (
-              <>
-                <div className="text-sm text-green-700 dark:text-green-400 space-y-1 mb-6">
-                  <p>Módulos requeridos: {validationState.educationRequirements?.length || 0}</p>
-                  <p>Tiempo estimado: {getTotalEducationTime()} minutos</p>
-                </div>
-                
-                {/* EDUCATION MODULE BUTTON */}
-                <div className="space-y-3">
-                  <button
-                    onClick={handleOpenEducationalModule}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:scale-105 transition-all font-bold shadow-lg"
-                    style={{
-                      animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                    }}
-                  >
-                    <div className="text-2xl mb-1">🎓 INICIAR MÓDULO EDUCATIVO</div>
-                    <div className="text-sm font-normal">
-                      Proyecto CryptoGift - 7 minutos
-                    </div>
-                  </button>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                    <div className="text-sm text-purple-700 dark:text-purple-300">
-                      <p className="font-bold mb-2">📚 Módulo Requerido:</p>
-                      <div className="space-y-1">
-                        <p>✨ Proyecto CryptoGift - Introducción completa</p>
-                        <p>⏱️ Duración: 7 minutos interactivos</p>
-                        <p>🎯 Aprenderás: Qué es, cómo funciona y por qué es revolucionario</p>
-                        <p>🎁 Al completar: Desbloquearás tu regalo</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Dev bypass button (hidden in production) */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <button
-                      onClick={handleEducationBypass}
-                      className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm"
-                    >
-                      [DEV] Bypass Education
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* LESSON MODAL WRAPPER - SISTEMA UNIFICADO usando Sales Masterclass exacta de Knowledge */}
-        <LessonModalWrapper
-          lessonId="sales-masterclass"
-          mode="educational"
-          isOpen={showEducationalModule}
-          tokenId={tokenId}
-          sessionToken={validationState.sessionToken || 'test-session'}
-          onComplete={(gateData) => {
-            console.log('🎉 EDUCATIONAL MODULE COMPLETED:', { gateData });
-            setShowEducationalModule(false);
-            onValidationSuccess(validationState.sessionToken || 'test-session', false, gateData);
-          }}
-          onClose={() => {
-            console.log('❌ EDUCATIONAL MODULE CLOSED');
-            setShowEducationalModule(false);
-          }}
-        />
-      </>
-    );
-  }
+  const isExpired = giftInfo?.isExpired || giftInfo?.status === 'expired';
+  const isClaimed = giftInfo?.status === 'claimed';
+  const cannotClaim = isExpired || isClaimed || giftInfo?.status === 'returned';
 
   return (
-    <div className={`max-w-md mx-auto ${className}`}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        {/* Header - COPIADO 100% EXACTO DE ClaimEscrowInterface */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <Image 
-              src="/cg-wallet-logo.png" 
-              alt="CryptoGift Wallet" 
-              width={32} 
-              height={32}
-              className="rounded"
-            />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Validar Gift Password
-            </h2>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Token ID: {tokenId}
-          </p>
-        </div>
-
-        {/* Gift Status - COPIADO 100% EXACTO DE ClaimEscrowInterface */}
-        {giftInfo && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Gift Status</h3>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(giftInfo.status)}`}>
-                {getStatusIcon(giftInfo.status)} {giftInfo.status.toUpperCase()}
-              </span>
+    <>
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 ${className}`}>
+        {/* Panel Izquierdo - EXACTAMENTE IGUAL AL CLAIM FINAL */}
+        <div>
+          <EscrowGiftStatus
+            tokenId={tokenId}
+            giftInfo={giftInfo}
+            nftMetadata={nftMetadata}
+            isCreator={false}
+            onRefresh={() => {
+              // Refresh logic if needed
+              window.location.reload();
+            }}
+            className="mb-6"
+          />
+          
+          {/* Help Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              🎁 ¡Tu Regalo Te Está Esperando!
+            </h3>
+            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                  <span className="text-white font-bold text-xs">💰</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Valor Real en Blockchain</p>
+                  <p className="text-xs mt-1">Este NFT tiene valor monetario real que podrás intercambiar, vender o conservar como inversión.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                  <span className="text-white font-bold text-xs">🚀</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Tecnología del Futuro</p>
+                  <p className="text-xs mt-1">Únete a millones que ya usan Web3. Este es tu primer paso hacia la economía digital descentralizada.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                  <span className="text-white font-bold text-xs">🎓</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Aprendizaje = Ganancias</p>
+                  <p className="text-xs mt-1">En solo 5 minutos aprenderás a manejar activos digitales valorados en miles de millones globalmente.</p>
+                </div>
+              </div>
             </div>
             
-            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-              <p>Creator: {giftInfo.creator.slice(0, 10)}...{giftInfo.creator.slice(-8)}</p>
-              {giftInfo.timeRemaining && !giftInfo.isExpired && (
-                <p>Time remaining: {giftInfo.timeRemaining}</p>
-              )}
-              {giftInfo.isExpired && (
-                <p className="text-orange-600">⚠️ This gift has expired</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* NFT Preview - COPIADO 100% EXACTO DE ClaimEscrowInterface */}
-        {nftMetadata && (
-          <div className="mb-6 text-center">
-            {nftMetadata.image && (
-              <div 
-                className="mx-auto mb-2 rounded-lg overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                style={{
-                  maxWidth: '128px',
-                  maxHeight: '128px',
-                  width: 'fit-content',
-                  height: 'fit-content'
-                }}
-                onClick={() => {
-                  console.log('🖼️ Opening NFT image modal for validation:', tokenId);
-                  setImageModalData({
-                    isOpen: true,
-                    image: nftMetadata.image!,
-                    name: nftMetadata.name || `Gift NFT #${tokenId}`,
-                    tokenId: tokenId,
-                    contractAddress: giftInfo?.nftContract || ''
-                  });
-                }}
-                title="Click to view full image"
-              >
-                <img 
-                  src={nftMetadata.image} 
-                  alt={nftMetadata.name || 'Gift NFT'}
-                  style={{
-                    maxWidth: '128px',
-                    maxHeight: '128px',
-                    width: 'auto',
-                    height: 'auto',
-                    display: 'block'
-                  }}
-                  className="bg-gray-50 dark:bg-gray-700"
-                />
+            {/* Urgency Banner */}
+            {giftInfo?.timeRemaining && !isExpired && (
+              <div className="mt-4 p-3 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 rounded-lg border border-orange-300 dark:border-orange-700">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-2 animate-pulse">⏰</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
+                      ¡TIEMPO LIMITADO! {giftInfo.timeRemaining}
+                    </p>
+                    <p className="text-xs text-orange-700 dark:text-orange-400 mt-0.5">
+                      No pierdas esta oportunidad única. El regalo expira pronto.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
-            {nftMetadata.name && (
-              <h3 className="font-medium text-gray-900 dark:text-white">{nftMetadata.name}</h3>
-            )}
-            {nftMetadata.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{nftMetadata.description}</p>
-            )}
           </div>
-        )}
+        </div>
 
-        {/* Wallet Connection Section - CRÍTICO para gifts con education requirements */}
-        {!account?.address && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-start">
-              <div className="text-blue-600 dark:text-blue-400 text-lg mr-3">💎</div>
-              <div>
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-2">
-                  Wallet Requerida para Módulos Educativos
-                </h4>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                  Este gift incluye contenido educativo. Conecta tu wallet antes de validar la contraseña.
-                </p>
-                <ConnectAndAuthButton 
-                  onAuthChange={(isAuthenticated, address) => {
-                    console.log('✅ Wallet auth change for education flow:', { isAuthenticated, address: address?.substring(0, 10) + '...' });
-                  }}
-                  className="w-full"
-                  showAuthStatus={true}
-                />
+        {/* Panel Derecho - Validación de Password */}
+        <div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            {/* Header con ganchos de venta */}
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center animate-bounce">
+                  <span className="text-2xl">🎁</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    ¡Felicidades! Has Recibido un Regalo
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Un activo digital de valor real te está esperando
+                  </p>
+                </div>
+              </div>
+              
+              {/* Trust Indicators */}
+              <div className="flex justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  100% Seguro
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-yellow-500">⭐</span>
+                  +50,000 usuarios
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="text-blue-500">🔒</span>
+                  Blockchain verificado
+                </span>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Validation Form - COPIADO DE ClaimEscrowInterface pero adaptado para validación */}
-        {canClaim ? (
-          <div className="space-y-4">
-            {/* Password Input - COPIADO 100% EXACTO */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Gift Password *
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleValidation()}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Enter the gift password"
-                disabled={validationState.isValidating}
-                autoFocus
-              />
+            {/* Sales Hook Banner */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+              <div className="flex items-start">
+                <span className="text-2xl mr-3 flex-shrink-0">💎</span>
+                <div>
+                  <h3 className="font-bold text-purple-800 dark:text-purple-300 mb-1">
+                    ¿Sabías que este regalo puede valer cientos o miles de dólares?
+                  </h3>
+                  <p className="text-sm text-purple-700 dark:text-purple-400">
+                    Los NFTs son activos digitales únicos con valor real de mercado. 
+                    Algunos se han vendido por millones. ¡Y alguien te acaba de regalar uno!
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Advanced Options - COPIADO 100% EXACTO pero oculto por simplicidad inicial */}
-            <div>
-              <button
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                disabled={validationState.isValidating}
-              >
-                <svg
-                  className={`w-4 h-4 mr-2 transform transition-transform ${
-                    showAdvanced ? 'rotate-90' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                Advanced Options
-              </button>
+            {/* Password Validation Form */}
+            {!cannotClaim ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    🔑 Contraseña del Regalo
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && password && !validationState.isValidating) {
+                          handlePasswordValidation();
+                        }
+                      }}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                      placeholder="Ingresa la contraseña que te compartieron"
+                      disabled={validationState.isValidating}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      {showPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    La persona que te envió este regalo te debe haber compartido una contraseña
+                  </p>
+                </div>
 
-              {showAdvanced && (
-                <div className="mt-3 space-y-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                {/* Error Display */}
+                {validationState.error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3">
                     <div className="flex items-start">
-                      <div className="text-blue-600 dark:text-blue-400 text-lg mr-2">ℹ️</div>
-                      <div>
-                        <h4 className="text-sm font-medium text-blue-800 dark:text-blue-400">
-                          Password Validation
-                        </h4>
-                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                          Este paso valida tu contraseña antes del proceso de claim final. No se requiere conexión de wallet en este punto.
-                        </p>
+                      <span className="text-red-500 mr-2">⚠️</span>
+                      <div className="flex-1">
+                        <p className="text-sm text-red-800 dark:text-red-300">{validationState.error}</p>
+                        {validationState.remainingAttempts !== undefined && (
+                          <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+                            Intentos restantes: {validationState.remainingAttempts}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Error Display - COPIADO 100% EXACTO */}
-            {validationState.error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-800 text-sm">{validationState.error}</p>
-                {validationState.remainingAttempts !== undefined && (
-                  <p className="text-xs text-red-500 mt-1">
-                    Intentos restantes: {validationState.remainingAttempts}
-                  </p>
                 )}
+
+                {/* Validate Button */}
+                <button
+                  onClick={handlePasswordValidation}
+                  disabled={!password || validationState.isValidating}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  {validationState.isValidating ? (
+                    <div className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Validando...
+                    </div>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      <span className="mr-2">🎯</span>
+                      Validar Contraseña y Continuar
+                    </span>
+                  )}
+                </button>
+
+                {/* Educational Requirements Notice */}
+                {validationState.requiresEducation && validationState.educationRequirements && (
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                    <div className="flex items-start">
+                      <span className="text-blue-500 text-xl mr-3">🎓</span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                          Requisitos Educativos Detectados
+                        </h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
+                          Este regalo requiere completar algunos módulos educativos cortos para asegurar que puedas manejarlo de forma segura.
+                        </p>
+                        <div className="space-y-1">
+                          {validationState.educationRequirements.map((req) => (
+                            <div key={req.id} className="flex items-center text-xs text-blue-600 dark:text-blue-400">
+                              <span className="mr-2">•</span>
+                              <span>{req.name} (~{req.estimatedTime} min)</span>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={handleEducationalBypass}
+                          className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+                        >
+                          Saltar requisitos educativos (usuario avanzado)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Motivational Messages */}
+                <div className="mt-6 space-y-2">
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-green-500 mr-2">✓</span>
+                    <span>Sin costos ocultos - 100% gratis para ti</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-green-500 mr-2">✓</span>
+                    <span>Proceso seguro verificado por blockchain</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-green-500 mr-2">✓</span>
+                    <span>Recibirás el NFT directamente en tu wallet</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Cannot Claim State */
+              <div className="text-center py-6">
+                <div className="text-4xl mb-4">
+                  {isClaimed ? '✅' : isExpired ? '⏰' : '↩️'}
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  {isClaimed ? 'Regalo ya reclamado' :
+                   isExpired ? 'Regalo expirado' :
+                   'Regalo no disponible'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {isClaimed ? 'Este regalo ya fue reclamado exitosamente.' :
+                   isExpired ? 'El tiempo límite para reclamar este regalo ha expirado.' :
+                   'Este regalo no está disponible para reclamar.'}
+                </p>
               </div>
             )}
-
-            {/* Validate Button - COPIADO 100% EXACTO pero cambiado texto */}
-            <button
-              onClick={handleValidation}
-              disabled={validationState.isValidating || !password}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {validationState.isValidating ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Validating Gift...
-                </div>
-              ) : (
-                'Validar y Continuar'
-              )}
-            </button>
-
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              Valida tu contraseña para continuar al proceso de claim
-            </p>
           </div>
-        ) : (
-          /* Cannot Claim - COPIADO 100% EXACTO */
-          <div className="text-center py-6">
-            <div className="text-4xl mb-4">
-              {giftInfo?.status === 'claimed' ? '✅' : 
-               giftInfo?.status === 'returned' ? '↩️' : 
-               giftInfo?.isExpired ? '⏰' : 
-               giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳' : '⏰'}
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {giftInfo?.status === 'claimed' ? '✅ Gift reclamado' :
-               giftInfo?.status === 'returned' ? '↩️ Gift devuelto al creador' :
-               giftInfo?.isExpired ? '⏰ Gift expirado' :
-               giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳ Gift todavía disponible...' :
-               giftInfo?.status === 'active' ? '🎁 Gift disponible para reclamar' : 
-               '⏰ Gift expirado'}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente por otro usuario.' :
-               giftInfo?.status === 'returned' ? 'El tiempo de reclamación expiró y el gift fue devuelto automáticamente a su creador.' :
-               giftInfo?.isExpired ? 'El tiempo límite para reclamar este gift ha expirado. Ya no puede ser reclamado.' :
-               giftInfo?.status === 'active' && !giftInfo?.canClaim ? 
-                 `Este gift está activo y disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')} a las ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` :
-               !giftInfo ? 'No se pudo cargar la información del gift. Verifica el enlace o intenta más tarde.' :
-               giftInfo?.status === 'pending' ? 'Este gift está siendo procesado. Espera unos momentos e intenta nuevamente.' :
-               giftInfo?.status === 'cancelled' ? 'Este gift fue cancelado por su creador y ya no está disponible.' :
-               giftInfo?.status === 'active' ? `Este gift está disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')} a las ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` :
-               'Este gift ha expirado y ya no puede ser reclamado.'}
-            </p>
-          </div>
-        )}
 
-        {/* Security Notice - COPIADO 100% EXACTO pero adaptado para validación */}
-        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-          <div className="flex">
-            <svg className="w-5 h-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <div className="text-xs text-blue-700 dark:text-blue-300">
-              <p className="font-medium mb-1">Secure Password Validation:</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-600 dark:text-blue-400">
-                <li>Your password is validated securely and never stored</li>
-                <li>This step prepares your gift for the claim process</li>
-                <li>Wallet connection will be required in the next step</li>
-                <li>All validation is done client-side for maximum security</li>
-              </ul>
+          {/* Trust & Security Footer */}
+          <div className="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
+                  🏆 ¿Por qué CryptoGift es diferente?
+                </h4>
+                <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+                  <li>• <strong>Sin complicaciones:</strong> No necesitas experiencia previa en crypto</li>
+                  <li>• <strong>100% Gratis:</strong> El remitente pagó todos los costos por ti</li>
+                  <li>• <strong>Valor real:</strong> NFT con valor de mercado intercambiable</li>
+                  <li>• <strong>Soporte 24/7:</strong> Te ayudamos en cada paso del proceso</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* NFT IMAGE MODAL - COPIADO 100% EXACTO */}
+      {/* Educational Module Modal */}
+      {showEducationalModule && (
+        <LessonModalWrapper
+          isOpen={showEducationalModule}
+          onClose={() => {
+            setShowEducationalModule(false);
+            // After completing education, proceed with claim
+            if (validationState.sessionToken) {
+              handleEducationalBypass();
+            }
+          }}
+          title="Proyecto CryptoGift"
+        >
+          <div className="p-6">
+            <h3 className="text-xl font-bold mb-4">Completa los Módulos Educativos</h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Para reclamar tu regalo de forma segura, necesitas completar algunos módulos educativos cortos.
+            </p>
+            {/* Educational content will be loaded here */}
+          </div>
+        </LessonModalWrapper>
+      )}
+
+      {/* NFT Image Modal */}
       <NFTImageModal
         isOpen={imageModalData.isOpen}
         onClose={() => setImageModalData(prev => ({ ...prev, isOpen: false }))}
@@ -683,16 +578,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         name={imageModalData.name}
         tokenId={imageModalData.tokenId}
         contractAddress={imageModalData.contractAddress}
-        metadata={{
-          description: nftMetadata?.description || "A special NFT gift waiting to be claimed.",
-          attributes: [
-            { trait_type: "Status", value: giftInfo?.status.toUpperCase() || "ACTIVE" },
-            { trait_type: "Network", value: "Base Sepolia" },
-            { trait_type: "Type", value: "CryptoGift NFT" }
-          ]
-        }}
       />
-      
-    </div>
+    </>
   );
 };
