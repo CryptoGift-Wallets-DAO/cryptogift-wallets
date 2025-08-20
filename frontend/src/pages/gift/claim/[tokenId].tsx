@@ -8,6 +8,7 @@ import { ClaimEscrowInterface } from '../../../components/escrow/ClaimEscrowInte
 import { EscrowGiftStatus } from '../../../components/escrow/EscrowGiftStatus';
 import { PreClaimFlow } from '../../../components/education/PreClaimFlow';
 import { EducationModule } from '../../../components/education/EducationModule';
+import { LessonModalWrapperForEducation } from '../../../components/education/LessonModalWrapperForEducation';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
@@ -442,17 +443,19 @@ export default function ClaimGiftPage() {
             />
           )}
           
-          {/* Education State */}
+          {/* Education State - ACTUALIZADO PARA USAR LESSONMODALWRAPPER CON MAPEO CORRECTO */}
           {flowState === ClaimFlowState.EDUCATION && educationSession && educationSession.requiredModules && (
-            <EducationModule
-              moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
-              sessionToken={educationSession.sessionToken}
-              tokenId={tokenId as string}
-              onComplete={handleModuleComplete}
-              giftInfo={giftInfo}
-              nftMetadata={nftMetadata}
-              className="mx-auto"
-            />
+            <div className="max-w-4xl mx-auto">
+              {/* Mostrar el módulo actual usando LessonModalWrapper */}
+              <LessonModalWrapperForEducation
+                moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
+                sessionToken={educationSession.sessionToken}
+                tokenId={tokenId as string}
+                onComplete={handleModuleComplete}
+                giftInfo={giftInfo}
+                nftMetadata={nftMetadata}
+              />
+            </div>
           )}
           
           {/* Claim State - Original UI preserved */}
