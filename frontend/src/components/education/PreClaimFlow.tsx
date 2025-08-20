@@ -519,11 +519,11 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
                   Este gift incluye contenido educativo. Conecta tu wallet antes de validar la contraseña.
                 </p>
                 <ConnectAndAuthButton 
-                  onAuthenticated={() => {
-                    console.log('✅ Wallet connected for education flow');
+                  onAuthChange={(isAuthenticated, address) => {
+                    console.log('✅ Wallet auth change for education flow:', { isAuthenticated, address: address?.substring(0, 10) + '...' });
                   }}
-                  requireAuth={false}
-                  compact={true}
+                  className="w-full"
+                  showAuthStatus={true}
                 />
               </div>
             </div>
