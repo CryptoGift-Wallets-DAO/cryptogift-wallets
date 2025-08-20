@@ -391,12 +391,12 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
             {/* Header con ganchos de venta */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="w-14 h-14 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center animate-bounce shadow-lg">
+                <div className="w-20 h-20 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center animate-bounce shadow-lg">
                   <Image 
                     src="/Apex.PNG" 
                     alt="Apex Logo" 
-                    width={36} 
-                    height={36}
+                    width={50} 
+                    height={50}
                     className="object-contain"
                   />
                 </div>
@@ -432,17 +432,17 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
             {/* Sales Hook Banner */}
             <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
               <div className="flex items-start">
-                <div className="w-10 h-10 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-lg flex items-center justify-center mr-3 flex-shrink-0 shadow-md">
+                <div className="w-14 h-14 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-lg flex items-center justify-center mr-3 flex-shrink-0 shadow-md p-1">
                   <Image 
                     src="/cg-wallet-logo.png" 
                     alt="CG Wallet Logo" 
-                    width={26} 
-                    height={26}
-                    className="object-contain"
+                    width={48} 
+                    height={48}
+                    className="object-contain w-full h-full"
                   />
                 </div>
-                <div>
-                  <h3 className="font-bold text-purple-800 dark:text-purple-300 mb-1">
+                <div className="flex-1">
+                  <h3 className="font-bold text-purple-800 dark:text-purple-300 mb-1 pr-3">
                     ¡Tu regalo es una NFT Wallet con tesoros dentro!
                   </h3>
                   <p className="text-sm text-purple-700 dark:text-purple-400">
