@@ -205,9 +205,19 @@ export default function ClaimGiftPage() {
     }
   };
 
-  // Pre-claim validation handlers
-  const handlePreClaimValidation = async (sessionToken: string, requiresEducation: boolean, gateData?: string) => {
-    console.log('✅ Pre-claim validation successful', { sessionToken, requiresEducation, gateData: gateData?.slice(0, 20) + '...' });
+  // Pre-claim validation handlers - FIXED to accept educationModules directly
+  const handlePreClaimValidation = async (
+    sessionToken: string, 
+    requiresEducation: boolean, 
+    gateData?: string, 
+    educationModules?: number[]
+  ) => {
+    console.log('✅ Pre-claim validation successful', { 
+      sessionToken, 
+      requiresEducation, 
+      gateData: gateData?.slice(0, 20) + '...', 
+      educationModules 
+    });
     
     // Store the education gate data for use in claim transaction
     if (gateData) {
@@ -216,42 +226,63 @@ export default function ClaimGiftPage() {
     }
     
     if (requiresEducation) {
-      // Get required modules from session
-      try {
-        const response = await fetch('/api/education/get-requirements', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionToken })
-        });
+      // CRITICAL FIX: Use educationModules passed directly from validation
+      if (educationModules && educationModules.length > 0) {
+        console.log('✅ Using modules directly from validation:', educationModules);
         
-        if (response.ok) {
-          const data = await response.json();
-          setEducationSession({
-            sessionToken,
-            requiresEducation: true,
-            requiredModules: data.modules || [1, 2], // Default to basic modules
-            currentModuleIndex: 0
+        setEducationSession({
+          sessionToken,
+          requiresEducation: true,
+          requiredModules: educationModules, // Use the exact modules from validation
+          currentModuleIndex: 0
+        });
+        setFlowState(ClaimFlowState.EDUCATION);
+      } else {
+        // Fallback: Try to get from session (but this should not happen with the fix)
+        console.warn('⚠️ No modules passed from validation, attempting session fetch...');
+        
+        try {
+          const response = await fetch('/api/education/get-requirements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionToken })
           });
-          setFlowState(ClaimFlowState.EDUCATION);
-        } else {
-          // Fallback to default modules
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Education requirements from session:', data);
+            
+            const modulesToUse = data.modules && data.modules.length > 0 
+              ? data.modules 
+              : [5]; // Last resort: default to Sales Masterclass
+            
+            setEducationSession({
+              sessionToken,
+              requiresEducation: true,
+              requiredModules: modulesToUse,
+              currentModuleIndex: 0
+            });
+            setFlowState(ClaimFlowState.EDUCATION);
+          } else {
+            console.error('❌ Session fetch failed, using module 5 as final fallback');
+            setEducationSession({
+              sessionToken,
+              requiresEducation: true,
+              requiredModules: [5], // Sales Masterclass as absolute last resort
+              currentModuleIndex: 0
+            });
+            setFlowState(ClaimFlowState.EDUCATION);
+          }
+        } catch (error) {
+          console.error('❌ Error in fallback:', error);
           setEducationSession({
             sessionToken,
             requiresEducation: true,
-            requiredModules: [1, 2], // Wallet basics + Security
+            requiredModules: [5], // Sales Masterclass as absolute last resort
             currentModuleIndex: 0
           });
           setFlowState(ClaimFlowState.EDUCATION);
         }
-      } catch (error) {
-        console.warn('Could not fetch requirements, using defaults:', error);
-        setEducationSession({
-          sessionToken,
-          requiresEducation: true,
-          requiredModules: [1, 2],
-          currentModuleIndex: 0
-        });
-        setFlowState(ClaimFlowState.EDUCATION);
       }
     } else {
       // No education required, proceed directly to claim

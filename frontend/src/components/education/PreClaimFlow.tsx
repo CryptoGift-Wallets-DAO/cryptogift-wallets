@@ -19,7 +19,7 @@ import { LessonModalWrapper } from './LessonModalWrapper';
 
 interface PreClaimFlowProps {
   tokenId: string;
-  onValidationSuccess: (sessionToken: string, requiresEducation: boolean, educationGateData?: string) => void;
+  onValidationSuccess: (sessionToken: string, requiresEducation: boolean, educationGateData?: string, educationModules?: number[]) => void;
   giftInfo?: {
     creator: string;
     nftContract: string;
@@ -49,6 +49,7 @@ interface ValidationState {
   isValid: boolean;
   requiresEducation: boolean;
   educationRequirements?: EducationRequirement[];
+  educationModules?: number[]; // Add modules to state
   sessionToken?: string;
   error?: string;
   remainingAttempts?: number;
@@ -170,14 +171,16 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           isValid: true,
           requiresEducation: data.requiresEducation || false,
           educationRequirements: data.educationRequirements,
-          sessionToken: data.sessionToken
+          sessionToken: data.sessionToken,
+          educationModules: data.educationModules // Store modules for later use
         });
 
-        // FIX: Pass the educationGateData from validation
+        // FIX: Pass the educationGateData and modules from validation
         onValidationSuccess(
           data.sessionToken,
           data.requiresEducation || false,
-          data.educationGateData || '0x'
+          data.educationGateData || '0x',
+          data.educationModules // Pass modules directly
         );
       } else {
         setValidationState({

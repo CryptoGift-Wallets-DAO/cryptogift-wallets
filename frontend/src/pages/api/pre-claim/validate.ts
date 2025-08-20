@@ -47,6 +47,7 @@ interface PreClaimValidationResponse {
   valid: boolean;
   requiresEducation: boolean;
   educationRequirements?: EducationRequirement[];
+  educationModules?: number[]; // CRITICAL FIX: Raw module IDs for direct use
   giftInfo?: {
     creator: string;
     expirationTime: number;
@@ -769,6 +770,9 @@ export default async function handler(
       response.educationRequirements = gateCheck.modules
         .map(moduleId => EDUCATION_MODULES[moduleId])
         .filter(Boolean);
+      
+      // CRITICAL FIX: Also include the raw module IDs for direct use
+      response.educationModules = gateCheck.modules;
     }
     
     return res.status(200).json(response);
