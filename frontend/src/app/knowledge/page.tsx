@@ -10,7 +10,7 @@ import { ProgressRing, ProgressRingGroup } from '../../components/learn/Progress
 import { LearningPath, PathNode } from '../../components/learn/LearningPath';
 import { DailyTipCard } from '../../components/learn/DailyTipCard';
 import { AchievementShowcase, PRESET_ACHIEVEMENTS } from '../../components/learn/AchievementSystem';
-import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles } from 'lucide-react';
+import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles, Plus, Grid3x3, Layers, Settings, PenTool, Wand2, GraduationCap } from 'lucide-react';
 
 interface KnowledgeModule {
   id: string;
@@ -24,12 +24,30 @@ interface KnowledgeModule {
   prerequisite?: string;
 }
 
+// Importar componentes del Creator Studio
+import CreatorWizard from '../../components/creator-studio/CreatorWizard';
+import RuleBuilder from '../../components/creator-studio/RuleBuilder';
+import { getPopularTemplates } from '../../lib/creator-studio/templates';
+
+type TabType = 'learn' | 'create' | 'my-content' | 'analytics';
+
 export default function KnowledgePage() {
+  // NUEVO: Sistema de pestañas para diferentes roles
+  const [activeTab, setActiveTab] = useState<TabType>('learn');
+  const [userRole, setUserRole] = useState<'student' | 'creator' | 'both'>('both'); // Demo: both roles
+  
+  // Estados del modo Learn (estudiante)
   const [selectedCategory, setSelectedCategory] = useState('sales-masterclass');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDailyTip, setShowDailyTip] = useState(false);
   const [userStreak, setUserStreak] = useState(7); // Demo streak
   const [showAchievements, setShowAchievements] = useState(false);
+  
+  // NUEVO: Estados del modo Creator
+  const [showCreatorWizard, setShowCreatorWizard] = useState(false);
+  const [creatorWizardType, setCreatorWizardType] = useState<'lesson' | 'campaign'>('lesson');
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [myCreations, setMyCreations] = useState<any[]>([]);
   
   // Sistema Unificado: LessonModalWrapper states
   const [showLessonModal, setShowLessonModal] = useState(false);
@@ -288,68 +306,128 @@ export default function KnowledgePage() {
     }
   ];
   
+  // Tabs configuration
+  const tabs = [
+    { id: 'learn' as TabType, label: 'Aprender', icon: GraduationCap, visible: userRole !== 'creator' },
+    { id: 'create' as TabType, label: 'Crear', icon: PenTool, visible: userRole !== 'student' },
+    { id: 'my-content' as TabType, label: 'Mi Contenido', icon: Layers, visible: userRole !== 'student' },
+    { id: 'analytics' as TabType, label: 'Analíticas', icon: TrendingUp, visible: userRole !== 'student' }
+  ].filter(tab => tab.visible);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 
                    dark:from-gray-900 dark:via-gray-800 dark:to-purple-900 transition-all duration-500">
       <div className="max-w-7xl mx-auto p-6">
-        {/* Enhanced Header with Stats */}
+        {/* Enhanced Header with Tabs */}
         <motion.div 
-          className="text-center mb-12"
+          className="mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <motion.div 
-              className="w-20 h-20 flex items-center justify-center 
-                        bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30
-                        rounded-2xl shadow-xl border border-purple-200/30 dark:border-purple-700/30 
-                        backdrop-blur-sm transition-all duration-300"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Sparkles className="w-12 h-12 text-purple-600 dark:text-purple-400" />
-            </motion.div>
-            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Knowledge Academy
-            </h1>
-          </div>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-6">
-            Aprende cripto de forma interactiva y divertida. Sistema DO → EXPLAIN → CHECK → REINFORCE.
-            <br />
-            <span className="text-purple-600 dark:text-purple-400 font-medium">
-              🚀 {learningProgress.completedModules} módulos completados • 
-              🔥 {userStreak} días de racha • 
-              ⚡ {learningProgress.points} puntos
-            </span>
-          </p>
-          
-          {/* User Level Badge */}
-          <motion.div 
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-full shadow-lg"
-            whileHover={{ scale: 1.05 }}
-          >
-            <Trophy className="w-5 h-5" />
-            <span className="font-bold">Nivel {learningProgress.level}</span>
-            <div className="w-32 bg-white/20 rounded-full h-2 overflow-hidden">
+          {/* Header con título */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-4 mb-4">
               <motion.div 
-                className="h-full bg-white"
-                initial={{ width: 0 }}
-                animate={{ width: `${learningProgress.nextLevelProgress}%` }}
-                transition={{ duration: 1, delay: 0.5 }}
-              />
+                className="w-20 h-20 flex items-center justify-center 
+                          bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30
+                          rounded-2xl shadow-xl border border-purple-200/30 dark:border-purple-700/30 
+                          backdrop-blur-sm transition-all duration-300"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Sparkles className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+              </motion.div>
+              <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Knowledge Academy
+              </h1>
             </div>
-            <span className="text-sm">{learningProgress.nextLevelProgress}%</span>
-          </motion.div>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-6">
+              {activeTab === 'learn' ? 
+                'Aprende cripto de forma interactiva y divertida. Sistema DO → EXPLAIN → CHECK → REINFORCE.' :
+                activeTab === 'create' ?
+                'Crea lecciones y campañas sin código. Constructor visual con plantillas y wizard.' :
+                activeTab === 'my-content' ?
+                'Gestiona tus lecciones y campañas creadas. Edita, publica y monitorea.' :
+                'Analiza el rendimiento de tu contenido. Métricas, engagement y optimización.'
+              }
+              {activeTab === 'learn' && (
+                <>
+                  <br />
+                  <span className="text-purple-600 dark:text-purple-400 font-medium">
+                    🚀 {learningProgress.completedModules} módulos completados • 
+                    🔥 {userStreak} días de racha • 
+                    ⚡ {learningProgress.points} puntos
+                  </span>
+                </>
+              )}
+            </p>
+            
+            {/* User Level Badge - solo en modo Learn */}
+            {activeTab === 'learn' && (
+              <motion.div 
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-full shadow-lg"
+                whileHover={{ scale: 1.05 }}
+              >
+                <Trophy className="w-5 h-5" />
+                <span className="font-bold">Nivel {learningProgress.level}</span>
+                <div className="w-32 bg-white/20 rounded-full h-2 overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-white"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${learningProgress.nextLevelProgress}%` }}
+                    transition={{ duration: 1, delay: 0.5 }}
+                  />
+                </div>
+                <span className="text-sm">{learningProgress.nextLevelProgress}%</span>
+              </motion.div>
+            )}
+          </div>
+          
+          {/* TABS NAVIGATION */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-2 inline-flex gap-2">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <motion.button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300
+                      ${activeTab === tab.id 
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' 
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                    `}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {tab.label}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
 
-        {/* Progress Overview Section */}
-        <motion.div 
-          className="grid md:grid-cols-4 gap-6 mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        {/* TAB CONTENT */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'learn' ? (
+            <motion.div
+              key="learn-content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Progress Overview Section */}
+              <motion.div 
+                className="grid md:grid-cols-4 gap-6 mb-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
             <ProgressRing 
               progress={(learningProgress.completedModules / learningProgress.totalModules) * 100}
@@ -727,30 +805,371 @@ export default function KnowledgePage() {
           </div>
         </div>
 
-        {/* Progress Tracking */}
-        <div className="mt-8 bg-bg-card rounded-2xl p-6 transition-colors duration-300">
-          <h3 className="text-xl font-bold text-text-primary mb-4 transition-colors duration-300">📈 Tu Progreso de Aprendizaje</h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-green-100 dark:bg-accent-gold/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
-                <span className="text-2xl font-bold text-green-600 dark:text-accent-gold transition-colors duration-300">75%</span>
+              {/* Progress Tracking */}
+              <div className="mt-8 bg-bg-card rounded-2xl p-6 transition-colors duration-300">
+                <h3 className="text-xl font-bold text-text-primary mb-4 transition-colors duration-300">📈 Tu Progreso de Aprendizaje</h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-green-100 dark:bg-accent-gold/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
+                      <span className="text-2xl font-bold text-green-600 dark:text-accent-gold transition-colors duration-300">75%</span>
+                    </div>
+                    <div className="text-sm text-text-secondary transition-colors duration-300">Básico Completado</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-yellow-100 dark:bg-accent-silver/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
+                      <span className="text-2xl font-bold text-yellow-600 dark:text-accent-silver transition-colors duration-300">45%</span>
+                    </div>
+                    <div className="text-sm text-text-secondary transition-colors duration-300">Intermedio en Progreso</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-bg-secondary dark:bg-bg-primary rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
+                      <span className="text-2xl font-bold text-text-muted transition-colors duration-300">0%</span>
+                    </div>
+                    <div className="text-sm text-text-secondary transition-colors duration-300">Avanzado Pendiente</div>
+                  </div>
+                </div>
               </div>
-              <div className="text-sm text-text-secondary transition-colors duration-300">Básico Completado</div>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-yellow-100 dark:bg-accent-silver/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
-                <span className="text-2xl font-bold text-yellow-600 dark:text-accent-silver transition-colors duration-300">45%</span>
+            </motion.div>
+          ) : activeTab === 'create' ? (
+            /* CREATE TAB - CREATOR STUDIO */
+            <motion.div
+              key="create-content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {!showCreatorWizard ? (
+                /* Creator Studio Home */
+                <div className="space-y-8">
+                  {/* Welcome Section */}
+                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-xl">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-3xl font-bold mb-3 flex items-center gap-3">
+                          <Wand2 className="w-8 h-8" />
+                          Creator Studio
+                        </h2>
+                        <p className="text-purple-100 mb-6 max-w-2xl">
+                          Crea lecciones educativas y campañas de engagement sin necesidad de programar. 
+                          Usa nuestro constructor visual con drag & drop, plantillas prediseñadas y wizard paso a paso.
+                        </p>
+                        <div className="flex gap-4">
+                          <motion.button
+                            onClick={() => {
+                              setCreatorWizardType('lesson');
+                              setShowCreatorWizard(true);
+                            }}
+                            className="px-6 py-3 bg-white text-purple-600 font-bold rounded-xl 
+                                     hover:bg-purple-50 transition-all shadow-lg"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <BookOpen className="inline w-5 h-5 mr-2" />
+                            Crear Lección
+                          </motion.button>
+                          <motion.button
+                            onClick={() => {
+                              setCreatorWizardType('campaign');
+                              setShowCreatorWizard(true);
+                            }}
+                            className="px-6 py-3 bg-purple-700 text-white font-bold rounded-xl 
+                                     hover:bg-purple-800 transition-all shadow-lg"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Trophy className="inline w-5 h-5 mr-2" />
+                            Crear Campaña
+                          </motion.button>
+                        </div>
+                      </div>
+                      <div className="hidden lg:block">
+                        <motion.div
+                          className="text-8xl"
+                          animate={{ 
+                            y: [0, -10, 0],
+                            rotate: [-5, 5, -5]
+                          }}
+                          transition={{ 
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          ✨
+                        </motion.div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Templates Section */}
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                      🎨 Plantillas Populares
+                    </h3>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      {getPopularTemplates().slice(0, 6).map((template) => (
+                        <motion.div
+                          key={template.id}
+                          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl 
+                                   transition-all cursor-pointer border-2 border-transparent 
+                                   hover:border-purple-500"
+                          whileHover={{ scale: 1.02 }}
+                          onClick={() => {
+                            setSelectedTemplate(template);
+                            setCreatorWizardType(template.type as 'lesson' | 'campaign');
+                            setShowCreatorWizard(true);
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <span className="text-3xl">{template.icon}</span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium
+                              ${template.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
+                                template.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'}`}>
+                              {template.difficulty === 'easy' ? 'Fácil' :
+                               template.difficulty === 'medium' ? 'Medio' : 'Avanzado'}
+                            </span>
+                          </div>
+                          <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                            {template.name}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            {template.description}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {template.tags.slice(0, 3).map(tag => (
+                              <span key={tag} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 
+                                                       text-purple-700 dark:text-purple-300 
+                                                       rounded text-xs">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Tools */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <Settings className="w-5 h-5 text-purple-500" />
+                        Constructor de Reglas
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Define condiciones de elegibilidad para tus campañas con nuestro constructor visual JsonLogic.
+                      </p>
+                      <RuleBuilder 
+                        showPreview={false}
+                        className="mt-4"
+                        onChange={(rule) => console.log('Rule changed:', rule)}
+                      />
+                    </div>
+                    
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <Grid3x3 className="w-5 h-5 text-purple-500" />
+                        Recursos de Creación
+                      </h3>
+                      <ul className="space-y-3">
+                        <li className="flex items-center gap-3">
+                          <span className="text-2xl">📚</span>
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">Guía de Mejores Prácticas</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Aprende a crear contenido efectivo</div>
+                          </div>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="text-2xl">🎯</span>
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">Ejemplos de Campañas Exitosas</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Inspírate con casos reales</div>
+                          </div>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <span className="text-2xl">🤖</span>
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">AI Content Assistant</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">Genera ideas y contenido con IA</div>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Creator Wizard Active */
+                <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
+                  <CreatorWizard
+                    type={creatorWizardType}
+                    templateData={selectedTemplate}
+                    onComplete={(data) => {
+                      console.log('Content created:', data);
+                      setMyCreations(prev => [...prev, data]);
+                      setShowCreatorWizard(false);
+                      setSelectedTemplate(null);
+                      // TODO: Save to backend
+                    }}
+                    onCancel={() => {
+                      setShowCreatorWizard(false);
+                      setSelectedTemplate(null);
+                    }}
+                    onSaveDraft={(data) => {
+                      console.log('Draft saved:', data);
+                      // TODO: Save draft to backend
+                    }}
+                  />
+                </div>
+              )}
+            </motion.div>
+          ) : activeTab === 'my-content' ? (
+            /* MY CONTENT TAB */
+            <motion.div
+              key="my-content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    📚 Mi Contenido
+                  </h2>
+                  <div className="flex gap-3">
+                    <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg 
+                                     text-gray-700 dark:text-gray-300 hover:bg-gray-200 
+                                     dark:hover:bg-gray-700 transition-colors">
+                      Filtrar
+                    </button>
+                    <button className="px-4 py-2 bg-purple-600 text-white rounded-lg 
+                                     hover:bg-purple-700 transition-colors font-medium">
+                      <Plus className="inline w-5 h-5 mr-2" />
+                      Nuevo
+                    </button>
+                  </div>
+                </div>
+                
+                {myCreations.length === 0 ? (
+                  <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl">
+                    <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      No tienes contenido creado aún
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                      Empieza creando tu primera lección o campaña
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('create')}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 
+                               text-white font-bold rounded-xl hover:shadow-lg transition-all"
+                    >
+                      Ir a Creator Studio
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {myCreations.map((content, index) => (
+                      <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                          {content.metadata?.title || 'Sin título'}
+                        </h4>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          {content.metadata?.description || 'Sin descripción'}
+                        </p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">
+                            Creado hace {index + 1} días
+                          </span>
+                          <div className="flex gap-2">
+                            <button className="px-3 py-1 text-sm bg-blue-100 text-blue-700 
+                                             rounded hover:bg-blue-200 transition-colors">
+                              Editar
+                            </button>
+                            <button className="px-3 py-1 text-sm bg-green-100 text-green-700 
+                                             rounded hover:bg-green-200 transition-colors">
+                              Publicar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="text-sm text-text-secondary transition-colors duration-300">Intermedio en Progreso</div>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-bg-secondary dark:bg-bg-primary rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
-                <span className="text-2xl font-bold text-text-muted transition-colors duration-300">0%</span>
+            </motion.div>
+          ) : (
+            /* ANALYTICS TAB */
+            <motion.div
+              key="analytics-content"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="space-y-6">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+                  📊 Analíticas de Contenido
+                </h2>
+                
+                {/* Metrics Overview */}
+                <div className="grid md:grid-cols-4 gap-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <Users className="w-8 h-8 text-blue-500" />
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">0</span>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">Estudiantes Totales</p>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <TrendingUp className="w-8 h-8 text-green-500" />
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">0%</span>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">Tasa de Finalización</p>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <Star className="w-8 h-8 text-yellow-500" />
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">--</span>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">Calificación Promedio</p>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <Clock className="w-8 h-8 text-purple-500" />
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">0h</span>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">Tiempo Total Visto</p>
+                  </div>
+                </div>
+                
+                {/* Empty State */}
+                <div className="bg-white dark:bg-gray-800 rounded-3xl p-12 text-center">
+                  <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    No hay datos de analíticas aún
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                    Las métricas aparecerán aquí cuando publiques contenido y los estudiantes comiencen a interactuar
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('create')}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 
+                             text-white font-bold rounded-xl hover:shadow-lg transition-all"
+                  >
+                    Crear Contenido
+                  </button>
+                </div>
               </div>
-              <div className="text-sm text-text-secondary transition-colors duration-300">Avanzado Pendiente</div>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* LESSON MODAL WRAPPER - SISTEMA UNIFICADO */}
