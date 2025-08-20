@@ -11,6 +11,58 @@ import { NFTImageModal } from '../ui/NFTImageModal';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
+// Confetti function - misma que se usa en LessonModalWrapper
+function triggerConfetti(options?: any) {
+  const duration = 3000;
+  const animationEnd = Date.now() + duration;
+
+  function randomInRange(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  const interval = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+
+    if (timeLeft <= 0) {
+      return clearInterval(interval);
+    }
+
+    const particleCount = 50 * (timeLeft / duration);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const confettiEl = document.createElement('div');
+      confettiEl.style.position = 'fixed';
+      confettiEl.style.width = '10px';
+      confettiEl.style.height = '10px';
+      confettiEl.style.backgroundColor = ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1'][Math.floor(Math.random() * 5)];
+      confettiEl.style.left = Math.random() * 100 + '%';
+      confettiEl.style.top = '-10px';
+      confettiEl.style.opacity = '1';
+      confettiEl.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiEl.style.zIndex = '10000';
+      confettiEl.className = 'confetti-particle';
+      
+      document.body.appendChild(confettiEl);
+      
+      confettiEl.animate([
+        { 
+          transform: `translateY(0) rotate(0deg)`,
+          opacity: 1 
+        },
+        { 
+          transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`,
+          opacity: 0
+        }
+      ], {
+        duration: randomInRange(2000, 4000),
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      }).onfinish = () => confettiEl.remove();
+    }
+  }, 250);
+  
+  console.log('🎉 CELEBRATION CONFETTI:', options);
+}
+
 // Import EscrowGiftStatus para el panel izquierdo
 import { EscrowGiftStatus } from '../escrow/EscrowGiftStatus';
 
@@ -90,7 +142,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     setShowEducationalModule(true);
   }, []);
 
-  // Generate salt on mount
+  // Generate salt on mount and trigger confetti
   useEffect(() => {
     const newSalt = generateSalt();
     setSalt(newSalt);
@@ -102,6 +154,14 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       saltLength: newSalt.length,
       saltStartsWith0x: newSalt.startsWith('0x'),
       timestamp: new Date().toISOString()
+    });
+    
+    // Trigger confetti when component mounts (user lands on claim page)
+    triggerConfetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#FFA500', '#FF6347']
     });
   }, []);
 
@@ -331,8 +391,14 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
             {/* Header con ganchos de venta */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center animate-bounce">
-                  <span className="text-2xl">🎁</span>
+                <div className="w-14 h-14 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center animate-bounce shadow-lg">
+                  <Image 
+                    src="/Apex.PNG" 
+                    alt="Apex Logo" 
+                    width={36} 
+                    height={36}
+                    className="object-contain"
+                  />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -366,14 +432,23 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
             {/* Sales Hook Banner */}
             <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
               <div className="flex items-start">
-                <span className="text-2xl mr-3 flex-shrink-0">💎</span>
+                <div className="w-10 h-10 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-lg flex items-center justify-center mr-3 flex-shrink-0 shadow-md">
+                  <Image 
+                    src="/cg-wallet-logo.png" 
+                    alt="CG Wallet Logo" 
+                    width={26} 
+                    height={26}
+                    className="object-contain"
+                  />
+                </div>
                 <div>
                   <h3 className="font-bold text-purple-800 dark:text-purple-300 mb-1">
-                    ¿Sabías que este regalo puede valer cientos o miles de dólares?
+                    ¡Tu regalo es una NFT Wallet con tesoros dentro!
                   </h3>
                   <p className="text-sm text-purple-700 dark:text-purple-400">
-                    Los NFTs son activos digitales únicos con valor real de mercado. 
-                    Algunos se han vendido por millones. ¡Y alguien te acaba de regalar uno!
+                    No es solo un NFT común - es una billetera digital inteligente que puede contener 
+                    criptomonedas, tokens y otros activos valiosos que el creador ha guardado especialmente para ti. 
+                    ¡Descubre los tesoros que te esperan dentro!
                   </p>
                 </div>
               </div>
