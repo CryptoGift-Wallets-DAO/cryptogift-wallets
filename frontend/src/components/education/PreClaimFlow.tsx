@@ -24,7 +24,7 @@ interface PreClaimFlowProps {
     creator: string;
     nftContract: string;
     expirationTime: number;
-    status: 'active' | 'expired' | 'claimed' | 'returned' | 'pending' | 'cancelled';
+    status: 'active' | 'expired' | 'claimed' | 'returned';
     timeRemaining?: string;
     canClaim: boolean;
     isExpired: boolean;
@@ -548,8 +548,10 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       </div>
 
       {/* Educational Module Modal */}
-      {showEducationalModule && (
+      {showEducationalModule && validationState.sessionToken && (
         <LessonModalWrapper
+          lessonId="claim-first-gift"
+          mode="educational"
           isOpen={showEducationalModule}
           onClose={() => {
             setShowEducationalModule(false);
@@ -558,16 +560,16 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
               handleEducationalBypass();
             }
           }}
-          title="Proyecto CryptoGift"
-        >
-          <div className="p-6">
-            <h3 className="text-xl font-bold mb-4">Completa los Módulos Educativos</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Para reclamar tu regalo de forma segura, necesitas completar algunos módulos educativos cortos.
-            </p>
-            {/* Educational content will be loaded here */}
-          </div>
-        </LessonModalWrapper>
+          tokenId={tokenId}
+          sessionToken={validationState.sessionToken}
+          onComplete={(gateData) => {
+            console.log('Education completed with gate data:', gateData);
+            setShowEducationalModule(false);
+            if (validationState.sessionToken) {
+              handleEducationalBypass();
+            }
+          }}
+        />
       )}
 
       {/* NFT Image Modal */}
