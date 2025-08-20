@@ -824,7 +824,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         marginLeft: '-8.82%'
       }}
     >
-      <div className="sales-masterclass min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
+      <div className={`sales-masterclass ${educationalMode ? 'min-h-full' : 'min-h-screen'} bg-gradient-to-br from-black via-gray-900 to-black text-white`}>
         {/* Header - Hidden in educational mode */}
         {!educationalMode && (
           <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-gold/20">

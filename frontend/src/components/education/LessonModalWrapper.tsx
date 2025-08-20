@@ -318,14 +318,16 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
           {/* Lesson Content */}
           {!showSuccess && (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {lessonId === 'sales-masterclass' ? (
-                <SalesMasterclass
-                  educationalMode={mode === 'educational'}
-                  onEducationComplete={handleLessonComplete}
-                />
+                <div className="h-full">
+                  <SalesMasterclass
+                    educationalMode={mode === 'educational'}
+                    onEducationComplete={handleLessonComplete}
+                  />
+                </div>
               ) : (
-                <div className="flex items-center justify-center py-20">
+                <div className="flex items-center justify-center h-full py-20">
                   <div className="text-center text-white">
                     <div className="text-6xl mb-4">📚</div>
                     <h2 className="text-2xl font-bold mb-2">Lección no encontrada</h2>
