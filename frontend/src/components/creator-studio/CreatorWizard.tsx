@@ -644,10 +644,12 @@ const renderStepComponent = (
 // Construir datos finales
 const buildFinalData = (state: WizardState, type: 'lesson' | 'campaign'): any => {
   // Combinar todos los datos de los pasos
-  const combined = Object.values(state.data).reduce((acc, stepData) => ({
-    ...acc,
-    ...stepData
-  }), {});
+  const combined = Object.values(state.data).reduce((acc, stepData) => {
+    if (stepData && typeof stepData === 'object') {
+      return { ...acc, ...stepData };
+    }
+    return acc;
+  }, {});
   
   return combined;
 };

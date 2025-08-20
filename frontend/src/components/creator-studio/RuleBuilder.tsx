@@ -152,9 +152,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
       return {
         ...group,
-        conditions: group.conditions.map(item =>
-          'operator' in item ? updateGroup(item) : item
-        )
+        conditions: group.conditions.map(item => {
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
+          }
+          return item;
+        })
       };
     };
     
@@ -182,9 +185,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
       return {
         ...group,
-        conditions: group.conditions.map(item =>
-          'operator' in item ? updateGroup(item) : item
-        )
+        conditions: group.conditions.map(item => {
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
+          }
+          return item;
+        })
       };
     };
     
@@ -200,7 +206,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         ...group,
         conditions: group.conditions
           .filter(item => item.id !== itemId)
-          .map(item => 'operator' in item ? updateGroup(item) : item)
+          .map(item => {
+            if (item && typeof item === 'object' && 'operator' in item) {
+              return updateGroup(item as RuleGroup);
+            }
+            return item;
+          })
       };
     };
     
@@ -215,10 +226,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       return {
         ...group,
         conditions: group.conditions.map(item => {
-          if ('operator' in item) {
-            return updateGroup(item);
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
           }
-          if (item.id === conditionId && !item.locked) {
+          const condition = item as RuleCondition;
+          if (condition.id === conditionId && !condition.locked) {
             // Si cambia el campo, actualizar el tipo y operador
             if (updates.field) {
               const fieldDef = availableFields.find(f => f.name === updates.field);
@@ -228,9 +240,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 updates.value = fieldDef.type === 'boolean' ? false : '';
               }
             }
-            return { ...item, ...updates };
+            return { ...condition, ...updates };
           }
-          return item;
+          return condition;
         })
       };
     };
@@ -251,9 +263,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
       return {
         ...group,
-        conditions: group.conditions.map(item =>
-          'operator' in item ? updateGroup(item) : item
-        )
+        conditions: group.conditions.map(item => {
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
+          }
+          return item;
+        })
       };
     };
     
@@ -271,13 +286,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       return {
         ...group,
         conditions: group.conditions.map(item => {
-          if ('operator' in item) {
-            return updateGroup(item);
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
           }
-          if (item.id === itemId) {
-            return { ...item, locked: !item.locked };
+          const condition = item as RuleCondition;
+          if (condition.id === itemId) {
+            return { ...condition, locked: !condition.locked };
           }
-          return item;
+          return condition;
         })
       };
     };
@@ -293,9 +309,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
       return {
         ...group,
-        conditions: group.conditions.map(item =>
-          'operator' in item ? updateGroup(item) : item
-        )
+        conditions: group.conditions.map(item => {
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
+          }
+          return item;
+        })
       };
     };
     
@@ -320,9 +339,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
       return {
         ...group,
-        conditions: group.conditions.map(item =>
-          'operator' in item ? updateGroup(item) : item
-        )
+        conditions: group.conditions.map(item => {
+          if (item && typeof item === 'object' && 'operator' in item) {
+            return updateGroup(item as RuleGroup);
+          }
+          return item;
+        })
       };
     };
     
@@ -336,12 +358,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     }
     
     const conditions = group.conditions.map(item => {
-      if ('operator' in item) {
-        return convertToJsonLogic(item);
+      if (item && typeof item === 'object' && 'operator' in item) {
+        return convertToJsonLogic(item as RuleGroup);
       }
       
       // Condición simple
-      const { field, operator, value } = item;
+      const condition = item as RuleCondition;
+      const { field, operator, value } = condition;
       
       // Manejo especial para operadores negados
       if (operator === '!in') {
@@ -371,15 +394,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     
     const indent = '  '.repeat(depth);
     const parts = group.conditions.map(item => {
-      if ('operator' in item) {
-        return generateHumanReadable(item, depth + 1);
+      if (item && typeof item === 'object' && 'operator' in item) {
+        return generateHumanReadable(item as RuleGroup, depth + 1);
       }
       
-      const field = availableFields.find(f => f.name === item.field);
-      const operator = OPERATORS[item.type]?.find(op => op.value === item.operator);
+      const condition = item as RuleCondition;
+      const field = availableFields.find(f => f.name === condition.field);
+      const operator = OPERATORS[condition.type]?.find(op => op.value === condition.operator);
       
-      return `${indent}${field?.label || item.field} ${operator?.label || item.operator} ${
-        item.type === 'boolean' ? (item.value ? 'verdadero' : 'falso') : item.value
+      return `${indent}${field?.label || condition.field} ${operator?.label || condition.operator} ${
+        condition.type === 'boolean' ? (condition.value ? 'verdadero' : 'falso') : condition.value
       }`;
     });
     
@@ -398,13 +422,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
       
       group.conditions.forEach((item, index) => {
-        if ('operator' in item) {
-          validateGroup(item, `${path}.${index}`);
+        if (item && typeof item === 'object' && 'operator' in item) {
+          validateGroup(item as RuleGroup, `${path}.${index}`);
         } else {
-          if (!item.field) {
+          const condition = item as RuleCondition;
+          if (!condition.field) {
             validationErrors.push(`Condición ${index + 1}: Falta seleccionar campo`);
           }
-          if (item.value === '' || item.value === null || item.value === undefined) {
+          if (condition.value === '' || condition.value === null || condition.value === undefined) {
             validationErrors.push(`Condición ${index + 1}: Falta valor`);
           }
         }
@@ -449,16 +474,19 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     
     const extract = (g: RuleGroup): void => {
       g.conditions.forEach(item => {
-        if ('operator' in item) {
-          extract(item);
-        } else if (!seen.has(item.field)) {
-          seen.add(item.field);
-          const fieldDef = availableFields.find(f => f.name === item.field);
-          variables.push({
-            name: item.field,
-            type: item.type,
-            description: fieldDef?.description || fieldDef?.label || item.field
-          });
+        if (item && typeof item === 'object' && 'operator' in item) {
+          extract(item as RuleGroup);
+        } else {
+          const condition = item as RuleCondition;
+          if (!seen.has(condition.field)) {
+            seen.add(condition.field);
+            const fieldDef = availableFields.find(f => f.name === condition.field);
+            variables.push({
+              name: condition.field,
+              type: condition.type,
+              description: (fieldDef && 'description' in fieldDef ? fieldDef.description : fieldDef?.label) || condition.field
+            });
+          }
         }
       });
     };
@@ -719,9 +747,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             <AnimatePresence>
               <div className="space-y-2">
                 {group.conditions.map((item, index) => (
-                  'operator' in item 
-                    ? renderGroup(item, depth + 1)
-                    : renderCondition(item, group.id, index)
+                  item && typeof item === 'object' && 'operator' in item 
+                    ? renderGroup(item as RuleGroup, depth + 1)
+                    : renderCondition(item as RuleCondition, group.id, index)
                 ))}
               </div>
             </AnimatePresence>

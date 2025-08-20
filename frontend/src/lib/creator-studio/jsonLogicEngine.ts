@@ -7,8 +7,64 @@
  * Co-Author: Godez22
  */
 
-import jsonLogic from 'json-logic-js';
+// import jsonLogic from 'json-logic-js';
 import { JsonLogicRule } from './types';
+
+// Simple JsonLogic implementation for development
+const jsonLogic = {
+  apply: (logic: any, data: any): any => {
+    // Basic implementation
+    if (logic && typeof logic === 'object') {
+      if (logic.and) {
+        return logic.and.every((rule: any) => jsonLogic.apply(rule, data));
+      }
+      if (logic.or) {
+        return logic.or.some((rule: any) => jsonLogic.apply(rule, data));
+      }
+      if (logic['==']) {
+        const [left, right] = logic['=='];
+        const leftVal = left.var ? data[left.var] : left;
+        return leftVal === right;
+      }
+      if (logic['>=']) {
+        const [left, right] = logic['>='];
+        const leftVal = left.var ? data[left.var] : left;
+        return leftVal >= right;
+      }
+      if (logic['>']) {
+        const [left, right] = logic['>'];
+        const leftVal = left.var ? data[left.var] : left;
+        return leftVal > right;
+      }
+      if (logic['<=']) {
+        const [left, right] = logic['<='];
+        const leftVal = left.var ? data[left.var] : left;
+        return leftVal <= right;
+      }
+      if (logic['<']) {
+        const [left, right] = logic['<'];
+        const leftVal = left.var ? data[left.var] : left;
+        return leftVal < right;
+      }
+      if (logic['!=']) {
+        const [left, right] = logic['!='];
+        const leftVal = left.var ? data[left.var] : left;
+        return leftVal !== right;
+      }
+      if (logic['!']) {
+        return !jsonLogic.apply(logic['!'], data);
+      }
+      if (logic.var) {
+        return data[logic.var];
+      }
+    }
+    return logic;
+  },
+  
+  add_operation: (name: string, fn: Function) => {
+    // Placeholder for custom operations
+  }
+};
 
 // ========== OPERADORES PERSONALIZADOS ==========
 

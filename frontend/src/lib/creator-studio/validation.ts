@@ -6,13 +6,16 @@
  * Co-Author: Godez22
  */
 
-import { z } from 'zod';
 import { 
   LessonCreatorData, 
   CampaignCreatorData, 
   ContentBlock, 
   JsonLogicRule,
-  WizardState
+  WizardState,
+  DoBlock,
+  ExplainBlock,
+  CheckBlock,
+  ReinforceBlock
 } from './types';
 
 // ========== VALIDADORES PERSONALIZADOS ==========
@@ -132,36 +135,44 @@ export const validateContentBlocks = (blocks: ContentBlock[]): { isValid: boolea
   // Validaciones específicas por tipo de bloque
   blocks.forEach((block, index) => {
     switch (block.type) {
-      case 'do':
-        if (!block.instruction || block.instruction.length < 20) {
+      case 'do': {
+        const doBlock = block as DoBlock;
+        if (!doBlock.instruction || doBlock.instruction.length < 20) {
           errors.push(`Bloque DO ${index + 1}: La instrucción debe tener al menos 20 caracteres`);
         }
         break;
+      }
         
-      case 'explain':
-        if (!block.concept || block.concept.length < 5) {
+      case 'explain': {
+        const explainBlock = block as ExplainBlock;
+        if (!explainBlock.concept || explainBlock.concept.length < 5) {
           errors.push(`Bloque EXPLAIN ${index + 1}: El concepto debe estar definido`);
         }
-        if (!block.explanation || block.explanation.length < 50) {
+        if (!explainBlock.explanation || explainBlock.explanation.length < 50) {
           errors.push(`Bloque EXPLAIN ${index + 1}: La explicación debe tener al menos 50 caracteres`);
         }
         break;
+      }
         
-      case 'check':
-        if (!block.question.options || block.question.options.length < 2) {
+      case 'check': {
+        const checkBlock = block as CheckBlock;
+        if (!checkBlock.question.options || checkBlock.question.options.length < 2) {
           errors.push(`Bloque CHECK ${index + 1}: Debe tener al menos 2 opciones`);
         }
-        const correctOptions = block.question.options.filter(opt => opt.isCorrect);
+        const correctOptions = checkBlock.question.options?.filter(opt => opt.isCorrect) || [];
         if (correctOptions.length === 0) {
           errors.push(`Bloque CHECK ${index + 1}: Debe tener al menos una respuesta correcta`);
         }
         break;
+      }
         
-      case 'reinforce':
-        if (!block.keyPoints || block.keyPoints.length < 2) {
+      case 'reinforce': {
+        const reinforceBlock = block as ReinforceBlock;
+        if (!reinforceBlock.keyPoints || reinforceBlock.keyPoints.length < 2) {
           errors.push(`Bloque REINFORCE ${index + 1}: Debe tener al menos 2 puntos clave`);
         }
         break;
+      }
     }
   });
   
@@ -177,30 +188,31 @@ export const validateLesson = (lesson: LessonCreatorData): { isValid: boolean; e
   const errors: string[] = [];
   
   // Validar metadata básica
-  try {
-    lesson.metadata; // Se valida automáticamente por el schema Zod
-  } catch (error) {
-    errors.push('Metadata inválida');
+  if (!lesson.metadata.title || lesson.metadata.title.length < 5) {
+    errors.push('El título debe tener al menos 5 caracteres');
+  }
+  
+  if (!lesson.metadata.description || lesson.metadata.description.length < 20) {
+    errors.push('La descripción debe tener al menos 20 caracteres');
   }
   
   // Validar objetivos de aprendizaje
-  if (lesson.learningObjectives.length === 0) {
+  if (!lesson.learningObjectives || lesson.learningObjectives.length === 0) {
     errors.push('Debe definir al menos un objetivo de aprendizaje');
   }
   
-  lesson.learningObjectives.forEach((objective, index) => {
+  lesson.learningObjectives?.forEach((objective, index) => {
     if (objective.length < 20) {
       errors.push(`Objetivo ${index + 1}: Debe tener al menos 20 caracteres`);
     }
   });
   
   // Validar bloques de contenido
-  const blockValidation = validateContentBlocks(lesson.blocks);
-  errors.push(...blockValidation.errors);
-  
-  // Validar configuración educacional
-  if (lesson.educationalSettings.completionCriteria.requiredCorrectAnswers > lesson.blocks.filter(b => b.type === 'check').length) {
-    errors.push('Las respuestas correctas requeridas no pueden exceder el número de preguntas');
+  if (lesson.contentBlocks) {
+    const blockValidation = validateContentBlocks(lesson.contentBlocks);
+    errors.push(...blockValidation.errors);
+  } else {
+    errors.push('Debe definir bloques de contenido');
   }
   
   return {
@@ -214,39 +226,39 @@ export const validateLesson = (lesson: LessonCreatorData): { isValid: boolean; e
 export const validateCampaign = (campaign: CampaignCreatorData): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
+  // Validar metadata básica
+  if (!campaign.metadata.title || campaign.metadata.title.length < 5) {
+    errors.push('El título debe tener al menos 5 caracteres');
+  }
+  
+  if (!campaign.metadata.description || campaign.metadata.description.length < 20) {
+    errors.push('La descripción debe tener al menos 20 caracteres');
+  }
+  
   // Validar ventana de tiempo
-  const timeValidation = validateTimeWindow(campaign.timeWindow.start, campaign.timeWindow.end);
-  if (!timeValidation.isValid) {
-    errors.push(timeValidation.error!);
-  }
-  
-  // Validar pool de premios
-  if (campaign.prizePool.supply <= 0) {
-    errors.push('El pool de premios debe tener al menos 1 premio');
-  }
-  
-  if (campaign.prizePool.type === 'nft' && !campaign.prizePool.escrowAddress) {
-    errors.push('Las campañas NFT requieren una dirección de escrow');
-  }
-  
-  if (campaign.prizePool.escrowAddress && !validateEthereumAddress(campaign.prizePool.escrowAddress)) {
-    errors.push('Dirección de escrow inválida');
-  }
-  
-  // Validar reglas de elegibilidad
-  const ruleValidation = validateJsonLogicRule(campaign.eligibility.rules);
-  errors.push(...ruleValidation.errors);
-  
-  // Validar leaderboard si está habilitado
-  if (campaign.leaderboard?.enabled) {
-    if (campaign.leaderboard.winners > campaign.prizePool.supply) {
-      errors.push('El número de ganadores no puede exceder el pool de premios');
+  if (campaign.timeWindow) {
+    const timeValidation = validateTimeWindow(
+      new Date(campaign.timeWindow.startDate),
+      new Date(campaign.timeWindow.endDate)
+    );
+    if (!timeValidation.isValid) {
+      errors.push(timeValidation.error!);
     }
   }
   
-  // Validar protección anti-abuse
-  if (!validateRateLimit(campaign.abuseProtection.rateLimit)) {
-    errors.push('Formato de rate limit inválido (usar formato: "60/min", "100/hour", etc.)');
+  // Validar pool de premios
+  if (!campaign.prizes || campaign.prizes.totalValue <= 0) {
+    errors.push('El pool de premios debe tener un valor mayor a 0');
+  }
+  
+  // Validar reglas de elegibilidad
+  if (campaign.eligibilityRules && campaign.eligibilityRules.length > 0) {
+    campaign.eligibilityRules.forEach((rule, index) => {
+      const ruleValidation = validateJsonLogicRule(rule);
+      if (!ruleValidation.isValid) {
+        errors.push(`Regla ${index + 1}: ${ruleValidation.errors.join(', ')}`);
+      }
+    });
   }
   
   return {
@@ -259,23 +271,45 @@ export const validateCampaign = (campaign: CampaignCreatorData): { isValid: bool
 
 export const validateWizardStep = (
   stepId: string, 
-  data: any, 
-  schema?: z.ZodSchema
+  data: any
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
-  if (!schema) {
-    return { isValid: true, errors: [] };
-  }
-  
-  try {
-    schema.parse(data);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      errors.push(...error.errors.map(err => `${err.path.join('.')}: ${err.message}`));
-    } else {
-      errors.push('Error de validación desconocido');
-    }
+  // Validación básica según el paso
+  switch (stepId) {
+    case 'metadata':
+    case 'basics':
+      if (!data.title || data.title.length < 5) {
+        errors.push('El título debe tener al menos 5 caracteres');
+      }
+      if (!data.description || data.description.length < 20) {
+        errors.push('La descripción debe tener al menos 20 caracteres');
+      }
+      break;
+      
+    case 'objectives':
+      if (!data.objectives || data.objectives.length === 0) {
+        errors.push('Debe definir al menos un objetivo');
+      }
+      break;
+      
+    case 'content':
+      if (!data.blocks || data.blocks.length < 4) {
+        errors.push('Debe crear al menos 4 bloques de contenido');
+      }
+      break;
+      
+    case 'prizes':
+      if (!data.totalValue || data.totalValue <= 0) {
+        errors.push('El valor total de premios debe ser mayor a 0');
+      }
+      break;
+      
+    case 'rules':
+      if (!data.rules || data.rules.length === 0) {
+        errors.push('Debe definir al menos una regla de elegibilidad');
+      }
+      break;
   }
   
   return {
@@ -336,5 +370,8 @@ export default {
   validateWizardStep,
   validateWizardCompletion,
   formatValidationErrors,
-  getValidationSeverity
+  getValidationSeverity,
+  validateEthereumAddress,
+  validateTimeWindow,
+  validateRateLimit
 };

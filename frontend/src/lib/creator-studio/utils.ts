@@ -280,9 +280,9 @@ export const convertLessonToRegistry = (lesson: LessonCreatorData) => {
     difficulty: lesson.metadata.difficulty,
     category: lesson.metadata.category,
     knowledgePath: `/knowledge/${lesson.metadata.id}`,
-    thumbnailUrl: lesson.knowledgeSettings.thumbnailUrl,
-    educationalValue: lesson.learningObjectives.join('. '),
-    prerequisites: lesson.prerequisites,
+    thumbnailUrl: lesson.knowledgeSettings?.thumbnailUrl || '',
+    educationalValue: lesson.learningObjectives?.join('. ') || '',
+    prerequisites: lesson.prerequisites || [],
     tags: lesson.metadata.tags
   };
 };
@@ -393,6 +393,13 @@ export const getTimeUntil = (targetDate: Date): { days: number; hours: number; m
 };
 
 // ========== ANALYTICS HELPERS ==========
+
+// Declare gtag type for TypeScript
+declare global {
+  interface Window {
+    gtag?: (command: string, ...args: any[]) => void;
+  }
+}
 
 export const trackEvent = (eventName: string, properties: Record<string, any> = {}): void => {
   // Integración con sistema de analytics existente
