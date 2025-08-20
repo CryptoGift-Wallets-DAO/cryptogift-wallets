@@ -1,19 +1,19 @@
 # Variables de Entorno Requeridas - CryptoGift Wallets
 
-## 🔐 **CONFIGURACIÓN ACTUALIZADA (August 18, 2025) - EDUCATION SYSTEM**
+## 🔐 **CONFIGURACIÓN ACTUALIZADA (August 20, 2025) - UNIFIED EDUCATION SYSTEM**
 
 **⚠️ IMPORTANTE**: Este archivo ha sido limpiado de secrets. Ver `.env.example` para valores de ejemplo.
 
-## 🎓 **EDUCATION SYSTEM CONFIGURATION (NUEVO - REQUERIDO)**
+## 🎓 **UNIFIED EDUCATION SYSTEM CONFIGURATION (ACTUALIZADO - REQUERIDO)**
 
-### **Sistema de Pre-Claim Education**
+### **Sistema de Pre-Claim Education Unificado**
 ```bash
-# SimpleApprovalGate Contract (Deployed & Verified)
-NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x3FEb03368cbF0970D4f29561dA200342D788eD6B
+# SimpleApprovalGate Contract (FIXED - NEW DEPLOYED CONTRACT)
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x99cCBE808cf4c01382779755DEf1562905ceb0d2
 
 # Approver Wallet Configuration (CRITICAL - MARK AS SENSITIVE)
 APPROVER_PRIVATE_KEY=your_approver_private_key_here
-APPROVER_ADDRESS=your_approver_wallet_address
+APPROVER_ADDRESS=0x75e32B5BA0817fEF917f21902EC5a84005d00943
 
 # Session & Authentication Management
 JWT_SECRET=your_secure_jwt_secret_key
@@ -25,15 +25,23 @@ EDUCATION_PASSWORD_ATTEMPTS_LIMIT=5    # Attempts per minute
 EDUCATION_SESSION_TTL=3600            # 1 hour in seconds
 EDUCATION_SIGNATURE_TTL=3600          # 1 hour EIP-712 deadline
 
-# WalletConnect Mobile Support
+# WalletConnect Mobile Support (REQUERIDO para mobile education)
 NEXT_PUBLIC_WC_PROJECT_ID=your_walletconnect_project_id
 ```
+
+### **🎓 UNIFIED EDUCATION SYSTEM FEATURES (AUGUST 20, 2025)**
+- ✅ **LessonModalWrapper**: Modal universal para Knowledge Academy Y Educational Requirements
+- ✅ **Lesson Registry**: Automatic detection - nuevas lecciones auto-disponibles
+- ✅ **Zero Duplication**: EXACTAMENTE la misma Sales Masterclass en ambos contextos
+- ✅ **Mobile Compatible**: Complete mobile workflow con wallet integration
+- ✅ **Confetti System**: Enhanced celebration system que funciona en ambos modos
+- ✅ **Error Handling**: Robust error states con Spanish messaging
 
 ### **🔐 SECURITY REQUIREMENTS**
 - **APPROVER_PRIVATE_KEY**: Must be marked as "Sensitive" in Vercel
 - **JWT_SECRET**: Must be unique and marked as "Sensitive" 
 - **Redis credentials**: Required for session management and rate limiting
-- **WalletConnect Project ID**: Required for mobile wallet compatibility
+- **WalletConnect Project ID**: Required for mobile wallet compatibility and education completion
 
 ## 📱 **Mobile UX Features Configuration**
 

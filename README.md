@@ -39,9 +39,18 @@ graph TD
 - **Contratos**: Desplegados en Base Sepolia ✅ **OPERATIVOS** 
 - **Dashboard**: Panel de transparencia con estadísticas en vivo ✅ **FUNCIONAL**
 
-### 🎯 **ESTADO ACTUAL (Agosto 18, 2025):**
+### 🎯 **ESTADO ACTUAL (Agosto 20, 2025):**
 
-#### 🚨 **LATEST: MOBILE CLAIMING CRISIS RESOLVED** ✅
+#### 🎓 **LATEST: UNIFIED EDUCATION SYSTEM + CRITICAL FIXES DEPLOYED** ✅
+- ✅ **UNIFIED KNOWLEDGE ↔ EDUCATIONAL SYSTEM**: Same Sales Masterclass usado en ambos contextos sin duplicación
+- ✅ **LESSON MODAL WRAPPER**: Modal universal con estructura GiftWizard para educación
+- ✅ **AUTOMATIC LESSON REGISTRY**: Nuevas lecciones en Knowledge automáticamente disponibles en Educational Requirements
+- ✅ **CRITICAL EDUCATION BUGS FIXED**: Claimer field, wallet connection timing, silent gateData fallbacks
+- ✅ **CONFETTI CELEBRATION PERFECTED**: Sistema de celebración mejorado que funciona en ambos modos
+- ✅ **MOBILE EDUCATION COMPATIBILITY**: Workflow completo mobile-ready con error handling robusto
+- 🎯 **EDUCATION COMPLETION VERIFIED**: Flow completo de password → education → EIP-712 → claim funcional
+
+#### 🚨 **PREVIOUS: MOBILE CLAIMING CRISIS RESOLVED** ✅
 - ✅ **CRITICAL MOBILE FIX**: "Error de conexión" en mobile claims completamente resuelto
 - ✅ **NFT IMAGE PARITY**: Mobile-claimed NFTs ahora muestran imágenes reales (no placeholders)
 - ✅ **REDIS METADATA SYNC**: Frontend claims ahora actualizan Redis automáticamente
@@ -134,9 +143,14 @@ NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS=0x000000006551c19487814612e58FE06813775758
 NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS=0x2d25602551487c3f3354dd80d76d54383a243358
 
 # Education System - SimpleApprovalGate (REQUERIDO)
-NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x3FEb03368cbF0970D4f29561dA200342D788eD6B
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x99cCBE808cf4c01382779755DEf1562905ceb0d2
 APPROVER_PRIVATE_KEY=your_approver_private_key
-APPROVER_ADDRESS=your_approver_address
+APPROVER_ADDRESS=0x75e32B5BA0817fEF917f21902EC5a84005d00943
+
+# Education System Configuration
+EDUCATION_PASSWORD_ATTEMPTS_LIMIT=5
+EDUCATION_SESSION_TTL=3600
+EDUCATION_SIGNATURE_TTL=3600
 
 # Redis/KV para sesiones y rate limiting (REQUERIDO)
 UPSTASH_REDIS_REST_URL=your_upstash_redis_url

@@ -2,24 +2,163 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🚀 LATEST SESSION UPDATES (Agosto 18, 2025) - EIP-712 EDUCATION SYSTEM DEPLOYED ✅
+## 🚀 LATEST SESSION UPDATES (Agosto 20, 2025) - UNIFIED EDUCATION SYSTEM + CRITICAL FIXES ✅
 
-### 🎓 REVOLUTIONARY PRE-CLAIM EDUCATION SYSTEM IMPLEMENTED
+### 🎯 UNIFIED KNOWLEDGE ↔ EDUCATIONAL REQUIREMENTS SYSTEM DEPLOYED
 
-**MAJOR FEATURE DEPLOYED**: Complete education system with EIP-712 stateless approvals
+**BREAKTHROUGH ACHIEVEMENT**: Sistema unificado donde Knowledge Academy y Educational Requirements usan EXACTAMENTE la misma Sales Masterclass
 
-**SYSTEM OVERVIEW**:
+**NEW ARCHITECTURE IMPLEMENTED**:
+- ✅ **LessonModalWrapper.tsx**: Modal universal con estructura de GiftWizard (fixed inset-0 bg-black/60)
+- ✅ **lessonRegistry.ts**: Sistema automático de registro de lecciones para detección automática  
+- ✅ **EXACTAMENTE** la misma Sales Masterclass en ambos contextos sin modificación
+- ✅ **Celebración confetti** preservada perfectamente y mejorada
+- ✅ **CRITICAL BUG FIXES**: Wallet connection + API field requirements + EIP-712 integration
+
+**EDUCATION SYSTEM FIXES IMPLEMENTED THIS SESSION**:
+
+1. **🔴 CRITICAL FIX #1: Missing claimer field in education/approve API**
+   - **Root Cause**: LessonModalWrapper no enviaba campo 'claimer' requerido
+   - **Impact**: "Missing required fields: sessionToken, tokenId, claimer" errors
+   - **Solution**: Added useActiveAccount hook y validación de claimer field
+   - **Files**: LessonModalWrapper.tsx:127-150
+
+2. **🔴 CRITICAL FIX #2: Wallet connection timing issue in mobile flow**
+   - **Root Cause**: Mobile permitía password validation sin wallet, pero education completion requiere wallet
+   - **Impact**: Education completion fallaba silenciosamente en mobile
+   - **Solution**: Mandatory wallet connection validation in PreClaimFlow antes de password validation
+   - **Files**: PreClaimFlow.tsx:116-126
+
+3. **🔴 CRITICAL FIX #3: Silent fallback to invalid gateData**
+   - **Root Cause**: API failures causaban fallback silencioso a 'gateData: "0x"'
+   - **Impact**: Claim failures con "Education validation required but not completed"
+   - **Solution**: Proper error display instead of silent failure, no fallback to invalid data
+   - **Files**: LessonModalWrapper.tsx:188-191
+
+4. **🔴 CRITICAL FIX #4: UI polish - Modal empty space issue**
+   - **Root Cause**: SalesMasterclass usaba 'min-h-screen' even in modal mode
+   - **Impact**: Empty space at bottom of educational modal
+   - **Solution**: Conditional height logic: 'min-h-full' en modal, 'min-h-screen' standalone
+   - **Files**: SalesMasterclass.tsx conditional height classes
+
+**UNIFIED LESSON SYSTEM ARCHITECTURE**:
+
+```typescript
+// LESSON MODAL WRAPPER - Sistema Universal
+export interface LessonModalWrapperProps {
+  lessonId: string;
+  mode: 'knowledge' | 'educational';
+  isOpen: boolean;
+  onClose: () => void;
+  tokenId?: string;
+  sessionToken?: string;
+  onComplete?: (gateData: string) => void;
+}
+
+// LESSON REGISTRY - Detección Automática
+export const LESSON_REGISTRY: Record<string, LessonDefinition> = {
+  'sales-masterclass': {
+    id: 'sales-masterclass',
+    title: 'Sales Masterclass - De $0 a $100M en 15 minutos',
+    description: 'La presentación definitiva de CryptoGift...',
+    estimatedTime: 15,
+    component: SalesMasterclass // EXACT same component
+  }
+};
+
+// AUTO-INTEGRATION: Knowledge → Educational Requirements
+// New lessons added to Knowledge automatically appear in Educational Requirements selector
+```
+
+**TECHNICAL IMPLEMENTATION HIGHLIGHTS**:
+
+- **Modal Structure**: Uses exact GiftWizard modal architecture with `fixed inset-0 bg-black/60 backdrop-blur-sm`
+- **Education Flow**: PreClaimFlow → Password Validation → Educational Module → EIP-712 Signature → Claim
+- **Wallet Integration**: ConnectAndAuthButton integration with proper interface validation
+- **Error Handling**: Comprehensive error states with user-friendly messaging in Spanish
+- **Confetti System**: Enhanced celebration system that triggers on completion and during transition
+- **Height Management**: Dynamic height classes based on mode (educational vs knowledge)
+
+**MODAL INTEGRATION EXAMPLES**:
+
+```typescript
+// In Knowledge Academy (src/app/knowledge/page.tsx)
+<LessonModalWrapper
+  lessonId="sales-masterclass"
+  mode="knowledge"
+  isOpen={selectedLesson === 'sales-masterclass'}
+  onClose={() => setSelectedLesson(null)}
+/>
+
+// In Educational Requirements (src/components/education/PreClaimFlow.tsx)
+<LessonModalWrapper
+  lessonId="sales-masterclass"
+  mode="educational"
+  isOpen={showEducationalModule}
+  tokenId={tokenId}
+  sessionToken={validationState.sessionToken}
+  onComplete={(gateData) => {
+    setShowEducationalModule(false);
+    onValidationSuccess(validationState.sessionToken, false, gateData);
+  }}
+  onClose={() => setShowEducationalModule(false)}
+/>
+```
+
+**EDUCATION COMPLETION FLOW VERIFICATION**:
+
+1. ✅ **Password Validation**: User enters correct password → validation succeeds
+2. ✅ **Education Detection**: System detects education requirements → shows module button
+3. ✅ **Module Launch**: User clicks "INICIAR MÓDULO EDUCATIVO" → LessonModalWrapper opens
+4. ✅ **Content Display**: Sales Masterclass loads with educational mode styling
+5. ✅ **Completion**: User completes module → EIP-712 signature generated via /api/education/approve
+6. ✅ **Claim Process**: Valid gateData passed to claim → successful claim execution
+
+**SUCCESS METRICS ACHIEVED**:
+- 🎯 **Zero Duplication**: Same Sales Masterclass component used in both contexts
+- 🎯 **100% Automatic**: New lessons in Knowledge auto-available in Educational Requirements
+- 🎯 **Perfect Modal UX**: GiftWizard-quality modal experience for education
+- 🎯 **Robust Error Handling**: All critical education completion errors resolved
+- 🎯 **Mobile Compatible**: Works seamlessly across all devices with proper wallet integration
+
+**EDUCATION SYSTEM OVERVIEW**:
 - Pre-claim password validation with education requirements
-- 5 comprehensive education modules with interactive quizzes
+- Sales Masterclass (15 min) como módulo educativo principal
 - EIP-712 signature-based approvals (stateless, <30k gas)
 - Mapping fallback for emergencies
 - Real-time progress tracking and completion certificates
 
 **CONTRACT DEPLOYMENT SUCCESS**:
-- **SimpleApprovalGate**: `0x3FEb03368cbF0970D4f29561dA200342D788eD6B`
+- **SimpleApprovalGate (FIXED)**: `0x99cCBE808cf4c01382779755DEf1562905ceb0d2`
+- **Previous Contract**: `0x3FEb03368cbF0970D4f29561dA200342D788eD6B` (immutable approver issue)
 - **Network**: Base Sepolia (verified on BaseScan)
-- **Status**: ✅ SOURCE CODE VERIFIED
-- **URL**: https://sepolia.basescan.org/address/0x3feb03368cbf0970d4f29561da200342d788ed6b#code
+- **Status**: ✅ SOURCE CODE VERIFIED + WORKING APPROVER
+- **URL**: https://sepolia.basescan.org/address/0x99cCBE808cf4c01382779755DEf1562905ceb0d2#code
+
+### 🚨 CRITICAL FIXES IMPLEMENTED - EDUCATION COMPLETION ERRORS RESOLVED
+
+**MAJOR BUG FIXES IN THIS SESSION**:
+
+**❌ Root Cause #1: Missing claimer field in education/approve API**
+- LessonModalWrapper was missing required 'claimer' field in API request
+- ✅ FIX: Added useActiveAccount hook and proper claimer validation
+- ✅ RESULT: No more "Missing required fields: sessionToken, tokenId, claimer" errors
+
+**❌ Root Cause #2: Wallet not connected during education completion**
+- Mobile flow allowed password validation without wallet connection
+- Education completion requires wallet for EIP-712 signature generation  
+- ✅ FIX: Added mandatory wallet connection validation in PreClaimFlow
+- ✅ RESULT: Clear messaging "Wallet Requerida para Módulos Educativos"
+
+**❌ Root Cause #3: Silent fallback to invalid gateData causing claim failures**
+- Dangerous fallback to 'gateData: "0x"' on API failures
+- ✅ FIX: Proper error display instead of silent failure
+- ✅ RESULT: Eliminates "Education validation required but not completed" errors
+
+**❌ Root Cause #4: Empty space in modal bottom (UI/UX issue)**
+- SalesMasterclass used 'min-h-screen' even in educational mode
+- ✅ FIX: Conditional height logic: 'min-h-full' in modal, 'min-h-screen' standalone
+- ✅ RESULT: Perfect modal height without empty space at bottom
 
 ### 🔐 EIP-712 STATELESS APPROVAL ARCHITECTURE
 

@@ -2,12 +2,27 @@
 
 Este frontend está construido con Next.js y thirdweb SDK. Consulta la documentación y variables de entorno necesarias en el README original.
 
-## 🚨 CRITICAL UPDATE (Agosto 18, 2025) - EDUCATION SYSTEM + MOBILE FIXES ✅
+## 🚨 CRITICAL UPDATE (Agosto 20, 2025) - UNIFIED EDUCATION SYSTEM + CRITICAL FIXES ✅
 
-### 🎓 REVOLUTIONARY EDUCATION SYSTEM DEPLOYED
+### 🎓 UNIFIED KNOWLEDGE ↔ EDUCATIONAL REQUIREMENTS SYSTEM DEPLOYED
+- ✅ **BREAKTHROUGH**: Same Sales Masterclass usado en Knowledge Academy Y Educational Requirements
+- ✅ **LessonModalWrapper**: Modal universal con estructura GiftWizard para educación perfecta
+- ✅ **Lesson Registry System**: Automatic detection - nuevas lecciones en Knowledge automáticamente disponibles
+- ✅ **Zero Duplication**: EXACTAMENTE la misma lección sin modificación alguna
+- ✅ **Critical Education Bugs Fixed**: Claimer field, wallet connection timing, gateData fallbacks
+- ✅ **Confetti Celebration Enhanced**: Perfect celebration system que funciona en ambos modos
+- ✅ **Mobile Education Compatible**: Complete mobile workflow con error handling robusto
+
+### 🔴 CRITICAL EDUCATION FIXES IMPLEMENTED THIS SESSION
+1. **Missing claimer field**: LessonModalWrapper now sends required claimer field to education/approve API
+2. **Wallet connection timing**: Mobile flow now requires wallet connection before password validation  
+3. **Silent gateData fallbacks**: Proper error display instead of dangerous fallback to '0x'
+4. **Modal height issues**: Conditional height classes fixed empty space at bottom
+
+### PREVIOUS: EIP-712 EDUCATION SYSTEM
 - ✅ **EIP-712 Pre-Claim Education**: Complete education system with stateless approvals
-- ✅ **5 Interactive Modules**: From wallet security to project collaboration
-- ✅ **SimpleApprovalGate Contract**: Deployed and verified on Base Sepolia
+- ✅ **Sales Masterclass Module**: 15-minute interactive presentation
+- ✅ **SimpleApprovalGate Contract**: Deployed and verified on Base Sepolia (0x99cCBE...)
 - ✅ **<30k Gas Verification**: Ultra-efficient signature-based approvals
 - ✅ **Session Management**: Redis-based progress tracking with JWT authentication
 

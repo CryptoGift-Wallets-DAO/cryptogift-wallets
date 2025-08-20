@@ -497,16 +497,18 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       timerRef.current = setTimeout(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0 && currentBlock < SALES_BLOCKS.length - 1) {
-      // FIXED: Remove canProceed dependency for auto-advance
-      // In educational mode, allow auto-advance regardless of interaction
-      console.log('⏰ TIME UP - Auto-advancing to next block:', {
+    } else if (timeLeft === 0) {
+      // ✅ FIX #3: Timer NO auto-avanza, solo oculta el botón
+      // Cuando el timer se agota, simplemente mantener canProceed = false
+      // El usuario debe esperar o hacer algo para proceder manualmente
+      console.log('⏰ TIME UP - Button hidden, waiting for user action:', {
         currentBlock,
-        nextBlock: currentBlock + 1,
-        canProceed,
+        timeLeft: 0,
+        canProceed: false,
         educationalMode
       });
-      handleNextBlock();
+      // No llamamos handleNextBlock() automáticamente
+      setCanProceed(false); // Ocultar botón cuando se acaba el tiempo
     }
 
     return () => {
@@ -686,6 +688,31 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     }
   }, [leadData, metrics, celebrate, handleNextBlock, educationalMode, onEducationComplete]);
 
+  // ✅ FIX #2: ELIMINAR EL PADDING BOTTOM QUE CAUSA EL ESPACIO VACÍO
+  useEffect(() => {
+    if (educationalMode) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'educational-fix-padding';
+      styleElement.textContent = `
+        .educational-mode-wrapper > div {
+          padding-bottom: 0 !important;
+        }
+        .educational-mode-wrapper .NavigationArea {
+          flex: 1 !important;
+        }
+      `;
+      document.head.appendChild(styleElement);
+      
+      return () => {
+        const existingStyle = document.getElementById('educational-fix-padding');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      };
+    }
+  }, [educationalMode]);
+
+
   // Render Block Content
   const renderBlockContent = () => {
     const block = SALES_BLOCKS[currentBlock];
@@ -708,6 +735,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'problem':
         return <ProblemBlock 
@@ -718,6 +746,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'solution':
         return <SolutionBlock
@@ -728,6 +757,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'demo':
         return <DemoBlock 
@@ -741,6 +771,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'comparison':
         return <ComparisonBlock
@@ -751,6 +782,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'cases':
         return <CasesBlock 
@@ -761,6 +793,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'business':
         return <BusinessBlock
@@ -771,6 +804,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'roadmap':
         return <RoadmapBlock
@@ -781,6 +815,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'close':
         return <CloseBlock
@@ -791,6 +826,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           showFeedback={showQuestionFeedback}
           onNext={handleNextBlock}
           canProceed={canProceed}
+          timeLeft={timeLeft}
         />;
       case 'capture':
         return <CaptureBlock 
@@ -824,7 +860,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         marginLeft: '-8.82%'
       }}
     >
-      <div className={`sales-masterclass ${educationalMode ? 'min-h-full' : 'min-h-screen'} bg-gradient-to-br from-black via-gray-900 to-black text-white`}>
+      <div className={`sales-masterclass ${educationalMode ? 'h-full' : 'min-h-screen'} bg-gradient-to-br from-black via-gray-900 to-black text-white`}>
         {/* Header - Hidden in educational mode */}
         {!educationalMode && (
           <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-gold/20">
@@ -876,7 +912,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     )}
 
       {/* Main Content */}
-      <div className={educationalMode ? "pt-10 pb-10 px-3" : "pt-20 pb-10 px-3"}>
+      <div className={educationalMode ? "h-full flex flex-col px-3" : "pt-20 pb-10 px-3"}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentBlock}
@@ -884,9 +920,11 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.5 }}
-            className="max-w-4xl mx-auto"
+            className={`max-w-4xl mx-auto ${educationalMode ? 'flex-1 flex flex-col' : ''}`}
           >
-            {renderBlockContent()}
+            <div className={educationalMode ? 'h-full flex flex-col educational-mode-wrapper' : ''}>
+              {renderBlockContent()}
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -979,6 +1017,91 @@ const QuestionSection: React.FC<{
   );
 };
 
+// ✅ FIX #1: Componente de navegación unificado con espacio fijo
+const NavigationArea: React.FC<{
+  onNext: () => void;
+  canProceed: boolean;
+  timeLeft: number;
+  buttonText?: string;
+  buttonIcon?: React.ReactNode;
+  buttonColor?: string;
+}> = ({ 
+  onNext, 
+  canProceed, 
+  timeLeft, 
+  buttonText = "CONTINUAR", 
+  buttonIcon = <Rocket className="w-6 h-6" />,
+  buttonColor = "from-yellow-500 to-orange-500 text-black"
+}) => (
+  <div className="NavigationArea text-center mt-8 flex-1 flex flex-col justify-center">
+    {canProceed && timeLeft > 0 ? (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <motion.button
+          onClick={onNext}
+          className={`inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r ${buttonColor}
+                     font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
+                     cursor-pointer`}
+          style={{
+            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {buttonIcon}
+          {buttonText}
+          <ArrowRight className="w-6 h-6" />
+        </motion.button>
+        
+        <div className="mt-4 text-gray-400 text-sm">
+          👆 Haz clic para continuar • ⏱️ Tiempo restante: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+        </div>
+      </motion.div>
+    ) : timeLeft === 0 ? (
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="text-yellow-400 text-lg font-medium mb-4">
+          ⏰ Tiempo agotado - Esperando...
+        </div>
+        <div className="text-gray-400 text-sm mb-4">
+          El siguiente bloque está disponible cuando completes esta sección
+        </div>
+        
+        <motion.button
+          onClick={onNext}
+          className={`inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r ${buttonColor}
+                     font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
+                     cursor-pointer`}
+          style={{
+            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {buttonIcon}
+          {buttonText}
+          <ArrowRight className="w-6 h-6" />
+        </motion.button>
+      </motion.div>
+    ) : (
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="text-gray-400 text-lg">
+          ⏳ Procesando respuesta...
+        </div>
+      </motion.div>
+    )}
+  </div>
+);
+
 // Block Components with Questions
 const OpeningBlock: React.FC<{ 
   content: any; 
@@ -988,7 +1111,8 @@ const OpeningBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <motion.div 
       className="text-center mb-8"
@@ -1023,33 +1147,14 @@ const OpeningBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 
-                     text-black font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Rocket className="w-6 h-6" />
-          CONTINUAR
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-        
-        <div className="mt-4 text-gray-400 text-sm">
-          👆 Haz clic para continuar • ⏱️ Auto-avance en 30s
-        </div>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="CONTINUAR"
+      buttonIcon={<Rocket className="w-6 h-6" />}
+      buttonColor="from-yellow-500 to-orange-500 text-black"
+    />
   </div>
 );
 
@@ -1061,7 +1166,8 @@ const ProblemBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12">Las 3 Brechas del Mercado 🚧</h2>
     
@@ -1099,29 +1205,14 @@ const ProblemBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 
-                     text-white font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Shield className="w-6 h-6" />
-          VER SOLUCIÓN
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="VER SOLUCIÓN"
+      buttonIcon={<Shield className="w-6 h-6" />}
+      buttonColor="from-purple-500 to-pink-500 text-white"
+    />
   </div>
 );
 
@@ -1133,7 +1224,8 @@ const SolutionBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-8">NFT-Wallets: La Revolución 🚀</h2>
     
@@ -1210,7 +1302,8 @@ const DemoBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, showQR, giftUrl, claimStatus, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, showQR, giftUrl, claimStatus, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="text-center py-12">
     <h2 className="text-5xl font-bold mb-8">{content.instruction}</h2>
     
@@ -1274,29 +1367,14 @@ const DemoBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 
-                     text-white font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <BarChart3 className="w-6 h-6" />
-          VER COMPARACIÓN
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="VER COMPARACIÓN"
+      buttonIcon={<BarChart3 className="w-6 h-6" />}
+      buttonColor="from-green-500 to-emerald-500 text-white"
+    />
   </div>
 );
 
@@ -1308,7 +1386,8 @@ const ComparisonBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12">{content.title} ⚔️</h2>
     
@@ -1338,29 +1417,14 @@ const ComparisonBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 
-                     text-white font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <TrendingUp className="w-6 h-6" />
-          VER RESULTADOS
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="VER RESULTADOS"
+      buttonIcon={<TrendingUp className="w-6 h-6" />}
+      buttonColor="from-orange-500 to-red-500 text-white"
+    />
   </div>
 );
 
@@ -1372,7 +1436,8 @@ const CasesBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12">Resultados Reales 📊</h2>
     
@@ -1404,29 +1469,14 @@ const CasesBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-500 to-indigo-500 
-                     text-white font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Banknote className="w-6 h-6" />
-          VER MODELO DE NEGOCIO
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="VER MODELO DE NEGOCIO"
+      buttonIcon={<Banknote className="w-6 h-6" />}
+      buttonColor="from-purple-500 to-indigo-500 text-white"
+    />
   </div>
 );
 
@@ -1438,7 +1488,8 @@ const BusinessBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12">{content.title} 💎</h2>
     
@@ -1481,29 +1532,14 @@ const BusinessBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 
-                     text-white font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Globe className="w-6 h-6" />
-          VER ROADMAP
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="VER ROADMAP"
+      buttonIcon={<Globe className="w-6 h-6" />}
+      buttonColor="from-blue-500 to-purple-500 text-white"
+    />
   </div>
 );
 
@@ -1515,7 +1551,8 @@ const RoadmapBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12">El Futuro es Exponencial 🚀</h2>
     
@@ -1544,29 +1581,14 @@ const RoadmapBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 
-                     text-white font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Heart className="w-6 h-6" />
-          MOMENTO INSPIRACIONAL
-          <ArrowRight className="w-6 h-6" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="MOMENTO INSPIRACIONAL"
+      buttonIcon={<Heart className="w-6 h-6" />}
+      buttonColor="from-indigo-500 to-purple-500 text-white"
+    />
   </div>
 );
 
@@ -1578,7 +1600,8 @@ const CloseBlock: React.FC<{
   showFeedback: boolean;
   onNext: () => void;
   canProceed: boolean;
-}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed }) => (
+  timeLeft: number;
+}> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <div className="max-w-4xl mx-auto text-center">
       <motion.h2 
@@ -1630,29 +1653,14 @@ const CloseBlock: React.FC<{
       showFeedback={showFeedback}
     />
 
-    {canProceed && (
-      <motion.div 
-        className="text-center mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <motion.button
-          onClick={onNext}
-          className="inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-yellow-500 to-orange-500 
-                     text-black font-black text-2xl rounded-xl hover:scale-105 transition-all duration-300 shadow-2xl
-                     cursor-pointer"
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Rocket className="w-8 h-8" />
-          ¡QUIERO SER PARTE!
-          <ArrowRight className="w-8 h-8" />
-        </motion.button>
-      </motion.div>
-    )}
+    <NavigationArea
+      onNext={onNext}
+      canProceed={canProceed}
+      timeLeft={timeLeft}
+      buttonText="¡QUIERO SER PARTE!"
+      buttonIcon={<Rocket className="w-8 h-8" />}
+      buttonColor="from-yellow-500 to-orange-500 text-black"
+    />
   </div>
 );
 

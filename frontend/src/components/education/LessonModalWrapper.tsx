@@ -216,7 +216,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         style={{ transform: 'scale(0.92)', transformOrigin: 'center' }}
       >
         <motion.div
-          className="bg-gradient-to-br from-black via-gray-900 to-black rounded-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+          className="bg-gradient-to-br from-black via-gray-900 to-black rounded-2xl max-w-6xl w-full h-screen overflow-hidden flex flex-col shadow-2xl"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
