@@ -294,8 +294,14 @@ export default function ClaimGiftPage() {
     }
   };
 
-  const handleModuleComplete = () => {
+  const handleModuleComplete = (gateData?: string) => {
     if (!educationSession || !educationSession.requiredModules) return;
+    
+    // Store the gate data when received
+    if (gateData) {
+      console.log('🆕 Education gate data received:', gateData.slice(0, 20) + '...');
+      setEducationGateData(gateData);
+    }
     
     const nextIndex = (educationSession.currentModuleIndex || 0) + 1;
     
@@ -307,7 +313,7 @@ export default function ClaimGiftPage() {
       });
     } else {
       // All modules completed, proceed to claim
-      console.log('🎓 All education modules completed!');
+      console.log('🎓 All education modules completed with gate data!');
       setFlowState(ClaimFlowState.CLAIM);
     }
   };
@@ -482,7 +488,7 @@ export default function ClaimGiftPage() {
                 moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
                 sessionToken={educationSession.sessionToken}
                 tokenId={tokenId as string}
-                onComplete={handleModuleComplete}
+                onComplete={(gateData) => handleModuleComplete(gateData)}
                 giftInfo={giftInfo}
                 nftMetadata={nftMetadata}
               />

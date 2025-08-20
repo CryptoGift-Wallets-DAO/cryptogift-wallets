@@ -18,7 +18,7 @@ interface LessonModalWrapperForEducationProps {
   moduleId: number;
   sessionToken: string;
   tokenId: string;
-  onComplete: () => void;
+  onComplete: (gateData?: string) => void; // FIXED: Accept optional gateData
   giftInfo?: any;
   nftMetadata?: any;
 }
@@ -72,7 +72,7 @@ export const LessonModalWrapperForEducation: React.FC<LessonModalWrapperForEduca
         <button
           onClick={() => {
             console.error('Module not mapped, skipping education');
-            onComplete();
+            onComplete('0x'); // Pass empty gate data for error case
           }}
           className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
         >
@@ -142,7 +142,7 @@ export const LessonModalWrapperForEducation: React.FC<LessonModalWrapperForEduca
           onComplete={(gateData) => {
             console.log('✅ Lesson completed with gate data:', gateData);
             setIsModalOpen(false);
-            onComplete();
+            onComplete(gateData); // CRITICAL FIX: Pass gateData to parent
           }}
         />
       </>
@@ -154,7 +154,7 @@ export const LessonModalWrapperForEducation: React.FC<LessonModalWrapperForEduca
         moduleId={moduleId}
         sessionToken={sessionToken}
         tokenId={tokenId}
-        onComplete={onComplete}
+        onComplete={(gateData) => onComplete(gateData)} // Pass gateData through
         giftInfo={giftInfo}
         nftMetadata={nftMetadata}
         className="mx-auto"
