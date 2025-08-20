@@ -1675,6 +1675,7 @@ const CaptureBlock: React.FC<{
   questionsScore: { correct: number; total: number };
   educationalMode?: boolean;
 }> = ({ content, onSubmit, questionsScore, educationalMode = false }) => {
+  const account = useActiveAccount(); // Add account hook here
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [formData, setFormData] = useState({
     availability: '',
@@ -1741,23 +1742,16 @@ const CaptureBlock: React.FC<{
             <p className="text-yellow-400 font-semibold text-lg mb-4">
               🔒 Conecta tu wallet para completar el módulo educativo
             </p>
-            <ConnectButton
-              client={client}
-              appMetadata={{
-                name: "CryptoGift Wallets",
-                url: typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'
-              }}
-              theme="dark"
-              style={{
-                background: 'linear-gradient(to right, rgb(234, 179, 8), rgb(34, 197, 94))',
-                color: 'black',
-                fontWeight: 'bold',
-                fontSize: '1.2rem',
-                padding: '1.25rem 3rem',
-                borderRadius: '0.75rem',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-              }}
-            />
+            <div className="inline-block">
+              <ConnectButton
+                client={client}
+                appMetadata={{
+                  name: "CryptoGift Wallets",
+                  url: typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'
+                }}
+                theme="dark"
+              />
+            </div>
             <p className="text-gray-400 text-sm mt-4">
               Tu wallet es necesaria para generar la firma EIP-712 que valida tu educación
             </p>
