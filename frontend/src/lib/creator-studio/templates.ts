@@ -6,32 +6,36 @@
  * Co-Author: Godez22
  */
 
-import { Template, LessonCreatorData, CampaignCreatorData, JsonLogicRule } from './types';
+import { Template, LessonCreatorData, CampaignCreatorData } from './types';
 
 // ========== PLANTILLAS DE LECCIONES EDUCATIVAS ==========
 
 export const LESSON_TEMPLATES: Template[] = [
   {
     id: 'crypto-basics-template',
+    type: 'lesson',
     name: '🪙 Introducción a Criptomonedas',
     description: 'Plantilla para enseñar conceptos básicos de criptomonedas usando el patrón DO→EXPLAIN→CHECK→REINFORCE',
-    category: 'lesson',
-    type: 'education',
-    estimatedSetupTime: 15,
-    thumbnail: '/images/templates/crypto-basics.png',
-    lessonTemplate: {
+    icon: '🪙',
+    category: 'getting-started',
+    difficulty: 'easy',
+    estimatedTime: 15,
+    popularity: 85,
+    tags: ['cripto', 'blockchain', 'básico', 'finanzas'],
+    data: {
       metadata: {
         id: '',
         title: 'Mis Primeras Criptomonedas',
         description: 'Aprende los fundamentos de las criptomonedas de manera práctica e interactiva',
         tags: ['cripto', 'blockchain', 'básico', 'finanzas'],
-        estimatedTime: 10,
-        difficulty: 'beginner' as const,
-        category: 'getting-started',
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: '',
-        status: 'draft' as const
+        author: '',
+        version: 1,
+        category: 'getting-started',
+        difficulty: 'easy',
+        estimatedTime: 10,
+        language: 'es'
       },
       learningObjectives: [
         'Entender qué es una criptomoneda',
@@ -39,7 +43,7 @@ export const LESSON_TEMPLATES: Template[] = [
         'Comprender el concepto de descentralización'
       ],
       prerequisites: [],
-      blocks: [
+      contentBlocks: [
         {
           type: 'do' as const,
           id: 'do-check-wallet',
@@ -48,8 +52,10 @@ export const LESSON_TEMPLATES: Template[] = [
           instruction: 'Conecta tu wallet y verifica tu balance actual de diferentes criptomonedas',
           interactionType: 'wallet-connect' as const,
           data: {
-            requiredAction: 'connect-wallet',
-            supportedWallets: ['metamask', 'walletconnect']
+            parameters: {
+              requiredAction: 'connect-wallet',
+              supportedWallets: ['metamask', 'walletconnect']
+            }
           }
         },
         {
@@ -59,26 +65,9 @@ export const LESSON_TEMPLATES: Template[] = [
           duration: 120,
           concept: 'Dinero Digital Descentralizado',
           explanation: 'Las criptomonedas son monedas digitales que funcionan en una red descentralizada llamada blockchain. No están controladas por bancos ni gobiernos.',
-          comparison: {
-            before: {
-              title: 'Dinero Tradicional',
-              points: [
-                '🏦 Controlado por bancos centrales',
-                '📄 Requiere intermediarios',
-                '🌍 Limitado por fronteras',
-                '⏰ Horarios bancarios restringidos'
-              ]
-            },
-            after: {
-              title: 'Criptomonedas',
-              points: [
-                '🔗 Red descentralizada',
-                '🤝 Transacciones directas',
-                '🌐 Sin fronteras geográficas',
-                '⚡ Disponible 24/7'
-              ]
-            }
-          }
+          analogies: [
+            'Como el email revolucionó el correo, las criptomonedas revolucionan el dinero'
+          ]
         },
         {
           type: 'check' as const,
@@ -93,59 +82,43 @@ export const LESSON_TEMPLATES: Template[] = [
               { text: 'Funcionan en una red descentralizada sin intermediarios', isCorrect: true },
               { text: 'Solo se pueden usar en internet', isCorrect: false },
               { text: 'Las controla el gobierno', isCorrect: false }
-            ],
-            explanation: 'La descentralización es la característica fundamental que diferencia a las criptomonedas del dinero tradicional.'
+            ]
           }
         },
         {
           type: 'reinforce' as const,
           id: 'reinforce-knowledge',
-          title: 'REINFORCE: Consolida tu Conocimiento',
-          duration: 30,
-          summary: 'Conceptos Clave Aprendidos',
+          title: 'REINFORCE: Lo que Aprendiste',
+          duration: 60,
+          summary: 'Has aprendido los conceptos básicos de las criptomonedas',
           keyPoints: [
-            '🪙 Las criptomonedas son dinero digital descentralizado',
-            '🔗 Funcionan en blockchain sin intermediarios',
-            '🌐 Están disponibles 24/7 sin restricciones geográficas',
-            '🤝 Permiten transacciones directas entre personas'
+            'Las criptomonedas son descentralizadas',
+            'No requieren intermediarios bancarios',
+            'Funcionan 24/7 sin fronteras'
           ],
-          nextSteps: 'Próximo paso: Aprende a crear tu primera wallet para guardar criptomonedas de forma segura'
+          nextSteps: 'Continúa con la lección sobre wallets digitales'
         }
       ],
-      patternValidation: {
-        hasDoBlock: true,
-        hasExplainBlock: true,
-        hasCheckBlock: true,
-        hasReinforceBlock: true
+      assessments: [],
+      gamification: {
+        pointsEnabled: true,
+        pointsPerCompletion: 100,
+        badgesEnabled: true,
+        badges: [],
+        leaderboardEnabled: false,
+        streakTracking: true
       },
       knowledgeSettings: {
-        featured: false,
-        order: 1
-      },
-      educationalSettings: {
-        canBeUsedAsRequirement: true,
-        points: 100,
-        completionCriteria: {
-          minTimeSpent: 180,
-          requiredCorrectAnswers: 1,
-          allowSkipping: false
-        }
+        autoRegister: true,
+        availableInEducational: true,
+        prerequisiteLessons: [],
+        nextLessons: [],
+        relatedLessons: [],
+        certificateEnabled: false
       }
-    },
-    previewData: {
-      screenshots: ['/images/templates/crypto-basics-preview-1.png'],
-      demoData: {
-        estimatedCompletion: '10 minutos',
-        difficulty: 'Principiante',
-        topics: 4
-      },
-      useCase: 'Ideal para onboardear nuevos usuarios al mundo cripto'
-    },
-    metrics: {
-      usageCount: 0,
-      successRate: 0.85,
-      rating: 4.7,
-      tags: ['popular', 'beginner-friendly']
+    } as Partial<LessonCreatorData>,
+    preview: {
+      images: ['/images/templates/crypto-basics-preview.png']
     }
   }
 ];
@@ -155,41 +128,41 @@ export const LESSON_TEMPLATES: Template[] = [
 export const CAMPAIGN_TEMPLATES: Template[] = [
   {
     id: 'onboard-48h-template',
+    type: 'campaign',
     name: '🚀 Onboarding Express 48h',
     description: 'Campaña de adopción rápida con auto-return para nuevos usuarios',
-    category: 'campaign',
-    type: 'onboarding',
-    estimatedSetupTime: 5,
-    thumbnail: '/images/templates/onboard-48h.png',
-    campaignTemplate: {
+    icon: '🚀',
+    category: 'acquisition',
+    difficulty: 'easy',
+    estimatedTime: 5,
+    popularity: 92,
+    tags: ['onboarding', 'new-users', 'welcome'],
+    data: {
       metadata: {
         id: '',
         title: 'Bienvenido a CryptoGift - 48h Express',
         description: 'Únete a CryptoGift y reclama tu regalo de bienvenida en las próximas 48 horas',
         tags: ['onboarding', 'new-users', 'welcome'],
-        estimatedTime: 5,
-        difficulty: 'beginner' as const,
-        category: 'adoption',
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: '',
-        status: 'draft' as const
+        author: '',
+        version: 1,
+        type: 'acquisition',
+        priority: 'high',
+        status: 'draft',
+        targetAudience: ['new-users']
       },
-      timeWindow: {
-        start: new Date(Date.now() + 24 * 60 * 60 * 1000), // Mañana
-        end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // En 3 días
-        graceHours: 24,
-        timezone: 'UTC'
+      prizes: {
+        totalValue: 10000,
+        currency: 'USDC',
+        distribution: {
+          type: 'fixed',
+          winners: 10000
+        },
+        claimMethod: 'automatic'
       },
-      prizePool: {
-        type: 'nft' as const,
-        supply: 10000,
-        value: 'NFT de Bienvenida + 10 USDC',
-        returnUnclaimed: true,
-        autoReturnAfterHours: 48
-      },
-      eligibility: {
-        rules: {
+      eligibilityRules: [
+        {
           logic: { "==": [{ "var": "is_new_user" }, true] },
           humanReadable: 'SI es usuario nuevo ENTONCES puede reclamar',
           variables: [
@@ -199,88 +172,76 @@ export const CAMPAIGN_TEMPLATES: Template[] = [
               description: 'Usuario registrado en las últimas 48 horas'
             }
           ]
-        },
-        description: 'Solo usuarios nuevos que se registraron en las últimas 48 horas',
-        requiredActions: ['register', 'verify-email']
-      },
-      leaderboard: {
-        enabled: false
-      },
-      abuseProtection: {
-        maxClaimsPerTBA: 1,
-        maxClaimsPerIP: 5,
-        rateLimit: '100/hour',
-        requireWalletAge: 0,
-        minBalance: '0'
-      },
-      publishing: {
-        status: 'draft' as const,
-        shareable: true,
-        featured: true
-      },
-      analytics: {
-        trackingEvents: ['onboard_start', 'onboard_complete', 'nft_claimed'],
-        conversionGoals: ['completion', 'retention_7d'],
-        customProperties: {
-          campaign_type: 'onboarding',
-          urgency: 'high'
         }
-      }
-    },
-    previewData: {
-      screenshots: ['/images/templates/onboard-preview-1.png'],
-      demoData: {
-        expectedParticipants: '5,000+',
-        conversionRate: '25%',
-        duration: '48 horas'
+      ],
+      timeWindow: {
+        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        timezone: 'UTC'
       },
-      useCase: 'Perfecto para lanzamientos y adopción masiva rápida'
-    },
-    metrics: {
-      usageCount: 0,
-      successRate: 0.75,
-      rating: 4.5,
-      tags: ['high-impact', 'quick-setup']
+      antiAbuseSettings: {
+        enabled: true,
+        maxEntriesPerUser: 1,
+        requireVerification: true,
+        verificationType: 'email',
+        suspiciousActivityDetection: true
+      },
+      trackingSettings: {
+        analyticsEnabled: true,
+        events: [
+          { name: 'onboard_start', description: 'Usuario inicia onboarding' },
+          { name: 'onboard_complete', description: 'Usuario completa onboarding' }
+        ],
+        reportingFrequency: 'realtime'
+      }
+    } as Partial<CampaignCreatorData>,
+    preview: {
+      images: ['/images/templates/onboard-preview.png']
     }
   },
   
   {
     id: 'hold-swap-7d-template',
+    type: 'campaign',
     name: '💎 Hold 7D + 1 Swap Challenge',
     description: 'Campaña para usuarios que mantengan tokens y hagan al menos 1 swap',
-    category: 'campaign',
-    type: 'engagement',
-    estimatedSetupTime: 8,
-    thumbnail: '/images/templates/hold-swap.png',
-    campaignTemplate: {
+    icon: '💎',
+    category: 'retention',
+    difficulty: 'medium',
+    estimatedTime: 8,
+    popularity: 78,
+    tags: ['holding', 'defi', 'trading', 'loyalty'],
+    data: {
       metadata: {
         id: '',
         title: 'Desafío Diamond Hands - Hold & Swap',
         description: 'Mantén tus tokens por 7 días y haz al menos 1 swap para ganar premios exclusivos',
         tags: ['holding', 'defi', 'trading', 'loyalty'],
-        estimatedTime: 10080, // 7 días en minutos
-        difficulty: 'intermediate' as const,
-        category: 'defi-engagement',
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: '',
-        status: 'draft' as const
+        author: '',
+        version: 1,
+        type: 'retention',
+        priority: 'medium',
+        status: 'draft',
+        targetAudience: ['holders', 'traders']
       },
-      timeWindow: {
-        start: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        end: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000), // 8 días total
-        graceHours: 48,
-        timezone: 'UTC'
+      prizes: {
+        totalValue: 50000,
+        currency: 'USDC',
+        distribution: {
+          type: 'tiered',
+          tiers: [
+            { rank: 'Top 10', amount: 1000, quantity: 10 },
+            { rank: 'Top 50', amount: 500, quantity: 40 },
+            { rank: 'Top 100', amount: 250, quantity: 50 }
+          ]
+        },
+        claimMethod: 'manual',
+        claimDeadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
       },
-      prizePool: {
-        type: 'nft' as const,
-        supply: 500,
-        value: 'NFT Diamond Hands + 100 USDC',
-        returnUnclaimed: true,
-        autoReturnAfterHours: 48
-      },
-      eligibility: {
-        rules: {
+      eligibilityRules: [
+        {
           logic: {
             "and": [
               { ">=": [{ "var": "holding_days" }, 7] },
@@ -297,294 +258,289 @@ export const CAMPAIGN_TEMPLATES: Template[] = [
             {
               name: 'swaps_count',
               type: 'number' as const,
-              description: 'Número de swaps realizados durante el período'
+              description: 'Número de swaps realizados'
             }
           ]
-        },
-        description: 'Mantener tokens por 7 días consecutivos Y realizar al menos 1 swap',
-        requiredActions: ['hold_tokens', 'make_swap']
-      },
-      leaderboard: {
-        enabled: true,
-        metric: 'earliestComplete' as const,
-        winners: 100,
-        tieBreaker: 'timestamp' as const
-      },
-      abuseProtection: {
-        maxClaimsPerTBA: 1,
-        maxClaimsPerIP: 2,
-        rateLimit: '50/hour',
-        requireWalletAge: 7,
-        minBalance: '0.001 ETH'
-      },
-      publishing: {
-        status: 'draft' as const,
-        shareable: true,
-        featured: false
-      },
-      analytics: {
-        trackingEvents: ['challenge_start', 'day_1_hold', 'first_swap', 'challenge_complete'],
-        conversionGoals: ['7_day_retention', 'increased_trading'],
-        customProperties: {
-          campaign_type: 'engagement',
-          difficulty: 'intermediate'
         }
-      }
-    },
-    previewData: {
-      screenshots: ['/images/templates/hold-swap-preview-1.png'],
-      demoData: {
-        expectedParticipants: '1,500+',
-        conversionRate: '15%',
-        avgReward: '100 USDC'
+      ],
+      timeWindow: {
+        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000),
+        timezone: 'UTC'
       },
-      useCase: 'Ideal para fomentar holding y actividad DeFi'
-    },
-    metrics: {
-      usageCount: 0,
-      successRate: 0.65,
-      rating: 4.8,
-      tags: ['defi', 'intermediate', 'high-reward']
+      antiAbuseSettings: {
+        enabled: true,
+        maxEntriesPerUser: 1,
+        cooldownPeriod: 24,
+        requireVerification: false,
+        walletAgeMinimum: 7,
+        minimumBalance: 100
+      },
+      trackingSettings: {
+        analyticsEnabled: true,
+        events: [
+          { name: 'hold_start', description: 'Inicia período de holding' },
+          { name: 'swap_completed', description: 'Completa swap requerido' },
+          { name: 'claim_prize', description: 'Reclama premio' }
+        ],
+        reportingFrequency: 'daily'
+      }
+    } as Partial<CampaignCreatorData>,
+    preview: {
+      images: ['/images/templates/hold-swap-preview.png']
     }
   },
   
   {
-    id: 'top-referrals-72h-template',
-    name: '🏆 Top Referidos 72h',
-    description: 'Competencia de referidos con leaderboard y premios para los top performers',
-    category: 'campaign',
-    type: 'referral',
-    estimatedSetupTime: 10,
-    thumbnail: '/images/templates/top-referrals.png',
-    campaignTemplate: {
+    id: 'referral-contest-template',
+    type: 'campaign',
+    name: '🌟 Top 10 Referrals Contest',
+    description: 'Competencia para los mejores referidores con premios escalonados',
+    icon: '🌟',
+    category: 'referral',
+    difficulty: 'medium',
+    estimatedTime: 10,
+    popularity: 88,
+    tags: ['referral', 'competition', 'social', 'growth'],
+    data: {
       metadata: {
         id: '',
-        title: 'Batalla de Referidos - Top 50 Ganan',
-        description: 'Compite por traer más amigos a CryptoGift. Los top 50 referidores se llevan premios épicos',
-        tags: ['referrals', 'competition', 'viral', 'community'],
-        estimatedTime: 4320, // 72 horas
-        difficulty: 'intermediate' as const,
-        category: 'growth',
+        title: 'Contest de Referidos - Top 10 Ganan',
+        description: 'Refiere amigos y compite por premios increíbles. Los top 10 referidores ganan.',
+        tags: ['referral', 'competition', 'social', 'growth'],
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: '',
-        status: 'draft' as const
+        author: '',
+        version: 1,
+        type: 'referral',
+        priority: 'high',
+        status: 'draft',
+        targetAudience: ['influencers', 'community-leaders']
       },
-      timeWindow: {
-        start: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        end: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 72h + 1 día prep
-        graceHours: 24,
-        timezone: 'UTC'
+      prizes: {
+        totalValue: 100000,
+        currency: 'USDC',
+        distribution: {
+          type: 'tiered',
+          tiers: [
+            { rank: '1st', amount: 25000, quantity: 1 },
+            { rank: '2nd', amount: 15000, quantity: 1 },
+            { rank: '3rd', amount: 10000, quantity: 1 },
+            { rank: '4-10', amount: 7142, quantity: 7 }
+          ]
+        },
+        claimMethod: 'automatic'
       },
-      prizePool: {
-        type: 'token' as const,
-        supply: 50,
-        value: 'Premios escalonados: 1º=1000 USDC, 2º=500 USDC, 3º-10º=200 USDC, 11º-50º=50 USDC',
-        returnUnclaimed: true,
-        autoReturnAfterHours: 48
-      },
-      eligibility: {
-        rules: {
-          logic: { ">=": [{ "var": "valid_referrals" }, 1] },
-          humanReadable: 'SI valid_referrals ≥ 1 ENTONCES entra al leaderboard',
+      eligibilityRules: [
+        {
+          logic: { ">=": [{ "var": "valid_referrals" }, 3] },
+          humanReadable: 'SI valid_referrals ≥ 3 ENTONCES elegible para competir',
           variables: [
             {
               name: 'valid_referrals',
               type: 'number' as const,
-              description: 'Número de referidos válidos (que completaron onboarding)'
+              description: 'Número de referidos válidos (verificados)'
             }
           ]
-        },
-        description: 'Al menos 1 referido válido para entrar al leaderboard',
-        requiredActions: ['refer_users', 'confirm_signups']
-      },
-      leaderboard: {
-        enabled: true,
-        metric: 'mostPoints' as const, // Basado en número de referidos válidos
-        winners: 50,
-        tieBreaker: 'timestamp' as const
-      },
-      abuseProtection: {
-        maxClaimsPerTBA: 1,
-        maxClaimsPerIP: 1,
-        rateLimit: '10/hour',
-        requireWalletAge: 3,
-        minBalance: '0.005 ETH'
-      },
-      publishing: {
-        status: 'draft' as const,
-        shareable: true,
-        featured: true
-      },
-      analytics: {
-        trackingEvents: ['ref_campaign_join', 'ref_sent', 'ref_completed', 'leaderboard_update'],
-        conversionGoals: ['viral_coefficient', 'new_user_acquisition'],
-        customProperties: {
-          campaign_type: 'referral',
-          competition: 'true'
         }
-      }
-    },
-    previewData: {
-      screenshots: ['/images/templates/referrals-preview-1.png'],
-      demoData: {
-        expectedParticipants: '2,000+',
-        viralCoefficient: '3.5x',
-        totalPrizePool: '15,000 USDC'
+      ],
+      timeWindow: {
+        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        timezone: 'UTC'
       },
-      useCase: 'Perfecto para crecimiento viral y expansión de comunidad'
-    },
-    metrics: {
-      usageCount: 0,
-      successRate: 0.80,
-      rating: 4.9,
-      tags: ['viral', 'high-reward', 'competitive']
+      antiAbuseSettings: {
+        enabled: true,
+        maxEntriesPerUser: 1,
+        requireVerification: true,
+        verificationType: 'social',
+        ipRestrictions: {
+          enabled: true,
+          maxPerIp: 3
+        },
+        suspiciousActivityDetection: true
+      },
+      trackingSettings: {
+        analyticsEnabled: true,
+        events: [
+          { name: 'referral_link_created', description: 'Link de referido creado' },
+          { name: 'referral_click', description: 'Click en link de referido' },
+          { name: 'referral_conversion', description: 'Referido convertido' }
+        ],
+        reportingFrequency: 'hourly'
+      }
+    } as Partial<CampaignCreatorData>,
+    preview: {
+      images: ['/images/templates/referral-preview.png']
     }
   },
   
   {
-    id: 'eligible-raffle-template',
-    name: '🎲 Rifa con Elegibilidad',
-    description: 'Sistema de rifa donde cumplir condiciones te da tickets para el sorteo',
-    category: 'campaign',
-    type: 'raffle',
-    estimatedSetupTime: 12,
-    thumbnail: '/images/templates/raffle.png',
-    campaignTemplate: {
+    id: 'daily-engagement-template',
+    type: 'campaign',
+    name: '🎁 Daily Rewards 30D',
+    description: 'Sistema de recompensas diarias para mantener engagement',
+    icon: '🎁',
+    category: 'engagement',
+    difficulty: 'easy',
+    estimatedTime: 5,
+    popularity: 75,
+    tags: ['daily', 'retention', 'rewards', 'streak'],
+    data: {
       metadata: {
         id: '',
-        title: 'Rifa Épica - Gana NFTs Únicos',
-        description: 'Completa misiones para ganar tickets de rifa. Más misiones = más posibilidades de ganar',
-        tags: ['raffle', 'missions', 'nft', 'luck'],
-        estimatedTime: 7200, // 5 días
-        difficulty: 'beginner' as const,
-        category: 'engagement',
+        title: 'Recompensas Diarias - 30 Días',
+        description: 'Reclama recompensas diarias y construye tu racha de 30 días',
+        tags: ['daily', 'retention', 'rewards', 'streak'],
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: '',
-        status: 'draft' as const
+        author: '',
+        version: 1,
+        type: 'engagement',
+        priority: 'medium',
+        status: 'draft',
+        targetAudience: ['active-users']
       },
-      timeWindow: {
-        start: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        end: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-        graceHours: 12,
-        timezone: 'UTC'
+      prizes: {
+        totalValue: 30000,
+        currency: 'POINTS',
+        distribution: {
+          type: 'fixed',
+          winners: 10000
+        },
+        claimMethod: 'milestone'
       },
-      prizePool: {
-        type: 'nft' as const,
-        supply: 10,
-        value: '10 NFTs únicos valorados en 500 USDC cada uno',
-        returnUnclaimed: true,
-        autoReturnAfterHours: 72
-      },
-      eligibility: {
-        rules: {
-          logic: {
-            "or": [
-              { ">=": [{ "var": "tasks_completed" }, 1] },
-              { ">=": [{ "var": "social_shares" }, 3] },
-              { ">=": [{ "var": "referrals_made" }, 1] }
-            ]
-          },
-          humanReadable: 'SI tasks_completed ≥ 1 O social_shares ≥ 3 O referrals_made ≥ 1 ENTONCES obtiene tickets',
+      eligibilityRules: [
+        {
+          logic: { "==": [{ "var": "daily_check_in" }, true] },
+          humanReadable: 'SI daily_check_in ENTONCES recibe recompensa',
           variables: [
             {
-              name: 'tasks_completed',
-              type: 'number' as const,
-              description: 'Número de tareas completadas'
-            },
-            {
-              name: 'social_shares',
-              type: 'number' as const,
-              description: 'Veces que compartió en redes sociales'
-            },
-            {
-              name: 'referrals_made',
-              type: 'number' as const,
-              description: 'Referidos exitosos realizados'
+              name: 'daily_check_in',
+              type: 'boolean' as const,
+              description: 'Completó check-in diario'
             }
           ]
-        },
-        description: 'Completa tareas, comparte en redes o refiere amigos para ganar tickets',
-        requiredActions: ['complete_tasks', 'social_engagement', 'refer_friends']
-      },
-      leaderboard: {
-        enabled: false // Es una rifa, no competencia directa
-      },
-      abuseProtection: {
-        maxClaimsPerTBA: 10, // Máximo 10 tickets por persona
-        maxClaimsPerIP: 15,
-        rateLimit: '20/hour',
-        requireWalletAge: 1,
-        minBalance: '0'
-      },
-      publishing: {
-        status: 'draft' as const,
-        shareable: true,
-        featured: false
-      },
-      analytics: {
-        trackingEvents: ['raffle_join', 'ticket_earned', 'task_completed', 'raffle_drawn'],
-        conversionGoals: ['engagement_increase', 'social_virality'],
-        customProperties: {
-          campaign_type: 'raffle',
-          luck_based: 'true'
         }
-      }
-    },
-    previewData: {
-      screenshots: ['/images/templates/raffle-preview-1.png'],
-      demoData: {
-        expectedParticipants: '5,000+',
-        ticketsPerUser: '1-10',
-        prizeValue: '5,000 USDC'
+      ],
+      timeWindow: {
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        timezone: 'UTC',
+        recurring: {
+          enabled: true,
+          pattern: 'daily',
+          endAfter: 30
+        }
       },
-      useCase: 'Ideal para generar engagement diversificado y buzz social'
-    },
-    metrics: {
-      usageCount: 0,
-      successRate: 0.70,
-      rating: 4.6,
-      tags: ['engaging', 'social', 'beginner-friendly']
+      antiAbuseSettings: {
+        enabled: true,
+        maxEntriesPerUser: 30,
+        cooldownPeriod: 23,
+        requireVerification: false
+      },
+      trackingSettings: {
+        analyticsEnabled: true,
+        events: [
+          { name: 'daily_checkin', description: 'Check-in diario completado' },
+          { name: 'streak_milestone', description: 'Milestone de racha alcanzado', points: 100 }
+        ],
+        reportingFrequency: 'daily'
+      }
+    } as Partial<CampaignCreatorData>,
+    preview: {
+      images: ['/images/templates/daily-rewards-preview.png']
     }
   }
 ];
 
-// ========== UTILIDADES PARA PLANTILLAS ==========
+// ========== FUNCIONES HELPER ==========
 
-export const getTemplatesByCategory = (category: 'lesson' | 'campaign'): Template[] => {
-  if (category === 'lesson') {
-    return LESSON_TEMPLATES;
-  }
-  return CAMPAIGN_TEMPLATES;
+/**
+ * Obtiene todas las plantillas disponibles
+ */
+export const getAllTemplates = (): Template[] => {
+  return [...LESSON_TEMPLATES, ...CAMPAIGN_TEMPLATES];
 };
 
-export const getTemplateById = (templateId: string): Template | null => {
-  const allTemplates = [...LESSON_TEMPLATES, ...CAMPAIGN_TEMPLATES];
-  return allTemplates.find(template => template.id === templateId) || null;
+/**
+ * Obtiene plantillas por tipo
+ */
+export const getTemplatesByType = (type: 'lesson' | 'campaign'): Template[] => {
+  return type === 'lesson' ? LESSON_TEMPLATES : CAMPAIGN_TEMPLATES;
 };
 
-export const getPopularTemplates = (limit: number = 6): Template[] => {
-  const allTemplates = [...LESSON_TEMPLATES, ...CAMPAIGN_TEMPLATES];
-  return allTemplates
-    .sort((a, b) => b.metrics.usageCount - a.metrics.usageCount)
-    .slice(0, limit);
+/**
+ * Obtiene una plantilla por ID
+ */
+export const getTemplateById = (id: string): Template | undefined => {
+  return getAllTemplates().find(template => template.id === id);
 };
 
-export const getTemplatesByType = (type: string): Template[] => {
-  const allTemplates = [...LESSON_TEMPLATES, ...CAMPAIGN_TEMPLATES];
-  return allTemplates.filter(template => template.type === type);
+/**
+ * Obtiene plantillas populares (popularity > 80)
+ */
+export const getPopularTemplates = (): Template[] => {
+  return getAllTemplates()
+    .filter(template => template.popularity > 80)
+    .sort((a, b) => b.popularity - a.popularity);
 };
 
-export const searchTemplates = (query: string): Template[] => {
-  const allTemplates = [...LESSON_TEMPLATES, ...CAMPAIGN_TEMPLATES];
-  const searchTerm = query.toLowerCase();
-  
-  return allTemplates.filter(template => 
-    template.name.toLowerCase().includes(searchTerm) ||
-    template.description.toLowerCase().includes(searchTerm) ||
-    template.metrics.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+/**
+ * Obtiene plantillas por categoría
+ */
+export const getTemplatesByCategory = (category: string): Template[] => {
+  return getAllTemplates().filter(template => template.category === category);
+};
+
+/**
+ * Obtiene plantillas por dificultad
+ */
+export const getTemplatesByDifficulty = (difficulty: 'easy' | 'medium' | 'hard'): Template[] => {
+  return getAllTemplates().filter(template => template.difficulty === difficulty);
+};
+
+/**
+ * Busca plantillas por tags
+ */
+export const searchTemplatesByTags = (tags: string[]): Template[] => {
+  return getAllTemplates().filter(template => 
+    tags.some(tag => template.tags.includes(tag))
   );
+};
+
+/**
+ * Obtiene plantillas recomendadas basadas en el contexto
+ */
+export const getRecommendedTemplates = (context: {
+  userLevel?: 'beginner' | 'intermediate' | 'advanced';
+  goal?: 'education' | 'engagement' | 'acquisition' | 'retention';
+  timeAvailable?: number; // minutos
+}): Template[] => {
+  let templates = getAllTemplates();
+  
+  // Filtrar por nivel de usuario
+  if (context.userLevel) {
+    const difficultyMap = {
+      'beginner': 'easy',
+      'intermediate': 'medium',
+      'advanced': 'hard'
+    };
+    templates = templates.filter(t => t.difficulty === difficultyMap[context.userLevel as keyof typeof difficultyMap]);
+  }
+  
+  // Filtrar por objetivo
+  if (context.goal) {
+    templates = templates.filter(t => t.category.includes(context.goal));
+  }
+  
+  // Filtrar por tiempo disponible
+  if (context.timeAvailable) {
+    templates = templates.filter(t => t.estimatedTime <= context.timeAvailable);
+  }
+  
+  // Ordenar por popularidad
+  return templates.sort((a, b) => b.popularity - a.popularity).slice(0, 5);
 };
 
 // ========== EXPORTS ==========
@@ -592,9 +548,12 @@ export const searchTemplates = (query: string): Template[] => {
 export default {
   LESSON_TEMPLATES,
   CAMPAIGN_TEMPLATES,
-  getTemplatesByCategory,
+  getAllTemplates,
+  getTemplatesByType,
   getTemplateById,
   getPopularTemplates,
-  getTemplatesByType,
-  searchTemplates
+  getTemplatesByCategory,
+  getTemplatesByDifficulty,
+  searchTemplatesByTags,
+  getRecommendedTemplates
 };
