@@ -242,24 +242,166 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         console.log('📱 Mobile detected - transaction will proceed (popup handled by auth flow)');
       }
       
-      // 🔄 FIXED: Use direct sendTransaction to avoid double transaction issue
-      // sendTransactionMobile causes multiple retries → multiple transactions in MetaMask
-      txResult = await sendTransaction({
-        transaction: claimTransaction,
-        account: account
-      });
+      // 🔄 MOBILE FIX: Enhanced transaction handling with timeout and retries
+      const isMobile = isMobileDevice();
+      
+      if (isMobile) {
+        console.log('📱 Mobile device detected - using enhanced transaction handling');
+        
+        // Add delay for MetaMask Mobile to be ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verify wallet is connected and on correct chain
+        if (window.ethereum) {
+          try {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            const currentChainId = parseInt(chainId, 16);
+            if (currentChainId !== 84532) {
+              console.warn('⚠️ Wrong chain detected:', currentChainId);
+              throw new Error('Por favor cambia a Base Sepolia en tu wallet');
+            }
+          } catch (chainError) {
+            console.error('Chain verification failed:', chainError);
+          }
+        }
+        
+        // Use timeout wrapper for mobile
+        const transactionPromise = sendTransaction({
+          transaction: claimTransaction,
+          account: account
+        });
+        
+        // 30 second timeout for mobile (MetaMask Mobile can be slow)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Transaction timeout - MetaMask no respondió')), 30000)
+        );
+        
+        try {
+          txResult = await Promise.race([transactionPromise, timeoutPromise]);
+        } catch (timeoutError) {
+          console.error('📱 Mobile transaction timeout:', timeoutError);
+          
+          // 🚨 MOBILE FIX: Check if transaction was actually sent but timed out on response
+          if (timeoutError.message?.includes('Transaction timeout')) {
+            console.log('🔍 Checking if transaction was actually sent despite timeout...');
+            
+            // Wait a moment for transaction to propagate
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Check recent transactions for this account
+            try {
+              const recentTxResponse = await fetch(`/api/check-recent-transaction`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  address: account.address,
+                  tokenId: tokenId,
+                  giftId: validationResult.giftId
+                })
+              });
+              
+              if (recentTxResponse.ok) {
+                const recentTxData = await recentTxResponse.json();
+                if (recentTxData.success && recentTxData.transactionHash) {
+                  console.log('✅ Found successful transaction despite timeout:', recentTxData.transactionHash);
+                  txResult = { transactionHash: recentTxData.transactionHash };
+                  // Skip retry, use found transaction
+                } else {
+                  throw timeoutError; // No successful transaction found, proceed with retry
+                }
+              } else {
+                throw timeoutError; // API call failed, proceed with retry
+              }
+            } catch (checkError) {
+              console.log('⚠️ Could not verify transaction status, proceeding with retry...');
+              
+              // Try once more with longer timeout
+              console.log('🔄 Retrying transaction with extended timeout...');
+              const retryPromise = sendTransaction({
+                transaction: claimTransaction,
+                account: account
+              });
+              
+              const extendedTimeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Transaction timeout después de reintentar - puede estar pendiente en blockchain')), 45000)
+              );
+              
+              txResult = await Promise.race([retryPromise, extendedTimeoutPromise]);
+            }
+          } else {
+            throw timeoutError; // Different type of error, don't retry
+          }
+        }
+      } else {
+        // Desktop: standard flow
+        txResult = await sendTransaction({
+          transaction: claimTransaction,
+          account: account
+        });
+      }
 
       console.log('📨 Transaction sent:', txResult.transactionHash);
 
-      // Step 4: Wait for transaction confirmation - use standard waitForReceipt
+      // Step 4: Wait for transaction confirmation with mobile-specific handling
       console.log('⏳ STEP 4: Waiting for transaction confirmation...');
-      const receipt = await waitForReceipt({
-        client: createThirdwebClient({
-          clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
-        }),
-        chain: baseSepolia,
-        transactionHash: txResult.transactionHash
-      });
+      
+      let receipt;
+      if (isMobile) {
+        // Extended timeout for mobile confirmation
+        const receiptPromise = waitForReceipt({
+          client: createThirdwebClient({
+            clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
+          }),
+          chain: baseSepolia,
+          transactionHash: txResult.transactionHash
+        });
+        
+        const confirmationTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Confirmación timeout - la transacción puede estar pendiente')), 60000)
+        );
+        
+        try {
+          receipt = await Promise.race([receiptPromise, confirmationTimeout]);
+        } catch (confirmError) {
+          console.warn('⚠️ Confirmation timeout, checking transaction status...');
+          
+          // 🚨 MOBILE FIX: Even if confirmation times out, the transaction might be successful
+          // Provide helpful message and don't fail completely
+          addNotification({
+            type: 'warning',
+            title: '⏳ Transacción procesándose',
+            message: `Tu transacción (${txResult.transactionHash.slice(0, 10)}...) está siendo procesada. Puede tomar unos minutos en móvil.`,
+            duration: 15000,
+            action: {
+              label: 'Ver en BaseScan',
+              onClick: () => {
+                window.open(`https://sepolia.basescan.org/tx/${txResult.transactionHash}`, '_blank');
+              }
+            }
+          });
+          
+          // Don't completely fail - set a warning state instead
+          console.log('📱 Setting transaction as pending due to confirmation timeout');
+          setError(`Transacción enviada (${txResult.transactionHash.slice(0, 10)}...) pero confirmación pendiente. 
+                   Verifica en tu wallet o en BaseScan en unos minutos.`);
+          setClaimStep('password'); // Return to password step but with pending message
+          
+          // Still call success callback with transaction hash for potential recovery
+          if (onClaimSuccess) {
+            onClaimSuccess(txResult.transactionHash, validationResult.giftInfo);
+          }
+          
+          return; // Exit gracefully instead of throwing
+        }
+      } else {
+        receipt = await waitForReceipt({
+          client: createThirdwebClient({
+            clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
+          }),
+          chain: baseSepolia,
+          transactionHash: txResult.transactionHash
+        });
+      }
 
       if (receipt.status !== 'success') {
         throw new Error(`Transaction failed with status: ${receipt.status}`);
@@ -309,13 +451,54 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       // 📱 MOBILE: Enhanced error handling for RPC issues
       let errorMessage: string;
       
-      // Check for specific mobile errors
-      if (err?.code === -32603 || err?.message?.includes('Internal JSON-RPC error')) {
+      // 🚨 MOBILE FIX: Better error handling for post-signature issues
+      if (err?.message?.includes('Transaction timeout después de reintentar')) {
+        console.error('📱 Mobile transaction timeout after retry detected');
+        
+        errorMessage = `⏳ Tu transacción puede estar procesándose en segundo plano.
+        
+Por favor:
+1. Verifica tu wallet para confirmar si la transacción aparece
+2. Espera 2-3 minutos y recarga la página
+3. Si el regalo sigue disponible, intenta de nuevo
+4. Si ya no aparece, ¡fue exitoso!
+
+La transacción puede tomar más tiempo en móvil.`;
+
+        addNotification({
+          type: 'info',
+          title: '⏳ Transacción puede estar pendiente',
+          message: 'Verifica tu wallet o espera unos minutos',
+          duration: 15000,
+          action: {
+            label: 'Ver en BaseScan',
+            onClick: () => {
+              window.open(`https://sepolia.basescan.org/address/${account?.address}`, '_blank');
+            }
+          }
+        });
+      } else if (err?.code === -32603 || err?.message?.includes('Internal JSON-RPC error')) {
         console.error('📱 Internal JSON-RPC error detected:', err);
+        
+        // Log full error details for debugging
+        console.error('Full error details:', {
+          code: err.code,
+          message: err.message,
+          data: err.data,
+          stack: err.stack
+        });
         
         // Check if it's a network/chain issue
         if (isMobile) {
-          errorMessage = 'Error de conexión. Por favor:\n1. Verifica estar en Base Sepolia\n2. Cierra y abre MetaMask\n3. Intenta de nuevo';
+          // More specific error messages based on error details
+          if (err.message?.includes('User rejected') || err.message?.includes('User denied')) {
+            errorMessage = 'Transacción rechazada. Por favor acepta la transacción en MetaMask.';
+          } else if (err.message?.includes('insufficient funds')) {
+            errorMessage = 'Fondos insuficientes para pagar el gas. Necesitas ETH en Base Sepolia.';
+          } else if (err.message?.includes('nonce')) {
+            errorMessage = 'Error de sincronización. Por favor:\n1. Abre MetaMask\n2. Ve a Configuración > Avanzado\n3. Presiona "Restablecer cuenta"\n4. Intenta de nuevo';
+          } else {
+            errorMessage = 'Error de conexión. Por favor:\n1. Verifica estar en Base Sepolia\n2. Cierra y abre MetaMask completamente\n3. Espera 10 segundos\n4. Intenta de nuevo';
           
           // Try to add more context
           addNotification({
@@ -836,6 +1019,62 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
                 'Claim Gift'
               )}
             </button>
+
+            {/* 📱 MOBILE FIX: Status check button for timeout scenarios */}
+            {error && error.includes('procesándose') && account && (
+              <button
+                onClick={async () => {
+                  setIsLoading(true);
+                  try {
+                    console.log('🔍 Checking transaction status manually...');
+                    
+                    // Check if gift was actually claimed
+                    const response = await fetch(`/api/gift-info/${tokenId}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.gift?.status === 'claimed') {
+                      console.log('✅ Gift was successfully claimed!');
+                      setError('');
+                      setClaimStep('success');
+                      
+                      addNotification({
+                        type: 'success',
+                        title: '🎉 ¡Regalo Reclamado!',
+                        message: 'Tu transacción fue exitosa. El NFT está en tu wallet.',
+                        duration: 8000
+                      });
+                      
+                      if (onClaimSuccess) {
+                        onClaimSuccess('verified', data.gift);
+                      }
+                    } else {
+                      // Still not claimed, user can try again
+                      addNotification({
+                        type: 'info',
+                        title: 'Aún no reclamado',
+                        message: 'El regalo sigue disponible. Puedes intentar de nuevo.',
+                        duration: 5000
+                      });
+                      setError('');
+                    }
+                  } catch (checkError) {
+                    console.error('Error checking status:', checkError);
+                    addNotification({
+                      type: 'error',
+                      title: 'Error de verificación',
+                      message: 'No se pudo verificar el estado. Intenta recargar la página.',
+                      duration: 5000
+                    });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+                className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors font-medium mt-2"
+              >
+                {isLoading ? 'Verificando...' : '🔍 Verificar Estado del Regalo'}
+              </button>
+            )}
 
             {!account && giftInfo?.status !== 'claimed' && giftInfo?.status !== 'returned' && !giftInfo?.isExpired && (
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">
