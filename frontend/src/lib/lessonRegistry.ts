@@ -46,6 +46,22 @@ export const LESSON_REGISTRY: Record<string, LessonDefinition> = {
     educationalValue: 'Comprende el proyecto CryptoGift, su propuesta de valor única, la tecnología ERC-6551, y por qué representa una revolución en Web3',
     prerequisites: [],
     tags: ['cryptogift', 'nft-wallets', 'erc-6551', 'blockchain', 'web3', 'revolución']
+  },
+  
+  'claim-first-gift': {
+    id: 'claim-first-gift',
+    title: 'Reclama tu Primer Regalo Cripto',
+    description: 'Aprende a reclamar NFTs sin pagar gas y descubre cómo cada NFT es una wallet. Experiencia práctica con regalo real incluido.',
+    estimatedTime: 7,
+    difficulty: 'beginner',
+    category: 'Fundamentos CryptoGift',
+    
+    knowledgePath: '/knowledge/claim-first-gift',
+    thumbnailUrl: '/images/claim-gift-tutorial.png',
+    
+    educationalValue: 'Domina el proceso de claim sin gas, entiende el sistema Paymaster, comprende cómo los NFTs son wallets (ERC-6551), y reclama tu primer regalo real',
+    prerequisites: [],
+    tags: ['claim', 'gas-free', 'paymaster', 'nft-wallet', 'tutorial', 'beginner']
   }
 };
 

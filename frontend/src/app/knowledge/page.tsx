@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LessonModalWrapper } from '../../components/education/LessonModalWrapper';
 import { getAllLessons, getLessonsByCategory } from '../../lib/lessonRegistry';
+import { ProgressRing, ProgressRingGroup } from '../../components/learn/ProgressRing';
+import { LearningPath, PathNode } from '../../components/learn/LearningPath';
+import { DailyTipCard } from '../../components/learn/DailyTipCard';
+import { AchievementShowcase, PRESET_ACHIEVEMENTS } from '../../components/learn/AchievementSystem';
+import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles } from 'lucide-react';
 
 interface KnowledgeModule {
   id: string;
@@ -21,10 +27,33 @@ interface KnowledgeModule {
 export default function KnowledgePage() {
   const [selectedCategory, setSelectedCategory] = useState('sales-masterclass');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDailyTip, setShowDailyTip] = useState(false);
+  const [userStreak, setUserStreak] = useState(7); // Demo streak
+  const [showAchievements, setShowAchievements] = useState(false);
   
   // Sistema Unificado: LessonModalWrapper states
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [currentLessonId, setCurrentLessonId] = useState('');
+  
+  // Learning progress demo data
+  const [learningProgress] = useState({
+    totalModules: 50,
+    completedModules: 12,
+    inProgressModules: 3,
+    totalTime: 15,
+    points: 2450,
+    level: 5,
+    nextLevelProgress: 65
+  });
+  
+  // Check for daily tip on mount
+  useEffect(() => {
+    const lastTipDate = localStorage.getItem('lastDailyTip');
+    const today = new Date().toDateString();
+    if (lastTipDate !== today) {
+      setTimeout(() => setShowDailyTip(true), 2000);
+    }
+  }, []);
 
   // Handler para abrir lecciones en modal (preserva la Sales Masterclass)
   const handleOpenLesson = (lessonId: string) => {
@@ -46,6 +75,15 @@ export default function KnowledgePage() {
       }
     ],
     'getting-started': [
+      {
+        id: 'claim-first-gift',
+        title: '🎁 Reclama tu Primer Regalo Cripto',
+        description: 'Aprende haciendo: reclama un NFT real sin pagar gas y descubre cómo funciona',
+        icon: '🎁',
+        level: 'Básico',
+        duration: '7 min',
+        topics: ['Claim sin Gas', 'NFT-Wallets', 'Paymaster', 'ERC-6551', 'Experiencia Práctica']
+      },
       {
         id: 'crypto-basics',
         title: '¿Qué es una Criptomoneda?',
@@ -173,57 +211,266 @@ export default function KnowledgePage() {
     module.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  // Learning path nodes for visualization
+  const learningPathNodes: PathNode[] = [
+    {
+      id: 'start',
+      title: 'Inicio',
+      description: 'Tu viaje cripto empieza aquí',
+      icon: '🚀',
+      status: 'completed',
+      position: { x: 100, y: 200 },
+      connections: ['wallet-basics']
+    },
+    {
+      id: 'wallet-basics',
+      title: 'Wallet Básico',
+      description: 'Aprende sobre wallets',
+      icon: '👛',
+      status: 'completed',
+      position: { x: 250, y: 200 },
+      connections: ['nft-intro', 'crypto-basics']
+    },
+    {
+      id: 'nft-intro',
+      title: 'Intro NFTs',
+      description: 'Descubre los NFTs',
+      icon: '🖼️',
+      status: 'in-progress',
+      progress: 65,
+      position: { x: 400, y: 150 },
+      connections: ['cryptogift-basics']
+    },
+    {
+      id: 'crypto-basics',
+      title: 'Crypto Básico',
+      description: 'Fundamentos de cripto',
+      icon: '🪙',
+      status: 'available',
+      position: { x: 400, y: 250 },
+      connections: ['defi-basics']
+    },
+    {
+      id: 'cryptogift-basics',
+      title: 'CryptoGift',
+      description: 'Domina CryptoGift',
+      icon: '🎁',
+      status: 'available',
+      position: { x: 550, y: 150 },
+      connections: ['sales-masterclass']
+    },
+    {
+      id: 'defi-basics',
+      title: 'DeFi',
+      description: 'Finanzas descentralizadas',
+      icon: '🏦',
+      status: 'locked',
+      position: { x: 550, y: 250 },
+      connections: ['advanced']
+    },
+    {
+      id: 'sales-masterclass',
+      title: 'Sales Masterclass',
+      description: 'Conviértete en experto',
+      icon: '💎',
+      status: 'available',
+      position: { x: 700, y: 150 },
+      connections: ['advanced']
+    },
+    {
+      id: 'advanced',
+      title: 'Avanzado',
+      description: 'Contenido experto',
+      icon: '🏆',
+      status: 'locked',
+      position: { x: 850, y: 200 },
+      connections: []
+    }
+  ];
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 
-                   dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 
+                   dark:from-gray-900 dark:via-gray-800 dark:to-purple-900 transition-all duration-500">
       <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="text-center mb-12">
+        {/* Enhanced Header with Stats */}
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="w-20 h-20 flex items-center justify-center 
-                          bg-gray-50 dark:bg-gray-800/50 
-                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
-                          backdrop-blur-sm transition-all duration-300">
-              <Image
-                src="/knowledge-logo.png"
-                alt="Knowledge"
-                width={76}
-                height={76}
-                className="object-contain drop-shadow-lg w-full h-full"
-              />
-            </div>
-            <h1 className="text-4xl font-bold text-text-primary transition-colors duration-300">
-              CryptoGift Knowledge Academy
+            <motion.div 
+              className="w-20 h-20 flex items-center justify-center 
+                        bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30
+                        rounded-2xl shadow-xl border border-purple-200/30 dark:border-purple-700/30 
+                        backdrop-blur-sm transition-all duration-300"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Sparkles className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+            </motion.div>
+            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Knowledge Academy
             </h1>
           </div>
-          <p className="text-xl text-text-secondary max-w-3xl mx-auto transition-colors duration-300">
-            Aprende cripto de forma simple y didáctica. Desde conceptos básicos hasta estrategias avanzadas.
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-6">
+            Aprende cripto de forma interactiva y divertida. Sistema DO → EXPLAIN → CHECK → REINFORCE.
             <br />
-            <span className="text-purple-600 dark:text-accent-gold font-medium transition-colors duration-300">Todo lo que necesitas para dominar el mundo cripto</span>
+            <span className="text-purple-600 dark:text-purple-400 font-medium">
+              🚀 {learningProgress.completedModules} módulos completados • 
+              🔥 {userStreak} días de racha • 
+              ⚡ {learningProgress.points} puntos
+            </span>
           </p>
-        </div>
+          
+          {/* User Level Badge */}
+          <motion.div 
+            className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-full shadow-lg"
+            whileHover={{ scale: 1.05 }}
+          >
+            <Trophy className="w-5 h-5" />
+            <span className="font-bold">Nivel {learningProgress.level}</span>
+            <div className="w-32 bg-white/20 rounded-full h-2 overflow-hidden">
+              <motion.div 
+                className="h-full bg-white"
+                initial={{ width: 0 }}
+                animate={{ width: `${learningProgress.nextLevelProgress}%` }}
+                transition={{ duration: 1, delay: 0.5 }}
+              />
+            </div>
+            <span className="text-sm">{learningProgress.nextLevelProgress}%</span>
+          </motion.div>
+        </motion.div>
 
-        {/* Search Bar */}
+        {/* Progress Overview Section */}
+        <motion.div 
+          className="grid md:grid-cols-4 gap-6 mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <ProgressRing 
+              progress={(learningProgress.completedModules / learningProgress.totalModules) * 100}
+              size={100}
+              label="Progreso Total"
+              color="gradient"
+              glowEffect={true}
+            />
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <Clock className="w-8 h-8 text-blue-500" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{learningProgress.totalTime}h</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Tiempo Total</p>
+            <p className="text-sm text-blue-500 mt-2">+2h esta semana</p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <Flame className="w-8 h-8 text-orange-500" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{userStreak}</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Días de Racha</p>
+            <p className="text-sm text-orange-500 mt-2">¡Sigue así! 🔥</p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <Star className="w-8 h-8 text-yellow-500" />
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{learningProgress.points}</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Puntos Totales</p>
+            <p className="text-sm text-yellow-500 mt-2">Top 5% usuarios</p>
+          </div>
+        </motion.div>
+        
+        {/* Learning Path Visualization */}
+        <motion.div 
+          className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl mb-12"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tu Ruta de Aprendizaje</h2>
+            <button 
+              className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
+              onClick={() => setSelectedCategory('getting-started')}
+            >
+              Ver todos los módulos →
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <LearningPath 
+              nodes={learningPathNodes}
+              currentNodeId="nft-intro"
+              onNodeClick={(nodeId) => {
+                if (nodeId === 'sales-masterclass') {
+                  handleOpenLesson('sales-masterclass');
+                }
+              }}
+              animated={true}
+            />
+          </div>
+        </motion.div>
+
+        {/* Search Bar with Quick Actions */}
         <div className="mb-8">
           <div className="relative max-w-2xl mx-auto">
-            <input
+            <motion.input
               type="text"
-              placeholder="🔍 Buscar temas, tutoriales, conceptos..."
+              placeholder="🔍 Buscar lecciones, conceptos, tutoriales..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-6 py-4 rounded-2xl border border-border-primary bg-bg-card text-text-primary
-                       focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-accent-gold 
-                       text-lg transition-all duration-300"
+              className="w-full px-6 py-4 rounded-2xl border-2 border-purple-200 dark:border-purple-700 
+                       bg-white dark:bg-gray-800 text-gray-900 dark:text-white
+                       focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500
+                       text-lg transition-all duration-300 shadow-lg"
+              whileFocus={{ scale: 1.02 }}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-text-muted 
-                         hover:text-text-secondary transition-colors duration-300"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 
+                         hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 ✕
               </button>
             )}
+          </div>
+          
+          {/* Quick Action Buttons */}
+          <div className="flex justify-center gap-3 mt-4">
+            <motion.button
+              onClick={() => setShowDailyTip(true)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full 
+                       font-medium shadow-lg hover:shadow-xl transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              💡 Tip del Día
+            </motion.button>
+            <motion.button
+              onClick={() => setShowAchievements(true)}
+              className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full 
+                       font-medium shadow-lg hover:shadow-xl transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              🏆 Mis Logros
+            </motion.button>
+            <motion.button
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full 
+                       font-medium shadow-lg hover:shadow-xl transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              📊 Estadísticas
+            </motion.button>
           </div>
         </div>
 
@@ -307,25 +554,53 @@ export default function KnowledgePage() {
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-orange-500/30 to-red-500/30 rounded-full blur-3xl" />
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
-            <div className="text-3xl font-bold text-blue-600 dark:text-accent-gold transition-colors duration-300">50+</div>
-            <div className="text-sm text-text-secondary transition-colors duration-300">Lecciones Disponibles</div>
+        {/* Featured Daily Tip Card */}
+        <motion.div 
+          className="mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                  <Sparkles className="w-6 h-6" />
+                  Tip del Día: ¿Sabías que los NFTs son únicos?
+                </h3>
+                <p className="text-purple-100 mb-4 max-w-2xl">
+                  Cada NFT tiene un identificador único en la blockchain que lo hace imposible de duplicar. 
+                  Es como tener el certificado de autenticidad digital definitivo.
+                </p>
+                <motion.button
+                  onClick={() => setShowDailyTip(true)}
+                  className="px-6 py-3 bg-white text-purple-600 font-bold rounded-xl 
+                           hover:bg-purple-50 transition-all shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Ver Tip Completo →
+                </motion.button>
+              </div>
+              <div className="hidden lg:block">
+                <motion.div
+                  className="text-8xl"
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [-5, 5, -5]
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  💡
+                </motion.div>
+              </div>
+            </div>
           </div>
-          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
-            <div className="text-3xl font-bold text-green-600 dark:text-accent-silver transition-colors duration-300">15h</div>
-            <div className="text-sm text-text-secondary transition-colors duration-300">Contenido Total</div>
-          </div>
-          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
-            <div className="text-3xl font-bold text-purple-600 dark:text-accent-gold transition-colors duration-300">98%</div>
-            <div className="text-sm text-text-secondary transition-colors duration-300">Satisfacción</div>
-          </div>
-          <div className="bg-bg-card p-6 rounded-2xl shadow-sm text-center transition-colors duration-300">
-            <div className="text-3xl font-bold text-orange-600 dark:text-accent-silver transition-colors duration-300">24/7</div>
-            <div className="text-sm text-text-secondary transition-colors duration-300">Asistente AI</div>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Knowledge Modules */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -401,6 +676,14 @@ export default function KnowledgePage() {
                       }}
                     >
                       🚀 INICIAR MASTERCLASS
+                    </button>
+                  ) : module.id === 'claim-first-gift' ? (
+                    <button
+                      onClick={() => handleOpenLesson('claim-first-gift')}
+                      className="block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 
+                               bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold shadow-lg"
+                    >
+                      🎁 COMENZAR EXPERIENCIA
                     </button>
                   ) : (
                     <Link
@@ -481,6 +764,78 @@ export default function KnowledgePage() {
           setCurrentLessonId('');
         }}
       />
+      
+      {/* Daily Tip Modal */}
+      <AnimatePresence>
+        {showDailyTip && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDailyTip(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="max-w-2xl w-full"
+            >
+              <DailyTipCard 
+                streak={userStreak}
+                onComplete={(correct) => {
+                  if (correct) {
+                    setUserStreak(prev => prev + 1);
+                    localStorage.setItem('lastDailyTip', new Date().toDateString());
+                  }
+                  setTimeout(() => setShowDailyTip(false), 3000);
+                }}
+                onSkip={() => setShowDailyTip(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Achievements Modal */}
+      <AnimatePresence>
+        {showAchievements && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowAchievements(false)}
+          >
+            <motion.div
+              className="max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="bg-white dark:bg-gray-800 rounded-3xl p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    🏆 Tus Logros
+                  </h2>
+                  <button
+                    onClick={() => setShowAchievements(false)}
+                    className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                <AchievementShowcase 
+                  achievements={PRESET_ACHIEVEMENTS}
+                  columns={4}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

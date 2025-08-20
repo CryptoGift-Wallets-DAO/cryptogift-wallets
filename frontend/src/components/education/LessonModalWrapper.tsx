@@ -31,6 +31,22 @@ const SalesMasterclass = dynamic(
   }
 );
 
+// Import dinámico para ClaimFirstGift
+const ClaimFirstGift = dynamic(
+  () => import('../learn/ClaimFirstGift').then(mod => ({ default: mod.ClaimFirstGift })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-xl">Cargando Lección de Claim...</p>
+        </div>
+      </div>
+    )
+  }
+);
+
 // Simple confetti implementation matching existing celebration
 function triggerConfetti(options?: any) {
   const duration = 3000;
@@ -229,7 +245,9 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                 {mode === 'educational' ? '🎓 Módulo Educativo Requerido' : '📚 Knowledge Academy'}
               </h1>
               <p className="text-gray-400 text-sm">
-                {lessonId === 'sales-masterclass' ? 'Sales Masterclass - De $0 a $100M en 15 minutos' : 'Lección Interactive'}
+                {lessonId === 'sales-masterclass' ? 'Sales Masterclass - De $0 a $100M en 15 minutos' : 
+                 lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo Cripto - 7 minutos' : 
+                 'Lección Interactive'}
               </p>
             </div>
             
@@ -287,7 +305,9 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                 >
                   <div className="bg-green-900/30 border border-green-500/50 rounded-xl p-4">
                     <p className="text-green-400 font-bold text-xl">
-                      ✅ Sales Masterclass - COMPLETADO
+                      ✅ {lessonId === 'sales-masterclass' ? 'Sales Masterclass' : 
+                         lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo' : 
+                         'Módulo'} - COMPLETADO
                     </p>
                     <p className="text-green-300 text-sm mt-2">
                       Has completado exitosamente el módulo educativo
@@ -322,6 +342,13 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
               {lessonId === 'sales-masterclass' ? (
                 <div className="h-full">
                   <SalesMasterclass
+                    educationalMode={mode === 'educational'}
+                    onEducationComplete={handleLessonComplete}
+                  />
+                </div>
+              ) : lessonId === 'claim-first-gift' ? (
+                <div className="h-full">
+                  <ClaimFirstGift
                     educationalMode={mode === 'educational'}
                     onEducationComplete={handleLessonComplete}
                   />
