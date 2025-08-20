@@ -11,6 +11,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
+import { ConnectButton, useActiveAccount } from 'thirdweb/react';
+import { client } from '../../app/client';
 // Simple confetti function to avoid external dependency
 function confetti(options: any) {
   console.log('🎉 Confetti effect triggered!', options);
@@ -422,6 +424,9 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   onEducationComplete
 }) => {
   console.log('🚀 SALES MASTERCLASS INIT:', { educationalMode, hasOnEducationComplete: !!onEducationComplete });
+  
+  // Hooks
+  const account = useActiveAccount();
   
   // State
   const [currentBlock, setCurrentBlock] = useState(0);
@@ -1725,22 +1730,56 @@ const CaptureBlock: React.FC<{
           Ahora entiendes nuestra visión y cómo funciona la plataforma.
         </motion.p>
         
-        <motion.button
-          onClick={() => onSubmit({ educationCompleted: true, questionsScore })}
-          className="px-12 py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          style={{
-            animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <Trophy className="w-8 h-8" />
-            COMPLETAR EDUCACIÓN Y RECLAMAR REGALO
-            <Gift className="w-8 h-8" />
-          </div>
-        </motion.button>
+        {/* Check if wallet is connected */}
+        {!account ? (
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <p className="text-yellow-400 font-semibold text-lg mb-4">
+              🔒 Conecta tu wallet para completar el módulo educativo
+            </p>
+            <ConnectButton
+              client={client}
+              appMetadata={{
+                name: "CryptoGift Wallets",
+                url: typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'
+              }}
+              theme="dark"
+              style={{
+                background: 'linear-gradient(to right, rgb(234, 179, 8), rgb(34, 197, 94))',
+                color: 'black',
+                fontWeight: 'bold',
+                fontSize: '1.2rem',
+                padding: '1.25rem 3rem',
+                borderRadius: '0.75rem',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+              }}
+            />
+            <p className="text-gray-400 text-sm mt-4">
+              Tu wallet es necesaria para generar la firma EIP-712 que valida tu educación
+            </p>
+          </motion.div>
+        ) : (
+          <motion.button
+            onClick={() => onSubmit({ educationCompleted: true, questionsScore })}
+            className="px-12 py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            style={{
+              animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <Trophy className="w-8 h-8" />
+              COMPLETAR EDUCACIÓN Y RECLAMAR REGALO
+              <Gift className="w-8 h-8" />
+            </div>
+          </motion.button>
+        )}
       </div>
     );
   }
