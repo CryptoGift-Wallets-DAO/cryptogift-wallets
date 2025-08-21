@@ -229,7 +229,52 @@ export default function KnowledgePage() {
     module.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Learning path nodes for visualization - OPTIMIZED FOR CARD DISPLAY
+  // LEARNING PATH NODES - SISTEMA DOCUMENTADO DE DISEÑO UX
+  // =====================================================
+  //
+  // ESTÁNDARES DE DISEÑO LEARNING PATH OBLIGATORIOS:
+  //
+  // 1. POSICIONAMIENTO DE CARDS:
+  //    - Cards aparecen SIEMPRE DEBAJO de los nodos
+  //    - Espacio mínimo: nodeSize/2 + 15px entre nodo y card
+  //    - Cards centradas: cardLeft = node.position.x - 100
+  //    - SVG height debe incluir +350px para espacio de cards
+  //
+  // 2. SISTEMA DE INTERACCIÓN HOVER/TOUCH:
+  //    - onMouseEnter/onMouseLeave para desktop
+  //    - onTouchStart/onTouchEnd para móvil
+  //    - State: Set<string> para múltiples cards visibles
+  //    - NO botones de cierre (X) - UX limpia
+  //
+  // 3. CLICK OUTSIDE TO CLOSE:
+  //    - Event listeners: mousedown + touchstart
+  //    - data-node y data-card para identificar elementos
+  //    - Solo activos cuando visibleCards.size > 0
+  //
+  // 4. INDICADORES VISUALES:
+  //    - Solo nodos NO locked muestran "Hover → Info"
+  //    - Nodos grises (locked) sin indicadores
+  //    - Cambio dinámico: "Hover → Info" / "Click → Entrenar"
+  //
+  // 5. ANIMACIONES OBLIGATORIAS:
+  //    - Spring physics: stiffness: 300, damping: 25
+  //    - Entry: opacity 0→1, y: -20→0, scale: 0.8→1
+  //    - Exit: opacity 1→0, y: 0→-10, scale: 1→0.9
+  //    - Hover en nodos: scale: 1.1, stiffness: 400, damping: 10
+  //
+  // 6. GLASS MORPHISM OBLIGATORIO:
+  //    - backdrop-blur-xl + backdrop-saturate-150
+  //    - from-white/95 to-white/90 (light)
+  //    - from-gray-800/95 to-gray-900/90 (dark)
+  //    - border-white/20 + shadow-2xl
+  //
+  // 7. RESPONSIVE & MOBILE:
+  //    - Touch events idénticos a mouse events
+  //    - Cards width: 200px fijo
+  //    - Overflow-x-auto en contenedor principal
+  //
+  // ESTE DISEÑO ES EL ESTÁNDAR DEFINITIVO - NO CAMBIAR SIN DOCUMENTAR
+  //
   const learningPathNodes: PathNode[] = [
     {
       id: 'start',

@@ -85,8 +85,9 @@ graph TD
 ### Frontend
 - **Next.js 15** - Framework React
 - **ThirdWeb v5** - Web3 SDK con Account Abstraction
-- **Tailwind CSS** - Styling
+- **Tailwind CSS** - Styling con design tokens
 - **TypeScript** - Type safety
+- **Framer Motion** - Animaciones spring physics estándar
 
 ### Blockchain
 - **Base Sepolia** - Layer 2 para transacciones rápidas y baratas
@@ -197,8 +198,11 @@ frontend/src/
 ├── app/                    # App Router de Next.js
 │   ├── page.tsx           # Página principal
 │   ├── token/[...]/       # Página de wallet NFT
+│   ├── knowledge/         # Sistema educativo completo
 │   └── referrals/         # Panel de referidos
 ├── components/            # Componentes React
+│   ├── learn/             # 🎓 SISTEMA UX MASTER
+│   │   └── LearningPath.tsx # ⭐ COMPONENTE PATRÓN UX
 │   ├── GiftWizard.tsx     # Wizard de creación
 │   ├── WalletInterface.tsx # Interfaz de wallet
 │   └── SwapModal.tsx      # Modal de swaps
@@ -210,6 +214,20 @@ frontend/src/
     ├── constants.ts       # Configuraciones
     └── errorHandler.ts    # Manejo de errores
 ```
+
+### 🎨 Estándares de Diseño UX
+
+El proyecto sigue **estándares obligatorios de UX** documentados en:
+- `UX_DESIGN_STANDARDS.md` - Patrones de diseño oficial
+- `components/learn/LearningPath.tsx` - Componente patrón maestro
+- `app/knowledge/page.tsx` - Implementación de referencia
+
+#### Principios UX Obligatorios:
+- **Hover/Touch System**: Sin botones feos, interacción natural
+- **Click Outside to Close**: UX sin interrupciones
+- **Spring Physics**: stiffness: 300, damping: 25 (estándar)
+- **Glass Morphism**: backdrop-blur-xl + transparencias
+- **Mobile-First**: Touch events = Mouse events
 
 ## 🔧 Configuración Avanzada
 

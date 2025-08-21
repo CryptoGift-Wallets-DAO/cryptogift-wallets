@@ -1,6 +1,53 @@
 /**
- * LEARNING PATH COMPONENT - Visualización estilo Brilliant
- * Rutas de aprendizaje conectadas con animaciones fluidas
+ * LEARNING PATH COMPONENT - SISTEMA DE DISEÑO UX DEFINITIVO
+ * ========================================================
+ * 
+ * Visualización interactiva estilo Brilliant con estándares de diseño obligatorios.
+ * Este componente establece el patrón UX estándar para toda la plataforma.
+ * 
+ * PRINCIPIOS DE DISEÑO FUNDAMENTALES:
+ * 
+ * 🎨 VISUAL DESIGN STANDARDS:
+ * - Glass Morphism: backdrop-blur-xl + backdrop-saturate-150
+ * - Cards aparecen SIEMPRE DEBAJO de nodos (nunca superpuestas)
+ * - Hover/Touch system: Sin botones feos, UX limpia y natural
+ * - Spring animations: stiffness: 300, damping: 25 (obligatorio)
+ * 
+ * 🖱️ INTERACTION PATTERNS:
+ * - Desktop: onMouseEnter → show card, onMouseLeave → hide card
+ * - Mobile: onTouchStart → show card, onTouchEnd → hide card  
+ * - Click outside anywhere → close all cards (no interruptions)
+ * - NO botones X de cierre (feo y innecesario)
+ * 
+ * 📱 RESPONSIVE BEHAVIOR:
+ * - Touch events = Mouse events (identical behavior)
+ * - Cards width: 200px fixed (optimal for mobile/desktop)
+ * - Overflow-x-auto container para navegación horizontal
+ * 
+ * 🎯 CONDITIONAL INDICATORS:
+ * - Solo nodos con COLOR muestran "Hover → Info" / "Click → Entrenar"
+ * - Nodos GRISES (locked) = sin indicadores (no hay contenido)
+ * - Estado dinámico: hover activo cambia texto indicador
+ * 
+ * 📏 POSITIONING MATHEMATICS:
+ * - SVG height = max(node.y) + 350px (espacio para cards)
+ * - Card top = node.y + nodeSize/2 + 15px (debajo del nodo)
+ * - Card left = node.x - 100px (centrada bajo nodo)
+ * 
+ * 🚀 ANIMATION SPECIFICATIONS:
+ * - Card Entry: { opacity: 0→1, y: -20→0, scale: 0.8→1 }
+ * - Card Exit: { opacity: 1→0, y: 0→-10, scale: 1→0.9 }
+ * - Node Hover: { scale: 1→1.1, spring: stiffness:400, damping:10 }
+ * - Timing: 0.4s duration con spring physics
+ * 
+ * 🔧 TECHNICAL ARCHITECTURE:
+ * - State: Set<string> para múltiples cards visibles simultáneas
+ * - Event delegation: data-node y data-card atributos
+ * - Memory efficiency: listeners solo activos cuando necesarios
+ * - Clean unmount: removeEventListener en cleanup
+ * 
+ * ESTE ES EL ESTÁNDAR DE DISEÑO DEFINITIVO PARA TODA LA PLATAFORMA.
+ * Cualquier modificación debe documentarse aquí y seguir estos principios.
  * 
  * Made by mbxarts.com The Moon in a Box property
  * Co-Author: Godez22
@@ -50,21 +97,31 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   // State para controlar qué cards están visibles
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
   
-  // Handler para click en nodos
+  // Ref para el contenedor principal
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Handler para hover en nodos (mostrar card)
+  const handleNodeHover = (nodeId: string, nodeStatus: PathNode['status']) => {
+    if (nodeStatus === 'locked') return; // No mostrar info si está bloqueado
+    console.log('👁️ Showing info card on hover for:', nodeId);
+    setVisibleCards(prev => new Set([...prev, nodeId]));
+  };
+  
+  // Handler para unhover en nodos (ocultar card)
+  const handleNodeUnhover = (nodeId: string) => {
+    console.log('👁️ Hiding info card on unhover for:', nodeId);
+    setVisibleCards(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(nodeId);
+      return newSet;
+    });
+  };
+  
+  // Handler para click en nodos (abrir entrenamiento directamente)
   const handleNodeClick = (nodeId: string, nodeStatus: PathNode['status']) => {
     if (nodeStatus === 'locked') return; // No hacer nada si está bloqueado
-    
-    const isCardVisible = visibleCards.has(nodeId);
-    
-    if (!isCardVisible) {
-      // FIRST CLICK: Mostrar card de información
-      console.log('🔍 Showing info card for:', nodeId);
-      setVisibleCards(prev => new Set([...prev, nodeId]));
-    } else {
-      // SECOND CLICK: Abrir módulo para entrenar
-      console.log('🚀 Opening training module for:', nodeId);
-      onNodeClick?.(nodeId);
-    }
+    console.log('🚀 Opening training module for:', nodeId);
+    onNodeClick?.(nodeId);
   };
   
   // Handler para botón "Comenzar" en card
@@ -72,21 +129,40 @@ export const LearningPath: React.FC<LearningPathProps> = ({
     console.log('▶️ Starting training from button for:', nodeId);
     onNodeClick?.(nodeId);
   };
-  
-  // Cerrar card cuando se hace click fuera
-  const handleCloseCard = (nodeId: string) => {
-    setVisibleCards(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(nodeId);
-      return newSet;
-    });
-  };
 
   useEffect(() => {
     if (isInView && animated) {
       controls.start('visible');
     }
   }, [isInView, controls, animated]);
+
+  // Effect para manejar click/touch fuera de las cards
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Element;
+      
+      // Si el click fue en una card o en un nodo, no cerrar
+      if (target.closest('[data-card]') || target.closest('[data-node]')) {
+        return;
+      }
+      
+      // Cerrar todas las cards visibles
+      if (visibleCards.size > 0) {
+        console.log('👁️ Closing all cards on outside click/touch');
+        setVisibleCards(new Set());
+      }
+    };
+
+    // Solo agregar los listeners si hay cards visibles
+    if (visibleCards.size > 0) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+    }
+  }, [visibleCards]);
 
   const getNodeColor = (status: PathNode['status']) => {
     switch (status) {
@@ -135,7 +211,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   const nodeSize = compact ? 60 : 80;
 
   return (
-    <div className="relative w-full overflow-x-auto">
+    <div ref={containerRef} className="relative w-full overflow-x-auto">
       <svg
         ref={svgRef}
         width={svgWidth}
@@ -187,6 +263,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
           return (
             <motion.g
               key={node.id}
+              data-node={node.id}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ 
@@ -196,6 +273,10 @@ export const LearningPath: React.FC<LearningPathProps> = ({
               }}
               style={{ cursor: node.status !== 'locked' ? 'pointer' : 'not-allowed' }}
               onClick={() => handleNodeClick(node.id, node.status)}
+              onMouseEnter={() => handleNodeHover(node.id, node.status)}
+              onMouseLeave={() => handleNodeUnhover(node.id)}
+              onTouchStart={() => handleNodeHover(node.id, node.status)}
+              onTouchEnd={() => handleNodeUnhover(node.id)}
               whileHover={node.status !== 'locked' ? { 
                 scale: 1.1,
                 transition: { type: "spring", stiffness: 400, damping: 10 }
@@ -288,7 +369,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                 </text>
               )}
               
-              {/* Click instructions for interactive nodes */}
+              {/* Hover indicator only for colored nodes (no grises/locked) */}
               {node.status !== 'locked' && (
                 <text
                   x={node.position.x}
@@ -298,7 +379,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                   fill="#6B7280"
                   className="pointer-events-none select-none"
                 >
-                  {visibleCards.has(node.id) ? 'Click → Entrenar' : 'Click → Info'}
+                  {visibleCards.has(node.id) ? 'Click → Entrenar' : 'Hover → Info'}
                 </text>
               )}
             </motion.g>
@@ -323,6 +404,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
             return (
               <motion.div
               key={`detail-${node.id}`}
+              data-card={node.id}
               className="absolute pointer-events-auto"
               style={{
                 left: `${cardLeft}px`,
@@ -338,6 +420,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                 damping: 25,
                 duration: 0.4
               }}
+              onMouseEnter={() => handleNodeHover(node.id, node.status)}
+              onMouseLeave={() => handleNodeUnhover(node.id)}
+              onTouchStart={() => handleNodeHover(node.id, node.status)}
             >
               {/* Card Container with Glass Morphism Effect */}
               <div className={`
@@ -354,14 +439,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                 {/* Gradient Border Effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-pink-500/20 pointer-events-none" />
                 
-                {/* Close Button */}
-                <button
-                  onClick={() => handleCloseCard(node.id)}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-gray-400 hover:bg-gray-500 text-white rounded-full flex items-center justify-center text-xs font-bold z-20 transition-colors"
-                  title="Cerrar información"
-                >
-                  ×
-                </button>
+{/* Close button removed - cleaner UX */}
                 
                 {/* Connection Line from Node to Card */}
                 <div 
