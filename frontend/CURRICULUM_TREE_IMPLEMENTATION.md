@@ -1,8 +1,68 @@
-# 🎯 CURRICULUM TREE IMPLEMENTATION - OBRA MAESTRA COMPLETADA
+# 🎯 CURRICULUM TREE IMPLEMENTATION - SISTEMA COMPLETO + LEARNING PATH RESTORED
 
-## ✅ **PROYECTO COMPLETADO AL 100%**
+## ✅ **PROYECTO COMPLETADO AL 100% + INFORMACIÓN RESTAURADA**
 
-He implementado exitosamente el sistema completo de **Árbol Curricular Interactivo** para CryptoGift Academy, transformando la sección "Ver todos los módulos" en una experiencia visual extraordinaria.
+Sistema completo de **Knowledge Academy** implementado con información restaurada del commit 7dfa065. Incluye tanto el árbol curricular completo como los nodos específicos curados de "Tu Ruta de Aprendizaje".
+
+---
+
+## 🔄 **LEARNING PATH RESTORATION (Agosto 21, 2025)**
+
+### **PROBLEMA CRÍTICO IDENTIFICADO:**
+- ✅ **Local funcionaba perfecto** con toda la información
+- ❌ **Vercel deployment fallaba** porque faltaban archivos en commits
+- ❌ **Tu Ruta de Aprendizaje** usaba datos genéricos vs nodos específicos del commit 7dfa065
+
+### **SOLUCIÓN DUAL IMPLEMENTADA:**
+
+**1. DEPLOYMENT FIX:**
+```bash
+# Archivos que faltaban en commits
++ frontend/src/app/knowledge/page.tsx              (página principal)
++ frontend/src/components/learn/CurriculumTree.tsx (árbol curricular)
++ frontend/src/components/learn/AchievementSystem.tsx
++ frontend/src/components/learn/DailyTipCard.tsx
++ frontend/src/components/learn/ProgressRing.tsx
++ frontend/src/data/curriculumData.ts
++ documentación completa del sistema
+```
+
+**2. LEARNING PATH RESTORATION:**
+```typescript
+// COMMIT 7dfa065: Nodos específicos curados
+const specificNodes = [
+  {
+    id: 'start',
+    title: 'Inicio',
+    description: 'Tu viaje cripto empieza aquí. Descubre el poder...',
+    // Información contextual específica
+  }
+];
+
+// AHORA: Best of both worlds
+const restoredNodes = [
+  {
+    id: 'start',
+    title: 'Inicio',
+    subtitle: 'Bienvenida Cripto',                    // NUEVO
+    description: 'Tu viaje cripto empieza aquí...',   // RESTAURADO
+    objective: 'Comprender los fundamentos...',       // NUEVO
+    xpTotal: 100,                                     // NUEVO
+    masterBadgeTitle: 'Pionero Crypto',               // NUEVO
+    // Best of both: específico + rico
+  }
+];
+```
+
+**NODOS RESTAURADOS COMPLETOS:**
+1. 🚀 **Inicio** (2min, 100 XP, Badge: Pionero Crypto)
+2. 👛 **Wallet Básico** (8min, 350 XP, Badge: Guardian Digital)
+3. 🖼️ **Intro NFTs** (12min, 480 XP, Badge: Coleccionista NFT)
+4. 🪙 **Crypto Básico** (15min, 500 XP, Badge: Crypto Scholar)
+5. 🎁 **CryptoGift** (10min, 650 XP, Badge: CryptoGift Pro)
+6. 🏦 **DeFi** (25min, 900 XP, Badge: DeFi Master)
+7. 💎 **Sales Masterclass** (20min, 1200 XP, Badge: Sales Champion)
+8. 🏆 **Experto Crypto** (45min, 2000 XP, Badge: Crypto Master)
 
 ---
 
