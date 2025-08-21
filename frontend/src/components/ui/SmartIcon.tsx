@@ -60,14 +60,14 @@ export const SmartIcon: React.FC<SmartIconProps> = ({
         const LucideIcon = getLucideIconForEmoji(firstEmoji);
         
         return (
-          <LucideIcon
-            size={size}
-            className={`smart-icon ${className}`}
-            color={color}
-            strokeWidth={strokeWidth}
-            title={title || `Icon for ${firstEmoji}`}
-            aria-label={ariaLabel || title || `Icon representing ${firstEmoji}`}
-          />
+          <span title={title || `Icon for ${firstEmoji}`} aria-label={ariaLabel || title || `Icon representing ${firstEmoji}`}>
+            <LucideIcon
+              size={size}
+              className={`smart-icon ${className}`}
+              color={color}
+              strokeWidth={strokeWidth}
+            />
+          </span>
         );
       }
     }
@@ -90,14 +90,14 @@ export const SmartIcon: React.FC<SmartIconProps> = ({
   const LucideComponent = icon as LucideIcon;
   
   return (
-    <LucideComponent
-      size={size}
-      className={`smart-icon ${className}`}
-      color={color}
-      strokeWidth={strokeWidth}
-      title={title}
-      aria-label={ariaLabel || title}
-    />
+    <span title={title} aria-label={ariaLabel || title}>
+      <LucideComponent
+        size={size}
+        className={`smart-icon ${className}`}
+        color={color}
+        strokeWidth={strokeWidth}
+      />
+    </span>
   );
 };
 

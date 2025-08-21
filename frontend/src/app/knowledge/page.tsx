@@ -18,7 +18,7 @@ interface KnowledgeModule {
   id: string;
   title: string;
   description: string;
-  icon: string | React.ComponentType<any>;
+  icon: string;
   level: 'Básico' | 'Intermedio' | 'Avanzado';
   duration: string;
   topics: string[];
