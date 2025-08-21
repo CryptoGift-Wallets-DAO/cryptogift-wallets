@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LessonModalWrapper } from '../../components/education/LessonModalWrapper';
 import { getAllLessons, getLessonsByCategory } from '../../lib/lessonRegistry';
 import { ProgressRing, ProgressRingGroup } from '../../components/learn/ProgressRing';
-import { LearningPath, PathNode } from '../../components/learn/LearningPath';
+import { LearningContainer } from '../../components/learn';
 import { DailyTipCard } from '../../components/learn/DailyTipCard';
 import { AchievementShowcase, PRESET_ACHIEVEMENTS } from '../../components/learn/AchievementSystem';
 import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles, Plus, Grid3x3, Layers, Settings, PenTool, Wand2, GraduationCap } from 'lucide-react';
@@ -42,6 +42,8 @@ export default function KnowledgePage() {
   const [showDailyTip, setShowDailyTip] = useState(false);
   const [userStreak, setUserStreak] = useState(7); // Demo streak
   const [showAchievements, setShowAchievements] = useState(false);
+  
+  // Toggle system is now handled internally by LearningContainer
   
   // NUEVO: Estados del modo Creator
   const [showCreatorWizard, setShowCreatorWizard] = useState(false);
@@ -531,32 +533,34 @@ export default function KnowledgePage() {
           </div>
         </motion.div>
         
-        {/* Learning Path Visualization */}
+        {/* Learning Path / Curriculum Tree Visualization */}
         <motion.div 
           className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl mb-12"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tu Ruta de Aprendizaje</h2>
-            <button 
-              className="text-purple-600 dark:text-purple-400 hover:underline font-medium"
-              onClick={() => setSelectedCategory('getting-started')}
-            >
-              Ver todos los módulos →
-            </button>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">
+              CG Academy - Sistema de Aprendizaje Interactivo
+            </h2>
           </div>
-          <div className="overflow-x-auto">
-            <LearningPath 
-              nodes={learningPathNodes}
-              currentNodeId="nft-intro"
-              onNodeClick={(nodeId) => {
+          
+          {/* New Learning Container with Toggle System */}
+          <div className="h-[600px] rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+            <LearningContainer
+              onNodeClick={(nodeId, nodeType) => {
+                console.log('🎯 Node selected:', nodeId, nodeType);
+                // Handle node selection - could open lesson modal, etc.
                 if (nodeId === 'sales-masterclass') {
                   handleOpenLesson('sales-masterclass');
                 }
               }}
-              animated={true}
+              onQuestStart={(questId) => {
+                console.log('✪ Starting quest:', questId);
+                // TODO: Start quest system
+              }}
+              className="w-full h-full"
             />
           </div>
         </motion.div>
