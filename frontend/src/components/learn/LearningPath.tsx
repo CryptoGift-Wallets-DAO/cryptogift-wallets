@@ -6,8 +6,8 @@
  * Co-Author: Godez22
  */
 
-import React, { useEffect, useRef } from 'react';
-import { motion, useAnimation, useInView } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 export interface PathNode {
@@ -46,6 +46,41 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const controls = useAnimation();
   const isInView = useInView(svgRef);
+  
+  // State para controlar qué cards están visibles
+  const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
+  
+  // Handler para click en nodos
+  const handleNodeClick = (nodeId: string, nodeStatus: PathNode['status']) => {
+    if (nodeStatus === 'locked') return; // No hacer nada si está bloqueado
+    
+    const isCardVisible = visibleCards.has(nodeId);
+    
+    if (!isCardVisible) {
+      // FIRST CLICK: Mostrar card de información
+      console.log('🔍 Showing info card for:', nodeId);
+      setVisibleCards(prev => new Set([...prev, nodeId]));
+    } else {
+      // SECOND CLICK: Abrir módulo para entrenar
+      console.log('🚀 Opening training module for:', nodeId);
+      onNodeClick?.(nodeId);
+    }
+  };
+  
+  // Handler para botón "Comenzar" en card
+  const handleStartTraining = (nodeId: string) => {
+    console.log('▶️ Starting training from button for:', nodeId);
+    onNodeClick?.(nodeId);
+  };
+  
+  // Cerrar card cuando se hace click fuera
+  const handleCloseCard = (nodeId: string) => {
+    setVisibleCards(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(nodeId);
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (isInView && animated) {
@@ -160,7 +195,12 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                 stiffness: 200
               }}
               style={{ cursor: node.status !== 'locked' ? 'pointer' : 'not-allowed' }}
-              onClick={() => node.status !== 'locked' && onNodeClick?.(node.id)}
+              onClick={() => handleNodeClick(node.id, node.status)}
+              whileHover={node.status !== 'locked' ? { 
+                scale: 1.1,
+                transition: { type: "spring", stiffness: 400, damping: 10 }
+              } : undefined}
+              whileTap={node.status !== 'locked' ? { scale: 0.95 } : undefined}
             >
               {/* Node background with glow effect */}
               {(isActive || node.status === 'in-progress') && (
@@ -247,22 +287,41 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                   🔒
                 </text>
               )}
+              
+              {/* Click instructions for interactive nodes */}
+              {node.status !== 'locked' && (
+                <text
+                  x={node.position.x}
+                  y={node.position.y + nodeSize / 2 + 12}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fill="#6B7280"
+                  className="pointer-events-none select-none"
+                >
+                  {visibleCards.has(node.id) ? 'Click → Entrenar' : 'Click → Info'}
+                </text>
+              )}
             </motion.g>
           );
         })}
       </svg>
 
-      {/* Node details cards - BELOW NODES WITHOUT OVERLAP */}
+      {/* Node details cards - BELOW NODES WITHOUT OVERLAP - NOW WITH TOGGLE */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        {nodes.map((node, index) => {
-          if (compact) return null;
-          
-          // Calculate position to appear below node with proper spacing
-          const cardTop = node.position.y + nodeSize / 2 + 15; // Below the node
-          const cardLeft = node.position.x - 100; // Centered under node
-          
-          return (
-            <motion.div
+        <AnimatePresence>
+          {nodes.map((node, index) => {
+            if (compact) return null;
+            
+            // Solo mostrar card si está en el Set de visibleCards
+            const isCardVisible = visibleCards.has(node.id);
+            if (!isCardVisible) return null;
+            
+            // Calculate position to appear below node with proper spacing
+            const cardTop = node.position.y + nodeSize / 2 + 15; // Below the node
+            const cardLeft = node.position.x - 100; // Centered under node
+            
+            return (
+              <motion.div
               key={`detail-${node.id}`}
               className="absolute pointer-events-auto"
               style={{
@@ -270,13 +329,14 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                 top: `${cardTop}px`,
                 zIndex: 10 + index // Ensure proper stacking
               }}
-              initial={{ opacity: 0, y: -10, scale: 0.9 }}
+              initial={{ opacity: 0, y: -20, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.9 }}
               transition={{ 
-                delay: animated ? index * 0.1 + 0.5 : 0,
                 type: "spring",
-                stiffness: 260,
-                damping: 20
+                stiffness: 300,
+                damping: 25,
+                duration: 0.4
               }}
             >
               {/* Card Container with Glass Morphism Effect */}
@@ -293,6 +353,15 @@ export const LearningPath: React.FC<LearningPathProps> = ({
               `}>
                 {/* Gradient Border Effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-pink-500/20 pointer-events-none" />
+                
+                {/* Close Button */}
+                <button
+                  onClick={() => handleCloseCard(node.id)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-gray-400 hover:bg-gray-500 text-white rounded-full flex items-center justify-center text-xs font-bold z-20 transition-colors"
+                  title="Cerrar información"
+                >
+                  ×
+                </button>
                 
                 {/* Connection Line from Node to Card */}
                 <div 
@@ -380,7 +449,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                         className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-xl"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => onNodeClick?.(node.id)}
+                        onClick={() => handleStartTraining(node.id)}
                       >
                         Comenzar →
                       </motion.button>
@@ -423,10 +492,12 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                     <div className="w-3 h-3 bg-purple-500 rounded-full absolute top-0" />
                   </div>
                 )}
+                
               </div>
             </motion.div>
           );
         })}
+        </AnimatePresence>
       </div>
     </div>
   );
