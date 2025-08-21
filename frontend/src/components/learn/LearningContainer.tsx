@@ -105,34 +105,143 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
     console.log(`Node selected: ${nodeId} (${nodeType})`);
   }, [onNodeClick]);
 
-  // Datos REALES del curriculum para LearningPath (INFORMACIÓN RICA)
+  // NODOS ESPECÍFICOS del commit 7dfa065 con información rica actual (BEST OF BOTH)
   const learningPathNodes: PathNode[] = useMemo(() => {
-    // Seleccionar los primeros módulos para el learning path personalizado
-    const selectedModules = modules.slice(0, 8); // Primeros 8 módulos para la ruta
-    
-    return selectedModules.map((module: Module, index: number) => ({
-      id: module.id,
-      title: module.title,
-      subtitle: module.categoryTitle || 'Módulo Core',
-      description: module.description,
-      objective: module.objective, // INFORMACIÓN RICA AÑADIDA
-      icon: module.icon,
-      status: module.status,
-      difficulty: module.difficulty,
-      estimatedTime: module.estimatedTime ? `${module.estimatedTime}min` : undefined,
-      xpTotal: module.xpTotal, // INFORMACIÓN RICA AÑADIDA
-      branches: module.branches, // INFORMACIÓN RICA AÑADIDA
-      prerequisites: module.prerequisites, // INFORMACIÓN RICA AÑADIDA
-      masterBadgeTitle: module.masterBadgeTitle, // INFORMACIÓN RICA AÑADIDA
-      masterBadgeDescription: module.masterBadgeDescription, // INFORMACIÓN RICA AÑADIDA
-      completedBranches: module.completedBranches || 0,
-      progress: module.status === 'in-progress' ? Math.floor(((module.completedBranches || 0) / module.branches.length) * 100) : undefined,
-      position: {
-        x: 150 + (index % 4) * 200, // Distribución en grid
-        y: 100 + Math.floor(index / 4) * 180
+    return [
+      {
+        id: 'start',
+        title: 'Inicio',
+        subtitle: 'Bienvenida Cripto',
+        description: 'Tu viaje cripto empieza aquí. Descubre el poder de la tecnología blockchain',
+        objective: 'Comprender los fundamentos del ecosistema blockchain y estar listo para explorar',
+        icon: '🚀',
+        status: 'completed' as const,
+        position: { x: 150, y: 80 },
+        connections: ['wallet-basics'],
+        estimatedTime: '2 min',
+        difficulty: 'beginner' as const,
+        xpTotal: 100,
+        masterBadgeTitle: 'Pionero Crypto',
+        masterBadgeDescription: 'Has comenzado tu aventura en el mundo cripto'
       },
-      connections: index < selectedModules.length - 1 ? [selectedModules[index + 1].id] : []
-    }));
+      {
+        id: 'wallet-basics',
+        title: 'Wallet Básico',
+        subtitle: 'Gestión Segura',
+        description: 'Aprende a crear y gestionar tu billetera digital de forma segura',
+        objective: 'Dominar la creación, backup y uso básico de wallets digitales',
+        icon: '👛',
+        status: 'completed' as const,
+        position: { x: 350, y: 100 },
+        connections: ['nft-intro', 'crypto-basics'],
+        estimatedTime: '8 min',
+        difficulty: 'beginner' as const,
+        xpTotal: 350,
+        masterBadgeTitle: 'Guardian Digital',
+        masterBadgeDescription: 'Maestro en seguridad de wallets'
+      },
+      {
+        id: 'nft-intro',
+        title: 'Intro NFTs',
+        subtitle: 'Arte Digital',
+        description: 'Descubre qué son los NFTs y cómo revolucionan la propiedad digital',
+        objective: 'Entender los NFTs, su utilidad y cómo interactuar con ellos',
+        icon: '🖼️',
+        status: 'in-progress' as const,
+        progress: 65,
+        position: { x: 550, y: 60 },
+        connections: ['cryptogift-basics'],
+        estimatedTime: '12 min',
+        difficulty: 'beginner' as const,
+        xpTotal: 480,
+        masterBadgeTitle: 'Coleccionista NFT',
+        masterBadgeDescription: 'Experto en tokens no fungibles'
+      },
+      {
+        id: 'crypto-basics',
+        title: 'Crypto Básico',
+        subtitle: 'Fundamentos',
+        description: 'Fundamentos de criptomonedas y tecnología blockchain',
+        objective: 'Comprender cómo funcionan las criptomonedas y la tecnología subyacente',
+        icon: '🪙',
+        status: 'available' as const,
+        position: { x: 550, y: 140 },
+        connections: ['defi-basics'],
+        estimatedTime: '15 min',
+        difficulty: 'beginner' as const,
+        xpTotal: 500,
+        masterBadgeTitle: 'Crypto Scholar',
+        masterBadgeDescription: 'Conocedor de fundamentos blockchain'
+      },
+      {
+        id: 'cryptogift-basics',
+        title: 'CryptoGift',
+        subtitle: 'Regalos Cripto',
+        description: 'Domina CryptoGift: envía y recibe regalos cripto de forma fácil',
+        objective: 'Convertirse en experto usando la plataforma CryptoGift',
+        icon: '🎁',
+        status: 'available' as const,
+        position: { x: 750, y: 80 },
+        connections: ['sales-masterclass'],
+        estimatedTime: '10 min',
+        difficulty: 'intermediate' as const,
+        prerequisites: ['nft-intro'],
+        xpTotal: 650,
+        masterBadgeTitle: 'CryptoGift Pro',
+        masterBadgeDescription: 'Maestro de regalos digitales'
+      },
+      {
+        id: 'defi-basics',
+        title: 'DeFi',
+        subtitle: 'Finanzas Descentralizadas',
+        description: 'Finanzas descentralizadas: préstamos, yield farming y más',
+        objective: 'Dominar los protocolos DeFi y estrategias de yield',
+        icon: '🏦',
+        status: 'locked' as const,
+        position: { x: 750, y: 160 },
+        connections: ['advanced'],
+        estimatedTime: '25 min',
+        difficulty: 'advanced' as const,
+        prerequisites: ['crypto-basics'],
+        xpTotal: 900,
+        masterBadgeTitle: 'DeFi Master',
+        masterBadgeDescription: 'Experto en finanzas descentralizadas'
+      },
+      {
+        id: 'sales-masterclass',
+        title: 'Sales Masterclass',
+        subtitle: 'Monetización Pro',
+        description: 'Conviértete en colaborador experto y monetiza con CryptoGift',
+        objective: 'Desarrollar habilidades de venta y colaboración profesional',
+        icon: '💎',
+        status: 'available' as const,
+        position: { x: 950, y: 100 },
+        connections: ['advanced'],
+        estimatedTime: '20 min',
+        difficulty: 'intermediate' as const,
+        prerequisites: ['cryptogift-basics'],
+        xpTotal: 1200,
+        masterBadgeTitle: 'Sales Champion',
+        masterBadgeDescription: 'Maestro en ventas y colaboraciones'
+      },
+      {
+        id: 'advanced',
+        title: 'Experto Crypto',
+        subtitle: 'Nivel Profesional',
+        description: 'Contenido experto: trading avanzado, DeFi y estrategias pro',
+        objective: 'Alcanzar el nivel máximo de conocimiento cripto profesional',
+        icon: '🏆',
+        status: 'locked' as const,
+        position: { x: 1150, y: 120 },
+        connections: [],
+        estimatedTime: '45 min',
+        difficulty: 'advanced' as const,
+        prerequisites: ['sales-masterclass', 'defi-basics'],
+        xpTotal: 2000,
+        masterBadgeTitle: 'Crypto Master',
+        masterBadgeDescription: 'Maestro absoluto del ecosistema cripto'
+      }
+    ];
   }, []);
 
   // Persistir estado en sessionStorage
