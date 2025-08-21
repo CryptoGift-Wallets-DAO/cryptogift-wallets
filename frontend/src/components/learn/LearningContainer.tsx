@@ -55,21 +55,11 @@ interface LearningContainerProps {
 const containerVariants = {
   learningPath: {
     x: 0,
-    opacity: 1,
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 30
-    }
+    opacity: 1
   },
   treeView: {
     x: 0,
-    opacity: 1,
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 30
-    }
+    opacity: 1
   }
 };
 

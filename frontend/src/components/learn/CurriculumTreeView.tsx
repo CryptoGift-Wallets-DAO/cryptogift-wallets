@@ -123,20 +123,10 @@ const nodeVariants = {
   visible: { 
     opacity: 1, 
     scale: 1, 
-    y: 0,
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 25
-    }
+    y: 0
   },
   hover: { 
-    scale: 1.1, 
-    transition: { 
-      type: "spring", 
-      stiffness: 400, 
-      damping: 10 
-    }
+    scale: 1.1
   },
   tap: { 
     scale: 0.95 
@@ -152,12 +142,7 @@ const cardVariants = {
   visible: { 
     opacity: 1, 
     y: 0, 
-    scale: 1,
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 25
-    }
+    scale: 1
   },
   exit: { 
     opacity: 0, 
@@ -1104,11 +1089,11 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           )}
                           
                           {/* Recompensas/Badges */}
-                          {(node.data as Lesson).rewards && (node.data as Lesson).rewards!.length > 0 && (
+                          {(node.data as Lesson).rewards && ((node.data as Lesson).rewards!.badges?.length || (node.data as Lesson).rewards!.xp || (node.data as Lesson).rewards!.items?.length) && (
                             <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-2">
                               <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 text-xs font-medium mb-1">
                                 <Award size={12} />
-                                <span>{(node.data as Lesson).rewards!.length} Badge{(node.data as Lesson).rewards!.length > 1 ? 's' : ''} Disponible{(node.data as Lesson).rewards!.length > 1 ? 's' : ''}</span>
+                                <span>Recompensas Disponibles</span>
                               </div>
                               <div className="text-xs text-yellow-700 dark:text-yellow-300">
                                 Desbloquea logros al completar esta lección
