@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { SmartIcon } from './ui/SmartIcon';
 
 interface HeroSectionProps {
   onCreateGift: () => void;
@@ -85,7 +86,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
                   }
                 }}
               />
-              <span className="text-white dark:text-bg-primary text-lg" style={{ display: 'none' }}>🎁</span>
+              <div className="text-white dark:text-bg-primary" style={{ display: 'none' }}>
+                <SmartIcon icon="🎁" size={18} />
+              </div>
             </div>
           </div>
         </div>

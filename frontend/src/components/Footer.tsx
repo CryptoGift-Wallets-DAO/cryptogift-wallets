@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { SmartIcon } from './ui/SmartIcon';
 
 export const Footer: React.FC = () => {
   return (
@@ -13,7 +14,7 @@ export const Footer: React.FC = () => {
           <div className="col-span-1">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">🎁</span>
+                <SmartIcon icon="🎁" size={20} />
               </div>
               <div>
                 <div className="font-bold text-xl">CryptoGift</div>
