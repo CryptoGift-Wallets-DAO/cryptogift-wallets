@@ -38,6 +38,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence, useAnimation, useInView } from 'framer-motion';
+import { SmartIcon } from '../ui/SmartIcon';
 import { 
   BookOpen, 
   Award, 
@@ -748,13 +749,19 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                         <div className="space-y-3">
                           {/* Descripción y Objetivo */}
                           <div className="text-xs text-gray-700 dark:text-gray-300">
-                            <div className="font-medium text-gray-800 dark:text-gray-200 mb-1">📋 Descripción:</div>
+                            <div className="font-medium text-gray-800 dark:text-gray-200 mb-1 flex items-center gap-2">
+                              <SmartIcon icon="📋" size={16} />
+                              Descripción:
+                            </div>
                             {(node.data as Module).description}
                           </div>
                           
                           {(node.data as Module).objective && (
                             <div className="text-xs text-gray-700 dark:text-gray-300">
-                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1">🎯 Objetivo:</div>
+                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1 flex items-center gap-2">
+                                <SmartIcon icon="🎯" size={16} />
+                                Objetivo:
+                              </div>
                               {(node.data as Module).objective}
                             </div>
                           )}
@@ -793,7 +800,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           
                           {/* Dificultad Visual */}
                           <div className="text-xs">
-                            <div className="text-gray-600 dark:text-gray-400 mb-1">📊 Dificultad:</div>
+                            <div className="text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-2">
+                              <SmartIcon icon="📊" size={16} />
+                              Dificultad:
+                            </div>
                             <div className="flex items-center gap-1">
                               {Array.from({length: 3}, (_, i) => (
                                 <div key={i} className={`w-3 h-3 rounded-full ${
@@ -846,7 +856,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           {/* Objetivo de la rama */}
                           {(node.data as Branch).objective && (
                             <div className="text-xs text-gray-700 dark:text-gray-300">
-                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1">🎯 Objetivo:</div>
+                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1 flex items-center gap-2">
+                                <SmartIcon icon="🎯" size={16} />
+                                Objetivo:
+                              </div>
                               {(node.data as Branch).objective}
                             </div>
                           )}
@@ -898,7 +911,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           {/* Estado de progreso */}
                           {(node.data as Branch).completedUnits !== undefined && (
                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
-                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">📋 Progreso:</div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1 flex items-center gap-2">
+                                <SmartIcon icon="📋" size={16} />
+                                Progreso:
+                              </div>
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                   <div 
@@ -917,14 +933,20 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                         <div className="space-y-3">
                           {/* Descripción */}
                           <div className="text-xs text-gray-700 dark:text-gray-300">
-                            <div className="font-medium text-gray-800 dark:text-gray-200 mb-1">📦 Descripción:</div>
+                            <div className="font-medium text-gray-800 dark:text-gray-200 mb-1 flex items-center gap-2">
+                              <SmartIcon icon="📦" size={16} />
+                              Descripción:
+                            </div>
                             {(node.data as Unit).description}
                           </div>
                           
                           {/* Objetivo */}
                           {(node.data as Unit).objective && (
                             <div className="text-xs text-gray-700 dark:text-gray-300">
-                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1">🎯 Objetivo:</div>
+                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1 flex items-center gap-2">
+                                <SmartIcon icon="🎯" size={16} />
+                                Objetivo:
+                              </div>
                               {(node.data as Unit).objective}
                             </div>
                           )}
@@ -977,7 +999,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           {/* Progreso de la unidad */}
                           {(node.data as Unit).completedLessons !== undefined && (
                             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
-                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">📋 Progreso:</div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1 flex items-center gap-2">
+                                <SmartIcon icon="📋" size={16} />
+                                Progreso:
+                              </div>
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                   <div 
@@ -1003,7 +1028,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           {/* Objetivo de la lección */}
                           {(node.data as Lesson).objective && (
                             <div className="text-xs text-gray-700 dark:text-gray-300">
-                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1">🎯 Objetivo:</div>
+                              <div className="font-medium text-gray-800 dark:text-gray-200 mb-1 flex items-center gap-2">
+                                <SmartIcon icon="🎯" size={16} />
+                                Objetivo:
+                              </div>
                               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
                                 <div className="text-blue-700 dark:text-blue-300 font-medium italic">
                                   "{(node.data as Lesson).objective}"
@@ -1032,7 +1060,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           
                           {/* Dificultad visual */}
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="text-gray-600 dark:text-gray-400">📊 Dificultad:</span>
+                            <span className="text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                              <SmartIcon icon="📊" size={16} />
+                              Dificultad:
+                            </span>
                             <div className="flex items-center gap-1">
                               {Array.from({length: 3}, (_, i) => (
                                 <div key={i} className={`w-2 h-2 rounded-full ${
@@ -1051,7 +1082,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           {(node.data as Lesson).evidenceType && (
                             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2">
                               <div className="text-xs text-purple-700 dark:text-purple-300 font-medium mb-1">
-                                📋 Evidencia: <span className="capitalize">{(node.data as Lesson).evidenceType}</span>
+                                <span className="flex items-center gap-2">
+                                  <SmartIcon icon="📋" size={16} />
+                                  Evidencia:
+                                </span> <span className="capitalize">{(node.data as Lesson).evidenceType}</span>
                               </div>
                               {(node.data as Lesson).evidenceDescription && (
                                 <div className="text-xs text-purple-600 dark:text-purple-400">
@@ -1077,7 +1111,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                           {/* Tags/Etiquetas */}
                           {(node.data as Lesson).tags && (node.data as Lesson).tags!.length > 0 && (
                             <div className="">
-                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">🏷️ Tags:</div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1 flex items-center gap-2">
+                                <SmartIcon icon="🏷️" size={16} />
+                                Tags:
+                              </div>
                               <div className="flex flex-wrap gap-1">
                                 {(node.data as Lesson).tags!.map((tag, i) => (
                                   <span key={i} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">
@@ -1122,13 +1159,22 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                             <span className="text-green-600 dark:text-green-400">✓ Completado</span>
                           )}
                           {node.status === 'in-progress' && (
-                            <span className="text-orange-600 dark:text-orange-400">⚡ En Progreso</span>
+                            <span className="text-orange-600 dark:text-orange-400 flex items-center gap-2">
+                              <SmartIcon icon="⚡" size={16} />
+                              En Progreso
+                            </span>
                           )}
                           {node.status === 'available' && (
-                            <span className="text-blue-600 dark:text-blue-400">🎯 Click → Entrenar</span>
+                            <span className="text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                              <SmartIcon icon="🎯" size={16} />
+                              Click → Entrenar
+                            </span>
                           )}
                           {node.status === 'locked' && (
-                            <span className="text-gray-500">🔒 Bloqueado</span>
+                            <span className="text-gray-500 flex items-center gap-2">
+                              <SmartIcon icon="🔒" size={16} />
+                              Bloqueado
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1187,7 +1233,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
           
           <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
             <div className="text-xs text-gray-500 dark:text-gray-500">
-              💡 Hover: Ver info | Click: Interactuar
+              <span className="flex items-center gap-2">
+                <SmartIcon icon="💡" size={16} />
+                Hover: Ver info | Click: Interactuar
+              </span>
             </div>
           </div>
         </div>

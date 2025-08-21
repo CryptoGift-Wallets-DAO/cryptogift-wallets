@@ -13,6 +13,7 @@ interface SmartIconProps {
   fallback?: LucideIcon;
   title?: string;
   ariaLabel?: string;
+  autoColor?: boolean; // New: Automatically apply contextual colors
 }
 
 /**
@@ -33,6 +34,62 @@ interface SmartIconProps {
  * - Fallback icon support
  * - Smooth transition during migration
  */
+// Contextual color mapping for emojis
+const getEmojiColor = (emoji: string): string => {
+  const colorMap: Record<string, string> = {
+    // Gems and valuables - precious colors
+    '💎': '#60A5FA', // Blue-400 - Diamond blue
+    '💰': '#FCD34D', // Yellow-300 - Gold
+    '🪙': '#FCD34D', // Yellow-300 - Gold
+    '🏆': '#FCD34D', // Yellow-300 - Trophy gold
+    '👑': '#FCD34D', // Yellow-300 - Crown gold
+    
+    // Fire and energy - warm colors  
+    '🔥': '#F97316', // Orange-500 - Fire
+    '⚡': '#EAB308', // Yellow-500 - Lightning
+    '🌟': '#FCD34D', // Yellow-300 - Star
+    '✨': '#A855F7', // Purple-500 - Sparkles
+    '⭐': '#FCD34D', // Yellow-300 - Star
+    
+    // Tech and targets - cool colors
+    '🎯': '#EF4444', // Red-500 - Target
+    '🚀': '#3B82F6', // Blue-500 - Rocket
+    '🎮': '#8B5CF6', // Violet-500 - Gaming
+    '💻': '#6B7280', // Gray-500 - Tech
+    '📱': '#6B7280', // Gray-500 - Tech
+    '⚙️': '#6B7280', // Gray-500 - Settings
+    
+    // Nature and growth - green colors
+    '🌱': '#10B981', // Emerald-500 - Growth  
+    '🌳': '#059669', // Emerald-600 - Tree
+    '🌍': '#10B981', // Emerald-500 - Earth
+    '🌉': '#0EA5E9', // Sky-500 - Bridge
+    
+    // Status and actions - semantic colors
+    '✅': '#10B981', // Emerald-500 - Success
+    '❌': '#EF4444', // Red-500 - Error
+    '⚠️': '#F59E0B', // Amber-500 - Warning
+    '🔒': '#6B7280', // Gray-500 - Lock
+    '🛡️': '#3B82F6', // Blue-500 - Shield
+    
+    // Content and information - neutral warm
+    '📋': '#8B5CF6', // Violet-500 - Clipboard
+    '📊': '#3B82F6', // Blue-500 - Charts
+    '📈': '#10B981', // Emerald-500 - Growth chart
+    '📦': '#F97316', // Orange-500 - Package
+    '🏷️': '#A855F7', // Purple-500 - Tags
+    '💡': '#FCD34D', // Yellow-300 - Idea
+    
+    // Social and connection - warm colors
+    '🤝': '#10B981', // Emerald-500 - Handshake
+    '👥': '#3B82F6', // Blue-500 - People
+    '🎁': '#EC4899', // Pink-500 - Gift
+    '🎉': '#F97316', // Orange-500 - Celebration
+  };
+  
+  return colorMap[emoji] || 'currentColor';
+};
+
 export const SmartIcon: React.FC<SmartIconProps> = ({
   icon,
   size = 24,
@@ -42,6 +99,7 @@ export const SmartIcon: React.FC<SmartIconProps> = ({
   fallback,
   title,
   ariaLabel,
+  autoColor = true, // Default to true for automatic coloring
 }) => {
   // If no icon provided, render nothing
   if (!icon) {
@@ -58,13 +116,14 @@ export const SmartIcon: React.FC<SmartIconProps> = ({
       
       if (firstEmoji) {
         const LucideIcon = getLucideIconForEmoji(firstEmoji);
+        const finalColor = autoColor ? getEmojiColor(firstEmoji) : color;
         
         return (
           <span title={title || `Icon for ${firstEmoji}`} aria-label={ariaLabel || title || `Icon representing ${firstEmoji}`}>
             <LucideIcon
               size={size}
               className={`smart-icon ${className}`}
-              color={color}
+              color={finalColor}
               strokeWidth={strokeWidth}
             />
           </span>

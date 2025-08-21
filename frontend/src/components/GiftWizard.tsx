@@ -101,10 +101,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     if (mounted && auth.isConnected) {
       // CRITICAL: Check device wallet limits when user connects
       const deviceInfo = getDeviceWalletInfo();
-      console.log('🔍 Device wallet check:', deviceInfo);
+      console.log('DEVICE_CHECK: Device wallet check:', deviceInfo);
       
       if (!deviceInfo.allowed && !deviceInfo.registeredWallets.includes(account.address.toLowerCase())) {
-        console.warn('⚠️ Device wallet limit exceeded for new wallet:', account.address.slice(0, 10) + '...');
+        console.warn('WARNING: Device wallet limit exceeded for new wallet:', account.address.slice(0, 10) + '...');
         setShowDeviceLimitModal(true);
         return;
       }
@@ -133,7 +133,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     qrCode: '',
     wasGasless: false,
     escrowConfig: null as EscrowConfig | null,
-    imageCid: '' // 🔥 NEW: Store image CID for wallet_watchAsset
+    imageCid: '' // NEW: Store image CID for wallet_watchAsset
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -208,7 +208,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
 
     // Check authentication before proceeding
     if (!auth.isAuthenticated) {
-      console.log('⚠️ Authentication required before minting');
+      console.log('WARNING: Authentication required before minting');
       setError(new CryptoGiftError(
         ErrorType.API_KEY,
         'Please connect and authenticate your wallet first',
@@ -246,7 +246,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
     }, 'success');
     
     // CRITICAL FIX: Check if gasless is actually enabled before attempting
-    console.log('🔍 CHECKING: Is gasless actually enabled on backend?');
+    console.log('CHECK: Is gasless actually enabled on backend?');
     
     try {
       // First check if gasless is available from backend
@@ -256,10 +256,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       });
       
       const gaslessStatus = await gaslessStatusResponse.json();
-      console.log('🔍 Backend gasless status:', gaslessStatus);
+      console.log('STATUS: Backend gasless status:', gaslessStatus);
       
       if (!gaslessStatus.enabled || gaslessStatus.temporarilyDisabled) {
-        console.log('⚠️ GASLESS DISABLED: Skipping gasless attempt, going directly to gas modal');
+        console.log('WARNING: GASLESS DISABLED: Skipping gasless attempt, going directly to gas modal');
         
         addStep('GIFT_WIZARD', 'GASLESS_DISABLED_SKIP', {
           reason: gaslessStatus.reason || 'Gasless temporarily disabled',
@@ -279,10 +279,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       console.log('🔄 Attempting GASLESS (confirmed enabled)...');
       await attemptGaslessMint();
     } catch (gaslessError) {
-      console.log('❌ Gasless attempt reported failure:', gaslessError);
+      console.log('ERROR: Gasless attempt reported failure:', gaslessError);
       
       // CRITICAL: Check if gasless actually succeeded despite error report
-      console.log('🔍 VERIFICATION: Checking if gasless actually succeeded on-chain...');
+      console.log('VERIFY: Checking if gasless actually succeeded on-chain...');
       
       try {
         const deployerAccount = account?.address; // This should be the deployer address
@@ -291,7 +291,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         );
         
         if (gaslessVerification.found && gaslessVerification.transactionHash && gaslessVerification.tokenId) {
-          console.log('🎉 GASLESS ACTUALLY SUCCEEDED! Found transaction:', gaslessVerification);
+          console.log('SUCCESS: GASLESS ACTUALLY SUCCEEDED! Found transaction:', gaslessVerification);
           
           // Treat as successful gasless transaction
           setWizardData(prev => ({ 

@@ -35,7 +35,7 @@ export default function Home() {
       }
       
       // Track referral click in real-time - will be handled by separate effect
-      console.log('🎯 REFERRAL DETECTED:', ref);
+      console.log('REFERRAL DETECTED:', ref);
     } else {
       // Check localStorage for existing referrer
       const storedRef = localStorage.getItem("referrer");
@@ -65,12 +65,12 @@ export default function Home() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Referral click tracked successfully:', result);
+        console.log('SUCCESS: Referral click tracked successfully:', result);
       } else {
-        console.warn('⚠️ Failed to track referral click:', response.statusText);
+        console.warn('WARNING: Failed to track referral click:', response.statusText);
       }
     } catch (error) {
-      console.error('❌ Error tracking referral click:', error);
+      console.error('ERROR: Error tracking referral click:', error);
       // Don't throw error to avoid disrupting user experience
     }
   }, [account?.address]); // Dependencies: account address
@@ -90,7 +90,7 @@ export default function Home() {
       // Re-track referral with wallet address if we have a stored referrer
       const storedRef = localStorage.getItem("referrer");
       if (storedRef) {
-        console.log('🔄 Re-tracking referral with connected wallet:', account.address);
+        console.log('RETRACK: Re-tracking referral with connected wallet:', account.address);
         trackReferralClick(storedRef);
       }
     }
@@ -98,7 +98,7 @@ export default function Home() {
 
   const upgradeIPAccount = async (userAddress: string) => {
     try {
-      console.log('🔄 Attempting to upgrade IP-based account for connected wallet');
+      console.log('UPGRADE: Attempting to upgrade IP-based account for connected wallet');
       
       const response = await fetch('/api/referrals/upgrade-ip-account', {
         method: 'POST',
@@ -112,12 +112,12 @@ export default function Home() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ IP account upgrade successful:', result);
+        console.log('SUCCESS: IP account upgrade successful:', result);
       } else {
-        console.warn('⚠️ IP account upgrade failed:', response.statusText);
+        console.warn('WARNING: IP account upgrade failed:', response.statusText);
       }
     } catch (error) {
-      console.error('❌ Error upgrading IP account:', error);
+      console.error('ERROR: Error upgrading IP account:', error);
       // Don't throw error to avoid disrupting user experience
     }
   };
