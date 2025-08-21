@@ -243,7 +243,6 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
       }
       
       // 🔄 MOBILE FIX: Enhanced transaction handling with timeout and retries
-      const isMobile = isMobileDevice();
       
       if (isMobile) {
         console.log('📱 Mobile device detected - using enhanced transaction handling');

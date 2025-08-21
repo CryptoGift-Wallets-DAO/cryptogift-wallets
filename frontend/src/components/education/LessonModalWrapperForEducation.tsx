@@ -154,7 +154,7 @@ export const LessonModalWrapperForEducation: React.FC<LessonModalWrapperForEduca
         moduleId={moduleId}
         sessionToken={sessionToken}
         tokenId={tokenId}
-        onComplete={(gateData) => onComplete(gateData)} // Pass gateData through
+        onComplete={() => onComplete('0x')} // EducationModule doesn't provide gateData
         giftInfo={giftInfo}
         nftMetadata={nftMetadata}
         className="mx-auto"
