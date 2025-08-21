@@ -60,13 +60,20 @@ import Link from 'next/link';
 export interface PathNode {
   id: string;
   title: string;
+  subtitle?: string;
   description?: string;
+  objective?: string; // NUEVA PROPIEDAD RICA
   icon: string;
   status: 'locked' | 'available' | 'in-progress' | 'completed';
   progress?: number;
   estimatedTime?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
   prerequisites?: string[];
+  xpTotal?: number; // NUEVA PROPIEDAD RICA
+  branches?: any[]; // NUEVA PROPIEDAD RICA
+  masterBadgeTitle?: string; // NUEVA PROPIEDAD RICA
+  masterBadgeDescription?: string; // NUEVA PROPIEDAD RICA
+  completedBranches?: number; // NUEVA PROPIEDAD RICA
   position: { x: number; y: number };
   connections?: string[]; // IDs of connected nodes
 }
@@ -397,9 +404,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
             const isCardVisible = visibleCards.has(node.id);
             if (!isCardVisible) return null;
             
-            // Calculate position to appear below node with proper spacing
-            const cardTop = node.position.y + nodeSize / 2 + 15; // Below the node
-            const cardLeft = node.position.x - 100; // Centered under node
+            // POSICIÓN FIJA OPTIMIZADA - Izquierda, arriba del centro (IGUAL QUE CURRICULUM)
+            const cardLeft = 20; // Siempre en el margen izquierdo
+            const cardTop = Math.max(80, (window.innerHeight / 2) - 200); // Arriba del centro, min 80px del top
             
             return (
               <motion.div
@@ -424,9 +431,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
               onMouseLeave={() => handleNodeUnhover(node.id)}
               onTouchStart={() => handleNodeHover(node.id, node.status)}
             >
-              {/* Card Container with Glass Morphism Effect */}
+              {/* Card Container with Glass Morphism Effect - EXPANDIDO */}
               <div className={`
-                relative w-[200px]
+                relative w-[280px] max-h-[400px] overflow-y-auto
                 bg-gradient-to-br from-white/95 to-white/90 
                 dark:from-gray-800/95 dark:to-gray-900/90
                 backdrop-blur-xl backdrop-saturate-150
@@ -494,9 +501,48 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                   
                   {/* Description */}
                   {node.description && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
-                      {node.description}
-                    </p>
+                    <div className="mb-3">
+                      <div className="text-xs font-medium text-gray-800 dark:text-gray-200 mb-1">📋 Descripción:</div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {node.description}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Objetivo - NUEVA INFORMACIÓN RICA */}
+                  {node.objective && (
+                    <div className="mb-3">
+                      <div className="text-xs font-medium text-gray-800 dark:text-gray-200 mb-1">🎯 Objetivo:</div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+                        <p className="text-xs text-blue-700 dark:text-blue-300 font-medium italic">
+                          "{node.objective}"
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Estadísticas ricas */}
+                  {(node.xpTotal || node.branches) && (
+                    <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+                      {node.xpTotal && (
+                        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-2">
+                          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <span>⭐</span>
+                            <span className="font-semibold">{node.xpTotal}</span>
+                          </div>
+                          <div className="text-green-700 dark:text-green-300 text-xs">XP Total</div>
+                        </div>
+                      )}
+                      {node.branches && (
+                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-2">
+                          <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                            <span>🌱</span>
+                            <span className="font-semibold">{node.branches.length}</span>
+                          </div>
+                          <div className="text-purple-700 dark:text-purple-300 text-xs">Ramas</div>
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   {/* Progress Bar for In-Progress */}
@@ -513,14 +559,51 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                     </div>
                   )}
 
+                  {/* Progress Bar for In-Progress - INFORMACIÓN QUE FALTABA */}
+                  {node.status === 'in-progress' && node.progress !== undefined && (
+                    <div className="mb-3">
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${node.progress}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Master Badge - NUEVA INFORMACIÓN RICA */}
+                  {node.masterBadgeTitle && (
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-2 mb-3">
+                      <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 text-xs font-medium mb-1">
+                        <span>🏆</span>
+                        <span>{node.masterBadgeTitle}</span>
+                      </div>
+                      {node.masterBadgeDescription && (
+                        <div className="text-xs text-yellow-700 dark:text-yellow-300">
+                          {node.masterBadgeDescription}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Footer Info & Actions */}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                    {node.estimatedTime && (
-                      <span className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
-                        <span className="text-base">⏱️</span>
-                        {node.estimatedTime}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+                      {node.estimatedTime && (
+                        <span className="flex items-center gap-1">
+                          <span className="text-base">⏱️</span>
+                          {node.estimatedTime}
+                        </span>
+                      )}
+                      {node.completedBranches !== undefined && node.branches && (
+                        <span className="flex items-center gap-1">
+                          <span>📋</span>
+                          <span>{node.completedBranches}/{node.branches.length}</span>
+                        </span>
+                      )}
+                    </div>
                     
                     {node.status === 'available' && (
                       <motion.button
@@ -546,15 +629,19 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                     )}
                   </div>
                   
-                  {/* Prerequisites if locked */}
-                  {node.status === 'locked' && node.prerequisites && node.prerequisites.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        📚 Completa primero:
+                  {/* Prerequisites - MEJORADA CON INFORMACIÓN RICA */}
+                  {node.prerequisites && node.prerequisites.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        🔗 Prerrequisitos{node.status === 'locked' ? ' (Pendientes)' : ''}:
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {node.prerequisites.map(prereq => (
-                          <span key={prereq} className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                          <span key={prereq} className={`text-xs px-2 py-1 rounded ${
+                            node.status === 'locked' 
+                              ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                              : 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                          }`}>
                             {nodes.find(n => n.id === prereq)?.title || prereq}
                           </span>
                         ))}
