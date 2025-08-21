@@ -500,19 +500,20 @@ La transacción puede tomar más tiempo en móvil.`;
           } else {
             errorMessage = 'Error de conexión. Por favor:\n1. Verifica estar en Base Sepolia\n2. Cierra y abre MetaMask completamente\n3. Espera 10 segundos\n4. Intenta de nuevo';
           
-          // Try to add more context
-          addNotification({
-            type: 'warning',
-            title: '⚠️ Error de red detectado',
-            message: 'Cambia a Base Sepolia en tu wallet',
-            duration: 10000,
-            action: {
-              label: 'Ver instrucciones',
-              onClick: () => {
-                window.open('https://docs.base.org/network-information/', '_blank');
+            // Try to add more context
+            addNotification({
+              type: 'warning',
+              title: '⚠️ Error de red detectado',
+              message: 'Cambia a Base Sepolia en tu wallet',
+              duration: 10000,
+              action: {
+                label: 'Ver instrucciones',
+                onClick: () => {
+                  window.open('https://docs.base.org/network-information/', '_blank');
+                }
               }
-            }
-          });
+            });
+          }
         } else {
           errorMessage = 'Error interno del wallet. Por favor recarga la página e intenta de nuevo.';
         }
@@ -681,15 +682,16 @@ La transacción puede tomar más tiempo en móvil.`;
         }
       }
       
-      // Notify parent component of successful claim - MOVED TO FINALLY BLOCK
-      if (txResult && onClaimSuccess) {
-        onClaimSuccess(txResult.transactionHash, {
-          tokenId,
-          recipientAddress: account.address, // NFT goes to connected wallet
-          giftInfo: validationResult.giftInfo,
-          gasless: false, // Frontend execution is always gas-paid by user
-          frontendExecution: true
-        });
+        // Notify parent component of successful claim - MOVED TO FINALLY BLOCK
+        if (txResult && onClaimSuccess) {
+          onClaimSuccess(txResult.transactionHash, {
+            tokenId,
+            recipientAddress: account.address, // NFT goes to connected wallet
+            giftInfo: validationResult.giftInfo,
+            gasless: false, // Frontend execution is always gas-paid by user
+            frontendExecution: true
+          });
+        }
       }
       
       setIsLoading(false);
