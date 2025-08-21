@@ -120,17 +120,16 @@ const nodeVariants = {
     scale: 0.8, 
     y: 20 
   },
-  visible: (delay: number) => ({ 
+  visible: { 
     opacity: 1, 
     scale: 1, 
     y: 0,
     transition: { 
       type: "spring", 
       stiffness: 300, 
-      damping: 25, 
-      delay 
+      damping: 25
     }
-  }),
+  },
   hover: { 
     scale: 1.1, 
     transition: { 
@@ -157,8 +156,7 @@ const cardVariants = {
     transition: { 
       type: "spring", 
       stiffness: 300, 
-      damping: 25, 
-      duration: 0.4 
+      damping: 25
     }
   },
   exit: { 

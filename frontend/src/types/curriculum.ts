@@ -13,7 +13,7 @@
 
 export type ModuleStatus = 'locked' | 'available' | 'in-progress' | 'completed';
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
-export type EvidenceType = 'quiz' | 'quest-onchain' | 'quest-simulation' | 'screenshot' | 'demo';
+export type EvidenceType = 'quiz' | 'quest-onchain' | 'quest-simulation' | 'screenshot' | 'demo' | 'quest-demo';
 
 // ========== LECCIÓN (HOJA DEL ÁRBOL) ==========
 export interface Lesson {
@@ -35,6 +35,13 @@ export interface Lesson {
   questInstructions?: string;    // Instrucciones específicas del quest
   verificationSteps?: string[];  // Pasos para verificar completion
   
+  // Rewards y gamificación
+  rewards?: {
+    xp?: number;
+    badges?: string[];
+    items?: string[];
+  };
+  
   // Metadata para visualización
   icon?: string;                 // Emoji o ícono
   tags?: string[];               // ["gas", "mobile", "setup"]
@@ -46,11 +53,13 @@ export interface Unit {
   id: string;                    // Ej: "0.1.1" (M.R.U)
   title: string;                 // "Instalación & setup"
   description: string;
+  objective?: string;            // Objetivo de la unidad
   lessons: Lesson[];             // 3 lecciones típicamente
   xpTotal: number;               // XP total de todas las lecciones
   estimatedTime: number;         // Tiempo total estimado
   status: ModuleStatus;
   completedLessons: number;
+  practiceMode?: boolean;        // Si tiene modo práctica
   
   // Metadata visual
   icon?: string;
@@ -62,16 +71,21 @@ export interface Branch {
   id: string;                    // Ej: "0.1" (M.R)
   title: string;                 // "Wallets (creación, backup, uso inicial)"
   description: string;
+  objective?: string;            // Objetivo de la rama
   units: Unit[];                 // 3 unidades típicamente
   xpTotal: number;
   estimatedTime: number;
   status: ModuleStatus;
   completedUnits: number;
+  totalLessons?: number;         // Total de lecciones en la rama
   
   // Badge al completar rama
   badgeId?: string;
   badgeTitle?: string;
   badgeDescription?: string;
+  
+  // Prerequisites
+  prerequisites?: string[];      // IDs de ramas prerequisito
   
   // Metadata visual
   icon?: string;
@@ -102,6 +116,7 @@ export interface Module {
   
   // Configuración de profundidad
   depth: 'high' | 'medium';     // M0-M8: high, M9-M20: medium
+  difficulty?: Difficulty;       // Dificultad del módulo
   
   // Prerequisites a nivel módulo
   prerequisites?: string[];      // IDs de módulos prerequisito
@@ -254,16 +269,26 @@ export interface LessonCompletionData {
   score?: number;                // Score en quiz (0-100)
 }
 
-export default {
-  Module,
-  Branch,
-  Unit,
-  Lesson,
-  Category,
-  Curriculum,
-  UserProgress,
-  TreeNode,
-  TreeVisualizationConfig,
-  CurriculumAction,
-  LessonCompletionData
-};
+// ========== PATH NODE PARA LEARNING PATH ==========
+export interface PathNode {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  objective?: string;
+  icon: string;
+  status: 'locked' | 'available' | 'in-progress' | 'completed';
+  progress?: number;
+  estimatedTime?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites?: string[];
+  xpTotal?: number;
+  branches?: any[];
+  masterBadgeTitle?: string;
+  masterBadgeDescription?: string;
+  completedBranches?: number;
+  position: { x: number; y: number };
+  connections?: string[];
+}
+
+// No default export needed - all types are already exported individually

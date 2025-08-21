@@ -7,7 +7,6 @@
 
 // Core components
 export { default as LearningPath } from './LearningPath';
-export { default as CurriculumTree } from './CurriculumTree';
 export { default as CurriculumTreeView } from './CurriculumTreeView';
 export { default as LearningContainer } from './LearningContainer';
 

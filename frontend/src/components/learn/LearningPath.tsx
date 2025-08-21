@@ -501,12 +501,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                   
                   {/* Description */}
                   {node.description && (
-                    <div className="mb-3">
-                      <div className="text-xs font-medium text-gray-800 dark:text-gray-200 mb-1">📋 Descripción:</div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {node.description}
-                      </p>
-                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
+                      {node.description}
+                    </p>
                   )}
                   
                   {/* Objetivo - NUEVA INFORMACIÓN RICA */}
@@ -558,20 +555,6 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                       </div>
                     </div>
                   )}
-
-                  {/* Progress Bar for In-Progress - INFORMACIÓN QUE FALTABA */}
-                  {node.status === 'in-progress' && node.progress !== undefined && (
-                    <div className="mb-3">
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <motion.div 
-                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${node.progress}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                        />
-                      </div>
-                    </div>
-                  )}
                   
                   {/* Master Badge - NUEVA INFORMACIÓN RICA */}
                   {node.masterBadgeTitle && (
@@ -590,20 +573,12 @@ export const LearningPath: React.FC<LearningPathProps> = ({
 
                   {/* Footer Info & Actions */}
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
-                      {node.estimatedTime && (
-                        <span className="flex items-center gap-1">
-                          <span className="text-base">⏱️</span>
-                          {node.estimatedTime}
-                        </span>
-                      )}
-                      {node.completedBranches !== undefined && node.branches && (
-                        <span className="flex items-center gap-1">
-                          <span>📋</span>
-                          <span>{node.completedBranches}/{node.branches.length}</span>
-                        </span>
-                      )}
-                    </div>
+                    {node.estimatedTime && (
+                      <span className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
+                        <span className="text-base">⏱️</span>
+                        {node.estimatedTime}
+                      </span>
+                    )}
                     
                     {node.status === 'available' && (
                       <motion.button
@@ -629,19 +604,15 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                     )}
                   </div>
                   
-                  {/* Prerequisites - MEJORADA CON INFORMACIÓN RICA */}
-                  {node.prerequisites && node.prerequisites.length > 0 && (
-                    <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        🔗 Prerrequisitos{node.status === 'locked' ? ' (Pendientes)' : ''}:
+                  {/* Prerequisites if locked - INFORMACIÓN ORIGINAL MÁS ORGANIZADA */}
+                  {node.status === 'locked' && node.prerequisites && node.prerequisites.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        📚 Completa primero:
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {node.prerequisites.map(prereq => (
-                          <span key={prereq} className={`text-xs px-2 py-1 rounded ${
-                            node.status === 'locked' 
-                              ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300'
-                              : 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                          }`}>
+                          <span key={prereq} className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
                             {nodes.find(n => n.id === prereq)?.title || prereq}
                           </span>
                         ))}

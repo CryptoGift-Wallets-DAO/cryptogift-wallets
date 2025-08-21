@@ -59,8 +59,7 @@ const containerVariants = {
     transition: { 
       type: "spring", 
       stiffness: 300, 
-      damping: 30,
-      duration: 0.6
+      damping: 30
     }
   },
   treeView: {
@@ -69,8 +68,7 @@ const containerVariants = {
     transition: { 
       type: "spring", 
       stiffness: 300, 
-      damping: 30,
-      duration: 0.6
+      damping: 30
     }
   }
 };
