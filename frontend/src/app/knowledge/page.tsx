@@ -425,7 +425,7 @@ export default function KnowledgePage() {
                   <br />
                   <span className="text-purple-600 dark:text-purple-400 font-medium">
                     🚀 {learningProgress.completedModules} módulos completados • 
-                    🔥 {userStreak} días de racha • 
+                    <SmartIcon icon="🔥" size={16} className="mr-1" />{userStreak} días de racha • 
                     ⚡ {learningProgress.points} puntos
                   </span>
                 </>
@@ -522,7 +522,7 @@ export default function KnowledgePage() {
               <span className="text-2xl font-bold text-gray-900 dark:text-white">{userStreak}</span>
             </div>
             <p className="text-gray-600 dark:text-gray-400">Días de Racha</p>
-            <p className="text-sm text-orange-500 mt-2">¡Sigue así! 🔥</p>
+            <p className="text-sm text-orange-500 mt-2 flex items-center">¡Sigue así! <SmartIcon icon="🔥" size={16} className="ml-1" /></p>
           </div>
           
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
@@ -610,7 +610,7 @@ export default function KnowledgePage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              🏆 Mis Logros
+              <SmartIcon icon="🏆" size={20} className="mr-2" />Mis Logros
             </motion.button>
             <motion.button
               className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full 
@@ -635,7 +635,7 @@ export default function KnowledgePage() {
                   : 'bg-bg-card text-text-secondary hover:bg-bg-secondary'
               }`}
             >
-              {category.icon} {category.name}
+              <SmartIcon icon={category.icon} size={20} className="mr-2" /> {category.name}
             </button>
           ))}
         </div>
@@ -645,14 +645,14 @@ export default function KnowledgePage() {
                        border border-yellow-500/30 rounded-3xl p-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4">
             <span className="inline-flex items-center px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-full animate-pulse">
-              ⭐ MÓDULO ESTRELLA
+              <SmartIcon icon="⭐" size={20} className="mr-2" />MÓDULO ESTRELLA
             </span>
           </div>
           
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
-                <div className="text-6xl">🚀</div>
+                <div className="text-6xl"><SmartIcon icon="🚀" size={72} /></div>
                 <div>
                   <h2 className="text-4xl font-bold text-black mb-2">
                     SALES MASTERCLASS
@@ -686,14 +686,14 @@ export default function KnowledgePage() {
                   animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                 }}
               >
-                🚀 INICIAR MASTERCLASS AHORA
+                <SmartIcon icon="🚀" size={20} className="mr-2" />INICIAR MASTERCLASS AHORA
               </button>
             </div>
             
             <div className="hidden lg:block ml-8">
               <div className="w-32 h-32 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full 
                             flex items-center justify-center text-4xl animate-spin-slow">
-                💎
+                <SmartIcon icon="💎" size={20} />
               </div>
             </div>
           </div>
@@ -762,7 +762,9 @@ export default function KnowledgePage() {
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="text-4xl">{module.icon}</div>
+                  <div className="flex items-center justify-center w-16 h-16">
+                    <SmartIcon icon={module.icon} size={64} />
+                  </div>
                   <div className="flex gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(module.level)}`}>
                       {module.level}
@@ -770,7 +772,8 @@ export default function KnowledgePage() {
                     {module.isLocked && (
                       <span className="px-2 py-1 bg-bg-secondary dark:bg-bg-primary text-text-secondary 
                                      rounded-full text-xs font-medium transition-colors duration-300">
-                        🔒 Bloqueado
+                        <SmartIcon icon="🔒" size={14} className="mr-1" />
+                        Bloqueado
                       </span>
                     )}
                   </div>
@@ -824,7 +827,7 @@ export default function KnowledgePage() {
                         animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                       }}
                     >
-                      🚀 INICIAR MASTERCLASS
+                      <SmartIcon icon="🚀" size={18} className="mr-2" />INICIAR MASTERCLASS
                     </button>
                   ) : module.id === 'claim-first-gift' ? (
                     <button
@@ -832,7 +835,7 @@ export default function KnowledgePage() {
                       className="block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 
                                bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold shadow-lg"
                     >
-                      🎁 COMENZAR EXPERIENCIA
+                      <SmartIcon icon="🎁" size={18} className="mr-2" />COMENZAR EXPERIENCIA
                     </button>
                   ) : (
                     <Link
@@ -860,7 +863,7 @@ export default function KnowledgePage() {
                 ¿Tienes dudas específicas? Nuestro asistente AI está aquí 24/7 para ayudarte con cualquier pregunta sobre cripto.
               </p>
               <ul className="text-sm text-indigo-100 dark:text-bg-secondary space-y-1 transition-colors duration-300">
-                <li>✨ Respuestas personalizadas a tus preguntas</li>
+                <li><SmartIcon icon="✨" size={16} className="mr-2" />Respuestas personalizadas a tus preguntas</li>
                 <li>🎯 Recomendaciones de aprendizaje</li>
                 <li>🔗 Enlaces a lecciones relevantes</li>
                 <li>📊 Seguimiento de tu progreso</li>
@@ -967,7 +970,7 @@ export default function KnowledgePage() {
                             ease: "easeInOut"
                           }}
                         >
-                          ✨
+                          <SmartIcon icon="✨" size={20} />
                         </motion.div>
                       </div>
                     </div>
@@ -993,7 +996,7 @@ export default function KnowledgePage() {
                           }}
                         >
                           <div className="flex items-start justify-between mb-4">
-                            <span className="text-3xl">{template.icon}</span>
+                            <SmartIcon icon={template.icon} size={36} />
                             <span className={`px-3 py-1 rounded-full text-xs font-medium
                               ${template.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
                                 template.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
@@ -1308,7 +1311,7 @@ export default function KnowledgePage() {
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-8">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    🏆 Tus Logros
+                    <SmartIcon icon="🏆" size={20} className="mr-2" />Tus Logros
                   </h2>
                   <button
                     onClick={() => setShowAchievements(false)}

@@ -77,7 +77,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
                 className="object-contain"
                 priority
                 onError={(e) => {
-                  console.log('❌ Error loading wallet-regalo.png from /wallet-regalo.png');
+                  console.log('ERROR: Error loading wallet-regalo.png from /wallet-regalo.png');
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                   if (fallback) {
