@@ -43,7 +43,7 @@ async function checkRecentTransactionHandler(req: NextApiRequest, res: NextApiRe
 
     // Check if the gift was actually claimed by reading contract state
     try {
-      const giftData: any = await readContract({
+      const giftData: any = await (readContract as any)({
         contract: escrowContract,
         method: 'function getGiftByTokenId(uint256 tokenId) view returns (tuple(address creator, address nftContract, uint256 expirationTime, uint8 status, string giftMessage, bytes32 passwordHash, uint256 amountETH, uint256 amountUSDC, address[] allowedClaimer, uint256 giftId))',
         params: [BigInt(tokenId)]
