@@ -10,6 +10,7 @@ import { ProgressRing, ProgressRingGroup } from '../../components/learn/Progress
 import { LearningContainer } from '../../components/learn';
 import { DailyTipCard } from '../../components/learn/DailyTipCard';
 import { AchievementShowcase, PRESET_ACHIEVEMENTS } from '../../components/learn/AchievementSystem';
+import type { PathNode } from '../../types/curriculum';
 import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles, Plus, Grid3x3, Layers, Settings, PenTool, Wand2, GraduationCap } from 'lucide-react';
 
 interface KnowledgeModule {

@@ -1150,7 +1150,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                       <div className="bg-white/50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
                         <div className="font-bold text-purple-600 dark:text-purple-400 flex items-center justify-center gap-1 text-sm">
                           <span className="text-base drop-shadow-sm">⭐</span>
-                          {nodeData.xpTotal || (lesson && lesson.xpReward) || 0} XP
+                          {('xpTotal' in nodeData ? nodeData.xpTotal : null) || (lesson && lesson.xpReward) || 0} XP
                         </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                           {lesson ? 'Recompensa' : 'Puntos'}
@@ -1159,7 +1159,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                       <div className="bg-white/50 dark:bg-gray-700/50 rounded-lg p-2 text-center">
                         <div className="font-bold text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1 text-sm">
                           <span className="text-base drop-shadow-sm">⏱️</span>
-                          {nodeData.estimatedTime || (lesson && lesson.duration) || 0}min
+                          {('estimatedTime' in nodeData ? nodeData.estimatedTime : null) || (lesson && lesson.duration) || 0}min
                         </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                           Tiempo
