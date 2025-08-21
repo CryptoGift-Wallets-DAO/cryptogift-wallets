@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { createThirdwebClient } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { getContract, readContract } from 'thirdweb';
-import { withSIWEAuth } from '../../lib/siweServer';
+import { withSIWEAuth } from '../../lib/siweAuth';
 
 const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!

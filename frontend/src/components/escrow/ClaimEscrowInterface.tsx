@@ -682,16 +682,15 @@ La transacción puede tomar más tiempo en móvil.`;
         }
       }
       
-        // Notify parent component of successful claim - MOVED TO FINALLY BLOCK
-        if (txResult && onClaimSuccess) {
-          onClaimSuccess(txResult.transactionHash, {
-            tokenId,
-            recipientAddress: account.address, // NFT goes to connected wallet
-            giftInfo: validationResult.giftInfo,
-            gasless: false, // Frontend execution is always gas-paid by user
-            frontendExecution: true
-          });
-        }
+      // Notify parent component of successful claim - MOVED TO FINALLY BLOCK
+      if (txResult && onClaimSuccess) {
+        onClaimSuccess(txResult.transactionHash, {
+          tokenId,
+          recipientAddress: account.address, // NFT goes to connected wallet
+          giftInfo: validationResult.giftInfo,
+          gasless: false, // Frontend execution is always gas-paid by user
+          frontendExecution: true
+        });
       }
       
       setIsLoading(false);
