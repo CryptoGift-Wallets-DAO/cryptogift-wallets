@@ -392,7 +392,7 @@ const SALES_BLOCKS: SalesBlock[] = [
   {
     id: 'success',
     title: '¡Bienvenido al Futuro!',
-    duration: 30,
+    duration: 60, // Extended duration for better enjoyment
     type: 'success',
     content: {
       title: '¡Ya eres parte de CryptoGift!',
@@ -451,6 +451,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showQuestionFeedback, setShowQuestionFeedback] = useState(false);
   const [canProceed, setCanProceed] = useState(false);
+  const [showEducationalValidation, setShowEducationalValidation] = useState(false);
   
   const router = useRouter();
   const timerRef = useRef<NodeJS.Timeout>();
@@ -481,14 +482,50 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     return `${GIFT_CLAIM_URL}${demoId}`;
   }, []);
 
-  // Celebration Effect
+  // Celebration Effect - Extended for better experience
   const celebrate = useCallback(() => {
+    // Multiple confetti bursts for extended celebration
+    const colors = ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1'];
+    
+    // Initial burst
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 150,
+      spread: 85,
       origin: { y: 0.6 },
-      colors: ['#FFD700', '#FFA500', '#FF6347']
+      colors: colors,
+      ticks: 300 // Extended duration (default is 200)
     });
+    
+    // Side bursts after 300ms
+    setTimeout(() => {
+      confetti({
+        particleCount: 75,
+        angle: 60,
+        spread: 70,
+        origin: { x: 0, y: 0.6 },
+        colors: colors,
+        ticks: 250
+      });
+      confetti({
+        particleCount: 75,
+        angle: 120,
+        spread: 70,
+        origin: { x: 1, y: 0.6 },
+        colors: colors,
+        ticks: 250
+      });
+    }, 300);
+    
+    // Center burst after 600ms
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        spread: 100,
+        origin: { y: 0.4 },
+        colors: colors,
+        ticks: 300
+      });
+    }, 600);
     
     setMetrics(prev => ({
       ...prev,
@@ -621,27 +658,51 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const handleLeadSubmit = useCallback(async (data: any) => {
     console.log('📝 LEAD SUBMIT:', { data, educationalMode, hasOnEducationComplete: !!onEducationComplete });
     
-    // In educational mode, skip lead capture and complete immediately
+    // Store lead data including selected path
+    setLeadData(prev => ({
+      ...prev,
+      path: data.path || prev.path,
+      contact: data.contact || prev.contact,
+      questionsCorrect: data.questionsScore?.correct || prev.questionsCorrect,
+      totalQuestions: data.questionsScore?.total || prev.totalQuestions
+    }));
+    
+    // In educational mode, show validation page before completing
     if (educationalMode) {
-      console.log('🎓 EDUCATIONAL MODE COMPLETION - Triggering celebration and completion');
+      console.log('🎓 EDUCATIONAL MODE - Showing validation page');
       setMetrics(prev => ({ ...prev, leadSubmitted: true }));
-      celebrate();
       
-      // Trigger education completion
-      if (onEducationComplete) {
-        console.log('✅ Calling onEducationComplete callback in 2 seconds');
-        setTimeout(() => {
+      // Show validation page
+      setShowEducationalValidation(true);
+      
+      // Extended celebration with longer confetti
+      setTimeout(() => {
+        // Trigger extended confetti
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => celebrate(), i * 1000);
+        }
+      }, 500);
+      
+      // After showing validation, trigger completion
+      setTimeout(() => {
+        // Trigger education completion
+        if (onEducationComplete) {
+          console.log('✅ Calling onEducationComplete callback to generate EIP-712 signature');
           onEducationComplete();
-        }, 2000);
-      }
+        }
+        
+        // Send completion event for iframe
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'MASTERCLASS_COMPLETE' }, '*');
+        }
+        
+        // Move to success block after extended time
+        setTimeout(() => {
+          handleNextBlock();
+          setShowEducationalValidation(false);
+        }, 6000); // Extended duration for validation page (6 seconds)
+      }, 7000); // Show validation for 7 seconds before proceeding
       
-      // Send completion event for iframe
-      if (window.parent !== window) {
-        window.parent.postMessage({ type: 'MASTERCLASS_COMPLETE' }, '*');
-      }
-      
-      // Move to success block
-      handleNextBlock();
       return;
     }
     
@@ -720,6 +781,74 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Render Block Content
   const renderBlockContent = () => {
+    // Show educational validation page if flag is set
+    if (showEducationalValidation && educationalMode) {
+      return (
+        <div className="py-12 text-center">
+          <motion.h2 
+            className="text-5xl font-bold mb-8 bg-gradient-to-r from-yellow-400 to-green-400 bg-clip-text text-transparent"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            ¡Felicidades! 🎉
+          </motion.h2>
+          
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="inline-block bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 px-8 py-6 rounded-2xl">
+              <p className="text-3xl mb-4">
+                Tu puntuación: <span className="font-bold text-yellow-400">
+                  {leadData.questionsCorrect}/{leadData.totalQuestions}
+                </span> respuestas correctas
+              </p>
+              {leadData.questionsCorrect && leadData.questionsCorrect >= 7 && (
+                <p className="text-green-400 font-bold text-xl">¡EXCELENTE! Has aprendido sobre CryptoGift 🏆</p>
+              )}
+            </div>
+          </motion.div>
+          
+          <motion.p
+            className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            Has completado exitosamente el módulo educativo "Proyecto CryptoGift".
+            {leadData.path && (
+              <span className="block mt-2 text-yellow-400">
+                Tu rol seleccionado: <strong>{leadData.path}</strong>
+              </span>
+            )}
+          </motion.p>
+          
+          <motion.div
+            className="mb-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <p className="text-lg text-gray-400 mb-4">
+              Generando tu certificación EIP-712...
+            </p>
+            <div className="animate-spin w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto" />
+          </motion.div>
+          
+          <motion.p
+            className="text-2xl font-bold text-green-400"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8 }}
+          >
+            EDUCACIÓN COMPLETADA ✅
+          </motion.p>
+        </div>
+      );
+    }
+    
     const block = SALES_BLOCKS[currentBlock];
     
     console.log('🎬 RENDERING BLOCK:', {
@@ -1675,15 +1804,33 @@ const CaptureBlock: React.FC<{
   questionsScore: { correct: number; total: number };
   educationalMode?: boolean;
 }> = ({ content, onSubmit, questionsScore, educationalMode = false }) => {
-  const account = useActiveAccount(); // Add account hook here
+  const account = useActiveAccount(); 
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [formData, setFormData] = useState({
     availability: '',
     contact: ''
   });
+  const [showValidation, setShowValidation] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // En modo educacional, mostrar validación después de seleccionar rol
+    if (educationalMode && selectedPath) {
+      setShowValidation(true);
+      // Esperar un momento para mostrar la validación antes de continuar
+      setTimeout(() => {
+        onSubmit({
+          path: selectedPath,
+          ...formData,
+          questionsScore,
+          educationalMode: true
+        });
+      }, 1500);
+      return;
+    }
+    
+    // Modo normal
     onSubmit({
       path: selectedPath,
       ...formData,
@@ -1691,8 +1838,11 @@ const CaptureBlock: React.FC<{
     });
   };
 
-  // Educational mode - simplified completion
-  if (educationalMode) {
+  // 🚀 ARQUITECTURA UNIFICADA: Misma UI para ambos modos (Knowledge y Educational)
+  // La página de selección de rol es CRÍTICA para capturar leads antes de completar
+  
+  // Si ya mostramos validación en modo educacional
+  if (showValidation && educationalMode) {
     return (
       <div className="py-12 text-center">
         <motion.h2 
@@ -1700,7 +1850,7 @@ const CaptureBlock: React.FC<{
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          ¡Felicidades! 🎉
+          ¡Excelente Elección! 🎯
         </motion.h2>
         
         <motion.div
@@ -1709,76 +1859,20 @@ const CaptureBlock: React.FC<{
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="inline-block bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 px-8 py-6 rounded-2xl">
-            <p className="text-3xl mb-4">
-              Tu puntuación: <span className="font-bold text-yellow-400">
-                {questionsScore.correct}/{questionsScore.total}
-              </span> respuestas correctas
-            </p>
-            {questionsScore.correct >= 7 && (
-              <p className="text-green-400 font-bold text-xl">¡EXCELENTE! Has aprendido sobre CryptoGift 🏆</p>
-            )}
-          </div>
+          <p className="text-2xl text-gray-300 mb-4">
+            Has elegido: <span className="font-bold text-yellow-400">{selectedPath}</span>
+          </p>
+          <p className="text-xl text-gray-400">
+            Preparando tu acceso al regalo...
+          </p>
         </motion.div>
         
-        <motion.p
-          className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          Has completado exitosamente el módulo educativo "Proyecto CryptoGift".
-          Ahora entiendes nuestra visión y cómo funciona la plataforma.
-        </motion.p>
-        
-        {/* Check if wallet is connected */}
-        {!account ? (
-          <motion.div
-            className="space-y-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <p className="text-yellow-400 font-semibold text-lg mb-4">
-              🔒 Conecta tu wallet para completar el módulo educativo
-            </p>
-            <div className="inline-block">
-              <ConnectButton
-                client={client}
-                appMetadata={{
-                  name: "CryptoGift Wallets",
-                  url: typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'
-                }}
-                theme="dark"
-              />
-            </div>
-            <p className="text-gray-400 text-sm mt-4">
-              Tu wallet es necesaria para generar la firma EIP-712 que valida tu educación
-            </p>
-          </motion.div>
-        ) : (
-          <motion.button
-            onClick={() => onSubmit({ educationCompleted: true, questionsScore })}
-            className="px-12 py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            style={{
-              animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8" />
-              COMPLETAR EDUCACIÓN Y RECLAMAR REGALO
-              <Gift className="w-8 h-8" />
-            </div>
-          </motion.button>
-        )}
+        <div className="animate-spin w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto" />
       </div>
     );
   }
 
-  // Normal lead capture flow
+  // UI principal unificada para ambos modos
   return (
     <div className="py-12">
       <h2 className="text-5xl font-bold text-center mb-8">
@@ -1834,36 +1928,100 @@ const CaptureBlock: React.FC<{
           onSubmit={handleSubmit}
           className="max-w-md mx-auto space-y-4"
         >
-          <input
-            type="text"
-            placeholder="¿Cuándo podemos hablar? (ej: Mañana 3pm)"
-            value={formData.availability}
-            onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
-            required
-          />
-          
-          <input
-            type="text"
-            placeholder="Tu mejor contacto (email/telegram/whatsapp)"
-            value={formData.contact}
-            onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
-            required
-          />
-          
-          <motion.button
-            type="submit"
-            className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold text-xl rounded-lg"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            🚀 CONFIRMAR Y UNIRME
-          </motion.button>
-          
-          <div className="text-center text-yellow-400 text-sm">
-            ⏰ {content.urgency}
-          </div>
+          {/* En modo educacional, simplificar el formulario */}
+          {educationalMode ? (
+            <>
+              <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6">
+                <p className="text-lg text-gray-300 mb-4">
+                  Has seleccionado: <span className="font-bold text-yellow-400">{selectedPath}</span>
+                </p>
+                <p className="text-sm text-gray-400">
+                  Esta información nos ayuda a personalizar tu experiencia en CryptoGift
+                </p>
+              </div>
+              
+              {/* Campo opcional de contacto en modo educacional */}
+              <input
+                type="text"
+                placeholder="(Opcional) Tu email si quieres recibir actualizaciones"
+                value={formData.contact}
+                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
+              />
+              
+              {/* Check wallet connection for educational mode */}
+              {!account ? (
+                <div className="space-y-4">
+                  <p className="text-yellow-400 font-semibold text-lg text-center">
+                    🔒 Conecta tu wallet para continuar
+                  </p>
+                  <div className="flex justify-center">
+                    <ConnectButton
+                      client={client}
+                      appMetadata={{
+                        name: "CryptoGift Wallets",
+                        url: typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'
+                      }}
+                      theme="dark"
+                    />
+                  </div>
+                  <p className="text-gray-400 text-sm text-center">
+                    Tu wallet es necesaria para generar la firma EIP-712
+                  </p>
+                </div>
+              ) : (
+                <motion.button
+                  type="submit"
+                  className="w-full py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    <Trophy className="w-8 h-8" />
+                    CONTINUAR AL REGALO
+                    <Gift className="w-8 h-8" />
+                  </div>
+                </motion.button>
+              )}
+            </>
+          ) : (
+            /* Modo normal - formulario completo */
+            <>
+              <input
+                type="text"
+                placeholder="¿Cuándo podemos hablar? (ej: Mañana 3pm)"
+                value={formData.availability}
+                onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
+                required
+              />
+              
+              <input
+                type="text"
+                placeholder="Tu mejor contacto (email/telegram/whatsapp)"
+                value={formData.contact}
+                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
+                required
+              />
+              
+              <motion.button
+                type="submit"
+                className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold text-xl rounded-lg"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                🚀 CONFIRMAR Y UNIRME
+              </motion.button>
+              
+              <div className="text-center text-yellow-400 text-sm">
+                ⏰ {content.urgency}
+              </div>
+            </>
+          )}
         </motion.form>
       )}
     </div>
