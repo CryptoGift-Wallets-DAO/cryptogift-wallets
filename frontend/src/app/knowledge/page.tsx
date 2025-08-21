@@ -229,80 +229,100 @@ export default function KnowledgePage() {
     module.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Learning path nodes for visualization
+  // Learning path nodes for visualization - OPTIMIZED FOR CARD DISPLAY
   const learningPathNodes: PathNode[] = [
     {
       id: 'start',
       title: 'Inicio',
-      description: 'Tu viaje cripto empieza aquí',
+      description: 'Tu viaje cripto empieza aquí. Descubre el poder de la tecnología blockchain',
       icon: '🚀',
       status: 'completed',
-      position: { x: 100, y: 200 },
-      connections: ['wallet-basics']
+      position: { x: 150, y: 80 }, // Higher position for card space below
+      connections: ['wallet-basics'],
+      estimatedTime: '2 min',
+      difficulty: 'beginner'
     },
     {
       id: 'wallet-basics',
       title: 'Wallet Básico',
-      description: 'Aprende sobre wallets',
+      description: 'Aprende a crear y gestionar tu billetera digital de forma segura',
       icon: '👛',
       status: 'completed',
-      position: { x: 250, y: 200 },
-      connections: ['nft-intro', 'crypto-basics']
+      position: { x: 350, y: 100 }, // Staggered for flow
+      connections: ['nft-intro', 'crypto-basics'],
+      estimatedTime: '8 min',
+      difficulty: 'beginner'
     },
     {
       id: 'nft-intro',
       title: 'Intro NFTs',
-      description: 'Descubre los NFTs',
+      description: 'Descubre qué son los NFTs y cómo revolucionan la propiedad digital',
       icon: '🖼️',
       status: 'in-progress',
       progress: 65,
-      position: { x: 400, y: 150 },
-      connections: ['cryptogift-basics']
+      position: { x: 550, y: 60 }, // Higher branch
+      connections: ['cryptogift-basics'],
+      estimatedTime: '12 min',
+      difficulty: 'beginner'
     },
     {
       id: 'crypto-basics',
       title: 'Crypto Básico',
-      description: 'Fundamentos de cripto',
+      description: 'Fundamentos de criptomonedas y tecnología blockchain',
       icon: '🪙',
       status: 'available',
-      position: { x: 400, y: 250 },
-      connections: ['defi-basics']
+      position: { x: 550, y: 140 }, // Lower branch, more space
+      connections: ['defi-basics'],
+      estimatedTime: '15 min',
+      difficulty: 'beginner'
     },
     {
       id: 'cryptogift-basics',
       title: 'CryptoGift',
-      description: 'Domina CryptoGift',
+      description: 'Domina CryptoGift: envía y recibe regalos cripto de forma fácil',
       icon: '🎁',
       status: 'available',
-      position: { x: 550, y: 150 },
-      connections: ['sales-masterclass']
+      position: { x: 750, y: 80 }, // Continue upper flow
+      connections: ['sales-masterclass'],
+      estimatedTime: '10 min',
+      difficulty: 'intermediate',
+      prerequisites: ['nft-intro']
     },
     {
       id: 'defi-basics',
       title: 'DeFi',
-      description: 'Finanzas descentralizadas',
+      description: 'Finanzas descentralizadas: préstamos, yield farming y más',
       icon: '🏦',
       status: 'locked',
-      position: { x: 550, y: 250 },
-      connections: ['advanced']
+      position: { x: 750, y: 160 }, // Lower branch continues
+      connections: ['advanced'],
+      estimatedTime: '25 min',
+      difficulty: 'advanced',
+      prerequisites: ['crypto-basics']
     },
     {
       id: 'sales-masterclass',
       title: 'Sales Masterclass',
-      description: 'Conviértete en experto',
+      description: 'Conviértete en colaborador experto y monetiza con CryptoGift',
       icon: '💎',
       status: 'available',
-      position: { x: 700, y: 150 },
-      connections: ['advanced']
+      position: { x: 950, y: 100 }, // Central convergence
+      connections: ['advanced'],
+      estimatedTime: '20 min',
+      difficulty: 'intermediate',
+      prerequisites: ['cryptogift-basics']
     },
     {
       id: 'advanced',
-      title: 'Avanzado',
-      description: 'Contenido experto',
+      title: 'Experto Crypto',
+      description: 'Contenido experto: trading avanzado, DeFi y estrategias pro',
       icon: '🏆',
       status: 'locked',
-      position: { x: 850, y: 200 },
-      connections: []
+      position: { x: 1150, y: 120 }, // Final destination with space
+      connections: [],
+      estimatedTime: '45 min',
+      difficulty: 'advanced',
+      prerequisites: ['sales-masterclass', 'defi-basics']
     }
   ];
   

@@ -77,9 +77,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
     return colors[difficulty];
   };
 
-  // Calculate SVG dimensions based on node positions
-  const svgWidth = Math.max(...nodes.map(n => n.position.x)) + 200;
-  const svgHeight = Math.max(...nodes.map(n => n.position.y)) + 200;
+  // Calculate SVG dimensions based on node positions + card space
+  const svgWidth = Math.max(...nodes.map(n => n.position.x)) + 300; // More horizontal space
+  const svgHeight = Math.max(...nodes.map(n => n.position.y)) + 350; // Extra space for cards below
 
   // Generate path connections
   const generatePath = (from: PathNode, to: PathNode) => {
@@ -106,7 +106,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
         width={svgWidth}
         height={svgHeight}
         className="min-w-full"
-        style={{ minHeight: '400px' }}
+        style={{ minHeight: '500px' }} // More height for cards
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        preserveAspectRatio="xMidYMid meet"
       >
         {/* Render connections first (behind nodes) */}
         {showConnections && nodes.map(node => 
@@ -250,78 +252,177 @@ export const LearningPath: React.FC<LearningPathProps> = ({
         })}
       </svg>
 
-      {/* Node details cards */}
+      {/* Node details cards - BELOW NODES WITHOUT OVERLAP */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
         {nodes.map((node, index) => {
           if (compact) return null;
+          
+          // Calculate position to appear below node with proper spacing
+          const cardTop = node.position.y + nodeSize / 2 + 15; // Below the node
+          const cardLeft = node.position.x - 100; // Centered under node
           
           return (
             <motion.div
               key={`detail-${node.id}`}
               className="absolute pointer-events-auto"
               style={{
-                left: node.position.x + nodeSize / 2 + 10,
-                top: node.position.y - 30
+                left: `${cardLeft}px`,
+                top: `${cardTop}px`,
+                zIndex: 10 + index // Ensure proper stacking
               }}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: animated ? index * 0.1 + 0.5 : 0 }}
+              initial={{ opacity: 0, y: -10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                delay: animated ? index * 0.1 + 0.5 : 0,
+                type: "spring",
+                stiffness: 260,
+                damping: 20
+              }}
             >
+              {/* Card Container with Glass Morphism Effect */}
               <div className={`
-                bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 
-                ${node.status === 'locked' ? 'opacity-60' : 'hover:shadow-xl'}
-                transition-all duration-300 max-w-xs
+                relative w-[200px]
+                bg-gradient-to-br from-white/95 to-white/90 
+                dark:from-gray-800/95 dark:to-gray-900/90
+                backdrop-blur-xl backdrop-saturate-150
+                rounded-2xl shadow-2xl
+                border border-white/20 dark:border-gray-700/30
+                ${node.status === 'locked' ? 'opacity-60 grayscale' : 'hover:shadow-3xl hover:scale-105'}
+                transition-all duration-500 ease-out
+                overflow-hidden
               `}>
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">
-                    {node.title}
-                  </h3>
-                  {node.difficulty && (
-                    <span className={`
-                      px-2 py-0.5 rounded-full text-xs font-medium
-                      ${getDifficultyBadge(node.difficulty)}
-                    `}>
-                      {node.difficulty}
-                    </span>
+                {/* Gradient Border Effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-transparent to-pink-500/20 pointer-events-none" />
+                
+                {/* Connection Line from Node to Card */}
+                <div 
+                  className="absolute w-[2px] bg-gradient-to-b from-purple-500/50 to-transparent"
+                  style={{
+                    height: '15px',
+                    left: '50%',
+                    top: '-15px',
+                    transform: 'translateX(-50%)'
+                  }}
+                />
+                
+                {/* Card Content */}
+                <div className="relative p-4">
+                  {/* Header with Status Badge */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-white leading-tight">
+                        {node.title}
+                      </h3>
+                      {node.difficulty && (
+                        <span className={`
+                          inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold
+                          ${getDifficultyBadge(node.difficulty)}
+                        `}>
+                          {node.difficulty === 'beginner' ? '🌱 Básico' :
+                           node.difficulty === 'intermediate' ? '🌿 Intermedio' :
+                           '🌳 Avanzado'}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Status Icon */}
+                    <div className="ml-2">
+                      {node.status === 'completed' && (
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+                          <span className="text-white text-sm">✓</span>
+                        </div>
+                      )}
+                      {node.status === 'in-progress' && (
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">{node.progress}%</span>
+                        </div>
+                      )}
+                      {node.status === 'locked' && (
+                        <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center">
+                          <span className="text-lg">🔒</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Description */}
+                  {node.description && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
+                      {node.description}
+                    </p>
+                  )}
+                  
+                  {/* Progress Bar for In-Progress */}
+                  {node.status === 'in-progress' && node.progress !== undefined && (
+                    <div className="mb-3">
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${node.progress}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer Info & Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                    {node.estimatedTime && (
+                      <span className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
+                        <span className="text-base">⏱️</span>
+                        {node.estimatedTime}
+                      </span>
+                    )}
+                    
+                    {node.status === 'available' && (
+                      <motion.button
+                        className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-xl"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => onNodeClick?.(node.id)}
+                      >
+                        Comenzar →
+                      </motion.button>
+                    )}
+                    
+                    {node.status === 'completed' && (
+                      <span className="text-xs text-green-600 dark:text-green-400 font-bold flex items-center gap-1">
+                        <span>🏆</span> Completado
+                      </span>
+                    )}
+                    
+                    {node.status === 'locked' && (
+                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                        Requisitos pendientes
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Prerequisites if locked */}
+                  {node.status === 'locked' && node.prerequisites && node.prerequisites.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        📚 Completa primero:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {node.prerequisites.map(prereq => (
+                          <span key={prereq} className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                            {nodes.find(n => n.id === prereq)?.title || prereq}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
                 
-                {node.description && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                    {node.description}
-                  </p>
+                {/* Decorative Elements */}
+                {node.status === 'available' && (
+                  <div className="absolute -top-1 -right-1">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full animate-ping" />
+                    <div className="w-3 h-3 bg-purple-500 rounded-full absolute top-0" />
+                  </div>
                 )}
-
-                <div className="flex items-center justify-between text-xs">
-                  {node.estimatedTime && (
-                    <span className="text-gray-500 dark:text-gray-500">
-                      ⏱️ {node.estimatedTime}
-                    </span>
-                  )}
-                  
-                  {node.status === 'in-progress' && node.progress !== undefined && (
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">
-                      {node.progress}% completado
-                    </span>
-                  )}
-                  
-                  {node.status === 'completed' && (
-                    <span className="text-green-600 dark:text-green-400 font-medium">
-                      ✅ Completado
-                    </span>
-                  )}
-                  
-                  {node.status === 'available' && (
-                    <motion.button
-                      className="px-3 py-1 bg-purple-600 text-white rounded-full text-xs font-medium hover:bg-purple-700"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => onNodeClick?.(node.id)}
-                    >
-                      Comenzar →
-                    </motion.button>
-                  )}
-                </div>
               </div>
             </motion.div>
           );
