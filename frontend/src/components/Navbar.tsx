@@ -7,6 +7,7 @@ import { useActiveAccount } from 'thirdweb/react';
 import { WalletSwitcher } from './WalletSwitcher';
 import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 import { ThemeToggle } from './ui/ThemeToggle';
+import { SmartIcon } from './ui/SmartIcon';
 
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,7 +46,7 @@ export const Navbar: React.FC = () => {
                 className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
                 style={{ display: 'none' }}
               >
-                <span className="text-white font-bold text-xl">🎁</span>
+                <SmartIcon icon="🎁" size={24} className="text-white" />
               </div>
             </div>
             <div className="flex items-center space-x-3">

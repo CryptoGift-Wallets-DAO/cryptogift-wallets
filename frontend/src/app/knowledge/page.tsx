@@ -11,13 +11,14 @@ import { LearningContainer } from '../../components/learn';
 import { DailyTipCard } from '../../components/learn/DailyTipCard';
 import { AchievementShowcase, PRESET_ACHIEVEMENTS } from '../../components/learn/AchievementSystem';
 import type { PathNode } from '../../types/curriculum';
-import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles, Plus, Grid3x3, Layers, Settings, PenTool, Wand2, GraduationCap } from 'lucide-react';
+import { BookOpen, Trophy, Flame, Clock, Star, TrendingUp, Users, Sparkles, Plus, Grid3x3, Layers, Settings, PenTool, Wand2, GraduationCap, Gift, Gem, Coins, Wallet, Image as ImageIcon, Shield, ShieldCheck, Lock, Rocket, Zap, Bot, Building2 } from 'lucide-react';
+import { SmartIcon } from '../../components/ui/SmartIcon';
 
 interface KnowledgeModule {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: string | React.ComponentType<any>;
   level: 'Básico' | 'Intermedio' | 'Avanzado';
   duration: string;
   topics: string[];
