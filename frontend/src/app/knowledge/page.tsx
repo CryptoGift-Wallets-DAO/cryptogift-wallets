@@ -79,7 +79,7 @@ export default function KnowledgePage() {
 
   // Handler para abrir lecciones en modal (preserva la Sales Masterclass)
   const handleOpenLesson = (lessonId: string) => {
-    console.log('📚 Opening lesson in Knowledge mode:', lessonId);
+    console.log('LESSON: Opening lesson in Knowledge mode:', lessonId);
     setCurrentLessonId(lessonId);
     setShowLessonModal(true);
   };
@@ -88,7 +88,7 @@ export default function KnowledgePage() {
     'sales-masterclass': [
       {
         id: 'sales-masterclass',
-        title: '🚀 SALES MASTERCLASS',
+        title: 'SALES MASTERCLASS',
         description: 'De $0 a $100M en 15 minutos - La presentación definitiva para captar colaboradores, inversores y comunidad',
         icon: '💎',
         level: 'Avanzado',
@@ -99,7 +99,7 @@ export default function KnowledgePage() {
     'getting-started': [
       {
         id: 'claim-first-gift',
-        title: '🎁 Reclama tu Primer Regalo Cripto',
+        title: 'Reclama tu Primer Regalo Cripto',
         description: 'Aprende haciendo: reclama un NFT real sin pagar gas y descubre cómo funciona',
         icon: '🎁',
         level: 'Básico',
@@ -210,7 +210,7 @@ export default function KnowledgePage() {
   };
 
   const categories = [
-    { id: 'sales-masterclass', name: '⭐ MASTERCLASS', icon: '🚀', color: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold shadow-lg' },
+    { id: 'sales-masterclass', name: 'MASTERCLASS', icon: '🚀', color: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold shadow-lg' },
     { id: 'getting-started', name: 'Primeros Pasos', icon: '🚀', color: 'bg-blue-50 text-blue-700' },
     { id: 'platform-guide', name: 'Guía CryptoGift', icon: '🎁', color: 'bg-purple-50 text-purple-700' },
     { id: 'advanced-crypto', name: 'Crypto Avanzado', icon: '⚡', color: 'bg-yellow-50 text-yellow-700' },
@@ -424,7 +424,7 @@ export default function KnowledgePage() {
                 <>
                   <br />
                   <span className="text-purple-600 dark:text-purple-400 font-medium">
-                    🚀 {learningProgress.completedModules} módulos completados • 
+                    <SmartIcon icon="🚀" size={16} className="mr-1" />{learningProgress.completedModules} módulos completados • 
                     <SmartIcon icon="🔥" size={16} className="mr-1" />{userStreak} días de racha • 
                     ⚡ {learningProgress.points} puntos
                   </span>
@@ -552,7 +552,7 @@ export default function KnowledgePage() {
           <div className="h-[600px] rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
             <LearningContainer
               onNodeClick={(nodeId, nodeType) => {
-                console.log('🎯 Node selected:', nodeId, nodeType);
+                console.log('NODE: Node selected:', nodeId, nodeType);
                 // Handle node selection - could open lesson modal, etc.
                 if (nodeId === 'sales-masterclass') {
                   handleOpenLesson('sales-masterclass');
@@ -572,7 +572,7 @@ export default function KnowledgePage() {
           <div className="relative max-w-2xl mx-auto">
             <motion.input
               type="text"
-              placeholder="🔍 Buscar lecciones, conceptos, tutoriales..."
+              placeholder="Buscar lecciones, conceptos, tutoriales..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-6 py-4 rounded-2xl border-2 border-purple-200 dark:border-purple-700 
@@ -601,7 +601,7 @@ export default function KnowledgePage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              💡 Tip del Día
+              <SmartIcon icon="💡" size={20} className="mr-2" />Tip del Día
             </motion.button>
             <motion.button
               onClick={() => setShowAchievements(true)}
@@ -618,7 +618,7 @@ export default function KnowledgePage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              📊 Estadísticas
+              <SmartIcon icon="📊" size={20} className="mr-2" />Estadísticas
             </motion.button>
           </div>
         </div>
@@ -744,7 +744,7 @@ export default function KnowledgePage() {
                     ease: "easeInOut"
                   }}
                 >
-                  💡
+                  <SmartIcon icon="💡" size={24} />
                 </motion.div>
               </div>
             </div>
@@ -789,7 +789,7 @@ export default function KnowledgePage() {
 
                 <div className="flex items-center justify-between text-sm text-text-muted mb-4 transition-colors duration-300">
                   <span>⏱️ {module.duration}</span>
-                  <span>📖 {module.topics.length} temas</span>
+                  <span><SmartIcon icon="📖" size={16} className="mr-2" />{module.topics.length} temas</span>
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-4">
@@ -814,7 +814,7 @@ export default function KnowledgePage() {
                     </p>
                     <button className="px-4 py-2 bg-bg-secondary dark:bg-bg-primary text-text-muted 
                                      rounded-lg cursor-not-allowed transition-colors duration-300">
-                      🔒 Bloqueado
+                      <SmartIcon icon="🔒" size={16} className="mr-2" />Bloqueado
                     </button>
                   </div>
                 ) : (
@@ -843,7 +843,7 @@ export default function KnowledgePage() {
                       className="block w-full text-center py-3 rounded-lg font-medium hover:opacity-90 transition-all duration-300 
                                bg-gradient-to-r from-purple-500 to-pink-500 dark:from-accent-gold dark:to-accent-silver text-white dark:text-bg-primary"
                     >
-                      🚀 Comenzar Lección
+                      <SmartIcon icon="🚀" size={16} className="mr-2" />Comenzar Lección
                     </Link>
                   )
                 )}
@@ -858,22 +858,22 @@ export default function KnowledgePage() {
                        text-white dark:text-bg-primary transition-all duration-500">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="text-2xl font-bold mb-2">🤖 Asistente AI Cripto</h3>
+              <h3 className="text-2xl font-bold mb-2 flex items-center"><SmartIcon icon="🤖" size={24} className="mr-2" />Asistente AI Cripto</h3>
               <p className="text-indigo-100 dark:text-bg-secondary mb-4 transition-colors duration-300">
                 ¿Tienes dudas específicas? Nuestro asistente AI está aquí 24/7 para ayudarte con cualquier pregunta sobre cripto.
               </p>
               <ul className="text-sm text-indigo-100 dark:text-bg-secondary space-y-1 transition-colors duration-300">
                 <li><SmartIcon icon="✨" size={16} className="mr-2" />Respuestas personalizadas a tus preguntas</li>
-                <li>🎯 Recomendaciones de aprendizaje</li>
-                <li>🔗 Enlaces a lecciones relevantes</li>
-                <li>📊 Seguimiento de tu progreso</li>
+                <li><SmartIcon icon="🎯" size={16} className="mr-2" />Recomendaciones de aprendizaje</li>
+                <li><SmartIcon icon="🔗" size={16} className="mr-2" />Enlaces a lecciones relevantes</li>
+                <li><SmartIcon icon="📊" size={16} className="mr-2" />Seguimiento de tu progreso</li>
               </ul>
             </div>
             <div className="ml-8">
               <button className="bg-white dark:bg-bg-primary text-indigo-600 dark:text-accent-gold px-8 py-4 
                                rounded-xl font-bold hover:bg-indigo-50 dark:hover:bg-bg-secondary 
                                transition-all duration-300">
-                💬 Chatear Ahora
+                <SmartIcon icon="💬" size={16} className="mr-2" />Chatear Ahora
               </button>
             </div>
           </div>
@@ -881,7 +881,7 @@ export default function KnowledgePage() {
 
               {/* Progress Tracking */}
               <div className="mt-8 bg-bg-card rounded-2xl p-6 transition-colors duration-300">
-                <h3 className="text-xl font-bold text-text-primary mb-4 transition-colors duration-300">📈 Tu Progreso de Aprendizaje</h3>
+                <h3 className="text-xl font-bold text-text-primary mb-4 transition-colors duration-300 flex items-center"><SmartIcon icon="📈" size={20} className="mr-2" />Tu Progreso de Aprendizaje</h3>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-green-100 dark:bg-accent-gold/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300">
@@ -979,7 +979,7 @@ export default function KnowledgePage() {
                   {/* Templates Section */}
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                      🎨 Plantillas Populares
+                      <SmartIcon icon="🎨" size={20} className="mr-2" />Plantillas Populares
                     </h3>
                     <div className="grid md:grid-cols-3 gap-6">
                       {getPopularTemplates().slice(0, 6).map((template) => (
@@ -1049,21 +1049,21 @@ export default function KnowledgePage() {
                       </h3>
                       <ul className="space-y-3">
                         <li className="flex items-center gap-3">
-                          <span className="text-2xl">📚</span>
+                          <SmartIcon icon="📚" size={32} />
                           <div>
                             <div className="font-semibold text-gray-900 dark:text-white">Guía de Mejores Prácticas</div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">Aprende a crear contenido efectivo</div>
                           </div>
                         </li>
                         <li className="flex items-center gap-3">
-                          <span className="text-2xl">🎯</span>
+                          <SmartIcon icon="🎯" size={32} />
                           <div>
                             <div className="font-semibold text-gray-900 dark:text-white">Ejemplos de Campañas Exitosas</div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">Inspírate con casos reales</div>
                           </div>
                         </li>
                         <li className="flex items-center gap-3">
-                          <span className="text-2xl">🤖</span>
+                          <SmartIcon icon="🤖" size={32} />
                           <div>
                             <div className="font-semibold text-gray-900 dark:text-white">AI Content Assistant</div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">Genera ideas y contenido con IA</div>
@@ -1110,7 +1110,7 @@ export default function KnowledgePage() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    📚 Mi Contenido
+                    <SmartIcon icon="📚" size={20} className="mr-2" />Mi Contenido
                   </h2>
                   <div className="flex gap-3">
                     <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg 
@@ -1185,7 +1185,7 @@ export default function KnowledgePage() {
             >
               <div className="space-y-6">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-                  📊 Analíticas de Contenido
+                  <SmartIcon icon="📊" size={20} className="mr-2" />Analíticas de Contenido
                 </h2>
                 
                 {/* Metrics Overview */}
@@ -1252,7 +1252,7 @@ export default function KnowledgePage() {
         mode="knowledge"
         isOpen={showLessonModal}
         onClose={() => {
-          console.log('📚 Closing lesson modal in Knowledge mode');
+          console.log('LESSON: Closing lesson modal in Knowledge mode');
           setShowLessonModal(false);
           setCurrentLessonId('');
         }}
