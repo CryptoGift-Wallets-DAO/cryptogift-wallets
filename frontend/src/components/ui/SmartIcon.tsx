@@ -121,16 +121,12 @@ const getEmojiColor = (emoji: string): string => {
     '📜': '#8B5CF6', // Violet-500 - Contract
     '🎣': '#EF4444', // Red-500 - Phishing/Target
     '🧹': '#10B981', // Emerald-500 - Clean
-    '👥': '#3B82F6', // Blue-500 - Community
-    '📦': '#F97316', // Orange-500 - Package
     '🗂️': '#6B7280', // Gray-500 - Files
     '🖥️': '#6366F1', // Indigo-500 - Desktop
     '🔤': '#A855F7', // Purple-500 - Typography
     '🏪': '#EC4899', // Pink-500 - Store
     '🖼️': '#8B5CF6', // Violet-500 - NFT
     '💵': '#10B981', // Emerald-500 - Money
-    '🌉': '#06B6D4', // Cyan-500 - Bridge
-    '👑': '#FCD34D', // Yellow-300 - Luxury
     '🎫': '#F97316', // Orange-500 - Ticket
     '🗳️': '#7C3AED', // Violet-600 - Voting
     '🌡️': '#EF4444', // Red-500 - Temperature
@@ -142,8 +138,7 @@ const getEmojiColor = (emoji: string): string => {
     '📤': '#10B981', // Emerald-500 - Upload
     '📡': '#3B82F6', // Blue-500 - Network
     '🤖': '#8B5CF6', // Violet-500 - AI
-    '🎵': '#EC4899', // Pink-500 - Music
-    '🏷️': '#A855F7'  // Purple-500 - Tag
+    '🎵': '#EC4899' // Pink-500 - Music
   };
   
   return colorMap[emoji] || 'currentColor';

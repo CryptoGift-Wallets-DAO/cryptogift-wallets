@@ -26,34 +26,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useAnimation, useInView } from 'framer-motion';
 import { SmartIcon } from '../ui/SmartIcon';
-import { 
-  BookOpen, 
-  Award, 
-  Clock, 
-  Zap, 
-  Target, 
-  Shield, 
-  Coins,
-  Cpu,
-  Globe,
-  Users,
-  Code,
-  TrendingUp,
-  Lock,
-  CheckCircle,
-  PlayCircle,
-  Star,
-  Settings,
-  FileText,
-  RefreshCw,
-  Key,
-  HardDrive,
-  PenTool,
-  Rocket,
-  Wallet,
-  Blocks,
-  Link
-} from 'lucide-react';
 
 // Types
 import type { 
@@ -68,7 +40,7 @@ import type {
 } from '../../types/curriculum';
 
 // Import actual curriculum data
-import curriculumData from '../../data/curriculumData';
+import { allModules } from '../../data/curriculumData';
 
 interface CurriculumTreeProps {
   modules?: Module[];
@@ -163,425 +135,12 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
     if (modules && modules.length > 0) {
       return modules;
     }
-    if (curriculumData && curriculumData.modules && curriculumData.modules.length > 0) {
-      return curriculumData.modules;
+    if (allModules && allModules.length > 0) {
+      return allModules;
     }
     // Fallback - should not happen with real data
-    return [
-    // ===== MÓDULOS PRINCIPALES (M0-M8) - PROFUNDIDAD ALTA =====
-    {
-      id: 'M0',
-      title: 'Onboarding & Seguridad',
-      description: 'Usuario nuevo: instalar, crear, respaldar y usar wallet con hábitos seguros',
-      objective: 'Dominar el setup seguro de wallets y entender gas/redes',
-      branches: [
-        {
-          id: 'M0.R1',
-          title: 'Wallets (creación, backup, uso inicial)',
-          description: 'Instalación, configuración y primeras transacciones',
-          units: [
-            {
-              id: 'M0.R1.U1',
-              title: 'Instalación & setup',
-              description: 'MetaMask setup y configuración de redes',
-              lessons: [
-                {
-                  id: 'M0.R1.U1.L1',
-                  title: 'Instalar MetaMask (mobile/desktop)',
-                  objective: 'Ahora sé instalar y configurar MetaMask',
-                  description: 'Instalación paso a paso de MetaMask en mobile y desktop',
-                  duration: 3,
-                  difficulty: 'beginner',
-                  evidenceType: 'screenshot',
-                  evidenceDescription: 'Screenshot de wallet configurada',
-                  xpReward: 50,
-                  status: 'available',
-                  icon: Code,
-                  tags: ['wallet', 'setup', 'metamask']
-                },
-                {
-                  id: 'M0.R1.U1.L2',
-                  title: 'Configurar Base/Mainnet & Base Sepolia',
-                  objective: 'Ahora sé configurar redes en mi wallet',
-                  description: 'Agregar RPCs y explorers de redes Base',
-                  duration: 4,
-                  difficulty: 'beginner',
-                  evidenceType: 'screenshot',
-                  evidenceDescription: 'Screenshot mostrando redes configuradas',
-                  xpReward: 60,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U1.L1'],
-                  icon: Globe,
-                  tags: ['networks', 'rpc', 'base']
-                },
-                {
-                  id: 'M0.R1.U1.L3',
-                  title: 'Habilitar biometría/PIN',
-                  objective: 'Ahora sé asegurar mi wallet con biometría',
-                  description: 'Configurar seguridad biométrica y PIN de acceso',
-                  duration: 2,
-                  difficulty: 'beginner',
-                  evidenceType: 'demo',
-                  evidenceDescription: 'Demostración de acceso seguro',
-                  xpReward: 40,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U1.L2'],
-                  icon: Lock,
-                  tags: ['security', 'biometrics', 'pin']
-                }
-              ],
-              xpTotal: 150,
-              estimatedTime: 9,
-              status: 'available',
-              completedLessons: 0,
-              icon: Settings,
-              color: '#3B82F6'
-            },
-            {
-              id: 'M0.R1.U2',
-              title: 'Backup responsable',
-              description: 'Seed phrases y recuperación segura',
-              lessons: [
-                {
-                  id: 'M0.R1.U2.L1',
-                  title: 'Anotar seed phrase seguramente',
-                  objective: 'Ahora sé respaldar mi seed phrase de forma segura',
-                  description: 'Métodos seguros para anotar y guardar seed phrases',
-                  duration: 5,
-                  difficulty: 'beginner',
-                  evidenceType: 'quiz',
-                  evidenceDescription: 'Quiz sobre mejores prácticas de backup',
-                  xpReward: 80,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U1.L3'],
-                  icon: FileText,
-                  tags: ['backup', 'seed', 'security']
-                },
-                {
-                  id: 'M0.R1.U2.L2',
-                  title: 'Probar recuperación simulada',
-                  objective: 'Ahora sé recuperar mi wallet',
-                  description: 'Simulación de proceso de recuperación',
-                  duration: 4,
-                  difficulty: 'intermediate',
-                  evidenceType: 'quest-simulation',
-                  evidenceDescription: 'Completar simulación de recuperación',
-                  xpReward: 70,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U2.L1'],
-                  icon: RefreshCw,
-                  tags: ['recovery', 'simulation', 'backup']
-                },
-                {
-                  id: 'M0.R1.U2.L3',
-                  title: 'Diferenciar seed vs. private key vs. password',
-                  objective: 'Ahora entiendo los diferentes tipos de claves',
-                  description: 'Conceptos clave: seed, private key, password',
-                  duration: 3,
-                  difficulty: 'beginner',
-                  evidenceType: 'quiz',
-                  evidenceDescription: 'Quiz conceptual sobre tipos de claves',
-                  xpReward: 60,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U2.L2'],
-                  icon: Key,
-                  tags: ['concepts', 'keys', 'security']
-                }
-              ],
-              xpTotal: 210,
-              estimatedTime: 12,
-              status: 'locked',
-              completedLessons: 0,
-              icon: HardDrive,
-              color: '#10B981'
-            },
-            {
-              id: 'M0.R1.U3',
-              title: 'Primeras firmas ✪',
-              description: 'Firmas EIP-191 y primeras transacciones',
-              lessons: [
-                {
-                  id: 'M0.R1.U3.L1',
-                  title: 'Firmar mensaje EIP-191',
-                  objective: 'Ahora sé firmar mensajes de forma segura',
-                  description: 'Firmas criptográficas y verificación local',
-                  duration: 4,
-                  difficulty: 'intermediate',
-                  evidenceType: 'demo',
-                  evidenceDescription: 'Demostración de firma y verificación',
-                  xpReward: 90,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U2.L3'],
-                  icon: PenTool,
-                  tags: ['signatures', 'eip191', 'crypto']
-                },
-                {
-                  id: 'M0.R1.U3.L2',
-                  title: '✪ Enviar 0.001 tETH en Base Sepolia',
-                  objective: 'Ahora sé realizar transacciones on-chain',
-                  description: 'Primera transacción real en testnet',
-                  duration: 5,
-                  difficulty: 'intermediate',
-                  evidenceType: 'quest-onchain',
-                  evidenceDescription: 'Tx hash de transacción exitosa',
-                  xpReward: 150,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U3.L1'],
-                  isQuest: true,
-                  questType: 'onchain',
-                  questInstructions: 'Enviar 0.001 tETH a la dirección proporcionada',
-                  verificationSteps: [
-                    'Copiar tx hash',
-                    'Verificar en BaseScan',
-                    'Confirmar recepción'
-                  ],
-                  icon: Rocket,
-                  tags: ['transaction', 'testnet', 'quest']
-                },
-                {
-                  id: 'M0.R1.U3.L3',
-                  title: 'Agregar token por contrato',
-                  objective: 'Ahora sé agregar tokens custom a mi wallet',
-                  description: 'watchAsset y gestión de tokens ERC-20',
-                  duration: 3,
-                  difficulty: 'beginner',
-                  evidenceType: 'screenshot',
-                  evidenceDescription: 'Screenshot del token agregado en wallet',
-                  xpReward: 70,
-                  status: 'locked',
-                  prerequisites: ['M0.R1.U3.L2'],
-                  icon: Coins,
-                  tags: ['tokens', 'erc20', 'wallet']
-                }
-              ],
-              xpTotal: 310,
-              estimatedTime: 12,
-              status: 'locked',
-              completedLessons: 0,
-              icon: '✪',
-              color: '#F59E0B'
-            }
-          ],
-          xpTotal: 670,
-          estimatedTime: 33,
-          status: 'available',
-          completedUnits: 0,
-          badgeId: 'wallet-master',
-          badgeTitle: 'Wallet Master',
-          badgeDescription: 'Maestro en configuración y uso de wallets',
-          icon: Wallet,
-          color: '#3B82F6',
-          position: { x: 200, y: 100 }
-        },
-        {
-          id: 'M0.R2',
-          title: 'Seguridad del usuario',
-          description: 'Higiene digital, phishing y recuperación',
-          units: [
-            // U1: Higiene digital, U2: Phishing 101, U3: Recuperación y guardianes
-          ],
-          xpTotal: 580,
-          estimatedTime: 28,
-          status: 'locked',
-          completedUnits: 0,
-          badgeId: 'security-guardian',
-          badgeTitle: 'Security Guardian',
-          badgeDescription: 'Protector de activos digitales',
-          icon: Shield,
-          color: '#EF4444',
-          position: { x: 400, y: 150 }
-        },
-        {
-          id: 'M0.R3',
-          title: 'Redes & gas',
-          description: 'Conceptos de gas, cuentas y quest de consolidación',
-          units: [
-            // U1: Conceptos de gas, U2: Cuentas y nonces, U3: Quest de consolidación
-          ],
-          xpTotal: 490,
-          estimatedTime: 25,
-          status: 'locked',
-          completedUnits: 0,
-          badgeId: 'gas-optimizer',
-          badgeTitle: 'Gas Optimizer',
-          badgeDescription: 'Experto en optimización de transacciones',
-          icon: Zap,
-          color: '#8B5CF6',
-          position: { x: 600, y: 100 }
-        }
-      ],
-      xpTotal: 1740,
-      estimatedTime: 86, // ~1.4 horas
-      status: 'available',
-      completedBranches: 0,
-      categoryId: 'fundamentos-onboarding',
-      categoryTitle: 'Fundamentos & Onboarding',
-      depth: 'high',
-      masterBadgeId: 'onboarding-champion',
-      masterBadgeTitle: 'Onboarding Champion',
-      masterBadgeDescription: 'Completó el proceso completo de onboarding seguro',
-      icon: Target,
-      color: '#3B82F6',
-      position: { x: 150 + (0 % 6) * 200, y: 80 + Math.floor(0 / 6) * 200 }, // M0: primera fila, primera posición
-      hasQuests: true,
-      questsCount: 3,
-      badgesAvailable: 4
-    },
-    
-    // M1: Fundamentos Blockchain
-    {
-      id: 'M1',
-      title: 'Fundamentos Blockchain',
-      description: 'Datos, bloques, consenso y finalidad para leer explorers',
-      objective: 'Entender blockchain para razonar sobre seguridad',
-      branches: [
-        {
-          id: 'M1.R1',
-          title: 'Datos y bloques',
-          description: 'Criptografía, estructura de bloques y finalidad',
-          units: [],
-          xpTotal: 520,
-          estimatedTime: 26,
-          status: 'locked',
-          completedUnits: 0,
-          prerequisites: ['M0'],
-          icon: Blocks,
-          color: '#059669',
-          position: { x: 350, y: 120 }
-        },
-        {
-          id: 'M1.R2',
-          title: 'Consenso',
-          description: 'PoW, PoS y redes modulares',
-          units: [],
-          xpTotal: 480,
-          estimatedTime: 24,
-          status: 'locked',
-          completedUnits: 0,
-          icon: '🤝',
-          color: '#DC2626',
-          position: { x: 550, y: 180 }
-        },
-        {
-          id: 'M1.R3',
-          title: 'Herramientas',
-          description: 'Explorers, RPC y nodos',
-          units: [],
-          xpTotal: 410,
-          estimatedTime: 21,
-          status: 'locked',
-          completedUnits: 0,
-          icon: '🔧',
-          color: '#7C3AED',
-          position: { x: 750, y: 120 }
-        }
-      ],
-      xpTotal: 1410,
-      estimatedTime: 71,
-      status: 'locked',
-      completedBranches: 0,
-      categoryId: 'fundamentos-onboarding',
-      categoryTitle: 'Fundamentos & Onboarding',
-      depth: 'high',
-      prerequisites: ['M0'],
-      icon: Link,
-      color: '#059669',
-      position: { x: 150 + (1 % 6) * 200, y: 80 + Math.floor(1 / 6) * 200 }, // M1: primera fila, segunda posición
-      hasQuests: true,
-      questsCount: 2,
-      badgesAvailable: 4
-    },
-
-    // M2: Bitcoin
-    {
-      id: 'M2',
-      title: 'Bitcoin',
-      description: 'UTXO, Lightning, historia y ecosistema Bitcoin',
-      objective: 'Dominar el modelo UTXO y Lightning Network',
-      branches: [
-        {
-          id: 'M2.R1',
-          title: 'Modelo UTXO',
-          description: 'Transacciones, seguridad y Lightning intro',
-          units: [],
-          xpTotal: 450,
-          estimatedTime: 22,
-          status: 'locked',
-          completedUnits: 0,
-          icon: '⚡',
-          color: '#F97316',
-          position: { x: 550, y: 100 }
-        },
-        {
-          id: 'M2.R2',
-          title: 'Historia & economía',
-          description: 'Origen, halving y escalado',
-          units: [],
-          xpTotal: 380,
-          estimatedTime: 19,
-          status: 'locked',
-          completedUnits: 0,
-          icon: '📈',
-          color: '#EAB308',
-          position: { x: 750, y: 160 }
-        },
-        {
-          id: 'M2.R3',
-          title: 'Ecosistema',
-          description: 'Herramientas, riesgos y práctica',
-          units: [],
-          xpTotal: 420,
-          estimatedTime: 21,
-          status: 'locked',
-          completedUnits: 0,
-          icon: Globe,
-          color: '#6366F1',
-          position: { x: 950, y: 100 }
-        }
-      ],
-      xpTotal: 1250,
-      estimatedTime: 62,
-      status: 'locked',
-      completedBranches: 0,
-      categoryId: 'protocolos-base-computo',
-      categoryTitle: 'Protocolos Base & Cómputo',
-      depth: 'high',
-      prerequisites: ['M1'],
-      icon: Coins,
-      color: '#F97316',
-      position: { x: 150 + (2 % 6) * 200, y: 80 + Math.floor(2 / 6) * 200 }, // M2: primera fila, tercera posición
-      hasQuests: true,
-      questsCount: 4,
-      badgesAvailable: 4
-    },
-
-    // ... Continuar con M3-M8 con profundidad alta
-    // ... Luego M9-M20 con profundidad media
-
-    // Placeholder para los demás módulos (se implementarán progresivamente)
-    ...Array.from({ length: 18 }, (_, i) => ({
-      id: `M${i + 3}`,
-      title: `Módulo ${i + 3}`,
-      description: `Descripción del módulo ${i + 3}`,
-      objective: `Objetivo del módulo ${i + 3}`,
-      branches: [],
-      xpTotal: 800 + i * 50,
-      estimatedTime: 40 + i * 2,
-      status: 'locked' as ModuleStatus,
-      completedBranches: 0,
-      categoryId: 'category-placeholder',
-      categoryTitle: 'Categoría Placeholder',
-      depth: i < 6 ? 'high' as const : 'medium' as const,
-      prerequisites: [`M${i + 2}`],
-      icon: BookOpen,
-      color: '#6B7280',
-      position: { x: 150 + (i % 6) * 200, y: 80 + Math.floor(i / 6) * 200 },
-      hasQuests: true,
-      questsCount: i < 6 ? 3 : 2,
-      badgesAvailable: i < 6 ? 4 : 3
-    }))
-    ];
-  }, [modules]);
+    return [];
+  }, [modules, allModules]);
 
   // ========== HANDLERS ==========
   const handleNodeHover = (nodeId: string, nodeType: string) => {
@@ -1223,7 +782,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                         )}
                         {lesson.isQuest && (
                           <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 justify-center">
-                            <Star className="w-3 h-3" />
+                            <SmartIcon icon="⭐" size={12} />
                             <span className="text-xs font-semibold">Quest</span>
                           </div>
                         )}
@@ -1234,11 +793,11 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                     {'hasQuests' in nodeData && nodeData.hasQuests && (
                       <div className="flex flex-wrap gap-1 mb-2">
                         <span className="inline-flex items-center px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full text-xs font-semibold">
-                          <Star className="w-2.5 h-2.5 mr-0.5" />
+                          <SmartIcon icon="⭐" size={10} />
                           {nodeData.questsCount}Q
                         </span>
                         <span className="inline-flex items-center px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-xs font-semibold">
-                          <Award className="w-2.5 h-2.5 mr-0.5" />
+                          <SmartIcon icon="🏆" size={10} />
                           {nodeData.badgesAvailable}B
                         </span>
                       </div>
@@ -1260,12 +819,12 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                         </motion.button>
                       ) : nodeData.status === 'locked' ? (
                         <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
-                          <Lock className="w-3 h-3" />
+                          <SmartIcon icon="🔒" size={12} />
                           Bloqueado
                         </div>
                       ) : (
                         <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs font-semibold">
-                          <CheckCircle className="w-3 h-3" />
+                          <SmartIcon icon="✅" size={12} />
                           Completado
                         </div>
                       )}
