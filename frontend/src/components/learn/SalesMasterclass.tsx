@@ -13,8 +13,46 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
-// Simple confetti function to avoid external dependency
+// Enhanced confetti function with visual effect
 function confetti(options: any) {
+  // Create visual confetti elements
+  const colors = options?.colors || ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1', '#32CD32'];
+  const particleCount = options?.particleCount || 50;
+  
+  for (let i = 0; i < particleCount; i++) {
+    const confettiElement = document.createElement('div');
+    confettiElement.style.cssText = `
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      left: ${Math.random() * 100}%;
+      top: -10px;
+      z-index: 10000;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: confetti-fall 3s ease-out forwards;
+    `;
+    document.body.appendChild(confettiElement);
+    
+    setTimeout(() => {
+      confettiElement.remove();
+    }, 3000);
+  }
+  
+  // Add CSS animation if not exists
+  if (!document.getElementById('confetti-styles')) {
+    const style = document.createElement('style');
+    style.id = 'confetti-styles';
+    style.textContent = `
+      @keyframes confetti-fall {
+        0% { transform: translateY(-10px) rotateZ(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotateZ(360deg); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
   console.log('🎉 Confetti effect triggered!', options);
 }
 import { 
@@ -674,16 +712,32 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Claim Monitoring
   const startClaimMonitoring = useCallback(() => {
-    // Simulate claim detection
-    setTimeout(() => {
-      setClaimStatus('claiming');
+    // Simulate claim detection with error handling
+    try {
+      setTimeout(() => {
+        setClaimStatus('claiming');
+        setTimeout(() => {
+          try {
+            setClaimStatus('success');
+            celebrate();
+            setMetrics(prev => ({ ...prev, claimSuccess: true }));
+            setCanProceed(true);
+          } catch (error) {
+            console.error('Error during claim success:', error);
+            // Still set success even if confetti fails
+            setClaimStatus('success');
+            setCanProceed(true);
+          }
+        }, 3000);
+      }, 5000);
+    } catch (error) {
+      console.error('Error starting claim monitoring:', error);
+      // Fallback to immediate success
       setTimeout(() => {
         setClaimStatus('success');
-        celebrate();
-        setMetrics(prev => ({ ...prev, claimSuccess: true }));
         setCanProceed(true);
-      }, 3000);
-    }, 5000);
+      }, 1000);
+    }
   }, [celebrate]);
 
   // Lead Submission
@@ -1036,7 +1090,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       <div className={`sales-masterclass ${educationalMode ? 'h-full' : 'min-h-screen'} 
         bg-gradient-to-br from-slate-50 to-blue-50 
         dark:from-gray-900 dark:to-gray-800 
-        text-gray-900 dark:text-white transition-colors duration-300`}>
+        text-gray-900 dark:text-white transition-colors duration-300 relative z-10`}>
         {/* Header - Hidden in educational mode */}
         {!educationalMode && (
           <div className="fixed top-0 left-0 right-0 z-50 
@@ -1583,17 +1637,17 @@ const DemoBlock: React.FC<{
             animate={{ scale: 1 }}
           >
             <CheckCircle className="w-32 h-32 text-green-400 mx-auto mb-8" />
-            <h3 className="text-4xl font-bold mb-4">¡LO TIENES! 🎉</h3>
+            <h3 className="text-4xl font-bold mb-4 text-gray-800 dark:text-white">¡LO TIENES! 🎉</h3>
           </motion.div>
         )}
       </div>
       
       <div className="text-left">
-        <h3 className="text-2xl font-bold mb-4 text-yellow-400">Pasos Simples:</h3>
+        <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">Pasos Simples:</h3>
         {content.steps.map((step: string, idx: number) => (
           <motion.div
             key={idx}
-            className="mb-3 text-lg"
+            className="mb-3 text-lg text-gray-700 dark:text-gray-300"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.2 }}
@@ -1871,17 +1925,17 @@ const CloseBlock: React.FC<{
           {content.inspiration}
         </p>
         
-        <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-2xl p-8">
-          <p className="text-xl text-white leading-relaxed">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-8 shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
+          <p className="text-xl text-gray-800 dark:text-white leading-relaxed">
             {content.vision}
           </p>
         </div>
         
-        <p className="text-2xl text-yellow-400 font-bold">
+        <p className="text-2xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent font-bold">
           {content.callToAction}
         </p>
         
-        <p className="text-3xl text-white font-black">
+        <p className="text-3xl text-gray-900 dark:text-white font-black">
           {content.final}
         </p>
       </motion.div>
@@ -2222,7 +2276,7 @@ const SuccessBlock: React.FC<{
       
       {/* Final Message */}
       <motion.p
-        className="text-3xl text-white font-bold mb-8"
+        className="text-3xl text-gray-900 dark:text-white font-bold mb-8"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1.5 }}
