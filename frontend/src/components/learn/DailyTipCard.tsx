@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SmartIcon } from '../ui/SmartIcon';
 import { Sparkles, Flame, Trophy, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 interface DailyTip {
@@ -204,7 +205,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
                   animate={showStreak ? { scale: [1, 1.2, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 >
-                  <span className="text-2xl">{getStreakEmoji()}</span>
+                  <SmartIcon icon={getStreakEmoji()} size={24} />
                   <div className="text-right">
                     <div className="text-xs opacity-80">Racha</div>
                     <div className="text-xl font-bold">{streak} días</div>
@@ -255,7 +256,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
                 }}
                 transition={{ duration: 1, delay: 0.5 }}
               >
-                💡
+                <SmartIcon icon="💡" size={24} />
               </motion.div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 ¡Tu tip diario está listo!
@@ -282,7 +283,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
               {currentTip.funFact && (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-xl p-4 mb-6">
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">🎉</span>
+                    <SmartIcon icon="🎉" size={24} />
                     <div>
                       <p className="font-bold text-purple-900 dark:text-purple-300 mb-1">
                         ¡Dato Curioso!
@@ -370,7 +371,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
                 }}
                 transition={{ duration: 0.5 }}
               >
-                {isCorrect ? '🎉' : '😅'}
+                <SmartIcon icon={isCorrect ? '🎉' : '😅'} size={16} />
               </motion.div>
               
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -392,7 +393,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
                 >
                   <Trophy className="w-12 h-12 text-yellow-600 mx-auto mb-2" />
                   <p className="font-bold text-yellow-900 dark:text-yellow-300">
-                    ¡{streak} días de racha! 🔥
+                    ¡{streak} días de racha! <SmartIcon icon="🔥" size={16} className="inline" />
                   </p>
                   <p className="text-sm text-yellow-800 dark:text-yellow-400">
                     Has desbloqueado un badge especial
@@ -411,7 +412,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
                   onClick={() => setStage('content')}
                   className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg transition-all"
                 >
-                  Compartir 🚀
+                  Compartir <SmartIcon icon="🚀" size={16} className="inline ml-1" />
                 </button>
               </div>
             </motion.div>
@@ -449,7 +450,7 @@ export const DailyTipCard: React.FC<DailyTipCardProps> = ({
             >
               <Trophy className="w-20 h-20 mx-auto mb-4" />
               <h2 className="text-3xl font-bold mb-2">¡{streak} Días de Racha!</h2>
-              <p className="text-xl">Eres imparable 🔥</p>
+              <p className="text-xl flex items-center gap-2">Eres imparable <SmartIcon icon="🔥" size={20} /></p>
             </motion.div>
           </motion.div>
         )}

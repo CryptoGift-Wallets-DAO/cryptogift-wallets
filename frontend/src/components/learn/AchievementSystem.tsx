@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SmartIcon } from '../ui/SmartIcon';
 import { Trophy, Star, Zap, Target, Award, Shield, Flame, Diamond, Crown, Medal } from 'lucide-react';
 
 export interface Achievement {
@@ -133,7 +134,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         {/* Lock overlay for locked achievements */}
         {!isUnlocked && (
           <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/20">
-            <span className="text-2xl">🔒</span>
+            <SmartIcon icon="🔒" size={24} />
           </div>
         )}
 
