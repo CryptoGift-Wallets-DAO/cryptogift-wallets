@@ -42,7 +42,17 @@ import {
   Lock,
   CheckCircle,
   PlayCircle,
-  Star
+  Star,
+  Settings,
+  FileText,
+  RefreshCw,
+  Key,
+  HardDrive,
+  PenTool,
+  Rocket,
+  Wallet,
+  Blocks,
+  Link
 } from 'lucide-react';
 
 // Types
@@ -186,7 +196,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   evidenceDescription: 'Screenshot de wallet configurada',
                   xpReward: 50,
                   status: 'available',
-                  icon: '🦊',
+                  icon: Code,
                   tags: ['wallet', 'setup', 'metamask']
                 },
                 {
@@ -201,7 +211,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 60,
                   status: 'locked',
                   prerequisites: ['M0.R1.U1.L1'],
-                  icon: '🌐',
+                  icon: Globe,
                   tags: ['networks', 'rpc', 'base']
                 },
                 {
@@ -216,7 +226,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 40,
                   status: 'locked',
                   prerequisites: ['M0.R1.U1.L2'],
-                  icon: '🔐',
+                  icon: Lock,
                   tags: ['security', 'biometrics', 'pin']
                 }
               ],
@@ -224,7 +234,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
               estimatedTime: 9,
               status: 'available',
               completedLessons: 0,
-              icon: '⚙️',
+              icon: Settings,
               color: '#3B82F6'
             },
             {
@@ -244,7 +254,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 80,
                   status: 'locked',
                   prerequisites: ['M0.R1.U1.L3'],
-                  icon: '📝',
+                  icon: FileText,
                   tags: ['backup', 'seed', 'security']
                 },
                 {
@@ -259,7 +269,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 70,
                   status: 'locked',
                   prerequisites: ['M0.R1.U2.L1'],
-                  icon: '🔄',
+                  icon: RefreshCw,
                   tags: ['recovery', 'simulation', 'backup']
                 },
                 {
@@ -274,7 +284,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 60,
                   status: 'locked',
                   prerequisites: ['M0.R1.U2.L2'],
-                  icon: '🔑',
+                  icon: Key,
                   tags: ['concepts', 'keys', 'security']
                 }
               ],
@@ -282,7 +292,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
               estimatedTime: 12,
               status: 'locked',
               completedLessons: 0,
-              icon: '💾',
+              icon: HardDrive,
               color: '#10B981'
             },
             {
@@ -302,7 +312,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 90,
                   status: 'locked',
                   prerequisites: ['M0.R1.U2.L3'],
-                  icon: '✍️',
+                  icon: PenTool,
                   tags: ['signatures', 'eip191', 'crypto']
                 },
                 {
@@ -325,7 +335,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                     'Verificar en BaseScan',
                     'Confirmar recepción'
                   ],
-                  icon: '🚀',
+                  icon: Rocket,
                   tags: ['transaction', 'testnet', 'quest']
                 },
                 {
@@ -340,7 +350,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   xpReward: 70,
                   status: 'locked',
                   prerequisites: ['M0.R1.U3.L2'],
-                  icon: '🪙',
+                  icon: Coins,
                   tags: ['tokens', 'erc20', 'wallet']
                 }
               ],
@@ -359,7 +369,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
           badgeId: 'wallet-master',
           badgeTitle: 'Wallet Master',
           badgeDescription: 'Maestro en configuración y uso de wallets',
-          icon: '👛',
+          icon: Wallet,
           color: '#3B82F6',
           position: { x: 200, y: 100 }
         },
@@ -377,7 +387,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
           badgeId: 'security-guardian',
           badgeTitle: 'Security Guardian',
           badgeDescription: 'Protector de activos digitales',
-          icon: '🛡️',
+          icon: Shield,
           color: '#EF4444',
           position: { x: 400, y: 150 }
         },
@@ -395,7 +405,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
           badgeId: 'gas-optimizer',
           badgeTitle: 'Gas Optimizer',
           badgeDescription: 'Experto en optimización de transacciones',
-          icon: '⛽',
+          icon: Zap,
           color: '#8B5CF6',
           position: { x: 600, y: 100 }
         }
@@ -410,7 +420,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
       masterBadgeId: 'onboarding-champion',
       masterBadgeTitle: 'Onboarding Champion',
       masterBadgeDescription: 'Completó el proceso completo de onboarding seguro',
-      icon: '🎯',
+      icon: Target,
       color: '#3B82F6',
       position: { x: 150 + (0 % 6) * 200, y: 80 + Math.floor(0 / 6) * 200 }, // M0: primera fila, primera posición
       hasQuests: true,
@@ -435,7 +445,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
           status: 'locked',
           completedUnits: 0,
           prerequisites: ['M0'],
-          icon: '🧱',
+          icon: Blocks,
           color: '#059669',
           position: { x: 350, y: 120 }
         },
@@ -474,7 +484,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
       categoryTitle: 'Fundamentos & Onboarding',
       depth: 'high',
       prerequisites: ['M0'],
-      icon: '⛓️',
+      icon: Link,
       color: '#059669',
       position: { x: 150 + (1 % 6) * 200, y: 80 + Math.floor(1 / 6) * 200 }, // M1: primera fila, segunda posición
       hasQuests: true,
@@ -524,7 +534,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
           estimatedTime: 21,
           status: 'locked',
           completedUnits: 0,
-          icon: '🌐',
+          icon: Globe,
           color: '#6366F1',
           position: { x: 950, y: 100 }
         }
@@ -537,7 +547,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
       categoryTitle: 'Protocolos Base & Cómputo',
       depth: 'high',
       prerequisites: ['M1'],
-      icon: '₿',
+      icon: Coins,
       color: '#F97316',
       position: { x: 150 + (2 % 6) * 200, y: 80 + Math.floor(2 / 6) * 200 }, // M2: primera fila, tercera posición
       hasQuests: true,
@@ -563,7 +573,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
       categoryTitle: 'Categoría Placeholder',
       depth: i < 6 ? 'high' as const : 'medium' as const,
       prerequisites: [`M${i + 2}`],
-      icon: '📚',
+      icon: BookOpen,
       color: '#6B7280',
       position: { x: 150 + (i % 6) * 200, y: 80 + Math.floor(i / 6) * 200 },
       hasQuests: true,
@@ -979,15 +989,16 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                 />
 
                 {/* Branch Icon */}
-                <text
-                  x={branchPos.x}
-                  y={branchPos.y + 6}
-                  textAnchor="middle"
-                  fontSize="24"
-                  className="select-none"
+                <foreignObject 
+                  x={branchPos.x - 16} 
+                  y={branchPos.y - 16} 
+                  width="32" 
+                  height="32"
                 >
-                  {branch.icon}
-                </text>
+                  <div className="flex items-center justify-center w-full h-full">
+                    <SmartIcon icon={branch.icon} size={28} />
+                  </div>
+                </foreignObject>
 
                 {/* Branch Title */}
                 <text
@@ -1143,8 +1154,11 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                         )}
                       </div>
                       
-                      <div className="ml-2 text-2xl">
-                        {nodeData.icon || (nodeType === 'unit' ? '◉' : nodeType === 'lesson' ? '◎' : '▪')}
+                      <div className="ml-2 flex items-center justify-center">
+                        <SmartIcon 
+                          icon={nodeData.icon || (nodeType === 'unit' ? '◉' : nodeType === 'lesson' ? '◎' : '▪')} 
+                          size={32} 
+                        />
                       </div>
                     </div>
                     
