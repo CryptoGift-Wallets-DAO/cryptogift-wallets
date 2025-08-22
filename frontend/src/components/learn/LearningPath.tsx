@@ -53,10 +53,11 @@
  * Co-Author: Godez22
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
 import { SmartIcon } from '../ui/SmartIcon';
 import Link from 'next/link';
+import { Plus, Minus, RotateCcw, Maximize2 } from 'lucide-react';
 
 export interface PathNode {
   id: string;
@@ -105,6 +106,16 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   // State para controlar qué cards están visibles
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
   
+  // Zoom and Pan state (similar a CurriculumTreeView)
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [lastMousePos, setLastMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  
+  // Touch gesture state for pinch-zoom
+  const [lastTouches, setLastTouches] = useState<{ distance: number; center: { x: number; y: number } } | null>(null);
+  const [isTouch, setIsTouch] = useState<boolean>(false);
+  
   // Ref para el contenedor principal
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -137,6 +148,200 @@ export const LearningPath: React.FC<LearningPathProps> = ({
     console.log('▶️ Starting training from button for:', nodeId);
     onNodeClick?.(nodeId);
   };
+
+  // Zoom and Pan handlers
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.5, Math.min(2, zoomLevel * zoomFactor));
+
+    // Calculate new pan offset to zoom towards mouse position
+    const newPanX = mouseX - (mouseX - panOffset.x) * (newZoom / zoomLevel);
+    const newPanY = mouseY - (mouseY - panOffset.y) * (newZoom / zoomLevel);
+
+    setZoomLevel(newZoom);
+    setPanOffset({ x: newPanX, y: newPanY });
+  }, [zoomLevel, panOffset]);
+
+  // Touch gesture helper functions
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchCenter = (touches: React.TouchList) => {
+    if (touches.length < 2) return { x: 0, y: 0 };
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+  };
+
+  // Touch event handlers for pinch-zoom and two-finger pan
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setIsTouch(true);
+    
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches);
+      const center = getTouchCenter(e.touches);
+      const rect = containerRef.current?.getBoundingClientRect();
+      
+      if (rect) {
+        setLastTouches({ 
+          distance, 
+          center: { x: center.x - rect.left, y: center.y - rect.top } 
+        });
+      }
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && lastTouches) {
+      e.preventDefault();
+      
+      const currentDistance = getTouchDistance(e.touches);
+      const currentCenter = getTouchCenter(e.touches);
+      const rect = containerRef.current?.getBoundingClientRect();
+      
+      if (!rect) return;
+
+      const relativeCenter = {
+        x: currentCenter.x - rect.left,
+        y: currentCenter.y - rect.top
+      };
+
+      // Pinch-zoom gesture
+      if (Math.abs(currentDistance - lastTouches.distance) > 5) {
+        const scaleFactor = currentDistance / lastTouches.distance;
+        const newZoom = Math.max(0.5, Math.min(2, zoomLevel * scaleFactor));
+
+        // Zoom towards pinch center
+        const newPanX = relativeCenter.x - (relativeCenter.x - panOffset.x) * (newZoom / zoomLevel);
+        const newPanY = relativeCenter.y - (relativeCenter.y - panOffset.y) * (newZoom / zoomLevel);
+
+        setZoomLevel(newZoom);
+        setPanOffset({ x: newPanX, y: newPanY });
+      }
+
+      // Two-finger pan gesture  
+      const panDeltaX = relativeCenter.x - lastTouches.center.x;
+      const panDeltaY = relativeCenter.y - lastTouches.center.y;
+      
+      if (Math.abs(panDeltaX) > 2 || Math.abs(panDeltaY) > 2) {
+        setPanOffset(prev => ({
+          x: prev.x + panDeltaX,
+          y: prev.y + panDeltaY
+        }));
+      }
+
+      setLastTouches({ 
+        distance: currentDistance, 
+        center: relativeCenter 
+      });
+    }
+  }, [lastTouches, zoomLevel, panOffset]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      setLastTouches(null);
+    }
+    if (e.touches.length === 0) {
+      setIsTouch(false);
+    }
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only start dragging if not clicking on an interactive element
+    const target = e.target as Element;
+    if (target.closest('[data-node]') || target.closest('[data-card]') || target.closest('button')) {
+      return;
+    }
+    
+    setIsDragging(true);
+    setLastMousePos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - lastMousePos.x;
+    const deltaY = e.clientY - lastMousePos.y;
+
+    setPanOffset(prev => ({
+      x: prev.x + deltaX,
+      y: prev.y + deltaY
+    }));
+
+    setLastMousePos({ x: e.clientX, y: e.clientY });
+  }, [isDragging, lastMousePos]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Zoom control functions
+  const zoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(2, prev * 1.2));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(0.5, prev / 1.2));
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  const fitToScreen = useCallback(() => {
+    if (!containerRef.current || !svgRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const positions = nodes.map(n => n.position);
+    const minX = Math.min(...positions.map(p => p.x)) - 100;
+    const maxX = Math.max(...positions.map(p => p.x)) + 100;
+    const minY = Math.min(...positions.map(p => p.y)) - 100;
+    const maxY = Math.max(...positions.map(p => p.y)) + 350;
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    const scaleX = containerRect.width / width;
+    const scaleY = containerRect.height / height;
+    const newZoom = Math.min(scaleX, scaleY) * 0.9;
+
+    setZoomLevel(newZoom);
+    setPanOffset({ 
+      x: (containerRect.width - width * newZoom) / 2,
+      y: (containerRect.height - height * newZoom) / 2
+    });
+  }, [nodes]);
+
+  // Center the view on mount
+  useEffect(() => {
+    // Center the learning path on initial load
+    if (containerRef.current && nodes.length > 0) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const positions = nodes.map(n => n.position);
+      const centerX = (Math.min(...positions.map(p => p.x)) + Math.max(...positions.map(p => p.x))) / 2;
+      const centerY = (Math.min(...positions.map(p => p.y)) + Math.max(...positions.map(p => p.y))) / 2;
+      
+      // Calculate offset to center the content
+      setPanOffset({
+        x: containerRect.width / 2 - centerX,
+        y: containerRect.height / 2 - centerY
+      });
+    }
+  }, []); // Only run once on mount
 
   useEffect(() => {
     if (isInView && animated) {
@@ -219,16 +424,66 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   const nodeSize = compact ? 60 : 80;
 
   return (
-    <div ref={containerRef} className="relative w-full overflow-x-auto">
-      <svg
-        ref={svgRef}
-        width={svgWidth}
-        height={svgHeight}
-        className="min-w-full"
-        style={{ minHeight: '500px' }} // More height for cards
-        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        preserveAspectRatio="xMidYMid meet"
+    <div 
+      ref={containerRef} 
+      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-40 flex flex-col gap-2">
+        <button
+          onClick={zoomIn}
+          className="w-8 h-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          title="Zoom In"
+        >
+          <Plus size={16} />
+        </button>
+        <button
+          onClick={zoomOut}
+          className="w-8 h-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          title="Zoom Out"
+        >
+          <Minus size={16} />
+        </button>
+        <button
+          onClick={resetZoom}
+          className="w-8 h-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          title="Reset Zoom"
+        >
+          <RotateCcw size={16} />
+        </button>
+        <button
+          onClick={fitToScreen}
+          className="w-8 h-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          title="Fit to Screen"
+        >
+          <Maximize2 size={16} />
+        </button>
+      </div>
+
+      <div
+        style={{
+          transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
+          transformOrigin: '0 0',
+          transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+        }}
       >
+        <svg
+          ref={svgRef}
+          width={svgWidth}
+          height={svgHeight}
+          className="min-w-full"
+          style={{ minHeight: '500px' }} // More height for cards
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
         {/* Render connections first (behind nodes) */}
         {showConnections && nodes.map(node => 
           node.connections?.map(targetId => {
@@ -637,6 +892,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
         })}
         </AnimatePresence>
       </div>
+      </div> {/* Close transform div */}
     </div>
   );
 };

@@ -258,60 +258,61 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
 
   return (
     <div className={`relative w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden ${className}`}>
-      {/* Header Toggle Button */}
-      <div className="absolute top-4 right-4 z-50">
-        <motion.button
-          onClick={handleToggleView}
-          disabled={isTransitioning}
-          className="flex items-center gap-3 px-6 py-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-2">
-            {currentView === 'learning-path' ? (
-              <>
-                <TreePine size={20} className="text-emerald-600" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Ver todos los módulos
-                </span>
-              </>
-            ) : (
-              <>
-                <BookOpen size={20} className="text-blue-600" />
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Tu Ruta de Aprendizaje
-                </span>
-              </>
-            )}
-          </div>
-          
-          {isTransitioning ? (
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-          ) : (
-            <ArrowRight 
-              size={16} 
-              className={`transform transition-transform duration-300 ${
-                currentView === 'curriculum-tree' ? 'rotate-180' : ''
-              }`} 
-            />
-          )}
-        </motion.button>
-      </div>
+      {/* Combined View Indicator and Toggle - LEFT SIDE */}
+      <div className="absolute top-4 left-4 z-50">
+        <div className="flex flex-col gap-2">
+          {/* Current View Indicator */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50"
+          >
+            <div className={`w-2 h-2 rounded-full ${
+              currentView === 'learning-path' ? 'bg-blue-500' : 'bg-emerald-500'
+            }`} />
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              {currentView === 'learning-path' ? 'Ruta Personalizada' : 'Árbol Curricular Interactivo'}
+            </span>
+          </motion.div>
 
-      {/* View indicator - ELEVADO POR ENCIMA DE CONTROLES */}
-      <div className="absolute top-4 left-4 z-60">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50"
-        >
-          <div className={`w-2 h-2 rounded-full ${
-            currentView === 'learning-path' ? 'bg-blue-500' : 'bg-emerald-500'
-          }`} />
-          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            {currentView === 'learning-path' ? 'Ruta Personalizada' : 'Curriculum Completo'}
-          </span>
-        </motion.div>
+          {/* Toggle Button */}
+          <motion.button
+            onClick={handleToggleView}
+            disabled={isTransitioning}
+            className="flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-2">
+              {currentView === 'learning-path' ? (
+                <>
+                  <TreePine size={16} className="text-emerald-600" />
+                  <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                    Ver todos los módulos
+                  </span>
+                </>
+              ) : (
+                <>
+                  <BookOpen size={16} className="text-blue-600" />
+                  <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                    Tu Ruta de Aprendizaje
+                  </span>
+              </>
+              )}
+            </div>
+            
+            {isTransitioning ? (
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            ) : (
+              <ArrowRight 
+                size={14} 
+                className={`transform transition-transform duration-300 ${
+                  currentView === 'curriculum-tree' ? 'rotate-180' : ''
+                }`} 
+              />
+            )}
+          </motion.button>
+        </div>
       </div>
 
       {/* Main Content Container */}
@@ -381,8 +382,8 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Stats overlay (común para ambas vistas) */}
-      <div className="absolute bottom-4 right-4 z-30">
+      {/* Stats overlay - MOVED TO BOTTOM LEFT */}
+      <div className="absolute bottom-4 left-4 z-30">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
