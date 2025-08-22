@@ -298,7 +298,7 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
         </motion.button>
       </div>
 
-      {/* Current View Indicator - BOTTOM LEFT (as you had it correctly before) */}
+      {/* View Status Indicator - BOTTOM LEFT */}
       <div className="absolute bottom-4 left-4 z-30">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -309,7 +309,7 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
             currentView === 'learning-path' ? 'bg-blue-500' : 'bg-emerald-500'
           }`} />
           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            {currentView === 'learning-path' ? 'Ruta Personalizada' : 'Árbol Curricular Interactivo'}
+            {currentView === 'learning-path' ? 'Vista Activa' : 'Vista Completa'}
           </span>
         </motion.div>
       </div>

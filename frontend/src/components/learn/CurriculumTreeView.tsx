@@ -224,26 +224,22 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
 
   // Zoom and Pan handlers
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    // Only allow wheel zoom in interactive mode
-    if (zoomMode !== 'interactive') return;
-    
+    // WHEEL ZOOM DISABLED - Only pan via panel controls
+    // Two-finger trackpad scrolling should only pan, never zoom
     e.preventDefault();
+    
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    // Convert wheel delta to pan movement
+    const panDeltaX = -e.deltaX;
+    const panDeltaY = -e.deltaY;
 
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
-
-    // Calculate new pan offset to zoom towards mouse position
-    const newPanX = mouseX - (mouseX - panOffset.x) * (newZoom / zoomLevel);
-    const newPanY = mouseY - (mouseY - panOffset.y) * (newZoom / zoomLevel);
-
-    setZoomLevel(newZoom);
-    setPanOffset({ x: newPanX, y: newPanY });
-  }, [zoomLevel, panOffset, zoomMode]);
+    setPanOffset(prev => ({
+      x: prev.x + panDeltaX,
+      y: prev.y + panDeltaY
+    }));
+  }, []);
 
   // Touch gesture helper functions
   const getTouchDistance = (touches: React.TouchList) => {
@@ -284,10 +280,9 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && lastTouches && zoomMode === 'interactive') {
+    if (e.touches.length === 2 && lastTouches) {
       e.preventDefault();
       
-      const currentDistance = getTouchDistance(e.touches);
       const currentCenter = getTouchCenter(e.touches);
       const rect = containerRef.current?.getBoundingClientRect();
       
@@ -298,45 +293,22 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         y: currentCenter.y - rect.top
       };
 
-      // Calculate changes
-      const distanceChange = Math.abs(currentDistance - lastTouches.distance);
-      const centerChangeX = Math.abs(relativeCenter.x - lastTouches.center.x);
-      const centerChangeY = Math.abs(relativeCenter.y - lastTouches.center.y);
-      const centerChange = Math.sqrt(centerChangeX * centerChangeX + centerChangeY * centerChangeY);
+      // TWO-FINGER PAN ONLY: No zoom gestures, only scrolling
+      const panDeltaX = relativeCenter.x - lastTouches.center.x;
+      const panDeltaY = relativeCenter.y - lastTouches.center.y;
+      
+      setPanOffset(prev => ({
+        x: prev.x + panDeltaX,
+        y: prev.y + panDeltaY
+      }));
 
-      // STRICT separation: If fingers are moving together (scrolling), NEVER zoom
-      const isPinchGesture = distanceChange > 20 && centerChange < 8; // Only when distance changes but center stable
-      const isPanGesture = centerChange > 1; // Always allow pan/scroll movement
-
-      if (isPinchGesture) {
-        // PINCH-TO-ZOOM: Only zoom, don't pan
-        const scaleFactor = currentDistance / lastTouches.distance;
-        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * scaleFactor));
-
-        // Zoom towards pinch center
-        const newPanX = relativeCenter.x - (relativeCenter.x - panOffset.x) * (newZoom / zoomLevel);
-        const newPanY = relativeCenter.y - (relativeCenter.y - panOffset.y) * (newZoom / zoomLevel);
-
-        setZoomLevel(newZoom);
-        setPanOffset({ x: newPanX, y: newPanY });
-      } else if (isPanGesture) {
-        // TWO-FINGER PAN: Standard touchpad-like scrolling
-        const panDeltaX = relativeCenter.x - lastTouches.center.x;
-        const panDeltaY = relativeCenter.y - lastTouches.center.y;
-        
-        setPanOffset(prev => ({
-          x: prev.x + panDeltaX,
-          y: prev.y + panDeltaY
-        }));
-      }
-
-      // Update last touches
+      // Update last touches (no distance tracking needed)
       setLastTouches({ 
-        distance: currentDistance, 
+        distance: lastTouches.distance, // Keep same distance
         center: relativeCenter 
       });
     }
-  }, [lastTouches, zoomLevel, panOffset, zoomMode]);
+  }, [lastTouches, panOffset]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (e.touches.length < 2) {
