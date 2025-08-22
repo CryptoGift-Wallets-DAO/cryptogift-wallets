@@ -25,6 +25,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useAnimation, useInView } from 'framer-motion';
+import { SmartIcon } from '../ui/SmartIcon';
 import { 
   BookOpen, 
   Award, 
@@ -757,15 +758,16 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
             />
 
             {/* Module Icon */}
-            <text
-              x={module.position?.x || 0}
-              y={(module.position?.y || 0) + 8}
-              textAnchor="middle"
-              fontSize={compact ? 24 : 32}
-              className="select-none"
+            <foreignObject 
+              x={(module.position?.x || 0) - (compact ? 20 : 24)} 
+              y={(module.position?.y || 0) - (compact ? 20 : 24)} 
+              width={compact ? 40 : 48} 
+              height={compact ? 40 : 48}
             >
-              {module.icon}
-            </text>
+              <div className="flex items-center justify-center w-full h-full">
+                <SmartIcon icon={module.icon} size={compact ? 32 : 40} />
+              </div>
+            </foreignObject>
 
             {/* Module Title */}
             <text
@@ -915,15 +917,16 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                   />
                   
                   {/* Unit Icon */}
-                  <text
-                    x={unitPos.x}
-                    y={unitPos.y + 5}
-                    textAnchor="middle"
-                    fontSize="16"
-                    className="select-none"
+                  <foreignObject 
+                    x={unitPos.x - 12} 
+                    y={unitPos.y - 12} 
+                    width="24" 
+                    height="24"
                   >
-                    {unit.icon || '📚'}
-                  </text>
+                    <div className="flex items-center justify-center w-full h-full">
+                      <SmartIcon icon={unit.icon || '📚'} size={20} />
+                    </div>
+                  </foreignObject>
                 </motion.g>
               );
             })
@@ -1172,7 +1175,7 @@ export const CurriculumTree: React.FC<CurriculumTreeProps> = ({
                       <div className="mb-2">
                         <div className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-lg p-1.5 text-center">
                           <div className="font-bold text-orange-600 dark:text-orange-400 flex items-center justify-center gap-1 text-xs">
-                            <span className="text-sm drop-shadow-sm">📅</span>
+                            <SmartIcon icon="📅" size={14} />
                             Disponible
                           </div>
                           <div className="text-xs text-orange-600/80 dark:text-orange-400/80 font-medium">
