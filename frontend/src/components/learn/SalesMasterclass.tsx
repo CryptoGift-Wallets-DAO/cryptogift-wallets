@@ -836,7 +836,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           >
             <div className="inline-block bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 px-8 py-6 rounded-2xl">
               <p className="text-3xl mb-4">
-                Tu puntuación: <span className="font-bold text-yellow-400">
+                Tu puntuación: <span className="font-bold text-blue-500 dark:text-blue-400">
                   {leadData.questionsCorrect}/{leadData.totalQuestions}
                 </span> respuestas correctas
               </p>
@@ -1034,21 +1034,21 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       }}
     >
       <div className={`sales-masterclass ${educationalMode ? 'h-full' : 'min-h-screen'} 
-        bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 
-        dark:from-black dark:via-gray-900 dark:to-black 
+        bg-gradient-to-br from-gray-50 to-gray-100 
+        dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-800 
         text-gray-900 dark:text-white transition-colors duration-300`}>
         {/* Header - Hidden in educational mode */}
         {!educationalMode && (
           <div className="fixed top-0 left-0 right-0 z-50 
-            bg-white/80 dark:bg-black/80 
-            backdrop-blur-xl backdrop-saturate-150 
-            border-b border-gray-200/50 dark:border-gold/20 
-            shadow-lg">
+            bg-white/70 dark:bg-gray-900/70 
+            backdrop-blur-2xl 
+            border-b border-gray-200/20 dark:border-gray-700/30 
+            shadow-sm">
           <div className="max-w-5xl mx-auto px-3 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r 
-              from-amber-600 to-orange-600 
-              dark:from-yellow-400 dark:to-orange-500 
+              from-blue-600 to-purple-600 
+              dark:from-blue-400 dark:to-purple-400 
               bg-clip-text text-transparent">
               CryptoGift Masterclass
             </h1>
@@ -1058,10 +1058,10 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
                   key={block.id}
                   className={`w-2 h-2 rounded-full transition-all ${
                     idx === currentBlock 
-                      ? 'bg-amber-500 dark:bg-yellow-400 w-8 shadow-lg shadow-amber-500/50' 
+                      ? 'bg-blue-500 dark:bg-blue-400 w-8' 
                       : idx < currentBlock 
-                        ? 'bg-emerald-500 dark:bg-green-400' 
-                        : 'bg-gray-300 dark:bg-gray-600'
+                        ? 'bg-purple-500 dark:bg-purple-400' 
+                        : 'bg-gray-300 dark:bg-gray-700'
                   }`}
                 />
               ))}
@@ -1070,14 +1070,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
+              <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span className="font-mono text-lg">
                 {metrics.correctAnswers}/{metrics.questionsAnswered}
               </span>
             </div>
             
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
+              <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <span className="font-mono text-lg">
                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
               </span>
@@ -1086,13 +1086,13 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             <button
               onClick={() => setIsPaused(!isPaused)}
               className="px-4 py-2 
-                bg-amber-100 hover:bg-amber-200 
-                dark:bg-yellow-400/20 dark:hover:bg-yellow-400/30 
+                bg-white/50 hover:bg-white/70 
+                dark:bg-gray-800/50 dark:hover:bg-gray-800/70 
                 backdrop-blur-xl 
-                border border-amber-200/50 dark:border-yellow-400/20 
+                border border-gray-200/30 dark:border-gray-700/30 
                 rounded-lg transition-all 
-                text-amber-900 dark:text-white 
-                shadow-lg hover:shadow-xl"
+                text-gray-700 dark:text-gray-300 
+                shadow-sm hover:shadow-md"
             >
               {isPaused ? 'Resume' : 'Pause'}
             </button>
@@ -1145,14 +1145,14 @@ const QuestionSection: React.FC<{
 
   return (
     <div className="mt-8 p-6 
-      bg-white/60 dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-blue-900/20 
-      backdrop-blur-xl backdrop-saturate-150 
+      bg-white/40 dark:bg-gray-800/40 
+      backdrop-blur-2xl 
       rounded-2xl 
-      border border-purple-200/50 dark:border-purple-500/30 
-      shadow-xl">
+      border border-gray-200/20 dark:border-gray-700/20 
+      shadow-lg">
       <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 
-        text-amber-600 dark:text-yellow-400">
-        <Lightbulb className="w-7 h-7" />
+        text-gray-800 dark:text-gray-200">
+        <Lightbulb className="w-7 h-7 text-blue-500 dark:text-blue-400" />
         <span>Pregunta Rápida:</span>
       </h3>
       <p className="text-xl mb-6">{question.text}</p>
@@ -1172,7 +1172,7 @@ const QuestionSection: React.FC<{
                   : option.isCorrect
                     ? 'bg-emerald-50 dark:bg-green-500/20 border-2 border-emerald-400/50 dark:border-green-500/50'
                     : 'bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600'
-                : 'bg-white/80 dark:bg-gray-800/50 backdrop-blur-xl border border-gray-200 dark:border-gray-600 hover:bg-amber-50 dark:hover:bg-gray-700/50 hover:border-amber-400 dark:hover:border-yellow-500 cursor-pointer shadow-md hover:shadow-lg'
+                : 'bg-white/50 dark:bg-gray-800/30 backdrop-blur-xl border border-gray-200/30 dark:border-gray-700/30 hover:bg-white/70 dark:hover:bg-gray-800/50 hover:border-blue-400/50 dark:hover:border-blue-500/30 cursor-pointer shadow-sm hover:shadow-md'
             }`}
             whileHover={!showFeedback ? { scale: 1.02 } : {}}
             whileTap={!showFeedback ? { scale: 0.98 } : {}}
@@ -1245,12 +1245,11 @@ const NavigationArea: React.FC<{
           onClick={onNext}
           className={`inline-flex items-center gap-3 px-8 py-4 
                      bg-gradient-to-r ${buttonColor}
-                     backdrop-blur-xl backdrop-saturate-150
+                     backdrop-blur-xl
                      font-bold text-xl rounded-xl 
                      hover:scale-105 transition-all duration-300 
-                     shadow-2xl hover:shadow-[0_20px_60px_-15px_rgba(251,191,36,0.5)] 
-                     dark:hover:shadow-[0_20px_60px_-15px_rgba(250,204,21,0.5)]
-                     border border-white/20
+                     shadow-lg hover:shadow-xl
+                     border border-white/10
                      cursor-pointer`}
           style={{
             animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -1289,12 +1288,11 @@ const NavigationArea: React.FC<{
           onClick={onNext}
           className={`inline-flex items-center gap-3 px-8 py-4 
                      bg-gradient-to-r ${buttonColor}
-                     backdrop-blur-xl backdrop-saturate-150
+                     backdrop-blur-xl
                      font-bold text-xl rounded-xl 
                      hover:scale-105 transition-all duration-300 
-                     shadow-2xl hover:shadow-[0_20px_60px_-15px_rgba(251,191,36,0.5)] 
-                     dark:hover:shadow-[0_20px_60px_-15px_rgba(250,204,21,0.5)]
-                     border border-white/20
+                     shadow-lg hover:shadow-xl
+                     border border-white/10
                      cursor-pointer`}
           style={{
             animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -1352,12 +1350,12 @@ const OpeningBlock: React.FC<{
           {content.story}
         </p>
         
-        <div className="bg-white/60 dark:bg-gradient-to-r dark:from-yellow-500/20 dark:to-orange-500/20 
-          backdrop-blur-xl backdrop-saturate-150 
+        <div className="bg-white/30 dark:bg-gray-800/30 
+          backdrop-blur-2xl 
           p-6 rounded-2xl 
-          border border-amber-200/50 dark:border-yellow-500/30 
-          shadow-xl mb-6">
-          <p className="text-lg text-amber-700 dark:text-yellow-400 font-medium">
+          border border-gray-200/20 dark:border-gray-700/20 
+          shadow-lg mb-6">
+          <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
             {content.emphasis}
           </p>
         </div>
@@ -1381,7 +1379,7 @@ const OpeningBlock: React.FC<{
       timeLeft={timeLeft}
       buttonText="CONTINUAR"
       buttonIcon={<Rocket className="w-6 h-6" />}
-      buttonColor="from-yellow-500 to-orange-500 text-black"
+      buttonColor="from-blue-500 to-purple-500 text-white"
     />
   </div>
 );
@@ -1398,23 +1396,23 @@ const ProblemBlock: React.FC<{
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12 flex items-center justify-center gap-3">
-      <span className="bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">Las 3 Brechas del Mercado</span>
-      <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+      <span className="bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-300 dark:to-gray-100 bg-clip-text text-transparent">Las 3 Brechas del Mercado</span>
+      <AlertCircle className="w-10 h-10 text-gray-600 dark:text-gray-400" />
     </h2>
     
     <div className="grid md:grid-cols-3 gap-6 mb-8">
       {content.brechas.map((brecha: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-white/60 dark:bg-red-900/20 
-            backdrop-blur-xl backdrop-saturate-150 
-            border border-red-200/50 dark:border-red-500/30 
-            rounded-2xl p-6 shadow-xl"
+          className="bg-white/30 dark:bg-gray-800/30 
+            backdrop-blur-2xl 
+            border border-gray-200/20 dark:border-gray-700/20 
+            rounded-2xl p-6 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.2 }}
         >
-          <h3 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-3">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-3">
             {brecha.title}
           </h3>
           <p className="text-gray-700 dark:text-gray-300">
@@ -1426,11 +1424,11 @@ const ProblemBlock: React.FC<{
 
     <div className="text-center mb-8">
       <div className="inline-block 
-        bg-white/60 dark:bg-red-500/20 
-        backdrop-blur-xl backdrop-saturate-150 
-        border border-red-300/50 dark:border-red-500/50 
-        px-8 py-4 rounded-full shadow-xl">
-        <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+        bg-white/30 dark:bg-gray-800/30 
+        backdrop-blur-2xl 
+        border border-gray-200/20 dark:border-gray-700/20 
+        px-8 py-4 rounded-full shadow-lg">
+        <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">
           {content.stat}
         </p>
       </div>
@@ -1449,7 +1447,7 @@ const ProblemBlock: React.FC<{
       timeLeft={timeLeft}
       buttonText="VER SOLUCIÓN"
       buttonIcon={<Shield className="w-6 h-6" />}
-      buttonColor="from-purple-500 to-pink-500 text-white"
+      buttonColor="from-gray-600 to-gray-800 text-white"
     />
   </div>
 );
@@ -1466,8 +1464,8 @@ const SolutionBlock: React.FC<{
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-      <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">NFT-Wallets: La Revolución</span>
-      <Rocket className="w-10 h-10 text-emerald-600 dark:text-green-400" />
+      <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">NFT-Wallets: La Revolución</span>
+      <Rocket className="w-10 h-10 text-blue-600 dark:text-blue-400" />
     </h2>
     
     <div className="text-center mb-8">
@@ -1494,8 +1492,10 @@ const SolutionBlock: React.FC<{
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: idx * 0.1 }}
         >
-          {React.createElement(feature.icon, { className: "w-10 h-10 text-blue-600 dark:text-blue-400 flex-shrink-0" })}
-          <span className="text-lg text-gray-800 dark:text-gray-200">{feature.text}</span>
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30">
+            {React.createElement(feature.icon, { className: "w-6 h-6 text-blue-600 dark:text-blue-400" })}
+          </div>
+          <span className="text-lg text-gray-700 dark:text-gray-100">{feature.text}</span>
         </motion.div>
       ))}
     </div>
@@ -1621,7 +1621,7 @@ const DemoBlock: React.FC<{
       timeLeft={timeLeft}
       buttonText="VER COMPARACIÓN"
       buttonIcon={<BarChart3 className="w-6 h-6" />}
-      buttonColor="from-green-500 to-emerald-500 text-white"
+      buttonColor="from-blue-500 to-purple-500 text-white"
     />
   </div>
 );
@@ -1693,12 +1693,12 @@ const CasesBlock: React.FC<{
       {content.metrics.map((metric: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-xl p-6 text-center"
+          className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-2xl border border-gray-200/20 dark:border-gray-700/20 rounded-xl p-6 text-center shadow-md"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: idx * 0.1 }}
         >
-          <div className="text-4xl font-bold text-yellow-400 mb-2">{metric.number}</div>
+          <div className="text-4xl font-bold text-blue-500 dark:text-blue-400 mb-2">{metric.number}</div>
           <div className="text-sm text-gray-400">{metric.label}</div>
         </motion.div>
       ))}
@@ -1758,7 +1758,9 @@ const BusinessBlock: React.FC<{
           transition={{ delay: idx * 0.1 }}
         >
           <div className="flex items-center gap-3 mb-3">
-            {React.createElement(stream.icon, { className: "w-8 h-8 text-purple-600 dark:text-purple-400" })}
+            <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 dark:from-purple-500/30 dark:to-pink-500/30">
+              {React.createElement(stream.icon, { className: "w-6 h-6 text-purple-600 dark:text-purple-400" })}
+            </div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white">{stream.name}</h3>
           </div>
           <p className={`${idx === 0 ? 'text-emerald-600 dark:text-green-400 font-bold' : 'text-gray-700 dark:text-gray-300'}`}>
@@ -1910,7 +1912,7 @@ const CloseBlock: React.FC<{
       timeLeft={timeLeft}
       buttonText="¡QUIERO SER PARTE!"
       buttonIcon={<Rocket className="w-8 h-8" />}
-      buttonColor="from-yellow-500 to-orange-500 text-black"
+      buttonColor="from-blue-600 to-purple-600 text-white"
     />
   </div>
 );
@@ -1977,7 +1979,7 @@ const CaptureBlock: React.FC<{
           transition={{ delay: 0.2 }}
         >
           <p className="text-2xl text-gray-300 mb-4">
-            Has elegido: <span className="font-bold text-yellow-400">{selectedPath}</span>
+            Has elegido: <span className="font-bold text-blue-500 dark:text-blue-400">{selectedPath}</span>
           </p>
           <p className="text-xl text-gray-400">
             Preparando tu acceso al regalo...
@@ -2050,7 +2052,7 @@ const CaptureBlock: React.FC<{
             <>
               <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6">
                 <p className="text-lg text-gray-300 mb-4">
-                  Has seleccionado: <span className="font-bold text-yellow-400">{selectedPath}</span>
+                  Has seleccionado: <span className="font-bold text-blue-500 dark:text-blue-400">{selectedPath}</span>
                 </p>
                 <p className="text-sm text-gray-400">
                   Esta información nos ayuda a personalizar tu experiencia en CryptoGift
@@ -2193,7 +2195,7 @@ const SuccessBlock: React.FC<{
             key={key}
             className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6"
           >
-            <div className="text-3xl font-bold text-yellow-400 mb-2">{String(value)}</div>
+            <div className="text-3xl font-bold text-blue-500 dark:text-blue-400 mb-2">{String(value)}</div>
             <div className="text-gray-400 capitalize">{key.replace('_', ' ')}</div>
           </div>
         ))}
