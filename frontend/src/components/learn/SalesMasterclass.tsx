@@ -818,13 +818,13 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       return (
         <div className="py-12 text-center">
           <motion.h2 
-            className="text-5xl font-bold mb-8 bg-gradient-to-r from-amber-600 to-emerald-600 dark:from-yellow-400 dark:to-green-400 bg-clip-text text-transparent"
+            className="text-5xl font-bold mb-8 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="flex items-center justify-center gap-3">
               <span>¡Felicidades!</span>
-              <PartyPopper className="w-12 h-12 text-amber-600 dark:text-yellow-400" />
+              <PartyPopper className="w-12 h-12 text-blue-600 dark:text-blue-400" />
             </div>
           </motion.h2>
           
@@ -834,7 +834,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="inline-block bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 px-8 py-6 rounded-2xl">
+            <div className="inline-block bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 px-8 py-6 rounded-2xl shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
               <p className="text-3xl mb-4">
                 Tu puntuación: <span className="font-bold text-blue-500 dark:text-blue-400">
                   {leadData.questionsCorrect}/{leadData.totalQuestions}
@@ -1034,16 +1034,16 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       }}
     >
       <div className={`sales-masterclass ${educationalMode ? 'h-full' : 'min-h-screen'} 
-        bg-gradient-to-br from-gray-50 to-gray-100 
-        dark:from-gray-900 dark:via-gray-900/95 dark:to-gray-800 
+        bg-gradient-to-br from-slate-50 to-blue-50 
+        dark:from-gray-900 dark:to-gray-800 
         text-gray-900 dark:text-white transition-colors duration-300`}>
         {/* Header - Hidden in educational mode */}
         {!educationalMode && (
           <div className="fixed top-0 left-0 right-0 z-50 
-            bg-white/70 dark:bg-gray-900/70 
-            backdrop-blur-2xl 
-            border-b border-gray-200/20 dark:border-gray-700/30 
-            shadow-sm">
+            bg-white/95 dark:bg-gray-800/95 
+            backdrop-blur-xl backdrop-saturate-150 
+            border-b border-gray-200/50 dark:border-gray-700/50 
+            shadow-xl">
           <div className="max-w-5xl mx-auto px-3 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r 
@@ -1121,7 +1121,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
       {/* Metrics Overlay (Debug/Admin) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 bg-black/90 p-4 rounded-lg text-xs font-mono">
+        <div className="fixed bottom-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 p-4 rounded-lg text-xs font-mono text-gray-700 dark:text-gray-300 shadow-xl">
           <div>Block: {SALES_BLOCKS[currentBlock].id}</div>
           <div>Questions: {metrics.correctAnswers}/{metrics.questionsAnswered}</div>
           <div>Wow Moments: {metrics.wowMoments}</div>
@@ -1338,8 +1338,8 @@ const OpeningBlock: React.FC<{
       animate={{ opacity: 1, scale: 1 }}
     >
       <h1 className="text-6xl font-black mb-6 bg-gradient-to-r 
-        from-amber-600 via-orange-600 to-red-600 
-        dark:from-yellow-400 dark:via-orange-500 dark:to-red-500 
+        from-blue-600 via-purple-600 to-emerald-600 
+        dark:from-blue-400 dark:via-purple-400 dark:to-emerald-400 
         bg-clip-text text-transparent
         drop-shadow-2xl">
         {content.headline}
@@ -1350,11 +1350,11 @@ const OpeningBlock: React.FC<{
           {content.story}
         </p>
         
-        <div className="bg-white/30 dark:bg-gray-800/30 
-          backdrop-blur-2xl 
+        <div className="bg-white/80 dark:bg-gray-800/80 
+          backdrop-blur-xl backdrop-saturate-150 
           p-6 rounded-2xl 
-          border border-gray-200/20 dark:border-gray-700/20 
-          shadow-lg mb-6">
+          border border-gray-200/50 dark:border-gray-700/50 
+          shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02] mb-6">
           <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
             {content.emphasis}
           </p>
@@ -1404,10 +1404,10 @@ const ProblemBlock: React.FC<{
       {content.brechas.map((brecha: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-white/30 dark:bg-gray-800/30 
-            backdrop-blur-2xl 
-            border border-gray-200/20 dark:border-gray-700/20 
-            rounded-2xl p-6 shadow-lg"
+          className="bg-white/80 dark:bg-gray-800/80 
+            backdrop-blur-xl backdrop-saturate-150 
+            border border-gray-200/50 dark:border-gray-700/50 
+            rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.2 }}
@@ -1424,11 +1424,11 @@ const ProblemBlock: React.FC<{
 
     <div className="text-center mb-8">
       <div className="inline-block 
-        bg-white/30 dark:bg-gray-800/30 
-        backdrop-blur-2xl 
-        border border-gray-200/20 dark:border-gray-700/20 
-        px-8 py-4 rounded-full shadow-lg">
-        <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">
+        bg-white/80 dark:bg-gray-800/80 
+        backdrop-blur-xl backdrop-saturate-150 
+        border border-gray-200/50 dark:border-gray-700/50 
+        px-8 py-4 rounded-full shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
+        <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
           {content.stat}
         </p>
       </div>
@@ -1470,11 +1470,11 @@ const SolutionBlock: React.FC<{
     
     <div className="text-center mb-8">
       <div className="inline-block 
-        bg-white/60 dark:bg-gradient-to-r dark:from-green-500/20 dark:to-blue-500/20 
+        bg-white/80 dark:bg-gray-800/80 
         backdrop-blur-xl backdrop-saturate-150 
-        border border-emerald-300/50 dark:border-green-500/50 
-        px-8 py-4 rounded-2xl shadow-xl">
-        <p className="text-2xl font-bold text-emerald-600 dark:text-green-400">
+        border border-gray-200/50 dark:border-gray-700/50 
+        px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
+        <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent">
           {content.breakthrough}
         </p>
       </div>
@@ -1484,10 +1484,10 @@ const SolutionBlock: React.FC<{
       {content.features.map((feature: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-white/60 dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-purple-900/20 
+          className="bg-white/80 dark:bg-gray-800/80 
             backdrop-blur-xl backdrop-saturate-150 
-            border border-blue-200/50 dark:border-blue-500/30 
-            rounded-xl p-6 flex items-center gap-4 shadow-lg"
+            border border-gray-200/50 dark:border-gray-700/50 
+            rounded-xl p-6 flex items-center gap-4 shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]"
           initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: idx * 0.1 }}
@@ -1559,13 +1559,13 @@ const DemoBlock: React.FC<{
       <div>
         {showQR && claimStatus === 'waiting' && (
           <motion.div 
-            className="bg-white p-8 rounded-2xl inline-block"
+            className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 p-8 rounded-2xl inline-block shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring" }}
           >
             <QRCodeSVG value={giftUrl} size={200} level="H" />
-            <p className="text-black mt-4 font-semibold">Escanea con tu móvil</p>
+            <p className="text-gray-800 dark:text-gray-200 mt-4 font-semibold">Escanea con tu móvil</p>
           </motion.div>
         )}
         
@@ -1602,8 +1602,8 @@ const DemoBlock: React.FC<{
           </motion.div>
         ))}
         
-        <div className="mt-6 p-4 bg-green-500/20 border border-green-500/50 rounded-xl">
-          <p className="text-green-400 font-bold">{content.emphasis}</p>
+        <div className="mt-6 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
+          <p className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400 bg-clip-text text-transparent font-bold">{content.emphasis}</p>
         </div>
       </div>
     </div>
@@ -1648,10 +1648,10 @@ const ComparisonBlock: React.FC<{
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
         >
-          <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-4 shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
             <p className="text-lg">{comp.traditional}</p>
           </div>
-          <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-4 shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
             <p className="text-lg">{comp.cryptogift}</p>
           </div>
         </motion.div>
@@ -1693,7 +1693,7 @@ const CasesBlock: React.FC<{
       {content.metrics.map((metric: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-2xl border border-gray-200/20 dark:border-gray-700/20 rounded-xl p-6 text-center shadow-md"
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-6 text-center shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: idx * 0.1 }}
@@ -1748,11 +1748,7 @@ const BusinessBlock: React.FC<{
       {content.streams.map((stream: any, idx: number) => (
         <motion.div
           key={idx}
-          className={`${
-            idx === 0 
-              ? 'bg-white/70 dark:bg-gradient-to-br dark:from-green-500/20 dark:to-emerald-500/20 border-emerald-300/50 dark:border-green-500/50' 
-              : 'bg-white/60 dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200/50 dark:border-purple-500/30'
-          } backdrop-blur-xl backdrop-saturate-150 border rounded-xl p-6 shadow-lg`}
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
@@ -1763,7 +1759,7 @@ const BusinessBlock: React.FC<{
             </div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-white">{stream.name}</h3>
           </div>
-          <p className={`${idx === 0 ? 'text-emerald-600 dark:text-green-400 font-bold' : 'text-gray-700 dark:text-gray-300'}`}>
+          <p className="text-gray-700 dark:text-gray-300">
             {stream.model}
           </p>
         </motion.div>
@@ -1771,8 +1767,8 @@ const BusinessBlock: React.FC<{
     </div>
 
     <div className="text-center mb-8">
-      <div className="inline-block bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/50 px-8 py-4 rounded-full">
-        <p className="text-xl text-blue-400 font-bold">
+      <div className="inline-block bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 px-8 py-4 rounded-full shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02]">
+        <p className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent font-bold">
           {content.emphasis}
         </p>
       </div>
