@@ -55,6 +55,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
+import { SmartIcon } from '../ui/SmartIcon';
 import Link from 'next/link';
 
 export interface PathNode {
@@ -330,15 +331,16 @@ export const LearningPath: React.FC<LearningPathProps> = ({
               )}
 
               {/* Node icon */}
-              <text
-                x={node.position.x}
-                y={node.position.y + 8}
-                textAnchor="middle"
-                fontSize={compact ? "24" : "32"}
-                className="select-none"
+              <foreignObject
+                x={node.position.x - 16}
+                y={node.position.y - 16}
+                width="32"
+                height="32"
               >
-                {node.icon}
-              </text>
+                <div className="flex items-center justify-center w-full h-full">
+                  <SmartIcon icon={node.icon} size={compact ? 24 : 32} />
+                </div>
+              </foreignObject>
 
               {/* Status indicator */}
               {node.status === 'completed' && (

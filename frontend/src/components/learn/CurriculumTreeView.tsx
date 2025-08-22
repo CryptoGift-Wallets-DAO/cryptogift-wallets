@@ -58,7 +58,11 @@ import {
   Star,
   Filter,
   Search,
-  Layers
+  Layers,
+  Plus,
+  Minus,
+  RotateCcw,
+  Maximize2
 } from 'lucide-react';
 
 // Types
@@ -107,12 +111,12 @@ const NODE_SIZES = {
   lesson: 32    // Increased from 25
 };
 
-// Orbital distances - EXPANDED for better spacing
-const ORBITAL_DISTANCES = {
-  branch: 160,   // Increased from 80
-  unit: 100,     // Increased from 50
-  lesson: 65     // Increased from 35
-};
+// Orbital distances - DYNAMIC based on view mode
+const getOrbitalDistances = (viewMode: 'overview' | 'detailed') => ({
+  branch: viewMode === 'detailed' ? 200 : 160,   // More spacing in detailed mode
+  unit: viewMode === 'detailed' ? 130 : 100,     // More spacing in detailed mode
+  lesson: viewMode === 'detailed' ? 85 : 65      // More spacing in detailed mode
+});
 
 // Animation variants (siguiendo estándares LearningPath)
 const nodeVariants = {
@@ -170,6 +174,12 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
+  
+  // Zoom and Pan state
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [lastMousePos, setLastMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -185,10 +195,84 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
     }
   }, []);
 
+  // Zoom and Pan handlers
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
+
+    // Calculate new pan offset to zoom towards mouse position
+    const newPanX = mouseX - (mouseX - panOffset.x) * (newZoom / zoomLevel);
+    const newPanY = mouseY - (mouseY - panOffset.y) * (newZoom / zoomLevel);
+
+    setZoomLevel(newZoom);
+    setPanOffset({ x: newPanX, y: newPanY });
+  }, [zoomLevel, panOffset]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only start dragging if not clicking on an interactive element
+    const target = e.target as Element;
+    if (target.closest('[data-node]') || target.closest('[data-card]') || target.closest('button')) {
+      return;
+    }
+    
+    setIsDragging(true);
+    setLastMousePos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - lastMousePos.x;
+    const deltaY = e.clientY - lastMousePos.y;
+
+    setPanOffset(prev => ({
+      x: prev.x + deltaX,
+      y: prev.y + deltaY
+    }));
+
+    setLastMousePos({ x: e.clientX, y: e.clientY });
+  }, [isDragging, lastMousePos]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Zoom reset function
+  const resetZoom = useCallback(() => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  // Fit to screen function
+  const fitToScreen = useCallback(() => {
+    if (!containerRef.current || !svgRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const svgRect = svgRef.current.getBoundingClientRect();
+
+    const scaleX = containerRect.width / svgBounds.width;
+    const scaleY = containerRect.height / svgBounds.height;
+    const newZoom = Math.min(scaleX, scaleY) * 0.9; // 90% to add some padding
+
+    setZoomLevel(newZoom);
+    setPanOffset({ 
+      x: (containerRect.width - svgBounds.width * newZoom) / 2,
+      y: (containerRect.height - svgBounds.height * newZoom) / 2
+    });
+  }, [svgBounds]);
+
   // Construir estructura de árbol jerárquica
   const treeStructure = useMemo(() => {
     const buildTreeNodes = (): TreeNode[] => {
       const nodes: TreeNode[] = [];
+      const orbitalDistances = getOrbitalDistances(viewMode);
       
       // Calcular posiciones para módulos usando layout orgánico
       const calculateModulePositions = () => {
@@ -196,11 +280,13 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         const centerX = TREE_CONFIG.width / 2;
         const centerY = TREE_CONFIG.height / 2;
         
-        // Disposición circular para módulos principales - EXPANDIDA
+        // Disposición circular para módulos principales - DYNAMIC SPACING
         modules.forEach((module, index) => {
           const angle = (index / modules.length) * 2 * Math.PI;
-          // Increased spacing: deep modules at 280px, medium at 420px
-          const radius = module.depth === 'high' ? 280 : 420;
+          // Dynamic spacing based on view mode and module depth
+          const baseRadius = module.depth === 'high' ? 280 : 420;
+          const viewModeMultiplier = viewMode === 'detailed' ? 1.25 : 1;
+          const radius = baseRadius * viewModeMultiplier;
           
           positions[module.id] = {
             x: centerX + radius * Math.cos(angle),
@@ -238,7 +324,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         // Crear nodos de ramas
         module.branches.forEach((branch, branchIndex) => {
           const branchAngle = (branchIndex / module.branches.length) * Math.PI - Math.PI / 2;
-          const branchRadius = ORBITAL_DISTANCES.branch;
+          const branchRadius = orbitalDistances.branch;
           const branchPosition = {
             x: modulePosition.x + branchRadius * Math.cos(branchAngle),
             y: modulePosition.y + branchRadius * Math.sin(branchAngle)
@@ -268,7 +354,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
           // Crear nodos de unidades
           branch.units.forEach((unit, unitIndex) => {
             const unitAngle = branchAngle + (unitIndex - (branch.units.length - 1) / 2) * 0.4;
-            const unitRadius = ORBITAL_DISTANCES.unit;
+            const unitRadius = orbitalDistances.unit;
             const unitPosition = {
               x: branchPosition.x + unitRadius * Math.cos(unitAngle),
               y: branchPosition.y + unitRadius * Math.sin(unitAngle)
@@ -298,7 +384,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
             // Crear nodos de lecciones
             unit.lessons.forEach((lesson, lessonIndex) => {
               const lessonAngle = unitAngle + (lessonIndex - (unit.lessons.length - 1) / 2) * 0.3;
-              const lessonRadius = ORBITAL_DISTANCES.lesson;
+              const lessonRadius = orbitalDistances.lesson;
               const lessonPosition = {
                 x: unitPosition.x + lessonRadius * Math.cos(lessonAngle),
                 y: unitPosition.y + lessonRadius * Math.sin(lessonAngle)
@@ -332,7 +418,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
     };
 
     return buildTreeNodes();
-  }, [modules, selectedNodes, highlightedBranches, getStatusColor]);
+  }, [modules, selectedNodes, highlightedBranches, getStatusColor, viewMode, getOrbitalDistances]);
 
 
   // Manejar hover de nodos
@@ -465,23 +551,25 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
 
   return (
     <div className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-      {/* Header Controls */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onToggleView}
-            className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all"
-          >
-            <Layers size={16} />
-            <span className="text-sm font-medium">Tu Ruta de Aprendizaje</span>
-          </button>
+      {/* Header Controls - MOBILE SCROLLABLE */}
+      <div className="absolute top-4 left-4 right-4 z-20">
+        {/* Mobile: Scrollable horizontal container */}
+        <div className="flex md:hidden overflow-x-auto scrollbar-hide pb-2">
+          <div className="flex items-center gap-3 min-w-max px-1">
+            {/* Back Button */}
+            <button
+              onClick={onToggleView}
+              className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all whitespace-nowrap"
+            >
+              <Layers size={16} />
+              <span className="text-sm font-medium">Tu Ruta</span>
+            </button>
 
-          <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
             <div className="flex items-center bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-1">
               <button
                 onClick={() => setViewMode('overview')}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                   viewMode === 'overview'
                     ? 'bg-blue-500 text-white shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
@@ -491,7 +579,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
               </button>
               <button
                 onClick={() => setViewMode('detailed')}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                   viewMode === 'detailed'
                     ? 'bg-blue-500 text-white shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
@@ -501,25 +589,27 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
               </button>
             </div>
 
+            {/* Category Filter */}
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-3 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-sm min-w-[140px]"
+              className="px-3 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-sm min-w-[120px]"
             >
-              <option value="all">Todas las categorías</option>
+              <option value="all">Todas</option>
               {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.title}</option>
+                <option key={cat.id} value={cat.id}>{cat.title.substring(0, 12)}</option>
               ))}
             </select>
 
+            {/* Search Input */}
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar módulo, rama o lección..."
+                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-sm w-64"
+                className="pl-9 pr-4 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-sm w-48"
               />
               {searchTerm && (
                 <button
@@ -530,24 +620,151 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Stats Display - Mobile */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 px-3 py-1.5">
+              <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-center">
+                  <div className="font-bold text-sm text-blue-600 dark:text-blue-400">{filteredNodes.filter(n => n.type === 'module').length}</div>
+                  <div>Mód</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-sm text-green-600 dark:text-green-400">{filteredNodes.filter(n => n.type === 'lesson').length}</div>
+                  <div>Lec</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-sm text-orange-600 dark:text-orange-400">{filteredNodes.filter(n => n.type === 'lesson' && (n.data as Lesson).isQuest).length}</div>
+                  <div>Q</div>
+                </div>
+              </div>
+            </div>
           </div>
+          
+          {/* Scroll fade indicators */}
+          <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-slate-50 to-transparent dark:from-gray-900 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-slate-50 to-transparent dark:from-gray-900 pointer-events-none" />
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Stats Display */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 px-3 py-1.5">
-            <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-              <div className="text-center">
-                <div className="font-bold text-sm text-blue-600 dark:text-blue-400">{filteredNodes.filter(n => n.type === 'module').length}</div>
-                <div>Módulos</div>
+        {/* Desktop: Normal layout */}
+        <div className="hidden md:flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onToggleView}
+              className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all"
+            >
+              <Layers size={16} />
+              <span className="text-sm font-medium">Tu Ruta de Aprendizaje</span>
+            </button>
+
+            <div className="flex items-center gap-3">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-1">
+                <button
+                  onClick={() => setViewMode('overview')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    viewMode === 'overview'
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  Resumen
+                </button>
+                <button
+                  onClick={() => setViewMode('detailed')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    viewMode === 'detailed'
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  Detallado
+                </button>
               </div>
-              <div className="text-center">
-                <div className="font-bold text-sm text-green-600 dark:text-green-400">{filteredNodes.filter(n => n.type === 'lesson').length}</div>
-                <div>Lecciones</div>
+
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="px-3 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-sm min-w-[140px]"
+              >
+                <option value="all">Todas las categorías</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.title}</option>
+                ))}
+              </select>
+
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar módulo, rama o lección..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 py-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-sm w-64"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
-              <div className="text-center">
-                <div className="font-bold text-sm text-orange-600 dark:text-orange-400">{filteredNodes.filter(n => n.type === 'lesson' && (n.data as Lesson).isQuest).length}</div>
-                <div>Quests</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Zoom Controls */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-1 flex items-center gap-1">
+              <button
+                onClick={() => setZoomLevel(prev => Math.min(3, prev * 1.2))}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                title="Acercar"
+              >
+                <Plus size={16} />
+              </button>
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400 min-w-[3rem] text-center">
+                {Math.round(zoomLevel * 100)}%
+              </div>
+              <button
+                onClick={() => setZoomLevel(prev => Math.max(0.2, prev * 0.8))}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                title="Alejar"
+              >
+                <Minus size={16} />
+              </button>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+              <button
+                onClick={resetZoom}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                title="Reiniciar zoom"
+              >
+                <RotateCcw size={16} />
+              </button>
+              <button
+                onClick={fitToScreen}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                title="Ajustar a pantalla"
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+
+            {/* Stats Display */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 px-3 py-1.5">
+              <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-center">
+                  <div className="font-bold text-sm text-blue-600 dark:text-blue-400">{filteredNodes.filter(n => n.type === 'module').length}</div>
+                  <div>Módulos</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-sm text-green-600 dark:text-green-400">{filteredNodes.filter(n => n.type === 'lesson').length}</div>
+                  <div>Lecciones</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-sm text-orange-600 dark:text-orange-400">{filteredNodes.filter(n => n.type === 'lesson' && (n.data as Lesson).isQuest).length}</div>
+                  <div>Quests</div>
+                </div>
               </div>
             </div>
           </div>
@@ -557,16 +774,31 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
       {/* Main Tree Visualization */}
       <div 
         ref={containerRef}
-        className="w-full h-full overflow-auto pt-20"
+        className="w-full h-full overflow-hidden pt-20 cursor-grab active:cursor-grabbing"
+        style={{
+          paddingTop: '6rem' // Extra space for mobile scrollable header
+        }}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
-        <svg
-          ref={svgRef}
-          width={svgBounds.width}
-          height={svgBounds.height}
-          viewBox={svgBounds.viewBox}
-          className="w-full h-full"
-          style={{ minWidth: '1200px', minHeight: '800px' }}
+        <div
+          style={{
+            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`,
+            transformOrigin: '0 0',
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+          }}
         >
+          <svg
+            ref={svgRef}
+            width={svgBounds.width}
+            height={svgBounds.height}
+            viewBox={svgBounds.viewBox}
+            className="w-full h-full"
+            style={{ minWidth: '1200px', minHeight: '800px' }}
+          >
           {/* Background grid pattern */}
           <defs>
             <pattern
@@ -699,17 +931,19 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
             );
           })}
         </svg>
+        </div>
 
-        {/* Information Cards */}
+        {/* Information Cards - RIGHT SIDE POSITIONING */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <AnimatePresence>
             {Array.from(activeCards).map(nodeId => {
               const node = filteredNodes.find(n => n.id === nodeId);
               if (!node) return null;
 
-              // POSICIÓN FIJA OPTIMIZADA - Izquierda, arriba del centro
-              const cardLeft = 20; // Siempre en el margen izquierdo
-              const cardTop = Math.max(80, (window.innerHeight / 2) - 200); // Arriba del centro, min 80px del top
+              // NUEVA POSICIÓN: Lado derecho superior, debajo de la barra de información
+              const cardRight = 20; // Margen desde el borde derecho
+              const cardTop = typeof window !== 'undefined' ? 
+                (window.innerWidth >= 768 ? 80 : 120) : 80; // Debajo de la barra (responsive)
 
               return (
                 <motion.div
@@ -720,13 +954,16 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                   exit="exit"
                   className="absolute pointer-events-auto"
                   style={{
-                    left: cardLeft,
+                    right: cardRight,
                     top: cardTop,
-                    zIndex: 50
+                    zIndex: 50,
+                    maxWidth: '350px',
+                    width: typeof window !== 'undefined' && window.innerWidth < 768 ? 
+                      `${Math.min(350, window.innerWidth - 40)}px` : '350px'
                   }}
                 >
                   {/* Card content ULTRA DETALLADA - TODA LA INFO RICA */}
-                  <div className="w-[350px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl backdrop-saturate-150 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl max-h-[500px] overflow-y-auto">
+                  <div className="w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl backdrop-saturate-150 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl max-h-[calc(100vh-140px)] overflow-y-auto">
                     <div className="p-4">
                       {/* Header */}
                       <div className="flex items-start gap-3 mb-3">
