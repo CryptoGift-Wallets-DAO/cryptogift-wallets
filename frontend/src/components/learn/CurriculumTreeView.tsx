@@ -667,15 +667,19 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                 )}
 
                 {/* Node icon */}
-                <text
-                  x={node.position.x}
-                  y={node.position.y + 4}
-                  textAnchor="middle"
-                  fontSize={node.type === 'module' ? 20 : node.type === 'branch' ? 16 : 14}
-                  className="select-none"
+                <foreignObject 
+                  x={node.position.x - (node.type === 'module' ? 12 : node.type === 'branch' ? 10 : node.type === 'unit' ? 8 : 6)} 
+                  y={node.position.y - (node.type === 'module' ? 12 : node.type === 'branch' ? 10 : node.type === 'unit' ? 8 : 6)} 
+                  width={node.type === 'module' ? 24 : node.type === 'branch' ? 20 : node.type === 'unit' ? 16 : 12} 
+                  height={node.type === 'module' ? 24 : node.type === 'branch' ? 20 : node.type === 'unit' ? 16 : 12}
                 >
-                  {node.icon || (node.type === 'module' ? '📚' : node.type === 'branch' ? '🌿' : node.type === 'unit' ? '◉' : '◎')}
-                </text>
+                  <div className="flex items-center justify-center w-full h-full">
+                    <SmartIcon 
+                      icon={node.icon || (node.type === 'module' ? BookOpen : node.type === 'branch' ? TrendingUp : node.type === 'unit' ? Target : PlayCircle)} 
+                      size={node.type === 'module' ? 20 : node.type === 'branch' ? 16 : node.type === 'unit' ? 14 : 10} 
+                    />
+                  </div>
+                </foreignObject>
 
                 {/* Node title (only for modules in overview mode) */}
                 {(viewMode === 'detailed' || node.type === 'module') && (

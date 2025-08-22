@@ -10,6 +10,16 @@
  */
 
 import type { Module, Branch, Unit, Lesson, Category } from '../types/curriculum';
+import { 
+  Target, Settings, Diamond, Triangle, Circle, Shield, ChevronDown, Square,
+  Dot, Layers, TrendingUp, Star, Zap, Key, RefreshCw, Code, Hash, Play,
+  CheckCircle, Globe, Lock, BookOpen, Award, Clock, Coins, Users,
+  Cpu, TrendingDown, Filter, Search, Bot, Wifi, Database, Smartphone,
+  Wallet, Building, Laptop, Rocket, Gamepad2, Monitor, AlertTriangle,
+  ArrowLeftRight, Droplets, TreePine, PenTool, Package, FolderOpen,
+  Clipboard, Shuffle, Timer, Blocks, Type, Palette, Volume2, Lightbulb,
+  FileText
+} from 'lucide-react';
 
 // ========== CATEGORÍAS/MATERIAS MADRES ==========
 export const categories: Category[] = [
@@ -19,7 +29,7 @@ export const categories: Category[] = [
     description: 'Base crítica para usuarios nuevos',
     modules: ['M0', 'M1'],
     color: '#3B82F6',
-    icon: '🎯',
+    icon: Target,
     order: 1
   },
   {
@@ -28,7 +38,7 @@ export const categories: Category[] = [
     description: 'Core técnico de blockchain',
     modules: ['M2', 'M3', 'M8', 'M14', 'M15'],
     color: '#059669',
-    icon: '⚙',
+    icon: Settings,
     order: 2
   },
   {
@@ -37,7 +47,7 @@ export const categories: Category[] = [
     description: 'Economía cripto y trading',
     modules: ['M4', 'M5', 'M6', 'M12'],
     color: '#F59E0B',
-    icon: '◆',
+    icon: Diamond,
     order: 3
   },
   {
@@ -46,7 +56,7 @@ export const categories: Category[] = [
     description: 'Gobernanza y tokenomics',
     modules: ['M7', 'M11'],
     color: '#8B5CF6',
-    icon: '▲',
+    icon: Triangle,
     order: 4
   },
   {
@@ -55,7 +65,7 @@ export const categories: Category[] = [
     description: 'Infraestructura y conectividad',
     modules: ['M9', 'M16'],
     color: '#06B6D4',
-    icon: '◐',
+    icon: Circle,
     order: 5
   },
   {
@@ -64,7 +74,7 @@ export const categories: Category[] = [
     description: 'Seguridad crítica y compliance',
     modules: ['M10', 'M18', 'M19'],
     color: '#EF4444',
-    icon: '♦',
+    icon: Shield,
     order: 6
   },
   {
@@ -73,7 +83,7 @@ export const categories: Category[] = [
     description: 'Futuro y gaming',
     modules: ['M17', 'M20'],
     color: '#EC4899',
-    icon: '▼',
+    icon: ChevronDown,
     order: 7
   },
   {
@@ -82,7 +92,7 @@ export const categories: Category[] = [
     description: 'Desarrollo técnico avanzado',
     modules: ['M13'],
     color: '#7C3AED',
-    icon: '▪',
+    icon: Square,
     order: 8
   }
 ];
@@ -117,7 +127,7 @@ export const modules: Module[] = [
                 evidenceDescription: 'Screenshot de wallet configurada con EOA creada',
                 xpReward: 50,
                 status: 'available',
-                icon: '◉',
+                icon: Dot,
                 tags: ['wallet', 'setup', 'metamask', 'eoa']
               },
               {
@@ -132,7 +142,7 @@ export const modules: Module[] = [
                 xpReward: 60,
                 status: 'locked',
                 prerequisites: ['M0.R1.U1.L1'],
-                icon: '◐',
+                icon: Circle,
                 tags: ['networks', 'rpc', 'base', 'explorers']
               },
               {
@@ -147,7 +157,7 @@ export const modules: Module[] = [
                 xpReward: 40,
                 status: 'locked',
                 prerequisites: ['M0.R1.U1.L2'],
-                icon: '◪',
+                icon: Layers,
                 tags: ['security', 'biometrics', 'pin', 'auto-lock']
               }
             ],
@@ -155,7 +165,7 @@ export const modules: Module[] = [
             estimatedTime: 9,
             status: 'available',
             completedLessons: 0,
-            icon: '⚙️',
+            icon: Settings,
             color: '#3B82F6'
           },
           {
@@ -175,7 +185,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M0.R1.U1.L3'],
-                icon: '◫',
+                icon: TrendingUp,
                 tags: ['backup', 'seed', 'security', 'simulator']
               },
               {
@@ -190,7 +200,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M0.R1.U2.L1'],
-                icon: '◈',
+                icon: Star,
                 tags: ['recovery', 'simulation', 'backup', 'secondary-device']
               },
               {
@@ -205,7 +215,7 @@ export const modules: Module[] = [
                 xpReward: 60,
                 status: 'locked',
                 prerequisites: ['M0.R1.U2.L2'],
-                icon: '◇',
+                icon: Diamond,
                 tags: ['concepts', 'keys', 'security', 'fundamentals']
               }
             ],
@@ -213,7 +223,7 @@ export const modules: Module[] = [
             estimatedTime: 12,
             status: 'locked',
             completedLessons: 0,
-            icon: '▣',
+            icon: Square,
             color: '#10B981'
           },
           {
@@ -233,7 +243,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M0.R1.U2.L3'],
-                icon: '◐',
+                icon: Circle,
                 tags: ['signatures', 'eip191', 'crypto', 'verification']
               },
               {
@@ -256,7 +266,7 @@ export const modules: Module[] = [
                   'Verificar en BaseScan Sepolia',
                   'Confirmar recepción en wallet destino'
                 ],
-                icon: '▲',
+                icon: Triangle,
                 tags: ['transaction', 'testnet', 'quest', 'base-sepolia']
               },
               {
@@ -271,7 +281,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M0.R1.U3.L2'],
-                icon: '◯',
+                icon: Circle,
                 tags: ['tokens', 'erc20', 'wallet', 'watchAsset']
               }
             ],
@@ -279,7 +289,7 @@ export const modules: Module[] = [
             estimatedTime: 12,
             status: 'locked',
             completedLessons: 0,
-            icon: '★',
+            icon: Star,
             color: '#F59E0B'
           }
         ],
@@ -290,7 +300,7 @@ export const modules: Module[] = [
         badgeId: 'wallet-master',
         badgeTitle: 'Wallet Master',
         badgeDescription: 'Maestro en configuración y uso seguro de wallets',
-        icon: '👛',
+        icon: Wallet,
         color: '#3B82F6',
         position: { x: 200, y: 120 }
       },
@@ -316,7 +326,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M0.R1.U3.L3'],
-                icon: '◉',
+                icon: Dot,
                 tags: ['phishing', 'urls', 'extensions', 'security']
               },
               {
@@ -331,7 +341,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M0.R2.U1.L1'],
-                icon: '▪',
+                icon: Square,
                 tags: ['2fa', 'email', 'password-manager', 'authentication']
               },
               {
@@ -346,7 +356,7 @@ export const modules: Module[] = [
                 xpReward: 60,
                 status: 'locked',
                 prerequisites: ['M0.R2.U1.L2'],
-                icon: '✓',
+                icon: CheckCircle,
                 tags: ['checklist', 'signing', 'verification', 'security']
               }
             ],
@@ -354,7 +364,7 @@ export const modules: Module[] = [
             estimatedTime: 12,
             status: 'locked',
             completedLessons: 0,
-            icon: '🧹',
+            icon: RefreshCw,
             color: '#EF4444'
           },
           {
@@ -374,7 +384,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M0.R2.U1.L3'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['airdrops', 'permissions', 'setApprovalForAll', 'phishing']
               },
               {
@@ -389,7 +399,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M0.R2.U2.L1'],
-                icon: '◒',
+                icon: Play,
                 tags: ['revoke', 'approvals', 'tools', 'protection']
               },
               {
@@ -404,7 +414,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M0.R2.U2.L2'],
-                icon: '◪',
+                icon: Layers,
                 tags: ['siwe', 'blind-signing', 'authentication', 'ethereum']
               }
             ],
@@ -412,7 +422,7 @@ export const modules: Module[] = [
             estimatedTime: 13,
             status: 'locked',
             completedLessons: 0,
-            icon: '🎣',
+            icon: Target,
             color: '#F59E0B'
           },
           {
@@ -432,7 +442,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M0.R2.U2.L3'],
-                icon: '👥',
+                icon: Users,
                 tags: ['social-recovery', 'guardians', 'demo', 'backup']
               },
               {
@@ -447,7 +457,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M0.R2.U3.L1'],
-                icon: '📱',
+                icon: Smartphone,
                 tags: ['device-loss', 'recovery', 'simulation', 'emergency']
               },
               {
@@ -462,7 +472,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M0.R2.U3.L2'],
-                icon: '📜',
+                icon: BookOpen,
                 tags: ['inheritance', 'digital-legacy', 'planning', 'assets']
               }
             ],
@@ -470,7 +480,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '👨‍👩‍👧‍👦',
+            icon: Users,
             color: '#8B5CF6'
           }
         ],
@@ -481,7 +491,7 @@ export const modules: Module[] = [
         badgeId: 'security-guardian',
         badgeTitle: 'Security Guardian',
         badgeDescription: 'Protector experto de activos digitales',
-        icon: '🛡️',
+        icon: Shield,
         color: '#EF4444',
         position: { x: 450, y: 180 }
       },
@@ -507,7 +517,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M0.R2.U3.L3'],
-                icon: '⛽',
+                icon: Zap,
                 tags: ['gas', 'base-fee', 'priority-fee', 'estimation']
               },
               {
@@ -522,7 +532,7 @@ export const modules: Module[] = [
                 xpReward: 60,
                 status: 'locked',
                 prerequisites: ['M0.R3.U1.L1'],
-                icon: '📊',
+                icon: TrendingUp,
                 tags: ['explorers', 'wallets', 'costs', 'interpretation']
               },
               {
@@ -537,7 +547,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M0.R3.U1.L2'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['optimization', 'l2', 'batching', 'savings']
               }
             ],
@@ -545,7 +555,7 @@ export const modules: Module[] = [
             estimatedTime: 12,
             status: 'locked',
             completedLessons: 0,
-            icon: '⛽',
+            icon: Zap,
             color: '#F59E0B'
           },
           {
@@ -565,7 +575,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M0.R3.U1.L3'],
-                icon: '◯',
+                icon: Circle,
                 tags: ['eoa', 'smart-account', 'account-abstraction', 'nonces']
               },
               {
@@ -580,7 +590,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M0.R3.U2.L1'],
-                icon: '◈',
+                icon: Star,
                 tags: ['retry', 'replacement', 'stuck-tx', 'nonce-management']
               },
               {
@@ -595,7 +605,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M0.R3.U2.L2'],
-                icon: '⚠️',
+                icon: AlertTriangle,
                 tags: ['errors', 'troubleshooting', 'out-of-gas', 'underpriced']
               }
             ],
@@ -603,7 +613,7 @@ export const modules: Module[] = [
             estimatedTime: 12,
             status: 'locked',
             completedLessons: 0,
-            icon: '◯',
+            icon: Circle,
             color: '#8B5CF6'
           },
           {
@@ -632,7 +642,7 @@ export const modules: Module[] = [
                   'Transferir fondos wallet B → wallet A',
                   'Copiar ambos tx hashes'
                 ],
-                icon: '↔️',
+                icon: ArrowLeftRight,
                 tags: ['quest', 'transfer', 'multiple-wallets', 'bidirectional']
               },
               {
@@ -656,7 +666,7 @@ export const modules: Module[] = [
                   'Verificar recepción en wallet',
                   'Copiar tx hash del faucet'
                 ],
-                icon: '🚰',
+                icon: Droplets,
                 tags: ['quest', 'faucet', 'testnet', 'base-sepolia']
               },
               {
@@ -671,7 +681,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M0.R3.U3.L2'],
-                icon: '✓',
+                icon: CheckCircle,
                 tags: ['quiz', 'checklist', 'ready', 'claims']
               }
             ],
@@ -679,7 +689,7 @@ export const modules: Module[] = [
             estimatedTime: 13,
             status: 'locked',
             completedLessons: 0,
-            icon: '★',
+            icon: Star,
             color: '#10B981'
           }
         ],
@@ -690,7 +700,7 @@ export const modules: Module[] = [
         badgeId: 'gas-optimizer',
         badgeTitle: 'Gas Optimizer',
         badgeDescription: 'Experto en optimización de transacciones y gestión de gas',
-        icon: '⛽',
+        icon: Zap,
         color: '#F59E0B',
         position: { x: 700, y: 120 }
       }
@@ -705,7 +715,7 @@ export const modules: Module[] = [
     masterBadgeId: 'onboarding-champion',
     masterBadgeTitle: 'Onboarding Champion',
     masterBadgeDescription: 'Completó el proceso completo de onboarding seguro con dominio total',
-    icon: '🎯',
+    icon: Target,
     color: '#3B82F6',
     position: { x: 150 + (0 % 6) * 200, y: 80 + Math.floor(0 / 6) * 200 }, // M0: fila 1, pos 1
     hasQuests: true,
@@ -742,7 +752,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M0'],
-                icon: '#️⃣',
+                icon: Hash,
                 tags: ['cryptography', 'hashes', 'sha256', 'keccak']
               },
               {
@@ -757,7 +767,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M1.R1.U1.L1'],
-                icon: '🌳',
+                icon: TreePine,
                 tags: ['merkle-trees', 'verification', 'data-integrity', 'proofs']
               },
               {
@@ -772,7 +782,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M1.R1.U1.L2'],
-                icon: '✒️',
+                icon: PenTool,
                 tags: ['digital-signatures', 'ecdsa', 'ed25519', 'verification']
               }
             ],
@@ -780,7 +790,7 @@ export const modules: Module[] = [
             estimatedTime: 13,
             status: 'locked',
             completedLessons: 0,
-            icon: '◪',
+            icon: Layers,
             color: '#059669'
           },
           // Continuar con U2: Bloques & estado y U3: Finalidad...
@@ -800,7 +810,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M1.R1.U1.L3'],
-                icon: '📦',
+                icon: Package,
                 tags: ['blocks', 'structure', 'headers', 'transactions']
               },
               {
@@ -815,7 +825,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M1.R1.U2.L1'],
-                icon: '🗂️',
+                icon: FolderOpen,
                 tags: ['state', 'accounts', 'storage', 'trie']
               },
               {
@@ -830,7 +840,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M1.R1.U2.L2'],
-                icon: '📋',
+                icon: Clipboard,
                 tags: ['transactions', 'logs', 'events', 'decoding']
               }
             ],
@@ -838,7 +848,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '📦',
+            icon: Package,
             color: '#10B981'
           },
           {
@@ -858,7 +868,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M1.R1.U2.L3'],
-                icon: '✓',
+                icon: CheckCircle,
                 tags: ['finality', 'confirmations', 'probabilistic', 'security']
               },
               {
@@ -873,7 +883,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M1.R1.U3.L1'],
-                icon: '🔀',
+                icon: Shuffle,
                 tags: ['reorgs', 'chain-splits', 'risks', 'mitigation']
               },
               {
@@ -897,7 +907,7 @@ export const modules: Module[] = [
                   'Contar confirmaciones',
                   'Verificar finalidad'
                 ],
-                icon: '◎',
+                icon: Circle,
                 tags: ['quest', 'monitoring', 'confirmations', 'critical-tx']
               }
             ],
@@ -905,7 +915,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '⏱',
+            icon: Timer,
             color: '#F59E0B'
           }
         ],
@@ -916,7 +926,7 @@ export const modules: Module[] = [
         badgeId: 'blockchain-foundation',
         badgeTitle: 'Blockchain Foundation',
         badgeDescription: 'Dominio sólido de fundamentos blockchain',
-        icon: '🧱',
+        icon: Blocks,
         color: '#059669',
         position: { x: 350, y: 120 }
       },
@@ -942,7 +952,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M1.R1.U3.L3'],
-                icon: '▶',
+                icon: Play,
                 tags: ['mining', 'difficulty', 'pow', 'hashrate']
               },
               {
@@ -957,7 +967,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M1.R2.U1.L1'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['economics', 'rewards', 'halving', 'incentives']
               },
               {
@@ -972,7 +982,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M1.R2.U1.L2'],
-                icon: '◊',
+                icon: Diamond,
                 tags: ['attacks', '51-percent', 'security', 'costs']
               }
             ],
@@ -980,7 +990,7 @@ export const modules: Module[] = [
             estimatedTime: 14,
             status: 'locked',
             completedLessons: 0,
-            icon: '▶',
+            icon: Play,
             color: '#F97316'
           },
           {
@@ -1000,7 +1010,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M1.R2.U1.L3'],
-                icon: '🎯',
+                icon: Target,
                 tags: ['validators', 'staking', 'pos', 'ethereum']
               },
               {
@@ -1015,7 +1025,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M1.R2.U2.L1'],
-                icon: '⚡',
+                icon: Zap,
                 tags: ['slashing', 'penalties', 'security', 'validators']
               },
               {
@@ -1030,7 +1040,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M1.R2.U2.L2'],
-                icon: '△',
+                icon: Triangle,
                 tags: ['comparison', 'tradeoffs', 'pow-vs-pos', 'analysis']
               }
             ],
@@ -1038,7 +1048,7 @@ export const modules: Module[] = [
             estimatedTime: 12,
             status: 'locked',
             completedLessons: 0,
-            icon: '🎯',
+            icon: Target,
             color: '#8B5CF6'
           },
           {
@@ -1097,7 +1107,7 @@ export const modules: Module[] = [
                   'Detectar sandwich o front-running',
                   'Calcular MEV extraído'
                 ],
-                icon: '◉',
+                icon: Dot,
                 tags: ['quest', 'mev-detection', 'analysis', 'protection']
               }
             ],
@@ -1172,7 +1182,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M1.R3.U1.L2'],
-                icon: '📊',
+                icon: TrendingUp,
                 tags: ['analytics', 'holders', 'volume', 'activity']
               }
             ],
@@ -1180,7 +1190,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '◉',
+            icon: Dot,
             color: '#06B6D4'
           },
           {
@@ -1215,7 +1225,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M1.R3.U2.L1'],
-                icon: '🎯',
+                icon: Target,
                 tags: ['events', 'filters', 'monitoring', 'realtime']
               },
               {
@@ -1238,7 +1248,7 @@ export const modules: Module[] = [
             estimatedTime: 13,
             status: 'locked',
             completedLessons: 0,
-            icon: '◇',
+            icon: Diamond,
             color: '#10B981'
           },
           {
@@ -1267,7 +1277,7 @@ export const modules: Module[] = [
                   'Procesar y visualizar métricas',
                   'Deploy o demo funcional'
                 ],
-                icon: '△',
+                icon: Triangle,
                 tags: ['quest', 'dashboard', 'integration', 'project']
               },
               {
@@ -1314,7 +1324,7 @@ export const modules: Module[] = [
             estimatedTime: 20,
             status: 'locked',
             completedLessons: 0,
-            icon: '★',
+            icon: Star,
             color: '#F59E0B'
           }
         ],
@@ -1378,7 +1388,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M1'],
-                icon: '🖥️',
+                icon: Monitor,
                 tags: ['evm', 'stack', 'memory', 'storage']
               },
               {
@@ -1393,7 +1403,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M2.R1.U1.L1'],
-                icon: '⚙️',
+                icon: Settings,
                 tags: ['opcodes', 'gas-costs', 'optimization', 'evm']
               },
               {
@@ -1408,7 +1418,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M2.R1.U1.L2'],
-                icon: '🔤',
+                icon: Type,
                 tags: ['abi', 'encoding', 'decoding', 'interfaces']
               }
             ],
@@ -1416,7 +1426,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '▪',
+            icon: Square,
             color: '#059669'
           },
           {
@@ -1436,7 +1446,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M2.R1.U1.L3'],
-                icon: '📊',
+                icon: TrendingUp,
                 tags: ['solidity', 'variables', 'types', 'visibility']
               },
               {
@@ -1451,7 +1461,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M2.R1.U2.L1'],
-                icon: '⚡',
+                icon: Zap,
                 tags: ['functions', 'modifiers', 'events', 'logs']
               },
               {
@@ -1475,7 +1485,7 @@ export const modules: Module[] = [
                   'Deploy en Base Sepolia',
                   'Verificar en BaseScan'
                 ],
-                icon: '▲',
+                icon: Triangle,
                 tags: ['quest', 'deploy', 'hello-world', 'testnet']
               }
             ],
@@ -1483,7 +1493,7 @@ export const modules: Module[] = [
             estimatedTime: 18,
             status: 'locked',
             completedLessons: 0,
-            icon: '◫',
+            icon: TrendingUp,
             color: '#10B981'
           },
           {
@@ -1503,7 +1513,7 @@ export const modules: Module[] = [
                 xpReward: 110,
                 status: 'locked',
                 prerequisites: ['M2.R1.U2.L3'],
-                icon: '▪',
+                icon: Square,
                 tags: ['reentrancy', 'cei-pattern', 'security', 'guards']
               },
               {
@@ -1518,7 +1528,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M2.R1.U3.L1'],
-                icon: '◯',
+                icon: Circle,
                 tags: ['overflow', 'underflow', 'safemath', 'arithmetic']
               },
               {
@@ -1541,7 +1551,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '🛡️',
+            icon: Shield,
             color: '#EF4444'
           }
         ],
@@ -1552,7 +1562,7 @@ export const modules: Module[] = [
         badgeId: 'solidity-developer',
         badgeTitle: 'Solidity Developer',
         badgeDescription: 'Desarrollador competente en Solidity y EVM',
-        icon: '⚡',
+        icon: Zap,
         color: '#059669',
         position: { x: 200, y: 350 }
       },
@@ -1608,7 +1618,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M2.R2.U1.L2'],
-                icon: '📡',
+                icon: Wifi,
                 tags: ['events', 'listeners', 'filters', 'websockets']
               }
             ],
@@ -1616,7 +1626,7 @@ export const modules: Module[] = [
             estimatedTime: 16,
             status: 'locked',
             completedLessons: 0,
-            icon: '◐',
+            icon: Circle,
             color: '#3B82F6'
           },
           {
@@ -1651,7 +1661,7 @@ export const modules: Module[] = [
                 xpReward: 110,
                 status: 'locked',
                 prerequisites: ['M2.R2.U2.L1'],
-                icon: '◈',
+                icon: Star,
                 tags: ['foundry', 'forge', 'cast', 'fuzzing']
               },
               {
@@ -1709,7 +1719,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M2.R2.U3.L1'],
-                icon: '◈',
+                icon: Star,
                 tags: ['state', 'realtime', 'optimistic-ui', 'updates']
               },
               {
@@ -1741,7 +1751,7 @@ export const modules: Module[] = [
             estimatedTime: 21,
             status: 'locked',
             completedLessons: 0,
-            icon: '◉',
+            icon: Dot,
             color: '#8B5CF6'
           }
         ],
@@ -1808,7 +1818,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M2.R3.U1.L2'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['diamond', 'eip2535', 'facets', 'modular']
               }
             ],
@@ -1836,7 +1846,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M2.R3.U1.L3'],
-                icon: '◐',
+                icon: Circle,
                 tags: ['ipfs', 'storage', 'pinning', 'gateways']
               },
               {
@@ -1874,7 +1884,7 @@ export const modules: Module[] = [
             estimatedTime: 14,
             status: 'locked',
             completedLessons: 0,
-            icon: '▣',
+            icon: Square,
             color: '#06B6D4'
           },
           {
@@ -1894,7 +1904,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M2.R3.U2.L3'],
-                icon: '△',
+                icon: Triangle,
                 tags: ['chainlink', 'oracles', 'price-feeds', 'aggregators']
               },
               {
@@ -1933,7 +1943,7 @@ export const modules: Module[] = [
                   'UI para visualizar precios',
                   'Deploy y verificar funcionamiento'
                 ],
-                icon: '◯',
+                icon: Circle,
                 tags: ['quest', 'oracles', 'integration', 'dapp']
               }
             ],
@@ -1941,7 +1951,7 @@ export const modules: Module[] = [
             estimatedTime: 19,
             status: 'locked',
             completedLessons: 0,
-            icon: '◯',
+            icon: Circle,
             color: '#EC4899'
           }
         ],
@@ -1968,7 +1978,7 @@ export const modules: Module[] = [
     masterBadgeId: 'smart-contract-expert',
     masterBadgeTitle: 'Smart Contract Expert',
     masterBadgeDescription: 'Experto completo en desarrollo de smart contracts y DApps',
-    icon: '📜',
+    icon: BookOpen,
     color: '#059669',
     position: { x: 150 + (2 % 6) * 200, y: 80 + Math.floor(2 / 6) * 200 }, // M2: fila 1, pos 3
     hasQuests: true,
@@ -2020,7 +2030,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M3.R1.U1.L1'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['treasury', 'multisig', 'gnosis-safe', 'management']
               },
               {
@@ -2063,7 +2073,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M3.R1.U1.L3'],
-                icon: '◎',
+                icon: Circle,
                 tags: ['snapshot', 'voting', 'off-chain', 'proposals']
               },
               {
@@ -2078,7 +2088,7 @@ export const modules: Module[] = [
                 xpReward: 110,
                 status: 'locked',
                 prerequisites: ['M3.R1.U2.L1'],
-                icon: '△',
+                icon: Triangle,
                 tags: ['governor', 'on-chain', 'openzeppelin', 'timelock']
               },
               {
@@ -2130,7 +2140,7 @@ export const modules: Module[] = [
                 xpReward: 65,
                 status: 'locked',
                 prerequisites: ['M3.R1.U2.L3'],
-                icon: '🔀',
+                icon: Shuffle,
                 tags: ['protocol-dao', 'social-dao', 'types', 'comparison']
               },
               {
@@ -2145,7 +2155,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M3.R1.U3.L1'],
-                icon: '🌳',
+                icon: TreePine,
                 tags: ['subdaos', 'hierarchy', 'delegation', 'structure']
               },
               {
@@ -2160,7 +2170,7 @@ export const modules: Module[] = [
                 xpReward: 60,
                 status: 'locked',
                 prerequisites: ['M3.R1.U3.L2'],
-                icon: '△',
+                icon: Triangle,
                 tags: ['legal', 'compliance', 'llc', 'regulation']
               }
             ],
@@ -2168,7 +2178,7 @@ export const modules: Module[] = [
             estimatedTime: 10,
             status: 'locked',
             completedLessons: 0,
-            icon: '📊',
+            icon: TrendingUp,
             color: '#F59E0B'
           }
         ],
@@ -2220,7 +2230,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M3.R2.U1.L1'],
-                icon: '◐',
+                icon: Circle,
                 tags: ['delegation', 'liquid-democracy', 'metagovernance', 'incentives']
               },
               {
@@ -2235,7 +2245,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M3.R2.U1.L2'],
-                icon: '📊',
+                icon: TrendingUp,
                 tags: ['quorum', 'participation', 'incentives', 'apathy']
               }
             ],
@@ -2263,7 +2273,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M3.R2.U1.L3'],
-                icon: '◫',
+                icon: TrendingUp,
                 tags: ['proposals', 'governance', 'writing', 'structure']
               },
               {
@@ -2293,7 +2303,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M3.R2.U2.L2'],
-                icon: '✓',
+                icon: CheckCircle,
                 tags: ['execution', 'monitoring', 'post-mortem', 'metrics']
               }
             ],
@@ -2301,7 +2311,7 @@ export const modules: Module[] = [
             estimatedTime: 11,
             status: 'locked',
             completedLessons: 0,
-            icon: '📋',
+            icon: Clipboard,
             color: '#10B981'
           },
           {
@@ -2321,7 +2331,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M3.R2.U2.L3'],
-                icon: '◊',
+                icon: Diamond,
                 tags: ['attacks', 'bribery', 'raids', 'flash-loans']
               },
               {
@@ -2336,7 +2346,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M3.R2.U3.L1'],
-                icon: '🛡️',
+                icon: Shield,
                 tags: ['sybil', 'proof-of-humanity', 'gitcoin', 'resistance']
               },
               {
@@ -2368,7 +2378,7 @@ export const modules: Module[] = [
             estimatedTime: 16,
             status: 'locked',
             completedLessons: 0,
-            icon: '🛡️',
+            icon: Shield,
             color: '#EF4444'
           }
         ],
@@ -2405,7 +2415,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M3.R2.U3.L3'],
-                icon: '🎯',
+                icon: Target,
                 tags: ['schelling', 'signaling', 'coordination', 'game-theory']
               },
               {
@@ -2420,7 +2430,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M3.R3.U1.L1'],
-                icon: '▪',
+                icon: Square,
                 tags: ['commitment', 'timelock', 'vesting', 'rage-quit']
               },
               {
@@ -2435,7 +2445,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M3.R3.U1.L2'],
-                icon: '◈',
+                icon: Star,
                 tags: ['retropgf', 'public-goods', 'optimism', 'funding']
               }
             ],
@@ -2463,7 +2473,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M3.R3.U1.L3'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['tokenomics', 'supply', 'utility', 'value-accrual']
               },
               {
@@ -2478,7 +2488,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M3.R3.U2.L1'],
-                icon: '⚡',
+                icon: Zap,
                 tags: ['staking', 'slashing', 'rewards', 'apy']
               },
               {
@@ -2493,7 +2503,7 @@ export const modules: Module[] = [
                 xpReward: 105,
                 status: 'locked',
                 prerequisites: ['M3.R3.U2.L2'],
-                icon: '△',
+                icon: Triangle,
                 tags: ['bonding-curves', 'amm', 'liquidity', 'mathematics']
               }
             ],
@@ -2501,7 +2511,7 @@ export const modules: Module[] = [
             estimatedTime: 16,
             status: 'locked',
             completedLessons: 0,
-            icon: '◆',
+            icon: Diamond,
             color: '#F59E0B'
           },
           {
@@ -2530,7 +2540,7 @@ export const modules: Module[] = [
                   'Establecer procesos de gobernanza',
                   'Documentar todo en constitución'
                 ],
-                icon: '📜',
+                icon: BookOpen,
                 tags: ['quest', 'constitution', 'structure', 'design']
               },
               {
@@ -2554,7 +2564,7 @@ export const modules: Module[] = [
                   'Reclutar 10+ miembros',
                   'Ejecutar primera propuesta'
                 ],
-                icon: '▲',
+                icon: Triangle,
                 tags: ['quest', 'launch', 'community', 'recruitment']
               },
               {
@@ -2577,7 +2587,7 @@ export const modules: Module[] = [
             estimatedTime: 19,
             status: 'locked',
             completedLessons: 0,
-            icon: '★',
+            icon: Star,
             color: '#EC4899'
           }
         ],
@@ -2641,7 +2651,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M3'],
-                icon: '◯',
+                icon: Circle,
                 tags: ['erc20', 'tokens', 'standard', 'functions']
               },
               {
@@ -2656,7 +2666,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M4.R1.U1.L1'],
-                icon: '◯',
+                icon: Circle,
                 tags: ['decimals', 'precision', 'wei', 'conversion']
               },
               {
@@ -2679,7 +2689,7 @@ export const modules: Module[] = [
             estimatedTime: 14,
             status: 'locked',
             completedLessons: 0,
-            icon: '◯',
+            icon: Circle,
             color: '#F59E0B'
           },
           {
@@ -2714,7 +2724,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M4.R1.U2.L1'],
-                icon: '△',
+                icon: Triangle,
                 tags: ['peg', 'collateral', 'redemption', 'stability']
               },
               {
@@ -2729,7 +2739,7 @@ export const modules: Module[] = [
                 xpReward: 70,
                 status: 'locked',
                 prerequisites: ['M4.R1.U2.L2'],
-                icon: '⚠️',
+                icon: AlertTriangle,
                 tags: ['risks', 'depeg', 'regulation', 'blacklist']
               }
             ],
@@ -2757,7 +2767,7 @@ export const modules: Module[] = [
                 xpReward: 75,
                 status: 'locked',
                 prerequisites: ['M4.R1.U2.L3'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['weth', 'wbtc', 'wrapped', 'compatibility']
               },
               {
@@ -2796,7 +2806,7 @@ export const modules: Module[] = [
                   'Verificar en BaseScan',
                   'Testear todas las funciones'
                 ],
-                icon: '▲',
+                icon: Triangle,
                 tags: ['quest', 'deployment', 'erc20', 'verification']
               }
             ],
@@ -2815,7 +2825,7 @@ export const modules: Module[] = [
         badgeId: 'token-master',
         badgeTitle: 'Token Master',
         badgeDescription: 'Experto en tokens fungibles y estándares ERC-20',
-        icon: '◯',
+        icon: Circle,
         color: '#F59E0B',
         position: { x: 200, y: 650 }
       },
@@ -2856,7 +2866,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M4.R2.U1.L1'],
-                icon: '📋',
+                icon: Clipboard,
                 tags: ['metadata', 'ipfs', 'tokenuri', 'json']
               },
               {
@@ -2871,7 +2881,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M4.R2.U1.L2'],
-                icon: '🎯',
+                icon: Target,
                 tags: ['minting', 'whitelist', 'dutch-auction', 'sales']
               }
             ],
@@ -2899,7 +2909,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M4.R2.U1.L3'],
-                icon: '◐',
+                icon: Circle,
                 tags: ['erc1155', 'semi-fungible', 'batch', 'optimization']
               },
               {
@@ -2929,7 +2939,7 @@ export const modules: Module[] = [
                 xpReward: 80,
                 status: 'locked',
                 prerequisites: ['M4.R2.U2.L2'],
-                icon: '⛽',
+                icon: Zap,
                 tags: ['batch', 'gas-optimization', 'efficiency', 'comparison']
               }
             ],
@@ -2937,7 +2947,7 @@ export const modules: Module[] = [
             estimatedTime: 15,
             status: 'locked',
             completedLessons: 0,
-            icon: '◐',
+            icon: Circle,
             color: '#7C3AED'
           },
           {
@@ -2972,7 +2982,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M4.R2.U3.L1'],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['royalties', 'eip2981', 'enforcement', 'revenue']
               },
               {
@@ -2996,7 +3006,7 @@ export const modules: Module[] = [
                   'Upload metadata a IPFS',
                   'Listar en OpenSea testnet'
                 ],
-                icon: '◉',
+                icon: Dot,
                 tags: ['quest', 'nft-collection', 'launch', 'marketplace']
               }
             ],
@@ -3004,7 +3014,7 @@ export const modules: Module[] = [
             estimatedTime: 19,
             status: 'locked',
             completedLessons: 0,
-            icon: '◉',
+            icon: Dot,
             color: '#06B6D4'
           }
         ],
@@ -3041,7 +3051,7 @@ export const modules: Module[] = [
                 xpReward: 100,
                 status: 'locked',
                 prerequisites: ['M4.R2.U3.L3'],
-                icon: '◯',
+                icon: Circle,
                 tags: ['amm', 'uniswap', 'dex', 'formula']
               },
               {
@@ -3056,7 +3066,7 @@ export const modules: Module[] = [
                 xpReward: 90,
                 status: 'locked',
                 prerequisites: ['M4.R3.U1.L1'],
-                icon: '◐',
+                icon: Circle,
                 tags: ['liquidity', 'lp-tokens', 'pools', 'fees']
               },
               {
@@ -3079,7 +3089,7 @@ export const modules: Module[] = [
             estimatedTime: 16,
             status: 'locked',
             completedLessons: 0,
-            icon: '◯',
+            icon: Circle,
             color: '#A855F7'
           },
           {
@@ -3099,7 +3109,7 @@ export const modules: Module[] = [
                 xpReward: 95,
                 status: 'locked',
                 prerequisites: ['M4.R3.U1.L3'],
-                icon: '🏦',
+                icon: Building,
                 tags: ['lending', 'borrowing', 'aave', 'compound']
               },
               {
@@ -3114,7 +3124,7 @@ export const modules: Module[] = [
                 xpReward: 85,
                 status: 'locked',
                 prerequisites: ['M4.R3.U2.L1'],
-                icon: '⚠️',
+                icon: AlertTriangle,
                 tags: ['collateral', 'liquidation', 'risk', 'ltv']
               },
               {
@@ -3129,7 +3139,7 @@ export const modules: Module[] = [
                 xpReward: 110,
                 status: 'locked',
                 prerequisites: ['M4.R3.U2.L2'],
-                icon: '⚡',
+                icon: Zap,
                 tags: ['flash-loans', 'arbitrage', 'liquidation', 'advanced']
               }
             ],
@@ -3137,7 +3147,7 @@ export const modules: Module[] = [
             estimatedTime: 17,
             status: 'locked',
             completedLessons: 0,
-            icon: '🏦',
+            icon: Building,
             color: '#10B981'
           },
           {
@@ -3196,7 +3206,7 @@ export const modules: Module[] = [
                   'Implementar estrategia',
                   'Monitorear performance'
                 ],
-                icon: '◆',
+                icon: Diamond,
                 tags: ['quest', 'strategy', 'defi', 'complex']
               }
             ],
@@ -3215,7 +3225,7 @@ export const modules: Module[] = [
         badgeId: 'defi-strategist',
         badgeTitle: 'DeFi Strategist',
         badgeDescription: 'Estratega experto en protocolos DeFi',
-        icon: '◆',
+        icon: Diamond,
         color: '#A855F7',
         position: { x: 700, y: 650 }
       }
@@ -3231,7 +3241,7 @@ export const modules: Module[] = [
     masterBadgeId: 'crypto-assets-expert',
     masterBadgeTitle: 'Crypto Assets Expert',
     masterBadgeDescription: 'Experto completo en tokens, NFTs y DeFi',
-    icon: '◆',
+    icon: Diamond,
     color: '#F59E0B',
     position: { x: 150 + (4 % 6) * 200, y: 80 + Math.floor(4 / 6) * 200 }, // M4: fila 1, pos 5
     hasQuests: true,
@@ -3271,7 +3281,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 120,
               status: 'locked',
               isQuest: false,
-              icon: '⚡',
+              icon: Zap,
               tags: ['amm-v4', 'hooks', 'concentrated-liquidity', 'uniswap-v4']
             },
             {
@@ -3288,7 +3298,7 @@ const M5_DEFI_CORE: Module = {
               isQuest: true,
               questType: 'simulation',
               questInstructions: 'Ejecutar trades con protección MEV en Base usando intents-based protocols',
-              icon: '🛡️',
+              icon: Shield,
               tags: ['mev-protection', 'smart-slippage', 'intents', 'base-blockchain']
             },
             {
@@ -3303,7 +3313,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 90,
               status: 'locked',
               isQuest: false,
-              icon: '⚠️',
+              icon: AlertTriangle,
               tags: ['impermanent-loss', 'risk', 'strategy']
             }
           ],
@@ -3311,7 +3321,7 @@ const M5_DEFI_CORE: Module = {
           estimatedTime: 25,
           status: 'locked',
           completedLessons: 0,
-          icon: '◈',
+          icon: Star,
           color: '#10B981'
         },
         {
@@ -3352,7 +3362,7 @@ const M5_DEFI_CORE: Module = {
               questType: 'onchain',
               questInstructions: 'Añadir liquidez a pool ETH/USDC, recibir LP tokens, documentar',
               verificationSteps: ['Seleccionar pool', 'Calcular proporción', 'Add liquidity', 'Verificar LP tokens'],
-              icon: '◐',
+              icon: Circle,
               tags: ['liquidity', 'lp-tokens', 'onchain']
             },
             {
@@ -3367,7 +3377,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 70,
               status: 'locked',
               isQuest: false,
-              icon: '◉',
+              icon: Dot,
               tags: ['analysis', 'explorer', 'metrics']
             }
           ],
@@ -3375,7 +3385,7 @@ const M5_DEFI_CORE: Module = {
           estimatedTime: 35,
           status: 'locked',
           completedLessons: 0,
-          icon: '⚡',
+          icon: Zap,
           color: '#F59E0B'
         },
         {
@@ -3397,7 +3407,7 @@ const M5_DEFI_CORE: Module = {
               isQuest: true,
               questType: 'simulation',
               questInstructions: 'Usar AI aggregator para optimal routing entre Base, Arbitrum y Ethereum',
-              icon: '🚀',
+              icon: Rocket,
               tags: ['ai-routing', 'cross-chain', 'base-ecosystem', 'optimization']
             },
             {
@@ -3412,7 +3422,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 85,
               status: 'locked',
               isQuest: false,
-              icon: '🛡️',
+              icon: Shield,
               tags: ['mev', 'protection', 'security']
             },
             {
@@ -3427,7 +3437,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 50,
               status: 'locked',
               isQuest: false,
-              icon: '🎯',
+              icon: Target,
               tags: ['quiz', 'consolidation', 'amm']
             }
           ],
@@ -3446,7 +3456,7 @@ const M5_DEFI_CORE: Module = {
       badgeId: 'amm-expert',
       badgeTitle: 'AMM Expert',
       badgeDescription: 'Experto en Automated Market Makers',
-      icon: '◈',
+      icon: Star,
       color: '#10B981',
       position: { x: 120, y: 320 }
     },
@@ -3473,7 +3483,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 90,
               status: 'locked',
               isQuest: false,
-              icon: '◆',
+              icon: Diamond,
               tags: ['collateral', 'ltv', 'liquidation']
             },
             {
@@ -3488,7 +3498,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 75,
               status: 'locked',
               isQuest: false,
-              icon: '📊',
+              icon: TrendingUp,
               tags: ['interest-rates', 'fixed', 'variable']
             },
             {
@@ -3513,7 +3523,7 @@ const M5_DEFI_CORE: Module = {
           estimatedTime: 25,
           status: 'locked',
           completedLessons: 0,
-          icon: '🏦',
+          icon: Building,
           color: '#EF4444'
         },
         {
@@ -3554,7 +3564,7 @@ const M5_DEFI_CORE: Module = {
               questType: 'simulation',
               questInstructions: 'Simular price drop que trigger liquidación, ejecutar repago',
               verificationSteps: ['Setup liquidation scenario', 'Trigger liquidation', 'Execute repayment', 'Document process'],
-              icon: '⚡',
+              icon: Zap,
               tags: ['liquidation', 'repayment', 'simulation']
             },
             {
@@ -3569,7 +3579,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 90,
               status: 'locked',
               isQuest: false,
-              icon: '◉',
+              icon: Dot,
               tags: ['events', 'liquidation', 'analysis']
             }
           ],
@@ -3597,7 +3607,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 85,
               status: 'locked',
               isQuest: false,
-              icon: '◯',
+              icon: Circle,
               tags: ['oracle', 'risk', 'cascades']
             },
             {
@@ -3612,7 +3622,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 80,
               status: 'locked',
               isQuest: false,
-              icon: '⚠️',
+              icon: AlertTriangle,
               tags: ['smart-contract', 'risk', 'assessment']
             },
             {
@@ -3627,7 +3637,7 @@ const M5_DEFI_CORE: Module = {
               xpReward: 60,
               status: 'locked',
               isQuest: false,
-              icon: '🎯',
+              icon: Target,
               tags: ['quiz', 'consolidation', 'defi']
             }
           ],
@@ -3635,7 +3645,7 @@ const M5_DEFI_CORE: Module = {
           estimatedTime: 22,
           status: 'locked',
           completedLessons: 0,
-          icon: '⚠️',
+          icon: AlertTriangle,
           color: '#DC2626'
         }
       ],
@@ -3646,7 +3656,7 @@ const M5_DEFI_CORE: Module = {
       badgeId: 'lending-expert',
       badgeTitle: 'Lending Expert',
       badgeDescription: 'Experto en protocolos de lending',
-      icon: '🏦',
+      icon: Building,
       color: '#EF4444',
       position: { x: 280, y: 320 }
     }
@@ -3701,7 +3711,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               isQuest: true,
               questType: 'onchain',
               questInstructions: 'Deploy iNFT con AI agent básico y demostrar capacidades autónomas',
-              icon: '🤖',
+              icon: Bot,
               tags: ['erc-7857', 'intelligent-nfts', 'ai-agents', 're-encryption']
             },
             {
@@ -3735,7 +3745,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               isQuest: true,
               questType: 'simulation',
               questInstructions: 'Subir imagen + metadata a IPFS, configurar 3 gateways diferentes',
-              icon: '◐',
+              icon: Circle,
               tags: ['ipfs', 'gateways', 'persistence']
             }
           ],
@@ -3766,7 +3776,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               questType: 'onchain',
               questInstructions: '1) Upload image to IPFS, 2) Create metadata.json, 3) Upload metadata, 4) Mint with tokenURI',
               verificationSteps: ['Upload to IPFS', 'Create metadata JSON', 'Mint transaction', 'Verify in wallet/explorer'],
-              icon: '◉',
+              icon: Dot,
               tags: ['mint', 'ipfs', 'base-sepolia']
             },
             {
@@ -3781,7 +3791,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 60,
               status: 'locked',
               isQuest: false,
-              icon: '◎',
+              icon: Circle,
               tags: ['verification', 'display', 'wallets']
             },
             {
@@ -3798,7 +3808,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               isQuest: true,
               questType: 'simulation',
               questInstructions: 'Update metadata de NFT mutable, verificar refresh en marketplace',
-              icon: '◈',
+              icon: Star,
               tags: ['mutable', 'update', 'metadata']
             }
           ],
@@ -3806,7 +3816,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
           estimatedTime: 40,
           status: 'locked',
           completedLessons: 0,
-          icon: '⚡',
+          icon: Zap,
           color: '#F59E0B'
         },
         {
@@ -3826,7 +3836,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 120,
               status: 'locked',
               isQuest: false,
-              icon: '▲',
+              icon: Triangle,
               tags: ['supply', 'reveal', 'launch-strategy']
             },
             {
@@ -3841,7 +3851,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 100,
               status: 'locked',
               isQuest: false,
-              icon: '△',
+              icon: Triangle,
               tags: ['copyright', 'licensing', 'legal']
             },
             {
@@ -3856,7 +3866,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 70,
               status: 'locked',
               isQuest: false,
-              icon: '🎯',
+              icon: Target,
               tags: ['quiz', 'consolidation', 'nft']
             }
           ],
@@ -3875,7 +3885,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
       badgeId: 'nft-creator',
       badgeTitle: 'NFT Creator',
       badgeDescription: 'Creador experto de NFTs',
-      icon: '◉',
+      icon: Dot,
       color: '#8B5CF6',
       position: { x: 120, y: 400 }
     },
@@ -3921,7 +3931,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               isQuest: true,
               questType: 'simulation',
               questInstructions: 'Crear NFT dinámico que cambia según precio ETH usando Chainlink',
-              icon: '⚡',
+              icon: Zap,
               tags: ['oracles', 'dynamic', 'triggers']
             },
             {
@@ -3936,7 +3946,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 70,
               status: 'locked',
               isQuest: false,
-              icon: '💡',
+              icon: Lightbulb,
               tags: ['use-cases', 'innovation', 'applications']
             }
           ],
@@ -3944,7 +3954,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
           estimatedTime: 33,
           status: 'locked',
           completedLessons: 0,
-          icon: '◈',
+          icon: Star,
           color: '#06B6D4'
         },
         {
@@ -3982,7 +3992,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 85,
               status: 'locked',
               isQuest: false,
-              icon: '◆',
+              icon: Diamond,
               tags: ['royalties', 'payments', 'configuration']
             },
             {
@@ -3997,7 +4007,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 75,
               status: 'locked',
               isQuest: false,
-              icon: '📊',
+              icon: TrendingUp,
               tags: ['analytics', 'sales', 'tracking']
             }
           ],
@@ -4028,7 +4038,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               questType: 'onchain',
               questInstructions: 'Wallet A: mint + list, Wallet B: purchase, documentar todo el flujo',
               verificationSteps: ['Mint from wallet A', 'List on marketplace', 'Buy from wallet B', 'Verify ownership transfer'],
-              icon: '◈',
+              icon: Star,
               tags: ['complete-cycle', 'marketplace', 'onchain']
             },
             {
@@ -4060,7 +4070,7 @@ const M6_NFT_DIGITAL_MEDIA: Module = {
               xpReward: 100,
               status: 'locked',
               isQuest: false,
-              icon: '🎯',
+              icon: Target,
               tags: ['quiz', 'final', 'mastery']
             }
           ],
