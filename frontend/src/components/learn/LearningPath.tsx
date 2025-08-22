@@ -225,9 +225,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({
       const centerChangeY = Math.abs(relativeCenter.y - lastTouches.center.y);
       const centerChange = Math.sqrt(centerChangeX * centerChangeX + centerChangeY * centerChangeY);
 
-      // Determine gesture type - VERY STRICT separation
-      const isPinchGesture = distanceChange > 15; // Much higher threshold - only true pinch
-      const isPanGesture = centerChange > 3 && distanceChange <= 10; // Pan when scrolling with two fingers
+      // STRICT separation: If fingers are moving together (scrolling), NEVER zoom
+      const isPinchGesture = distanceChange > 20 && centerChange < 8; // Only when distance changes but center stable
+      const isPanGesture = centerChange > 1; // Always allow pan/scroll movement
 
       if (isPinchGesture) {
         // PINCH-TO-ZOOM: Only zoom, don't pan
