@@ -7,6 +7,14 @@ import {
   Image,
   Coins,
   Building2,
+  Building,
+  Landmark,
+  Blocks,
+  Handshake,
+  Wrench,
+  RefreshCw,
+  ScrollText,
+  FileText,
   Flame,
   Timer,
   Star,
@@ -91,10 +99,31 @@ import {
   Monitor,
   Smartphone,
   Laptop,
+  Package,
+  FolderOpen,
+  Type,
+  Store,
+  DollarSign,
+  Ticket,
+  Vote,
+  Thermometer,
+  Banknote,
+  Briefcase,
+  Plug,
+  Bot,
+  Music,
+  Tag,
   Cpu,
   HardDrive,
   Server,
   Database,
+  Network,
+  CircleDot,
+  Grid3x3 as Grid,
+  Layers,
+  Box,
+  Circle,
+  Diamond,
   Cloud,
   CloudDownload,
   CloudUpload,
@@ -299,6 +328,72 @@ import {
 export const emojiToLucideMap: Record<string, LucideIcon> = {
   // Gift & Rewards
   '🎁': Gift,
+  
+  // Geometric symbols to Lucide mappings for curriculum
+  '⚙': Settings,      // Protocol & Computing
+  '◆': TrendingUp,    // Assets & Markets  
+  '▲': Users,          // Organization & Economic Design
+  '◐': Network,        // Infrastructure & Interop
+  '♦': Shield,         // Security & Compliance
+  '▼': Database,       // Data & Storage
+  '▪': Box,            // Generic module
+  '◉': Circle,         // Lesson indicator
+  '◪': Square,         // Unit indicator
+  '◫': Layers,         // Stack layers
+  '◈': Diamond,        // Special feature
+  '◇': Code,           // Code lesson
+  '▣': Grid,           // Grid layout
+  '◒': CircleDot,      // Progress indicator
+  '★': Star,           // Featured content
+  '✓': Check,          // Completed
+  
+  // Specific module emojis - Perfect icon matches
+  '👛': Wallet,       // Wallet Master
+  '🦊': Code,         // Fox -> Code/Dev
+  '🏦': Building2,    // Banking/Finance
+  '💎': Gem,          // Diamond/Value
+  '🔧': Wrench,       // Tools/Build
+  '🤝': Handshake,    // Partnership/Consensus
+  '📈': TrendingUp,   // Growth/Analytics
+  '🌐': Globe,        // Global/Network
+  '📚': BookOpen,     // Learning/Education
+  '🔐': Lock,         // Security/Lock
+  '📝': FileText,     // Documentation
+  '🔄': RefreshCw,    // Cycle/Refresh
+  '🔑': Key,          // Keys/Access
+  '💾': HardDrive,    // Storage/Data
+  '🧱': Blocks,       // Building blocks
+  '🏗️': Building,     // Architecture
+  '🏛️': Landmark,     // Government/DAO
+  '📜': ScrollText,   // Smart Contract
+  '🎣': Target,       // Phishing/Hooks
+  '🧹': Sparkles,     // Clean/Sweep
+  '👥': Users,        // Community/People
+  '📦': Package,      // Package/Box
+  '🗂️': FolderOpen,   // Files/Organization
+  '🖥️': Monitor,      // Computer/Desktop
+  '🔤': Type,         // Text/Typography
+  '🏪': Store,        // Marketplace/Store
+  '🖼️': Image,        // NFT/Image
+  '💵': DollarSign,   // Money/USD
+  '🌉': Landmark,     // Bridge/Connection
+  '👑': Crown,        // Premium/Luxury
+  '🔥': Flame,        // Hot/Fire
+  '🎫': Ticket,       // Ticket/Event
+  '🗳️': Vote,         // Voting/Governance
+  '🌡️': Thermometer,  // Temperature/Metrics
+  '🔰': ShieldAlert,  // Warning/Security
+  '💸': Banknote,     // Money flow
+  '💼': Briefcase,    // Business/Portfolio
+  '🔗': Link,         // Connection/Link
+  '🛡️': Shield,       // Shield/Protection
+  '🔌': Plug,         // Plugin/Connect
+  '📤': Upload,       // Upload/Export
+  '📡': Wifi,         // Network/Signal
+  '🤖': Bot,          // AI/Robot
+  '🎵': Music,        // Music/Audio
+  '🏷️': Tag,          // Label/Tag
+  
   '🎉': Sparkles,
   '🎊': Sparkles,
   '🏆': Trophy,

@@ -59,6 +59,24 @@ const getEmojiColor = (emoji: string): string => {
     '📱': '#6B7280', // Gray-500 - Tech
     '⚙️': '#6B7280', // Gray-500 - Settings
     
+    // Curriculum geometric symbols - perfect contextual colors
+    '⚙': '#059669',  // Emerald-600 - Protocol & Computing
+    '◆': '#F59E0B',  // Amber-500 - Assets & Markets
+    '▲': '#8B5CF6',  // Violet-500 - Organization & Design
+    '◐': '#06B6D4',  // Cyan-500 - Infrastructure & Interop
+    '♦': '#EF4444',  // Red-500 - Security & Compliance
+    '▼': '#6366F1',  // Indigo-500 - Data & Storage
+    '▪': '#64748B',  // Slate-500 - Generic module
+    '◉': '#10B981',  // Emerald-500 - Lesson
+    '◪': '#3B82F6',  // Blue-500 - Unit
+    '◫': '#8B5CF6',  // Violet-500 - Stack layers
+    '◈': '#EC4899',  // Pink-500 - Special feature
+    '◇': '#14B8A6',  // Teal-500 - Code lesson
+    '▣': '#F97316',  // Orange-500 - Grid layout
+    '◒': '#A855F7',  // Purple-500 - Progress
+    '★': '#FCD34D',  // Yellow-300 - Featured
+    '✓': '#10B981',  // Emerald-500 - Completed
+    
     // Nature and growth - green colors
     '🌱': '#10B981', // Emerald-500 - Growth  
     '🌳': '#059669', // Emerald-600 - Tree
@@ -85,6 +103,47 @@ const getEmojiColor = (emoji: string): string => {
     '👥': '#3B82F6', // Blue-500 - People
     '🎁': '#EC4899', // Pink-500 - Gift
     '🎉': '#F97316', // Orange-500 - Celebration
+    
+    // Module-specific perfect colors
+    '👛': '#8B5CF6', // Violet-500 - Wallet
+    '🦊': '#F97316', // Orange-500 - Fox/Code
+    '🏦': '#3B82F6', // Blue-500 - Banking
+    '🔧': '#6B7280', // Gray-500 - Tools
+    '📚': '#6366F1', // Indigo-500 - Education
+    '🔐': '#EF4444', // Red-500 - Security Lock
+    '📝': '#A855F7', // Purple-500 - Documentation
+    '🔄': '#14B8A6', // Teal-500 - Refresh
+    '🔑': '#F59E0B', // Amber-500 - Keys
+    '💾': '#6B7280', // Gray-500 - Storage
+    '🧱': '#DC2626', // Red-600 - Building blocks
+    '🏗️': '#F97316', // Orange-500 - Construction
+    '🏛️': '#7C3AED', // Violet-600 - Government
+    '📜': '#8B5CF6', // Violet-500 - Contract
+    '🎣': '#EF4444', // Red-500 - Phishing/Target
+    '🧹': '#10B981', // Emerald-500 - Clean
+    '👥': '#3B82F6', // Blue-500 - Community
+    '📦': '#F97316', // Orange-500 - Package
+    '🗂️': '#6B7280', // Gray-500 - Files
+    '🖥️': '#6366F1', // Indigo-500 - Desktop
+    '🔤': '#A855F7', // Purple-500 - Typography
+    '🏪': '#EC4899', // Pink-500 - Store
+    '🖼️': '#8B5CF6', // Violet-500 - NFT
+    '💵': '#10B981', // Emerald-500 - Money
+    '🌉': '#06B6D4', // Cyan-500 - Bridge
+    '👑': '#FCD34D', // Yellow-300 - Luxury
+    '🎫': '#F97316', // Orange-500 - Ticket
+    '🗳️': '#7C3AED', // Violet-600 - Voting
+    '🌡️': '#EF4444', // Red-500 - Temperature
+    '🔰': '#F59E0B', // Amber-500 - Warning
+    '💸': '#10B981', // Emerald-500 - Money flow
+    '💼': '#6B7280', // Gray-500 - Business
+    '🔗': '#3B82F6', // Blue-500 - Link
+    '🔌': '#06B6D4', // Cyan-500 - Plugin
+    '📤': '#10B981', // Emerald-500 - Upload
+    '📡': '#3B82F6', // Blue-500 - Network
+    '🤖': '#8B5CF6', // Violet-500 - AI
+    '🎵': '#EC4899', // Pink-500 - Music
+    '🏷️': '#A855F7'  // Purple-500 - Tag
   };
   
   return colorMap[emoji] || 'currentColor';
