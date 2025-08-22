@@ -34,7 +34,39 @@ import {
   TrendingUp,
   Users,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Lightbulb,
+  AlertCircle,
+  Target,
+  DollarSign,
+  Award,
+  Star,
+  MessageCircle,
+  Play,
+  ChevronRight,
+  X,
+  Check,
+  Circle,
+  Square,
+  Triangle,
+  Hexagon,
+  Palette,
+  Building2,
+  ShoppingBag,
+  RefreshCw,
+  PartyPopper,
+  Mail,
+  Gamepad2,
+  Briefcase,
+  UserCheck,
+  TrendingDown,
+  CheckSquare,
+  XCircle,
+  CircleDot,
+  Hash,
+  AtSign,
+  Code,
+  BookOpen
 } from 'lucide-react';
 
 // Types
@@ -145,10 +177,10 @@ const SALES_BLOCKS: SalesBlock[] = [
     content: {
       breakthrough: 'ERC-6551 + Account Abstraction = Magic',
       features: [
-        { icon: '🎁', text: 'El NFT ES la cuenta bancaria' },
-        { icon: '⛽', text: 'Gas 100% patrocinado por nosotros' },
-        { icon: '🛡️', text: 'Recuperación social con guardianes' },
-        { icon: '🔄', text: 'Swap instantáneo a cualquier token' }
+        { icon: Gift, text: 'El NFT ES la cuenta bancaria' },
+        { icon: Flame, text: 'Gas 100% patrocinado por nosotros' },
+        { icon: Shield, text: 'Recuperación social con guardianes' },
+        { icon: RefreshCw, text: 'Swap instantáneo a cualquier token' }
       ],
       tagline: 'La complejidad desaparece. La magia permanece.'
     },
@@ -258,22 +290,22 @@ const SALES_BLOCKS: SalesBlock[] = [
         {
           name: 'Usuario Base',
           model: 'SIEMPRE GRATIS - $0 comisiones',
-          icon: '🎁'
+          icon: Gift
         },
         {
           name: 'Arte Premium',
           model: 'Marcos animados y filtros IA (opcional)',
-          icon: '🎨'
+          icon: Palette
         },
         {
           name: 'Corporativo',
           model: 'Paquetes para marcas y eventos',
-          icon: '🏢'
+          icon: Building2
         },
         {
           name: 'Marketplace',
           model: 'Diseños CC0 con royalties a creadores',
-          icon: '🛍️'
+          icon: ShoppingBag
         }
       ],
       emphasis: 'Sin custodia • Sin riesgo regulatorio • 100% on-chain'
@@ -403,10 +435,10 @@ const SALES_BLOCKS: SalesBlock[] = [
         status: 'Early Adopter Verificado'
       },
       benefits: [
-        '📧 Recibirás información exclusiva',
-        '🎁 NFT de fundador próximamente',
-        '💰 Acceso prioritario a nuevas features',
-        '🚀 Invitación a eventos privados'
+        { icon: Mail, text: 'Recibirás información exclusiva' },
+        { icon: Gift, text: 'NFT de fundador próximamente' },
+        { icon: DollarSign, text: 'Acceso prioritario a nuevas features' },
+        { icon: Rocket, text: 'Invitación a eventos privados' }
       ],
       finalMessage: 'El futuro de los pagos digitales comienza contigo.'
     },
@@ -786,11 +818,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       return (
         <div className="py-12 text-center">
           <motion.h2 
-            className="text-5xl font-bold mb-8 bg-gradient-to-r from-yellow-400 to-green-400 bg-clip-text text-transparent"
+            className="text-5xl font-bold mb-8 bg-gradient-to-r from-amber-600 to-emerald-600 dark:from-yellow-400 dark:to-green-400 bg-clip-text text-transparent"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            ¡Felicidades! 🎉
+            <div className="flex items-center justify-center gap-3">
+              <span>¡Felicidades!</span>
+              <PartyPopper className="w-12 h-12 text-amber-600 dark:text-yellow-400" />
+            </div>
           </motion.h2>
           
           <motion.div
@@ -806,7 +841,10 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
                 </span> respuestas correctas
               </p>
               {leadData.questionsCorrect && leadData.questionsCorrect >= 7 && (
-                <p className="text-green-400 font-bold text-xl">¡EXCELENTE! Has aprendido sobre CryptoGift 🏆</p>
+                <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-green-400 font-bold text-xl">
+                  <span>¡EXCELENTE! Has aprendido sobre CryptoGift</span>
+                  <Trophy className="w-6 h-6" />
+                </div>
               )}
             </div>
           </motion.div>
@@ -837,14 +875,15 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             <div className="animate-spin w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto" />
           </motion.div>
           
-          <motion.p
-            className="text-2xl font-bold text-green-400"
+          <motion.div
+            className="flex items-center justify-center gap-2 text-2xl font-bold text-emerald-600 dark:text-green-400"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.8 }}
           >
-            EDUCACIÓN COMPLETADA ✅
-          </motion.p>
+            <span>EDUCACIÓN COMPLETADA</span>
+            <CheckCircle className="w-8 h-8" />
+          </motion.div>
         </div>
       );
     }
@@ -994,13 +1033,23 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         marginLeft: '-8.82%'
       }}
     >
-      <div className={`sales-masterclass ${educationalMode ? 'h-full' : 'min-h-screen'} bg-gradient-to-br from-black via-gray-900 to-black text-white`}>
+      <div className={`sales-masterclass ${educationalMode ? 'h-full' : 'min-h-screen'} 
+        bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 
+        dark:from-black dark:via-gray-900 dark:to-black 
+        text-gray-900 dark:text-white transition-colors duration-300`}>
         {/* Header - Hidden in educational mode */}
         {!educationalMode && (
-          <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-lg border-b border-gold/20">
+          <div className="fixed top-0 left-0 right-0 z-50 
+            bg-white/80 dark:bg-black/80 
+            backdrop-blur-xl backdrop-saturate-150 
+            border-b border-gray-200/50 dark:border-gold/20 
+            shadow-lg">
           <div className="max-w-5xl mx-auto px-3 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r 
+              from-amber-600 to-orange-600 
+              dark:from-yellow-400 dark:to-orange-500 
+              bg-clip-text text-transparent">
               CryptoGift Masterclass
             </h1>
             <div className="flex gap-2">
@@ -1009,10 +1058,10 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
                   key={block.id}
                   className={`w-2 h-2 rounded-full transition-all ${
                     idx === currentBlock 
-                      ? 'bg-yellow-400 w-8' 
+                      ? 'bg-amber-500 dark:bg-yellow-400 w-8 shadow-lg shadow-amber-500/50' 
                       : idx < currentBlock 
-                        ? 'bg-green-400' 
-                        : 'bg-gray-600'
+                        ? 'bg-emerald-500 dark:bg-green-400' 
+                        : 'bg-gray-300 dark:bg-gray-600'
                   }`}
                 />
               ))}
@@ -1021,14 +1070,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
+              <Trophy className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
               <span className="font-mono text-lg">
                 {metrics.correctAnswers}/{metrics.questionsAnswered}
               </span>
             </div>
             
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-yellow-400" />
+              <Clock className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
               <span className="font-mono text-lg">
                 {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
               </span>
@@ -1036,7 +1085,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className="px-4 py-2 bg-yellow-400/20 hover:bg-yellow-400/30 rounded-lg transition-all"
+              className="px-4 py-2 
+                bg-amber-100 hover:bg-amber-200 
+                dark:bg-yellow-400/20 dark:hover:bg-yellow-400/30 
+                backdrop-blur-xl 
+                border border-amber-200/50 dark:border-yellow-400/20 
+                rounded-lg transition-all 
+                text-amber-900 dark:text-white 
+                shadow-lg hover:shadow-xl"
             >
               {isPaused ? 'Resume' : 'Pause'}
             </button>
@@ -1088,9 +1144,16 @@ const QuestionSection: React.FC<{
   if (!question) return null;
 
   return (
-    <div className="mt-8 p-6 bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-2xl border border-purple-500/30">
-      <h3 className="text-2xl font-bold mb-4 text-yellow-400">
-        💡 Pregunta Rápida:
+    <div className="mt-8 p-6 
+      bg-white/60 dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-blue-900/20 
+      backdrop-blur-xl backdrop-saturate-150 
+      rounded-2xl 
+      border border-purple-200/50 dark:border-purple-500/30 
+      shadow-xl">
+      <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 
+        text-amber-600 dark:text-yellow-400">
+        <Lightbulb className="w-7 h-7" />
+        <span>Pregunta Rápida:</span>
       </h3>
       <p className="text-xl mb-6">{question.text}</p>
       
@@ -1104,12 +1167,12 @@ const QuestionSection: React.FC<{
               showFeedback
                 ? selectedAnswer === idx
                   ? option.isCorrect
-                    ? 'bg-green-500/30 border-2 border-green-500'
-                    : 'bg-red-500/30 border-2 border-red-500'
+                    ? 'bg-emerald-100 dark:bg-green-500/30 border-2 border-emerald-500 dark:border-green-500'
+                    : 'bg-red-100 dark:bg-red-500/30 border-2 border-red-500'
                   : option.isCorrect
-                    ? 'bg-green-500/20 border-2 border-green-500/50'
-                    : 'bg-gray-800/50 border border-gray-600'
-                : 'bg-gray-800/50 border border-gray-600 hover:bg-gray-700/50 hover:border-yellow-500 cursor-pointer'
+                    ? 'bg-emerald-50 dark:bg-green-500/20 border-2 border-emerald-400/50 dark:border-green-500/50'
+                    : 'bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-600'
+                : 'bg-white/80 dark:bg-gray-800/50 backdrop-blur-xl border border-gray-200 dark:border-gray-600 hover:bg-amber-50 dark:hover:bg-gray-700/50 hover:border-amber-400 dark:hover:border-yellow-500 cursor-pointer shadow-md hover:shadow-lg'
             }`}
             whileHover={!showFeedback ? { scale: 1.02 } : {}}
             whileTap={!showFeedback ? { scale: 0.98 } : {}}
@@ -1118,11 +1181,13 @@ const QuestionSection: React.FC<{
               <span className="text-2xl">
                 {showFeedback
                   ? option.isCorrect
-                    ? '✅'
+                    ? <CheckCircle className="w-6 h-6 text-emerald-500 dark:text-green-400" />
                     : selectedAnswer === idx
-                      ? '❌'
-                      : '⭕'
-                  : ['🅰️', '🅱️', '🆎'][idx]}
+                      ? <XCircle className="w-6 h-6 text-red-500" />
+                      : <Circle className="w-6 h-6 text-gray-400" />
+                  : [<Hash className="w-6 h-6 text-amber-600 dark:text-yellow-400" />, 
+                     <AtSign className="w-6 h-6 text-blue-600 dark:text-blue-400" />, 
+                     <Code className="w-6 h-6 text-purple-600 dark:text-purple-400" />][idx]}
               </span>
               <span className="text-lg">{option.text}</span>
             </div>
@@ -1137,13 +1202,16 @@ const QuestionSection: React.FC<{
           className="mt-4 text-center"
         >
           {question.options[selectedAnswer!].isCorrect ? (
-            <p className="text-green-400 text-xl font-bold">
-              ¡Correcto! 🎉 Excelente respuesta
-            </p>
+            <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-green-400 text-xl font-bold">
+              <span>¡Correcto!</span>
+              <PartyPopper className="w-6 h-6" />
+              <span>Excelente respuesta</span>
+            </div>
           ) : (
-            <p className="text-yellow-400 text-xl">
-              Casi... pero la respuesta correcta te sorprenderá 🤔
-            </p>
+            <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-yellow-400 text-xl">
+              <span>Casi... pero la respuesta correcta te sorprenderá</span>
+              <AlertCircle className="w-6 h-6" />
+            </div>
           )}
         </motion.div>
       )}
@@ -1175,8 +1243,14 @@ const NavigationArea: React.FC<{
       >
         <motion.button
           onClick={onNext}
-          className={`inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r ${buttonColor}
-                     font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
+          className={`inline-flex items-center gap-3 px-8 py-4 
+                     bg-gradient-to-r ${buttonColor}
+                     backdrop-blur-xl backdrop-saturate-150
+                     font-bold text-xl rounded-xl 
+                     hover:scale-105 transition-all duration-300 
+                     shadow-2xl hover:shadow-[0_20px_60px_-15px_rgba(251,191,36,0.5)] 
+                     dark:hover:shadow-[0_20px_60px_-15px_rgba(250,204,21,0.5)]
+                     border border-white/20
                      cursor-pointer`}
           style={{
             animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -1189,8 +1263,12 @@ const NavigationArea: React.FC<{
           <ArrowRight className="w-6 h-6" />
         </motion.button>
         
-        <div className="mt-4 text-gray-400 text-sm">
-          👆 Haz clic para continuar • ⏱️ Tiempo restante: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+        <div className="mt-4 text-gray-600 dark:text-gray-400 text-sm flex items-center justify-center gap-2">
+          <ChevronRight className="w-4 h-4" />
+          <span>Haz clic para continuar</span>
+          <span className="text-gray-400 dark:text-gray-500">•</span>
+          <Clock className="w-4 h-4" />
+          <span>Tiempo restante: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
         </div>
       </motion.div>
     ) : timeLeft === 0 ? (
@@ -1199,17 +1277,24 @@ const NavigationArea: React.FC<{
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="text-yellow-400 text-lg font-medium mb-4">
-          ⏰ Tiempo agotado - Esperando...
+        <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-yellow-400 text-lg font-medium mb-4">
+          <Clock className="w-5 h-5" />
+          <span>Tiempo agotado - Esperando...</span>
         </div>
-        <div className="text-gray-400 text-sm mb-4">
+        <div className="text-gray-600 dark:text-gray-400 text-sm mb-4">
           El siguiente bloque está disponible cuando completes esta sección
         </div>
         
         <motion.button
           onClick={onNext}
-          className={`inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r ${buttonColor}
-                     font-bold text-xl rounded-xl hover:scale-105 transition-all duration-300 shadow-lg
+          className={`inline-flex items-center gap-3 px-8 py-4 
+                     bg-gradient-to-r ${buttonColor}
+                     backdrop-blur-xl backdrop-saturate-150
+                     font-bold text-xl rounded-xl 
+                     hover:scale-105 transition-all duration-300 
+                     shadow-2xl hover:shadow-[0_20px_60px_-15px_rgba(251,191,36,0.5)] 
+                     dark:hover:shadow-[0_20px_60px_-15px_rgba(250,204,21,0.5)]
+                     border border-white/20
                      cursor-pointer`}
           style={{
             animation: 'pulse 1.43s cubic-bezier(0.4, 0, 0.6, 1) infinite'
@@ -1228,8 +1313,9 @@ const NavigationArea: React.FC<{
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="text-gray-400 text-lg">
-          ⏳ Procesando respuesta...
+        <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-lg">
+          <RefreshCw className="w-5 h-5 animate-spin" />
+          <span>Procesando respuesta...</span>
         </div>
       </motion.div>
     )}
@@ -1253,22 +1339,30 @@ const OpeningBlock: React.FC<{
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      <h1 className="text-6xl font-black mb-6 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+      <h1 className="text-6xl font-black mb-6 bg-gradient-to-r 
+        from-amber-600 via-orange-600 to-red-600 
+        dark:from-yellow-400 dark:via-orange-500 dark:to-red-500 
+        bg-clip-text text-transparent
+        drop-shadow-2xl">
         {content.headline}
       </h1>
       
       <div className="max-w-3xl mx-auto">
-        <p className="text-xl text-gray-300 mb-6 leading-relaxed">
+        <p className="text-xl text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
           {content.story}
         </p>
         
-        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 p-6 rounded-2xl border border-yellow-500/30 mb-6">
-          <p className="text-lg text-yellow-400 font-medium">
+        <div className="bg-white/60 dark:bg-gradient-to-r dark:from-yellow-500/20 dark:to-orange-500/20 
+          backdrop-blur-xl backdrop-saturate-150 
+          p-6 rounded-2xl 
+          border border-amber-200/50 dark:border-yellow-500/30 
+          shadow-xl mb-6">
+          <p className="text-lg text-amber-700 dark:text-yellow-400 font-medium">
             {content.emphasis}
           </p>
         </div>
         
-        <p className="text-2xl text-white font-bold">
+        <p className="text-2xl text-gray-900 dark:text-white font-bold">
           {content.hook}
         </p>
       </div>
@@ -1303,21 +1397,27 @@ const ProblemBlock: React.FC<{
   timeLeft: number;
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
-    <h2 className="text-5xl font-bold text-center mb-12">Las 3 Brechas del Mercado 🚧</h2>
+    <h2 className="text-5xl font-bold text-center mb-12 flex items-center justify-center gap-3">
+      <span className="bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-400 dark:to-orange-400 bg-clip-text text-transparent">Las 3 Brechas del Mercado</span>
+      <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+    </h2>
     
     <div className="grid md:grid-cols-3 gap-6 mb-8">
       {content.brechas.map((brecha: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-red-900/20 border border-red-500/30 rounded-2xl p-6"
+          className="bg-white/60 dark:bg-red-900/20 
+            backdrop-blur-xl backdrop-saturate-150 
+            border border-red-200/50 dark:border-red-500/30 
+            rounded-2xl p-6 shadow-xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.2 }}
         >
-          <h3 className="text-2xl font-bold text-red-400 mb-3">
+          <h3 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-3">
             {brecha.title}
           </h3>
-          <p className="text-gray-300">
+          <p className="text-gray-700 dark:text-gray-300">
             {brecha.description}
           </p>
         </motion.div>
@@ -1325,8 +1425,12 @@ const ProblemBlock: React.FC<{
     </div>
 
     <div className="text-center mb-8">
-      <div className="inline-block bg-red-500/20 border border-red-500/50 px-8 py-4 rounded-full">
-        <p className="text-3xl font-bold text-red-400">
+      <div className="inline-block 
+        bg-white/60 dark:bg-red-500/20 
+        backdrop-blur-xl backdrop-saturate-150 
+        border border-red-300/50 dark:border-red-500/50 
+        px-8 py-4 rounded-full shadow-xl">
+        <p className="text-3xl font-bold text-red-600 dark:text-red-400">
           {content.stat}
         </p>
       </div>
@@ -1361,11 +1465,18 @@ const SolutionBlock: React.FC<{
   timeLeft: number;
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
-    <h2 className="text-5xl font-bold text-center mb-8">NFT-Wallets: La Revolución 🚀</h2>
+    <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-3">
+      <span className="bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">NFT-Wallets: La Revolución</span>
+      <Rocket className="w-10 h-10 text-emerald-600 dark:text-green-400" />
+    </h2>
     
     <div className="text-center mb-8">
-      <div className="inline-block bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 px-8 py-4 rounded-2xl">
-        <p className="text-2xl font-bold text-green-400">
+      <div className="inline-block 
+        bg-white/60 dark:bg-gradient-to-r dark:from-green-500/20 dark:to-blue-500/20 
+        backdrop-blur-xl backdrop-saturate-150 
+        border border-emerald-300/50 dark:border-green-500/50 
+        px-8 py-4 rounded-2xl shadow-xl">
+        <p className="text-2xl font-bold text-emerald-600 dark:text-green-400">
           {content.breakthrough}
         </p>
       </div>
@@ -1375,19 +1486,22 @@ const SolutionBlock: React.FC<{
       {content.features.map((feature: any, idx: number) => (
         <motion.div
           key={idx}
-          className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-xl p-6 flex items-center gap-4"
+          className="bg-white/60 dark:bg-gradient-to-br dark:from-blue-900/20 dark:to-purple-900/20 
+            backdrop-blur-xl backdrop-saturate-150 
+            border border-blue-200/50 dark:border-blue-500/30 
+            rounded-xl p-6 flex items-center gap-4 shadow-lg"
           initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: idx * 0.1 }}
         >
-          <span className="text-4xl">{feature.icon}</span>
-          <span className="text-lg">{feature.text}</span>
+          {React.createElement(feature.icon, { className: "w-10 h-10 text-blue-600 dark:text-blue-400 flex-shrink-0" })}
+          <span className="text-lg text-gray-800 dark:text-gray-200">{feature.text}</span>
         </motion.div>
       ))}
     </div>
 
     <div className="text-center mb-8">
-      <p className="text-2xl text-yellow-400 font-bold">
+      <p className="text-2xl text-amber-600 dark:text-yellow-400 font-bold">
         {content.tagline}
       </p>
     </div>
@@ -1625,7 +1739,10 @@ const BusinessBlock: React.FC<{
   timeLeft: number;
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
-    <h2 className="text-5xl font-bold text-center mb-12">{content.title} 💎</h2>
+    <h2 className="text-5xl font-bold text-center mb-12 flex items-center justify-center gap-3">
+      <span className="bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">{content.title}</span>
+      <Briefcase className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+    </h2>
     
     <div className="grid md:grid-cols-2 gap-6 mb-8 max-w-5xl mx-auto">
       {content.streams.map((stream: any, idx: number) => (
@@ -1633,18 +1750,18 @@ const BusinessBlock: React.FC<{
           key={idx}
           className={`${
             idx === 0 
-              ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/50' 
-              : 'bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/30'
-          } border rounded-xl p-6`}
+              ? 'bg-white/70 dark:bg-gradient-to-br dark:from-green-500/20 dark:to-emerald-500/20 border-emerald-300/50 dark:border-green-500/50' 
+              : 'bg-white/60 dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200/50 dark:border-purple-500/30'
+          } backdrop-blur-xl backdrop-saturate-150 border rounded-xl p-6 shadow-lg`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
         >
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-3xl">{stream.icon}</span>
-            <h3 className="text-xl font-bold">{stream.name}</h3>
+            {React.createElement(stream.icon, { className: "w-8 h-8 text-purple-600 dark:text-purple-400" })}
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white">{stream.name}</h3>
           </div>
-          <p className={`${idx === 0 ? 'text-green-400 font-bold' : 'text-gray-300'}`}>
+          <p className={`${idx === 0 ? 'text-emerald-600 dark:text-green-400 font-bold' : 'text-gray-700 dark:text-gray-300'}`}>
             {stream.model}
           </p>
         </motion.div>
@@ -1703,7 +1820,7 @@ const RoadmapBlock: React.FC<{
             <h3 className="text-2xl font-bold text-indigo-400">{phase.name}</h3>
             <span className="text-yellow-400 font-bold">{phase.goal}</span>
           </div>
-          <p className="text-gray-300">{phase.features}</p>
+          <p className="text-gray-700 dark:text-gray-300">{phase.features}</p>
         </motion.div>
       ))}
     </div>
@@ -2124,16 +2241,34 @@ const SuccessBlock: React.FC<{
       >
         <button
           onClick={() => router.push('/knowledge')}
-          className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all"
+          className="px-8 py-4 
+            bg-gradient-to-r from-purple-500 to-pink-500 
+            backdrop-blur-xl backdrop-saturate-150 
+            text-white font-bold rounded-xl 
+            hover:scale-105 transition-all 
+            shadow-xl hover:shadow-2xl 
+            border border-white/20"
         >
-          📚 Más Contenido
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5" />
+            <span>Más Contenido</span>
+          </div>
         </button>
         
         <button
           onClick={() => router.push('/')}
-          className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all"
+          className="px-8 py-4 
+            bg-gradient-to-r from-green-500 to-blue-500 
+            backdrop-blur-xl backdrop-saturate-150 
+            text-white font-bold rounded-xl 
+            hover:scale-105 transition-all 
+            shadow-xl hover:shadow-2xl 
+            border border-white/20"
         >
-          🎁 Crear mi Primer Regalo
+          <div className="flex items-center gap-2">
+            <Gift className="w-5 h-5" />
+            <span>Crear mi Primer Regalo</span>
+          </div>
         </button>
       </motion.div>
       
