@@ -250,23 +250,6 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
     setPanOffset({ x: 0, y: 0 });
   }, []);
 
-  // Fit to screen function
-  const fitToScreen = useCallback(() => {
-    if (!containerRef.current || !svgRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const svgRect = svgRef.current.getBoundingClientRect();
-
-    const scaleX = containerRect.width / svgBounds.width;
-    const scaleY = containerRect.height / svgBounds.height;
-    const newZoom = Math.min(scaleX, scaleY) * 0.9; // 90% to add some padding
-
-    setZoomLevel(newZoom);
-    setPanOffset({ 
-      x: (containerRect.width - svgBounds.width * newZoom) / 2,
-      y: (containerRect.height - svgBounds.height * newZoom) / 2
-    });
-  }, [svgBounds]);
 
   // Construir estructura de árbol jerárquica
   const treeStructure = useMemo(() => {
@@ -531,7 +514,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
   // Calcular SVG bounds dinámico
   const svgBounds = useMemo(() => {
     if (filteredNodes.length === 0) {
-      return { width: TREE_CONFIG.width, height: TREE_CONFIG.height };
+      return { width: TREE_CONFIG.width, height: TREE_CONFIG.height, viewBox: `0 0 ${TREE_CONFIG.width} ${TREE_CONFIG.height}` };
     }
 
     const positions = filteredNodes.map(node => node.position);
@@ -546,6 +529,24 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
       viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
     };
   }, [filteredNodes]);
+
+  // Fit to screen function
+  const fitToScreen = useCallback(() => {
+    if (!containerRef.current || !svgRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const svgRect = svgRef.current.getBoundingClientRect();
+
+    const scaleX = containerRect.width / svgBounds.width;
+    const scaleY = containerRect.height / svgBounds.height;
+    const newZoom = Math.min(scaleX, scaleY) * 0.9; // 90% to add some padding
+
+    setZoomLevel(newZoom);
+    setPanOffset({ 
+      x: (containerRect.width - svgBounds.width * newZoom) / 2,
+      y: (containerRect.height - svgBounds.height * newZoom) / 2
+    });
+  }, [svgBounds]);
 
   if (!isVisible) return null;
 
