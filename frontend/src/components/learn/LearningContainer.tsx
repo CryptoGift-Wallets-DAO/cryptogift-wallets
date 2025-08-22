@@ -258,10 +258,10 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
 
   return (
     <div className={`relative w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden ${className}`}>
-      {/* Combined View Indicator and Toggle - LEFT SIDE */}
+      {/* Combined View Controls - FIXED TOP LEFT */}
       <div className="absolute top-4 left-4 z-50">
         <div className="flex flex-col gap-2">
-          {/* Current View Indicator */}
+          {/* Current View Indicator - ALWAYS VISIBLE */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -275,7 +275,7 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
             </span>
           </motion.div>
 
-          {/* Toggle Button */}
+          {/* Toggle Button - BELOW INDICATOR */}
           <motion.button
             onClick={handleToggleView}
             disabled={isTransitioning}
@@ -297,7 +297,7 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
                   <span className="text-xs font-semibold text-gray-900 dark:text-white">
                     Tu Ruta de Aprendizaje
                   </span>
-              </>
+                </>
               )}
             </div>
             
@@ -382,8 +382,8 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Stats overlay - MOVED TO BOTTOM LEFT */}
-      <div className="absolute bottom-4 left-4 z-30">
+      {/* Stats overlay - BACK TO BOTTOM RIGHT AS REQUESTED */}
+      <div className="absolute bottom-4 right-4 z-30">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}

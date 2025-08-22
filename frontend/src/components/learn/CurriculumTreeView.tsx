@@ -298,8 +298,18 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         y: currentCenter.y - rect.top
       };
 
-      // Pinch-zoom gesture
-      if (Math.abs(currentDistance - lastTouches.distance) > 5) { // Threshold to prevent jitter
+      // Calculate changes
+      const distanceChange = Math.abs(currentDistance - lastTouches.distance);
+      const centerChangeX = Math.abs(relativeCenter.x - lastTouches.center.x);
+      const centerChangeY = Math.abs(relativeCenter.y - lastTouches.center.y);
+      const centerChange = Math.sqrt(centerChangeX * centerChangeX + centerChangeY * centerChangeY);
+
+      // Determine gesture type - VERY STRICT separation
+      const isPinchGesture = distanceChange > 15; // Much higher threshold - only true pinch
+      const isPanGesture = centerChange > 3 && distanceChange <= 10; // Pan when scrolling with two fingers
+
+      if (isPinchGesture) {
+        // PINCH-TO-ZOOM: Only zoom, don't pan
         const scaleFactor = currentDistance / lastTouches.distance;
         const newZoom = Math.max(0.2, Math.min(3, zoomLevel * scaleFactor));
 
@@ -309,13 +319,11 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
 
         setZoomLevel(newZoom);
         setPanOffset({ x: newPanX, y: newPanY });
-      }
-
-      // Two-finger pan gesture  
-      const panDeltaX = relativeCenter.x - lastTouches.center.x;
-      const panDeltaY = relativeCenter.y - lastTouches.center.y;
-      
-      if (Math.abs(panDeltaX) > 2 || Math.abs(panDeltaY) > 2) { // Threshold for pan
+      } else if (isPanGesture) {
+        // TWO-FINGER PAN: Standard touchpad-like scrolling
+        const panDeltaX = relativeCenter.x - lastTouches.center.x;
+        const panDeltaY = relativeCenter.y - lastTouches.center.y;
+        
         setPanOffset(prev => ({
           x: prev.x + panDeltaX,
           y: prev.y + panDeltaY
