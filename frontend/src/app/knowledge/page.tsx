@@ -453,9 +453,11 @@ export default function KnowledgePage() {
             )}
           </div>
           
-          {/* TABS NAVIGATION */}
+          {/* TABS NAVIGATION - MOBILE SCROLL OPTIMIZED */}
           <div className="flex justify-center mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-2 inline-flex gap-2">
+            {/* Mobile horizontal scroll wrapper */}
+            <div className="w-full max-w-full overflow-x-auto overflow-y-hidden overscroll-x-contain scrollbar-hide">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-2 mx-auto w-max min-w-fit flex gap-2 scroll-smooth">
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 return (
@@ -476,6 +478,7 @@ export default function KnowledgePage() {
                   </motion.button>
                 );
               })}
+              </div>
             </div>
           </div>
         </motion.div>

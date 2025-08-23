@@ -256,8 +256,36 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
     sessionStorage.setItem('cg-academy-current-view', currentView);
   }, [currentView]);
 
+  // Touch and scroll event handlers for complete independence
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleScroll = useCallback((e: React.UIEvent) => {
+    e.stopPropagation();
+  }, []);
+
   return (
-    <div className={`relative w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden ${className}`}>
+    <div 
+      className={`relative w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden ${className}`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onWheel={handleWheel}
+      onScroll={handleScroll}
+      style={{
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'auto'
+      }}
+    >
       {/* Toggle Button - TOP LEFT (as requested) */}
       <div className="absolute top-4 left-4 z-50">
         <motion.button
@@ -314,12 +342,20 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
         </motion.div>
       </div>
 
-      {/* Main Content Container */}
+      {/* Main Content Container - INDEPENDENT SCROLL ZONE */}
       <motion.div 
-        className="w-full h-full"
+        className="w-full h-full relative"
         variants={containerVariants}
         initial="learningPath"
         animate={currentView === 'learning-path' ? 'learningPath' : 'treeView'}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onWheel={handleWheel}
+        style={{
+          overscrollBehavior: 'contain',
+          isolation: 'isolate',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
         <AnimatePresence mode="wait">
           {currentView === 'learning-path' ? (

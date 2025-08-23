@@ -654,8 +654,37 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
 
   if (!isVisible) return null;
 
+  // Touch and scroll event handlers for complete scroll independence
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleScroll = useCallback((e: React.UIEvent) => {
+    e.stopPropagation();
+  }, []);
+
   return (
-    <div className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+    <div 
+      className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden overscroll-contain"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onWheel={handleWheel}
+      onScroll={handleScroll}
+      style={{
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'auto',
+        isolation: 'isolate'
+      }}
+    >
       {/* Header Controls - MOBILE SCROLLABLE */}
       <div className="absolute top-4 left-4 right-4 z-20">
         {/* Mobile: Scrollable horizontal container */}
@@ -1005,12 +1034,16 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         </div>
       </div>
 
-      {/* Main Tree Visualization */}
+      {/* Main Tree Visualization - INDEPENDENT SCROLL ZONE */}
       <div 
         ref={containerRef}
-        className="w-full h-full overflow-hidden pt-20 cursor-grab active:cursor-grabbing"
+        className="w-full h-full overflow-hidden pt-20 cursor-grab active:cursor-grabbing overscroll-contain"
         style={{
-          paddingTop: '6rem' // Extra space for mobile scrollable header
+          paddingTop: '6rem', // Extra space for mobile scrollable header
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-x pan-y zoom-in zoom-out',
+          isolation: 'isolate'
         }}
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}

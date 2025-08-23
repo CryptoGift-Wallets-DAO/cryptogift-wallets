@@ -407,18 +407,40 @@ export const LearningPath: React.FC<LearningPathProps> = ({
 
   const nodeSize = compact ? 60 : 80;
 
+  // Touch and scroll event handlers for complete scroll independence
+  const handleContainerTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+    handleTouchStart(e);
+  }, [handleTouchStart]);
+
+  const handleContainerTouchMove = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+    handleTouchMove(e);
+  }, [handleTouchMove]);
+
+  const handleContainerWheel = useCallback((e: React.WheelEvent) => {
+    e.stopPropagation();
+    handleWheel(e);
+  }, [handleWheel]);
+
   return (
     <div 
       ref={containerRef} 
-      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
-      onWheel={handleWheel}
+      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing overscroll-contain"
+      onWheel={handleContainerWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
+      onTouchStart={handleContainerTouchStart}
+      onTouchMove={handleContainerTouchMove}
       onTouchEnd={handleTouchEnd}
+      style={{
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-x pan-y zoom-in zoom-out',
+        isolation: 'isolate'
+      }}
     >
       {/* Zoom Controls */}
       <div className="absolute top-4 right-4 z-40 flex flex-col gap-2">
