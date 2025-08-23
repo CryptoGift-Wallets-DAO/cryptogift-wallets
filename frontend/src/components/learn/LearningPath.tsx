@@ -412,81 +412,150 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   // ========================================
   // Implementación idéntica a CurriculumTreeView para consistencia
   
-  // Setup de scroll independence usando mejores prácticas 2025
+  // ========================================
+  // LEARNING PATH - SCROLL INDEPENDENCE BOUNDARY-AWARE
+  // ========================================
+  // Misma lógica que CurriculumTreeView pero preservando zoom/pan existente
+  
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // ===== MÉTODO 1: PASSIVE FALSE LISTENERS =====
-    const handleWheelCapture = (e: WheelEvent) => {
-      if (container.contains(e.target as Node)) {
+    // ===== BOUNDARY-AWARE SCROLL PREVENTION =====
+    const handleWheel = (e: WheelEvent) => {
+      if (!container.contains(e.target as Node)) return;
+
+      // Encontrar elemento scrollable más cercano
+      let scrollableElement = e.target as Element;
+      while (scrollableElement && scrollableElement !== container) {
+        const overflow = getComputedStyle(scrollableElement).overflow;
+        const overflowY = getComputedStyle(scrollableElement).overflowY;
+        const overflowX = getComputedStyle(scrollableElement).overflowX;
+        
+        if (overflow === 'auto' || overflow === 'scroll' || 
+            overflowY === 'auto' || overflowY === 'scroll' ||
+            overflowX === 'auto' || overflowX === 'scroll') {
+          break;
+        }
+        scrollableElement = scrollableElement.parentElement!;
+      }
+
+      if (!scrollableElement || scrollableElement === document.documentElement) {
+        scrollableElement = container;
+      }
+
+      // Verificar límites de scroll
+      const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = scrollableElement;
+      const deltaY = e.deltaY;
+      const deltaX = e.deltaX;
+
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight;
+      const atLeft = scrollLeft <= 0;
+      const atRight = scrollLeft + clientWidth >= scrollWidth;
+
+      // Solo prevenir propagación si estamos en límites y scrolling en esa dirección
+      let shouldPrevent = false;
+      
+      if (deltaY > 0 && atBottom) shouldPrevent = true; 
+      if (deltaY < 0 && atTop) shouldPrevent = true;    
+      if (deltaX > 0 && atRight) shouldPrevent = true;  
+      if (deltaX < 0 && atLeft) shouldPrevent = true;   
+
+      if (shouldPrevent) {
+        e.preventDefault();
         e.stopPropagation();
-        e.stopImmediatePropagation();
       }
     };
 
-    const handleTouchStartCapture = (e: TouchEvent) => {
-      if (container.contains(e.target as Node)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
+    // ===== TOUCH BOUNDARY DETECTION =====
+    let startY = 0;
+    let startX = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (container.contains(e.target as Node) && e.touches.length === 1) {
+        startY = e.touches[0].clientY;
+        startX = e.touches[0].clientX;
       }
     };
 
-    const handleTouchMoveCapture = (e: TouchEvent) => {
-      if (container.contains(e.target as Node)) {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!container.contains(e.target as Node) || e.touches.length !== 1) return;
+
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaY = startY - currentY;
+      const deltaX = startX - currentX;
+
+      // Encontrar elemento scrollable
+      let scrollableElement = e.target as Element;
+      while (scrollableElement && scrollableElement !== container) {
+        const overflow = getComputedStyle(scrollableElement).overflow;
+        const overflowY = getComputedStyle(scrollableElement).overflowY;
+        if (overflow === 'auto' || overflow === 'scroll' || 
+            overflowY === 'auto' || overflowY === 'scroll') {
+          break;
+        }
+        scrollableElement = scrollableElement.parentElement!;
+      }
+
+      if (!scrollableElement) scrollableElement = container;
+
+      const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = scrollableElement;
+      
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight;
+      const atLeft = scrollLeft <= 0;
+      const atRight = scrollLeft + clientWidth >= scrollWidth;
+
+      let shouldPrevent = false;
+      
+      if (deltaY > 0 && atBottom) shouldPrevent = true; 
+      if (deltaY < 0 && atTop) shouldPrevent = true;    
+      if (deltaX > 0 && atRight) shouldPrevent = true;  
+      if (deltaX < 0 && atLeft) shouldPrevent = true;   
+
+      if (shouldPrevent) {
+        e.preventDefault();
         e.stopPropagation();
-        e.stopImmediatePropagation();
       }
     };
 
-    // ===== MÉTODO 2: SCROLL BOUNDARY DETECTION =====
-    const handleScrollCapture = (e: Event) => {
-      const target = e.target as Element;
-      if (!container.contains(target)) return;
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
 
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    };
-
-    // Attach listeners con { passive: false } para permitir preventDefault
-    container.addEventListener('wheel', handleWheelCapture, { passive: false, capture: true });
-    container.addEventListener('touchstart', handleTouchStartCapture, { passive: false, capture: true });
-    container.addEventListener('touchmove', handleTouchMoveCapture, { passive: false, capture: true });
-    container.addEventListener('scroll', handleScrollCapture, { passive: false, capture: true });
-
-    // Cleanup
     return () => {
-      container.removeEventListener('wheel', handleWheelCapture);
-      container.removeEventListener('touchstart', handleTouchStartCapture);
-      container.removeEventListener('touchmove', handleTouchMoveCapture);
-      container.removeEventListener('scroll', handleScrollCapture);
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
     };
   }, []);
 
-  // React event handlers - Secondary layer + Existing functionality
+  // React event handlers - Preserve existing functionality but allow natural scroll
   const handleContainerWheel = useCallback((e: React.WheelEvent) => {
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    handleWheel(e); // Preserve existing zoom/pan logic
+    // Native boundary-aware listener handles prevention
+    // Still call existing zoom/pan logic
+    handleWheel(e); 
   }, [handleWheel]);
 
   const handleContainerTouchStart = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    handleTouchStart(e); // Preserve existing touch logic
+    // Native listener handles boundary detection
+    // Preserve existing touch logic for zoom/pan
+    handleTouchStart(e);
   }, [handleTouchStart]);
 
   const handleContainerTouchMove = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    handleTouchMove(e); // Preserve existing touch logic
+    // Native listener handles boundary detection
+    // Preserve existing touch logic for zoom/pan
+    handleTouchMove(e);
   }, [handleTouchMove]);
 
   return (
     <div 
       ref={containerRef} 
       data-scroll-container="learning-path"
-      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
       onWheel={handleContainerWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -496,19 +565,12 @@ export const LearningPath: React.FC<LearningPathProps> = ({
       onTouchMove={handleContainerTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
-        // ===== CSS SCROLL INDEPENDENCE 2025 - LEARNING PATH =====
-        overscrollBehavior: 'contain',           // Prevenir scroll chaining (Método principal)
-        overscrollBehaviorX: 'contain',          // Horizontal independence
-        overscrollBehaviorY: 'contain',          // Vertical independence
+        // ===== LEARNING PATH - NATURAL SCROLL + BOUNDARY PREVENTION =====
+        overscrollBehavior: 'contain',           // CSS backup method
         WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
-        touchAction: 'pan-x pan-y',              // Permitir solo scroll, NO zoom accidental
-        scrollBehavior: 'smooth',                // Smooth scroll interno
-        isolation: 'isolate',                    // Crear stacking context independiente
-        contain: 'layout style size',            // CSS containment para performance
-        // ===== WORKAROUND PARA NO-OVERFLOW ELEMENTS =====
-        minHeight: '101%',                       // Force overflow (técnica 2025)
-        minWidth: '101%',                        // Force overflow horizontal también
-        paddingBottom: '1px',                    // Minimal overflow trigger
+        touchAction: 'auto',                     // Permitir scroll natural (incluye zoom/pan)
+        scrollBehavior: 'smooth',                // Smooth scroll
+        isolation: 'isolate',                    // Stacking context
       }}
     >
       {/* Zoom Controls */}

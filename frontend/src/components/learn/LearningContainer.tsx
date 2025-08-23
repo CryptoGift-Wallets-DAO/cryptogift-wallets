@@ -263,60 +263,29 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
   
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Setup de scroll independence en el nivel contenedor
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  // ========================================
+  // LEARNING CONTAINER - SIMPLIFIED APPROACH
+  // ========================================
+  // Los componentes hijos (CurriculumTreeView, LearningPath) manejan su scroll
+  // Este contenedor solo aplica CSS como fallback
+  
+  // NO JavaScript listeners - dejamos que CSS overscroll-behavior maneje todo
 
-    // Solo manejar eventos que no son procesados por componentes hijos
-    const handleWheelCapture = (e: WheelEvent) => {
-      // Permitir que los componentes hijos manejen sus propios eventos primero
-      const target = e.target as Element;
-      const isInChildScrollContainer = target.closest('[data-scroll-container]');
-      
-      if (!isInChildScrollContainer && container.contains(e.target as Node)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    const handleTouchCapture = (e: TouchEvent) => {
-      const target = e.target as Element;
-      const isInChildScrollContainer = target.closest('[data-scroll-container]');
-      
-      if (!isInChildScrollContainer && container.contains(e.target as Node)) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    // Listeners de nivel contenedor (prioridad más baja)
-    container.addEventListener('wheel', handleWheelCapture, { passive: false, capture: false });
-    container.addEventListener('touchstart', handleTouchCapture, { passive: false, capture: false });
-    container.addEventListener('touchmove', handleTouchCapture, { passive: false, capture: false });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheelCapture);
-      container.removeEventListener('touchstart', handleTouchCapture);
-      container.removeEventListener('touchmove', handleTouchCapture);
-    };
-  }, []);
-
-  // React event handlers - Nivel contenedor
+  // React event handlers - Minimal interference
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
+    // Allow natural touch behavior
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
+    // Allow natural touch behavior  
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.stopPropagation();
+    // Allow natural wheel behavior
   }, []);
 
   const handleScroll = useCallback((e: React.UIEvent) => {
-    e.stopPropagation();
+    // Allow natural scroll behavior
   }, []);
 
   return (
@@ -328,18 +297,11 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
       onWheel={handleWheel}
       onScroll={handleScroll}
       style={{
-        // ===== CSS SCROLL INDEPENDENCE 2025 - CONTAINER LEVEL =====
-        overscrollBehavior: 'contain',           // Método principal para prevenir scroll chaining
-        overscrollBehaviorX: 'contain',          // Horizontal independence
-        overscrollBehaviorY: 'contain',          // Vertical independence  
-        WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
-        touchAction: 'pan-x pan-y',              // Solo scroll, no zoom gestures
+        // ===== CONTAINER LEVEL - MINIMAL CSS ONLY =====
+        overscrollBehavior: 'contain',           // Backup scroll chaining prevention
+        WebkitOverflowScrolling: 'touch',        // iOS compatibility
+        touchAction: 'auto',                     // Allow all natural gestures
         scrollBehavior: 'smooth',                // Smooth scroll
-        isolation: 'isolate',                    // Stacking context
-        contain: 'layout style size',            // CSS containment
-        // Force minimal overflow para que overscroll-behavior funcione
-        minHeight: '100.1%',
-        paddingBottom: '1px'
       }}
     >
       {/* Toggle Button - TOP LEFT (as requested) */}
