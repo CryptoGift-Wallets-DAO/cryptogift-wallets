@@ -317,10 +317,21 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
     );
   }
 
-  // If authenticated, show enhanced status with security info
+  // If authenticated, show compact status for mobile
   return (
     <div className={className}>
-      <div className="flex flex-col items-center space-y-4">
+      {/* Mobile: Compact view */}
+      <div className="sm:hidden">
+        <div className="flex items-center space-x-2 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-xs text-green-700 dark:text-green-400 font-medium">
+            {account.address.slice(0, 6)}...{account.address.slice(-4)}
+          </span>
+        </div>
+      </div>
+      
+      {/* Desktop: Full view */}
+      <div className="hidden sm:flex flex-col items-center space-y-4 max-w-full overflow-hidden">
         {/* Enhanced authenticated status */}
         <div className="flex flex-col items-center space-y-2">
           <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
@@ -356,9 +367,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           </div>
         )}
 
-        {/* Security status info when authenticated */}
+        {/* Security status info when authenticated - Simplified for mobile */}
         {!isAuthenticating && !showSuccessMessage && showAuthStatus && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 max-w-sm">
+          <div className="hidden sm:block bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3 max-w-sm">
             <div className="flex items-start space-x-2">
               <div className="text-green-500 dark:text-green-400 text-lg">🛡️</div>
               <div className="text-xs text-green-700 dark:text-green-300">
@@ -369,8 +380,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           </div>
         )}
         
-        {/* Standard info footer */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2 max-w-sm">
+        {/* Standard info footer - Hidden on mobile to prevent overflow */}
+        <div className="hidden sm:block bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2 max-w-sm">
           <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1 text-center">
             <p>🔒 Tu wallet se conectará de forma segura usando el estándar SIWE (Sign-In With Ethereum)</p>
             <p>✅ Todos los datos se mantienen privados y seguros</p>

@@ -214,9 +214,9 @@ export default function MyWalletsPage() {
         }
         className="mb-8"
       >
-        {/* Header Actions */}
-        <div className="flex items-center gap-3">
-          <ConnectAndAuthButton />
+        {/* Header Actions - Compact for mobile */}
+        <div className="flex items-center gap-3 max-w-[150px] sm:max-w-none">
+          <ConnectAndAuthButton className="text-xs sm:text-sm" />
         </div>
       </DashboardGlassHeader>
 
