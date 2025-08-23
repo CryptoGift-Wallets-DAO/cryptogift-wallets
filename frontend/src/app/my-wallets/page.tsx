@@ -270,8 +270,8 @@ export default function MyWalletsPage() {
                         : 'border-border-primary hover:border-border-secondary'
                     }`}
                   >
-                    <div className="flex items-center justify-between overflow-x-auto scrollbar-hide">
-                      <div className="flex items-center space-x-4 min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
                         {/* NFT Image - Smart Adaptive Thumbnail */}
                         <div 
                           className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform bg-gray-100 dark:bg-gray-800 flex-shrink-0"
@@ -298,12 +298,40 @@ export default function MyWalletsPage() {
                           />
                         </div>
                         
-                        {/* Wallet Info - Scrollable on mobile */}
-                        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
-                          <h3 className="font-semibold text-text-primary transition-colors duration-300 whitespace-nowrap">{wallet.name}</h3>
-                          <p className="text-sm text-text-secondary transition-colors duration-300 whitespace-nowrap">
-                            {wallet.tbaAddress} • {wallet.balance.total}
-                          </p>
+                        {/* Wallet Info - Compact display */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-text-primary transition-colors duration-300">{wallet.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-text-secondary transition-colors duration-300">
+                              {wallet.tbaAddress.slice(0, 6)}...{wallet.tbaAddress.slice(-4)}
+                            </p>
+                            {/* Modern Copy Button */}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await navigator.clipboard.writeText(wallet.tbaAddress);
+                                  // Visual feedback
+                                  const btn = e.currentTarget;
+                                  const originalHTML = btn.innerHTML;
+                                  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                                  setTimeout(() => {
+                                    btn.innerHTML = originalHTML;
+                                  }, 1500);
+                                } catch (err) {
+                                  console.error('Failed to copy:', err);
+                                }
+                              }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
+                              title="Copiar dirección"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 dark:text-gray-400">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                            </button>
+                            <span className="text-sm text-text-secondary">• {wallet.balance.total}</span>
+                          </div>
                         </div>
 
                         {/* Active Badge */}
@@ -314,20 +342,20 @@ export default function MyWalletsPage() {
                         )}
                       </div>
 
-                      {/* Actions - No wrap on mobile */}
-                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                      {/* Actions - Compact on mobile */}
+                      <div className="flex items-center space-x-2 flex-shrink-0">
                         <button
                           onClick={() => handleWalletSelect(wallet)}
-                          className="px-4 py-2 bg-blue-500 dark:bg-accent-gold text-white dark:text-bg-primary rounded-lg hover:bg-blue-600 dark:hover:bg-accent-gold/80 transition-all duration-300 text-sm whitespace-nowrap"
+                          className="px-3 py-1.5 bg-blue-500 dark:bg-accent-gold text-white dark:text-bg-primary rounded-lg hover:bg-blue-600 dark:hover:bg-accent-gold/80 transition-all duration-300 text-sm"
                         >
                           Abrir
                         </button>
                         {!wallet.isActive && (
                           <button
                             onClick={() => handleSetAsActive(wallet.id)}
-                            className="px-4 py-2 border border-border-primary rounded-lg hover:bg-bg-secondary transition-all duration-300 text-sm text-text-secondary hover:text-text-primary whitespace-nowrap"
+                            className="hidden sm:block px-3 py-1.5 border border-border-primary rounded-lg hover:bg-bg-secondary transition-all duration-300 text-sm text-text-secondary hover:text-text-primary"
                           >
-                            Usar Como Principal
+                            Activar
                           </button>
                         )}
                       </div>
