@@ -222,7 +222,8 @@ export async function getBestGatewayForCid(input: string, timeoutMs: number = 80
 export async function validateMultiGatewayAccess(
   input: string, 
   minGateways: number = 1,  // REDUCED: Only require 1 gateway for upload
-  timeoutMs: number = 8000   // INCREASED: More time for new CIDs to propagate
+  timeoutMs: number = 15000, // INCREASED: More time for new CIDs to propagate on mobile
+  retryOnFailure: boolean = true // NEW: Enable retry for initial uploads
 ): Promise<{ success: boolean; workingGateways: string[]; errors: string[]; gatewayDetails: Array<{name: string; url: string; success: boolean; error?: string}> }> {
   const cidPath = getCidPath(input);
   
@@ -238,83 +239,120 @@ export async function validateMultiGatewayAccess(
   
   console.log(`🔍 CANONICAL: Multi-gateway validation - testing ${priorityGateways.length} gateways, need ≥${minGateways}`);
   
-  const workingGateways: string[] = [];
-  const errors: string[] = [];
-  const gatewayDetails: Array<{name: string; url: string; success: boolean; error?: string}> = [];
-  const controller = new AbortController();
+  // 🚀 RETRY LOGIC: For mobile/first-time uploads, implement progressive retry
+  const maxAttempts = retryOnFailure ? 3 : 1;
+  let lastAttemptError: string = '';
   
-  // Set global timeout
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
-  try {
-    // 🔥 CANONICAL FORMAT: Promise.any with structured gateway testing
-    const testPromises = priorityGateways.map(async (gateway, index) => {
-      const url = gateway.fn(cidPath);
-      const detail = { name: gateway.name, url, success: false, error: undefined as string | undefined };
-      
-      try {
-        const result = await testGatewayUrl(url, controller.signal);
-        if (result.success) {
-          workingGateways.push(url);
-          detail.success = true;
-          console.log(`✅ Gateway ${gateway.name} working: ${url.substring(0, 60)}...`);
-          
-          // 🔥 EARLY EXIT: Cancel other requests once we have minimum required
-          if (workingGateways.length >= minGateways) {
-            console.log(`🚀 EARLY SUCCESS: Reached ${minGateways} working gateways, cancelling remaining`);
-            controller.abort(); // Cancel remaining requests
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`🔄 Attempt ${attempt}/${maxAttempts} - timeout: ${timeoutMs}ms`);
+    
+    const workingGateways: string[] = [];
+    const errors: string[] = [];
+    const gatewayDetails: Array<{name: string; url: string; success: boolean; error?: string}> = [];
+    const controller = new AbortController();
+    
+    // Set timeout with progressive increase for retries
+    const currentTimeout = timeoutMs * attempt; // Increase timeout on each retry
+    const timeoutId = setTimeout(() => controller.abort(), currentTimeout);
+    
+    try {
+      // 🔥 CANONICAL FORMAT: Promise.any with structured gateway testing
+      const testPromises = priorityGateways.map(async (gateway, index) => {
+        const url = gateway.fn(cidPath);
+        const detail = { name: gateway.name, url, success: false, error: undefined as string | undefined };
+        
+        try {
+          const result = await testGatewayUrl(url, controller.signal);
+          if (result.success) {
+            workingGateways.push(url);
+            detail.success = true;
+            console.log(`✅ Gateway ${gateway.name} working: ${url.substring(0, 60)}...`);
+            
+            // 🔥 EARLY EXIT: Cancel other requests once we have minimum required
+            if (workingGateways.length >= minGateways) {
+              console.log(`🚀 EARLY SUCCESS: Reached ${minGateways} working gateways, cancelling remaining`);
+              controller.abort(); // Cancel remaining requests
+            }
+            
+            return detail;
+          } else {
+            detail.error = result.error;
+            errors.push(`${gateway.name}: ${result.error}`);
+            console.log(`❌ Gateway ${gateway.name} failed: ${result.error}`);
+            return detail;
           }
-          
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          detail.error = errorMsg;
+          errors.push(`${gateway.name}: ${errorMsg}`);
+          console.log(`❌ Gateway ${gateway.name} exception: ${errorMsg}`);
           return detail;
-        } else {
-          detail.error = result.error;
-          errors.push(`${gateway.name}: ${result.error}`);
-          console.log(`❌ Gateway ${gateway.name} failed: ${result.error}`);
-          return detail;
+        } finally {
+          gatewayDetails.push(detail);
         }
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        detail.error = errorMsg;
-        errors.push(`${gateway.name}: ${errorMsg}`);
-        console.log(`❌ Gateway ${gateway.name} exception: ${errorMsg}`);
-        return detail;
-      } finally {
-        gatewayDetails.push(detail);
-      }
-    });
-    
-    // 🔥 CRITICAL FIX: Don't wait for all - check periodically for minimum threshold
-    // This prevents "false OK" where Promise.any exits too early but we still need ≥minGateways
-    let completedCount = 0;
-    const results = await Promise.allSettled(testPromises.map(async (promise) => {
-      const result = await promise;
-      completedCount++;
+      });
       
-      // Early success check: if we have enough working gateways, we can stop
-      if (workingGateways.length >= minGateways) {
-        console.log(`🎯 THRESHOLD REACHED: ${workingGateways.length}/${minGateways} gateways working, early resolution`);
+      // 🔥 CRITICAL FIX: Don't wait for all - check periodically for minimum threshold
+      // This prevents "false OK" where Promise.any exits too early but we still need ≥minGateways
+      let completedCount = 0;
+      const results = await Promise.allSettled(testPromises.map(async (promise) => {
+        const result = await promise;
+        completedCount++;
+        
+        // Early success check: if we have enough working gateways, we can stop
+        if (workingGateways.length >= minGateways) {
+          console.log(`🎯 THRESHOLD REACHED: ${workingGateways.length}/${minGateways} gateways working, early resolution`);
+        }
+        
+        return result;
+      }));
+      
+      // Count final successful validations
+      const successCount = workingGateways.length;
+      const success = successCount >= minGateways;
+      
+      console.log(`🎯 CANONICAL: Multi-gateway validation result: ${successCount}/${priorityGateways.length} working (need ≥${minGateways})`);
+      console.log(`📊 Gateway breakdown: ${gatewayDetails.map(d => `${d.name}=${d.success ? 'OK' : 'FAIL'}`).join(', ')}`);
+      
+      // 🔥 CRITICAL FIX: If successful, return immediately
+      if (success) {
+        console.log(`✅ SUCCESS on attempt ${attempt}/${maxAttempts}`);
+        return {
+          success,
+          workingGateways,
+          errors,
+          gatewayDetails
+        };
       }
       
-      return result;
-    }));
-    
-    // Count final successful validations
-    const successCount = workingGateways.length;
-    const success = successCount >= minGateways;
-    
-    console.log(`🎯 CANONICAL: Multi-gateway validation result: ${successCount}/${priorityGateways.length} working (need ≥${minGateways})`);
-    console.log(`📊 Gateway breakdown: ${gatewayDetails.map(d => `${d.name}=${d.success ? 'OK' : 'FAIL'}`).join(', ')}`);
-    
-    return {
-      success,
-      workingGateways,
-      errors,
-      gatewayDetails
-    };
-    
-  } finally {
-    clearTimeout(timeoutId);
+      // 🔥 MOBILE FIX: If failed and more attempts remain, wait with exponential backoff
+      if (attempt < maxAttempts) {
+        const backoffDelay = Math.min(2000 * Math.pow(2, attempt - 1), 8000); // 2s, 4s, 8s max
+        console.log(`⏳ Attempt ${attempt} failed. Waiting ${backoffDelay}ms before retry...`);
+        console.log(`📱 MOBILE: IPFS needs time to propagate. This is normal for new uploads.`);
+        
+        // Store last error for final reporting
+        lastAttemptError = errors.join('; ');
+        
+        // Wait before next attempt
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+      
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
+  
+  // 🔥 If we get here, all attempts failed
+  console.log(`❌ ALL ${maxAttempts} ATTEMPTS FAILED. Last error: ${lastAttemptError}`);
+  
+  // Return the last attempt's results
+  return {
+    success: false,
+    workingGateways: [],
+    errors: [`All ${maxAttempts} attempts failed. ${lastAttemptError}`],
+    gatewayDetails: []
+  };
 }
 
 /**
