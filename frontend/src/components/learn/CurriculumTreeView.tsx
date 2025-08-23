@@ -114,11 +114,11 @@ const NODE_SIZES = {
   lesson: 32    // Increased from 25
 };
 
-// Orbital distances - DYNAMIC based on view mode
+// Orbital distances - FRACTAL: cada nivel se expande más que el anterior
 const getOrbitalDistances = (viewMode: 'overview' | 'detailed') => ({
-  branch: viewMode === 'detailed' ? 200 : 160,   // More spacing in detailed mode
-  unit: viewMode === 'detailed' ? 130 : 100,     // More spacing in detailed mode
-  lesson: viewMode === 'detailed' ? 85 : 65      // More spacing in detailed mode
+  branch: viewMode === 'detailed' ? 180 : 140,   // Primera expansión del fractal
+  unit: viewMode === 'detailed' ? 120 : 90,      // Segunda expansión
+  lesson: viewMode === 'detailed' ? 80 : 60      // Tercera expansión
 });
 
 // Animation variants (siguiendo estándares LearningPath)
@@ -415,23 +415,38 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
       const nodes: TreeNode[] = [];
       const orbitalDistances = getOrbitalDistances(viewMode);
       
-      // Calcular posiciones para módulos usando layout orgánico
+      // Calcular posiciones para módulos usando layout FRACTAL del centro hacia afuera
       const calculateModulePositions = () => {
         const positions: { [key: string]: { x: number; y: number } } = {};
         const centerX = TREE_CONFIG.width / 2;
         const centerY = TREE_CONFIG.height / 2;
         
-        // Disposición circular para módulos principales - DYNAMIC SPACING
-        modules.forEach((module, index) => {
-          const angle = (index / modules.length) * 2 * Math.PI;
-          // Dynamic spacing based on view mode and module depth
-          const baseRadius = module.depth === 'high' ? 280 : 420;
-          const viewModeMultiplier = viewMode === 'detailed' ? 1.25 : 1;
-          const radius = baseRadius * viewModeMultiplier;
+        // FRACTAL LAYOUT: Módulos principales (high) en el centro, secundarios afuera
+        // Separar módulos por profundidad
+        const highModules = modules.filter(m => m.depth === 'high');
+        const mediumModules = modules.filter(m => m.depth !== 'high');
+        
+        // CAPA 1: Módulos HIGH (principales) - más cerca del centro
+        highModules.forEach((module, index) => {
+          const angle = (index / highModules.length) * 2 * Math.PI - Math.PI/2;
+          // Radio menor para módulos principales (centro del fractal)
+          const baseRadius = viewMode === 'detailed' ? 200 : 150;
           
           positions[module.id] = {
-            x: centerX + radius * Math.cos(angle),
-            y: centerY + radius * Math.sin(angle)
+            x: centerX + baseRadius * Math.cos(angle),
+            y: centerY + baseRadius * Math.sin(angle)
+          };
+        });
+        
+        // CAPA 2: Módulos MEDIUM - en anillo exterior
+        mediumModules.forEach((module, index) => {
+          const angle = (index / mediumModules.length) * 2 * Math.PI - Math.PI/2;
+          // Radio mayor para módulos secundarios (expansión del fractal)
+          const baseRadius = viewMode === 'detailed' ? 450 : 380;
+          
+          positions[module.id] = {
+            x: centerX + baseRadius * Math.cos(angle),
+            y: centerY + baseRadius * Math.sin(angle)
           };
         });
         
@@ -462,9 +477,28 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
 
         nodes.push(moduleNode);
 
-        // Crear nodos de ramas
+        // Crear nodos de ramas - FRACTAL: ramas apuntan hacia afuera del centro
         module.branches.forEach((branch, branchIndex) => {
-          const branchAngle = (branchIndex / module.branches.length) * Math.PI - Math.PI / 2;
+          // Calcular ángulo desde el centro hacia el módulo (dirección radial)
+          const moduleAngleFromCenter = Math.atan2(
+            modulePosition.y - TREE_CONFIG.height / 2,
+            modulePosition.x - TREE_CONFIG.width / 2
+          );
+          
+          // Distribuir ramas en abanico alrededor de la dirección radial CON SEPARACIÓN
+          // Aumentamos el spreadAngle para dar más separación entre ramas (20% más)
+          const baseSpreadAngle = Math.PI / 3; // 60 grados base
+          const separationFactor = 1.20; // 20% de separación adicional
+          const spreadAngle = baseSpreadAngle * separationFactor; // ~72 grados con separación
+          
+          // Si hay múltiples ramas, distribuirlas con la separación adicional
+          const angleStep = module.branches.length > 1 
+            ? spreadAngle / (module.branches.length - 1) 
+            : 0;
+          
+          const branchAngle = moduleAngleFromCenter + 
+            (branchIndex - (module.branches.length - 1) / 2) * angleStep;
+          
           const branchRadius = orbitalDistances.branch;
           const branchPosition = {
             x: modulePosition.x + branchRadius * Math.cos(branchAngle),
@@ -492,9 +526,19 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
           moduleNode.children?.push(branch.id);
           nodes.push(branchNode);
 
-          // Crear nodos de unidades
+          // Crear nodos de unidades - FRACTAL: continúan expandiéndose hacia afuera CON SEPARACIÓN
           branch.units.forEach((unit, unitIndex) => {
-            const unitAngle = branchAngle + (unitIndex - (branch.units.length - 1) / 2) * 0.4;
+            // Las unidades continúan en la misma dirección radial con ligera dispersión
+            const baseUnitSpreadAngle = Math.PI / 6; // 30 grados base
+            const unitSpreadAngle = baseUnitSpreadAngle * separationFactor; // Aplicar mismo factor de separación
+            
+            const unitAngleStep = branch.units.length > 1
+              ? unitSpreadAngle / (branch.units.length - 1)
+              : 0;
+            
+            const unitAngle = branchAngle + 
+              (unitIndex - (branch.units.length - 1) / 2) * unitAngleStep;
+            
             const unitRadius = orbitalDistances.unit;
             const unitPosition = {
               x: branchPosition.x + unitRadius * Math.cos(unitAngle),
@@ -522,9 +566,19 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
             branchNode.children?.push(unit.id);
             nodes.push(unitNode);
 
-            // Crear nodos de lecciones
+            // Crear nodos de lecciones - FRACTAL: expansión final hacia el exterior CON SEPARACIÓN
             unit.lessons.forEach((lesson, lessonIndex) => {
-              const lessonAngle = unitAngle + (lessonIndex - (unit.lessons.length - 1) / 2) * 0.3;
+              // Las lecciones forman el anillo más externo del fractal
+              const baseLessonSpreadAngle = Math.PI / 8; // 22.5 grados base
+              const lessonSpreadAngle = baseLessonSpreadAngle * separationFactor; // Aplicar mismo factor
+              
+              const lessonAngleStep = unit.lessons.length > 1
+                ? lessonSpreadAngle / (unit.lessons.length - 1)
+                : 0;
+              
+              const lessonAngle = unitAngle + 
+                (lessonIndex - (unit.lessons.length - 1) / 2) * lessonAngleStep;
+              
               const lessonRadius = orbitalDistances.lesson;
               const lessonPosition = {
                 x: unitPosition.x + lessonRadius * Math.cos(lessonAngle),
