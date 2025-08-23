@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scrollbar hide utility for horizontal scroll on mobile */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
+
 :root {
 	line-height: 1.5;
 	font-weight: 400;

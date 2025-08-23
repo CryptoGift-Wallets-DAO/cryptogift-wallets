@@ -270,11 +270,11 @@ export default function MyWalletsPage() {
                         : 'border-border-primary hover:border-border-secondary'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-between overflow-x-auto scrollbar-hide">
+                      <div className="flex items-center space-x-4 min-w-0 flex-1">
                         {/* NFT Image - Smart Adaptive Thumbnail */}
                         <div 
-                          className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform bg-gray-100 dark:bg-gray-800"
+                          className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-orange-200 dark:border-accent-gold/30 transition-colors duration-300 cursor-pointer hover:scale-105 transition-transform bg-gray-100 dark:bg-gray-800 flex-shrink-0"
                           onClick={() => {
                             console.log('🖼️ Opening NFT image modal for wallet:', wallet.name);
                             setImageModalData({
@@ -298,10 +298,10 @@ export default function MyWalletsPage() {
                           />
                         </div>
                         
-                        {/* Wallet Info */}
-                        <div>
-                          <h3 className="font-semibold text-text-primary transition-colors duration-300">{wallet.name}</h3>
-                          <p className="text-sm text-text-secondary transition-colors duration-300">
+                        {/* Wallet Info - Scrollable on mobile */}
+                        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
+                          <h3 className="font-semibold text-text-primary transition-colors duration-300 whitespace-nowrap">{wallet.name}</h3>
+                          <p className="text-sm text-text-secondary transition-colors duration-300 whitespace-nowrap">
                             {wallet.tbaAddress} • {wallet.balance.total}
                           </p>
                         </div>
@@ -314,18 +314,18 @@ export default function MyWalletsPage() {
                         )}
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center space-x-2">
+                      {/* Actions - No wrap on mobile */}
+                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                         <button
                           onClick={() => handleWalletSelect(wallet)}
-                          className="px-4 py-2 bg-blue-500 dark:bg-accent-gold text-white dark:text-bg-primary rounded-lg hover:bg-blue-600 dark:hover:bg-accent-gold/80 transition-all duration-300 text-sm"
+                          className="px-4 py-2 bg-blue-500 dark:bg-accent-gold text-white dark:text-bg-primary rounded-lg hover:bg-blue-600 dark:hover:bg-accent-gold/80 transition-all duration-300 text-sm whitespace-nowrap"
                         >
                           Abrir
                         </button>
                         {!wallet.isActive && (
                           <button
                             onClick={() => handleSetAsActive(wallet.id)}
-                            className="px-4 py-2 border border-border-primary rounded-lg hover:bg-bg-secondary transition-all duration-300 text-sm text-text-secondary hover:text-text-primary"
+                            className="px-4 py-2 border border-border-primary rounded-lg hover:bg-bg-secondary transition-all duration-300 text-sm text-text-secondary hover:text-text-primary whitespace-nowrap"
                           >
                             Usar Como Principal
                           </button>
