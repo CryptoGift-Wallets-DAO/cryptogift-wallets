@@ -1346,17 +1346,17 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                   />
                 )}
 
-                {/* Node icon */}
+                {/* Node icon - AUMENTADO 5X */}
                 <foreignObject 
-                  x={node.position.x - (node.type === 'module' ? 12 : node.type === 'branch' ? 10 : node.type === 'unit' ? 8 : 6)} 
-                  y={node.position.y - (node.type === 'module' ? 12 : node.type === 'branch' ? 10 : node.type === 'unit' ? 8 : 6)} 
-                  width={node.type === 'module' ? 24 : node.type === 'branch' ? 20 : node.type === 'unit' ? 16 : 12} 
-                  height={node.type === 'module' ? 24 : node.type === 'branch' ? 20 : node.type === 'unit' ? 16 : 12}
+                  x={node.position.x - (node.type === 'module' ? 30 : node.type === 'branch' ? 25 : node.type === 'unit' ? 20 : 15)} 
+                  y={node.position.y - (node.type === 'module' ? 30 : node.type === 'branch' ? 25 : node.type === 'unit' ? 20 : 15)} 
+                  width={node.type === 'module' ? 60 : node.type === 'branch' ? 50 : node.type === 'unit' ? 40 : 30} 
+                  height={node.type === 'module' ? 60 : node.type === 'branch' ? 50 : node.type === 'unit' ? 40 : 30}
                 >
                   <div className="flex items-center justify-center w-full h-full">
                     <SmartIcon 
                       icon={node.icon || (node.type === 'module' ? BookOpen : node.type === 'branch' ? TrendingUp : node.type === 'unit' ? Target : PlayCircle)} 
-                      size={node.type === 'module' ? 20 : node.type === 'branch' ? 16 : node.type === 'unit' ? 14 : 10} 
+                      size={node.type === 'module' ? 50 : node.type === 'branch' ? 40 : node.type === 'unit' ? 35 : 25} 
                     />
                   </div>
                 </foreignObject>
