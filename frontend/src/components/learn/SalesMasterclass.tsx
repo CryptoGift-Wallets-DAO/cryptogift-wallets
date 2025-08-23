@@ -13,9 +13,65 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
-// Simple confetti function to avoid external dependency
+// Enhanced confetti function matching KnowledgeLessonModal implementation
+function triggerConfetti(options?: any) {
+  // Visual confetti effect using CSS animation
+  const duration = 3000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+  function randomInRange(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  const interval = setInterval(function() {
+    const timeLeft = animationEnd - Date.now();
+
+    if (timeLeft <= 0) {
+      return clearInterval(interval);
+    }
+
+    const particleCount = 50 * (timeLeft / duration);
+    
+    // Create confetti elements
+    for (let i = 0; i < particleCount; i++) {
+      const confettiEl = document.createElement('div');
+      confettiEl.style.position = 'fixed';
+      confettiEl.style.width = '10px';
+      confettiEl.style.height = '10px';
+      confettiEl.style.backgroundColor = ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1', '#32CD32'][Math.floor(Math.random() * 6)];
+      confettiEl.style.left = Math.random() * 100 + '%';
+      confettiEl.style.top = '-10px';
+      confettiEl.style.opacity = '1';
+      confettiEl.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiEl.style.zIndex = '10000';
+      confettiEl.className = 'confetti-particle';
+      
+      document.body.appendChild(confettiEl);
+      
+      // Animate falling
+      confettiEl.animate([
+        { 
+          transform: `translateY(0) rotate(0deg)`,
+          opacity: 1 
+        },
+        { 
+          transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`,
+          opacity: 0
+        }
+      ], {
+        duration: randomInRange(2000, 4000),
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      }).onfinish = () => confettiEl.remove();
+    }
+  }, 100);
+  
+  console.log('🎉 Enhanced confetti effect triggered!', options);
+}
+
+// Backward compatibility
 function confetti(options: any) {
-  console.log('🎉 Confetti effect triggered!', options);
+  triggerConfetti(options);
 }
 import { 
   CheckCircle, 
@@ -2240,8 +2296,8 @@ const SuccessBlock: React.FC<{
         </div>
       </motion.div>
       
-      {/* Knowledge vs Educational Mode Different Endings */}
-      {!educationalMode ? (
+      {/* DAO COMMUNITY SHOWCASE - For BOTH Knowledge and Educational modes */}
+      {
         // SPECTACULAR KNOWLEDGE ENDING - DAO COMMUNITY SHOWCASE
         <div className="mt-12 space-y-8">
           {/* Welcome to DAO Community */}
@@ -2413,10 +2469,10 @@ const SuccessBlock: React.FC<{
             transition={{ delay: 3.2 }}
             className="text-center"
             onAnimationComplete={() => {
-              // Trigger existing confetti system
-              if (typeof window !== 'undefined' && (window as any).triggerConfetti) {
-                (window as any).triggerConfetti();
-              }
+              // Trigger confetti for all modes
+              setTimeout(() => {
+                triggerConfetti();
+              }, 500);
             }}
           >
             <p className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent mb-6">
@@ -2445,28 +2501,51 @@ const SuccessBlock: React.FC<{
               </button>
             </div>
           </motion.div>
+          {/* Different CTAs based on mode */}
+          <div className="flex justify-center gap-4 flex-wrap">
+            {!educationalMode ? (
+              // KNOWLEDGE MODE - Navigation buttons
+              <>
+                <button
+                  onClick={() => router.push('/knowledge')}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5" />
+                    <span>Explorar Knowledge</span>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={() => router.push('/')}
+                  className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <Gift className="w-5 h-5" />
+                    <span>Crear mi Primer Regalo</span>
+                  </div>
+                </button>
+              </>
+            ) : (
+              // EDUCATIONAL MODE - Claim button
+              <button
+                onClick={() => {
+                  // Trigger completion event
+                  if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
+                  }
+                }}
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-6 h-6" />
+                  <span>IR AL CLAIM</span>
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </button>
+            )}
+          </div>
         </div>
-      ) : (
-        // EDUCATIONAL MODE - Simple ending
-        <>
-          <motion.p
-            className="text-3xl text-gray-900 dark:text-white font-bold mb-8"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            {content.finalMessage}
-          </motion.p>
-          
-          <motion.div
-            className="mt-12"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          >
-            <Sparkles className="w-16 h-16 mx-auto text-yellow-400" />
-          </motion.div>
-        </>
-      )}
     </div>
   );
 };
