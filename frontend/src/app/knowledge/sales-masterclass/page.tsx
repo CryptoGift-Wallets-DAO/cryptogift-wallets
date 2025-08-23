@@ -18,10 +18,10 @@ const SalesMasterclass = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-xl">Cargando Sales Masterclass...</p>
+          <p className="text-gray-800 dark:text-white text-xl">Cargando Sales Masterclass...</p>
         </div>
       </div>
     )
@@ -44,10 +44,10 @@ export default function SalesMasterclassPage() {
       </Head>
 
       <Suspense fallback={
-        <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors duration-300">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-xl">Inicializando experiencia...</p>
+            <p className="text-gray-800 dark:text-white text-xl">Inicializando experiencia...</p>
           </div>
         </div>
       }>

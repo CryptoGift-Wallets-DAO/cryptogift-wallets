@@ -232,19 +232,19 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         style={{ transform: 'scale(0.92)', transformOrigin: 'center' }}
       >
         <motion.div
-          className="bg-gradient-to-br from-black via-gray-900 to-black rounded-2xl max-w-6xl w-full h-screen overflow-hidden flex flex-col shadow-2xl"
+          className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl max-w-6xl w-full h-screen overflow-hidden flex flex-col shadow-2xl transition-colors duration-300"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
         >
           {/* Header */}
-          <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-700 flex-shrink-0">
+          <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
                 {mode === 'educational' ? '🎓 Módulo Educativo Requerido' : '📚 Knowledge Academy'}
               </h1>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 {lessonId === 'sales-masterclass' ? 'Sales Masterclass - De $0 a $100M en 15 minutos' : 
                  lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo Cripto - 7 minutos' : 
                  'Lección Interactive'}
@@ -255,7 +255,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
             {(process.env.NODE_ENV === 'development' || mode === 'knowledge') && !showSuccess && (
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg"
                 title="Cerrar"
               >
                 <X className="w-6 h-6" />
