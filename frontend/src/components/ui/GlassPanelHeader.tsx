@@ -4,8 +4,8 @@ import { motion, useScroll, useTransform, Easing } from 'framer-motion';
 import { useTheme } from 'next-themes';
 
 interface GlassPanelHeaderProps {
-  children: React.ReactNode;
-  title?: string;
+  children?: React.ReactNode;
+  title?: string | React.ReactNode;
   subtitle?: string;
   icon?: React.ReactNode;
   className?: string;
@@ -181,21 +181,21 @@ export function GlassPanelHeader({
               )}
               
               {(title || subtitle) && (
-                <div className="min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+                <div className="min-w-0 flex-1">
                   {title && (
-                    <motion.h1
-                      className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white whitespace-nowrap pr-4"
+                    <motion.div
+                      className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1, duration: 0.5 }}
                     >
                       {title}
-                    </motion.h1>
+                    </motion.div>
                   )}
                   
                   {subtitle && (
                     <motion.p
-                      className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap pr-4"
+                      className="text-sm text-gray-600 dark:text-gray-300"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2, duration: 0.5 }}

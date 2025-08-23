@@ -196,7 +196,18 @@ export default function MyWalletsPage() {
                    dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
       {/* Glass Panel Header with advanced blur effects */}
       <DashboardGlassHeader
-        title="Mis CryptoGift Wallets"
+        title={
+          <div className="flex items-center gap-3">
+            <span>Mis CryptoGift Wallets</span>
+            {/* Wallet address badge right next to title */}
+            <div className="px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center space-x-2">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+              <span className="text-xs text-green-700 dark:text-green-400 font-medium">
+                {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Conectado'}
+              </span>
+            </div>
+          </div>
+        }
         subtitle="Gestiona todas tus NFT-Wallets desde un solo lugar"
         icon={
           <div className="w-12 h-12 flex items-center justify-center 
@@ -213,17 +224,7 @@ export default function MyWalletsPage() {
           </div>
         }
         className="mb-8"
-      >
-        {/* Header Actions - Ultra compact for mobile */}
-        <div className="flex items-center">
-          <div className="px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs text-green-700 dark:text-green-400 font-medium">
-              {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Conectado'}
-            </span>
-          </div>
-        </div>
-      </DashboardGlassHeader>
+      />
 
       <div className="container mx-auto px-4 py-8">
 
