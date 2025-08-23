@@ -625,10 +625,10 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         </div>
       </div>
 
-      {/* Educational Module Modal */}
+      {/* Educational Module Modal - Using Sales Masterclass with DAO Showcase */}
       {showEducationalModule && validationState.sessionToken && (
         <LessonModalWrapper
-          lessonId="claim-first-gift"
+          lessonId="sales-masterclass"
           mode="educational"
           isOpen={showEducationalModule}
           onClose={() => {

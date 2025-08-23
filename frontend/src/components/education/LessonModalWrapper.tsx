@@ -245,7 +245,10 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                 {mode === 'educational' ? '🎓 Módulo Educativo Requerido' : '📚 Knowledge Academy'}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                {lessonId === 'sales-masterclass' ? 'Sales Masterclass - De $0 a $100M en 15 minutos' : 
+                {lessonId === 'sales-masterclass' ? 
+                  (mode === 'educational' ? 
+                    'Completa este módulo para desbloquear tu regalo cripto' : 
+                    'Sales Masterclass - De $0 a $100M en 15 minutos') : 
                  lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo Cripto - 7 minutos' : 
                  'Lección Interactive'}
               </p>
