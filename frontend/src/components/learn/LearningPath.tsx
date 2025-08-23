@@ -235,36 +235,43 @@ export const LearningPath: React.FC<LearningPathProps> = ({
         y: currentCenter.y - rect.top
       };
 
-      // ✅ PINCH ZOOM: Detectar cambio de distancia entre dedos
+      // ✅ PINCH ZOOM SIMPLIFICADO: Solo zoom, siempre al centro
       const currentDistance = getTouchDistance(e.touches);
-      const distanceChange = Math.abs(currentDistance - lastTouches.distance);
-      const centerChange = Math.sqrt(
-        Math.pow(relativeCenter.x - lastTouches.center.x, 2) + 
-        Math.pow(relativeCenter.y - lastTouches.center.y, 2)
-      );
-
-      if (distanceChange > 10 && centerChange < 20) {
-        // PINCH ZOOM: Cambio significativo en distancia, poco movimiento de centro
-        const zoomFactor = currentDistance / lastTouches.distance;
-        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
+      const distanceRatio = currentDistance / lastTouches.distance;
+      
+      // Detectar pinch zoom cuando la distancia cambia más del 1%
+      if (Math.abs(distanceRatio - 1) > 0.01) {
+        // PINCH ZOOM: Aplicar zoom directo basado en la distancia
+        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * distanceRatio));
         
-        // ✅ ZOOM HACIA EL PUNTO EXACTO ENTRE LOS DEDOS
-        const zoomRatio = newZoom / zoomLevel;
+        // ✅ ZOOM AL CENTRO - Fórmula simple y estable
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        // Ajustar pan para mantener el contenido centrado al hacer zoom
+        const zoomChange = newZoom / zoomLevel;
         setPanOffset(prev => ({
-          x: lastTouches.center.x - (lastTouches.center.x - prev.x) * zoomRatio,
-          y: lastTouches.center.y - (lastTouches.center.y - prev.y) * zoomRatio
+          x: centerX - (centerX - prev.x) * zoomChange,
+          y: centerY - (centerY - prev.y) * zoomChange
         }));
         
         setZoomLevel(newZoom);
-      } else if (centerChange > 5) {
-        // TWO-FINGER PAN: Movimiento de centro, mantener zoom
-        const panDeltaX = relativeCenter.x - lastTouches.center.x;
-        const panDeltaY = relativeCenter.y - lastTouches.center.y;
+      } else {
+        // TWO-FINGER PAN: Solo mover si no hay zoom significativo
+        const centerChange = Math.sqrt(
+          Math.pow(relativeCenter.x - lastTouches.center.x, 2) + 
+          Math.pow(relativeCenter.y - lastTouches.center.y, 2)
+        );
         
-        setPanOffset(prev => ({
-          x: prev.x + panDeltaX,
-          y: prev.y + panDeltaY
-        }));
+        if (centerChange > 2) { // Más sensible al movimiento
+          const panDeltaX = relativeCenter.x - lastTouches.center.x;
+          const panDeltaY = relativeCenter.y - lastTouches.center.y;
+          
+          setPanOffset(prev => ({
+            x: prev.x + panDeltaX,
+            y: prev.y + panDeltaY
+          }));
+        }
       }
 
       // Update last touches con nueva distancia y centro
@@ -467,24 +474,22 @@ export const LearningPath: React.FC<LearningPathProps> = ({
     const handleWheel = (e: WheelEvent) => {
       if (!container.contains(e.target as Node)) return;
 
-      // ===== ZOOM CON CTRL+WHEEL EN EL PUNTO DEL GESTO =====
+      // ===== ZOOM CON CTRL+WHEEL SIEMPRE EN EL CENTRO =====
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         
         const rect = container.getBoundingClientRect();
-        
-        // ✅ USAR POSICIÓN EXACTA DEL MOUSE/TRACKPAD
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
         
         const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
         const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
         
-        // ✅ ZOOM HACIA EL PUNTO EXACTO DEL GESTO
+        // Zoom hacia el centro de la pantalla
         const zoomRatio = newZoom / zoomLevel;
         setPanOffset(prev => ({
-          x: mouseX - (mouseX - prev.x) * zoomRatio,
-          y: mouseY - (mouseY - prev.y) * zoomRatio
+          x: centerX - (centerX - prev.x) * zoomRatio,
+          y: centerY - (centerY - prev.y) * zoomRatio
         }));
         
         setZoomLevel(newZoom);
