@@ -13,46 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
-// Enhanced confetti function with visual effect
+// Simple confetti function to avoid external dependency
 function confetti(options: any) {
-  // Create visual confetti elements
-  const colors = options?.colors || ['#FFD700', '#FFA500', '#FF6347', '#FF69B4', '#00CED1', '#32CD32'];
-  const particleCount = options?.particleCount || 50;
-  
-  for (let i = 0; i < particleCount; i++) {
-    const confettiElement = document.createElement('div');
-    confettiElement.style.cssText = `
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background: ${colors[Math.floor(Math.random() * colors.length)]};
-      left: ${Math.random() * 100}%;
-      top: -10px;
-      z-index: 10000;
-      border-radius: 50%;
-      pointer-events: none;
-      animation: confetti-fall 3s ease-out forwards;
-    `;
-    document.body.appendChild(confettiElement);
-    
-    setTimeout(() => {
-      confettiElement.remove();
-    }, 3000);
-  }
-  
-  // Add CSS animation if not exists
-  if (!document.getElementById('confetti-styles')) {
-    const style = document.createElement('style');
-    style.id = 'confetti-styles';
-    style.textContent = `
-      @keyframes confetti-fall {
-        0% { transform: translateY(-10px) rotateZ(0deg); opacity: 1; }
-        100% { transform: translateY(100vh) rotateZ(360deg); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-  
   console.log('🎉 Confetti effect triggered!', options);
 }
 import { 
@@ -2260,78 +2222,251 @@ const SuccessBlock: React.FC<{
       >
         <h3 className="text-2xl font-bold mb-6">Tus Beneficios Exclusivos:</h3>
         <div className="space-y-3">
-          {content.benefits.map((benefit: string, idx: number) => (
-            <motion.div
-              key={idx}
-              className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 text-lg"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1 + idx * 0.1 }}
-            >
-              {benefit}
-            </motion.div>
-          ))}
+          {content.benefits.map((benefit: any, idx: number) => {
+            const IconComponent = benefit.icon;
+            return (
+              <motion.div
+                key={idx}
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-lg p-4 text-lg shadow-xl hover:shadow-2xl hover:bg-white/90 dark:hover:bg-gray-800/90 transition-all duration-300 hover:scale-[1.02] flex items-center gap-3"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1 + idx * 0.1 }}
+              >
+                <IconComponent className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <span className="text-gray-800 dark:text-gray-200">{benefit.text}</span>
+              </motion.div>
+            );
+          })}
         </div>
       </motion.div>
       
-      {/* Final Message */}
-      <motion.p
-        className="text-3xl text-gray-900 dark:text-white font-bold mb-8"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1.5 }}
-      >
-        {content.finalMessage}
-      </motion.p>
-      
-      {/* Actions */}
-      <motion.div
-        className="flex justify-center gap-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.7 }}
-      >
-        <button
-          onClick={() => router.push('/knowledge')}
-          className="px-8 py-4 
-            bg-gradient-to-r from-purple-500 to-pink-500 
-            backdrop-blur-xl backdrop-saturate-150 
-            text-white font-bold rounded-xl 
-            hover:scale-105 transition-all 
-            shadow-xl hover:shadow-2xl 
-            border border-white/20"
-        >
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            <span>Más Contenido</span>
-          </div>
-        </button>
-        
-        <button
-          onClick={() => router.push('/')}
-          className="px-8 py-4 
-            bg-gradient-to-r from-green-500 to-blue-500 
-            backdrop-blur-xl backdrop-saturate-150 
-            text-white font-bold rounded-xl 
-            hover:scale-105 transition-all 
-            shadow-xl hover:shadow-2xl 
-            border border-white/20"
-        >
-          <div className="flex items-center gap-2">
-            <Gift className="w-5 h-5" />
-            <span>Crear mi Primer Regalo</span>
-          </div>
-        </button>
-      </motion.div>
-      
-      {/* Celebration Effect */}
-      <motion.div
-        className="mt-12"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      >
-        <Sparkles className="w-16 h-16 mx-auto text-yellow-400" />
-      </motion.div>
+      {/* Knowledge vs Educational Mode Different Endings */}
+      {!educationalMode ? (
+        // SPECTACULAR KNOWLEDGE ENDING - DAO COMMUNITY SHOWCASE
+        <div className="mt-12 space-y-8">
+          {/* Welcome to DAO Community */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5 }}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02] max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-6">
+              <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
+                🌟 ¡Bienvenido a nuestra DAO Community! 🌟
+              </h2>
+              <p className="text-xl text-gray-700 dark:text-gray-300">
+                Has completado tu entrenamiento y ahora formas parte de algo extraordinario
+              </p>
+            </div>
+
+            {/* Team Showcase */}
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              {/* Apex AI Assistant */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 1.8 }}
+                className="text-center bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-500/20"
+              >
+                <img 
+                  src="/Apex.PNG" 
+                  alt="Apex AI Assistant" 
+                  className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-blue-500/50 shadow-lg"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">🤖 APEX</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Nuestro Asistente IA que te guiará en cada paso del ecosistema cripto</p>
+              </motion.div>
+
+              {/* Godez22 */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 2.0 }}
+                className="text-center bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-2xl p-6 border border-emerald-500/20"
+              >
+                <img 
+                  src="/Godez22.png" 
+                  alt="Godez22 Developer" 
+                  className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-emerald-500/50 shadow-lg"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">💎 Godez22</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Desarrollador pionero que dio vida a este maravilloso sistema</p>
+              </motion.div>
+
+              {/* RLGra95 */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 2.2 }}
+                className="text-center bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-2xl p-6 border border-orange-500/20"
+              >
+                <img 
+                  src="/RLGra95.PNG" 
+                  alt="RLGra95 Developer" 
+                  className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-orange-500/50 shadow-lg"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">🚀 RLGra95</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Co-fundador visionario en los primeros pasos del proyecto</p>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Features Showcase */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.4 }}
+            className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto"
+          >
+            {/* CG Wallet Utilities */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-center gap-4 mb-4">
+                <img 
+                  src="/cg-wallet-logo.png" 
+                  alt="CG Wallet" 
+                  className="w-12 h-12 rounded-xl shadow-md"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">CG Wallet</h3>
+              </div>
+              <p className="text-gray-700 dark:text-gray-300 mb-3">Decenas de utilidades que transformarán tu experiencia crypto:</p>
+              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <li>• 🔒 Seguridad multi-capa con backup automático</li>
+                <li>• 💸 Intercambios sin comisiones entre usuarios</li>
+                <li>• 🎁 Portador de vida con funcionalidades integradas</li>
+                <li>• 📊 Analytics avanzados de tu portafolio</li>
+                <li>• 🌐 Cross-chain compatibility</li>
+              </ul>
+            </div>
+
+            {/* Art & Personalization */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-center gap-4 mb-4">
+                <img 
+                  src="/Arte-IA-Personalizado.png" 
+                  alt="Arte Personalizado" 
+                  className="w-12 h-12 rounded-xl shadow-md"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">Arte IA</h3>
+              </div>
+              <p className="text-gray-700 dark:text-gray-300 mb-3">Crear valor a través del arte personalizado:</p>
+              <div className="flex items-center gap-3 mb-2">
+                <img 
+                  src="/wallet-regalo.png" 
+                  alt="Wallet Regalo" 
+                  className="w-8 h-8 rounded-lg shadow-sm"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <p className="text-sm text-gray-600 dark:text-gray-400">Una imagen dice más que mil palabras - la integración de la wallet le da la posibilidad de ser portador de vida</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Knowledge Center - Neural Hub */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.8 }}
+            className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 dark:from-purple-500/10 dark:to-blue-500/10 border border-purple-500/30 rounded-3xl p-8 shadow-2xl max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-6">
+              <img 
+                src="/knowledge-logo.png" 
+                alt="Knowledge Center" 
+                className="w-16 h-16 mx-auto mb-4 rounded-2xl shadow-lg"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
+                🧠 Knowledge: Centro Neurálgico del Futuro
+              </h3>
+              <p className="text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
+                La sección Knowledge se convertirá en el epicentro donde confluyen creadores de contenido y consumidores, 
+                maestros y estudiantes, con integración de las academias crypto más prestigiosas del ecosistema.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4 text-center text-sm text-gray-600 dark:text-gray-400">
+              <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
+                <h4 className="font-bold text-orange-600 dark:text-orange-400 mb-2">🏆 Academias Elite</h4>
+                <p>Integración con Binance Academy, Coin Bureau, DeFi Pulse y más</p>
+              </div>
+              <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
+                <h4 className="font-bold text-green-600 dark:text-green-400 mb-2">🎮 Gamificación</h4>
+                <p>Sistema de logros, NFT badges y rewards por aprendizaje</p>
+              </div>
+              <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
+                <h4 className="font-bold text-blue-600 dark:text-blue-400 mb-2">🤝 DAO Community</h4>
+                <p>Governance participativa y decisiones comunitarias</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Final CTA with Confetti */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 3.2 }}
+            className="text-center"
+            onAnimationComplete={() => {
+              // Trigger existing confetti system
+              if (typeof window !== 'undefined' && (window as any).triggerConfetti) {
+                (window as any).triggerConfetti();
+              }
+            }}
+          >
+            <p className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent mb-6">
+              🎉 ¡El futuro de los pagos digitales comienza contigo! 🎉
+            </p>
+            
+            <div className="flex justify-center gap-4 flex-wrap">
+              <button
+                onClick={() => router.push('/knowledge')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  <span>Explorar Knowledge</span>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
+              >
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5" />
+                  <span>Crear mi Primer Regalo</span>
+                </div>
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      ) : (
+        // EDUCATIONAL MODE - Simple ending
+        <>
+          <motion.p
+            className="text-3xl text-gray-900 dark:text-white font-bold mb-8"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.5 }}
+          >
+            {content.finalMessage}
+          </motion.p>
+          
+          <motion.div
+            className="mt-12"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <Sparkles className="w-16 h-16 mx-auto text-yellow-400" />
+          </motion.div>
+        </>
+      )}
     </div>
   );
 };
