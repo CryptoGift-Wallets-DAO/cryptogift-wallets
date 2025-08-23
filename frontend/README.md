@@ -2,7 +2,30 @@
 
 Este frontend está construido con Next.js y thirdweb SDK. Consulta la documentación y variables de entorno necesarias en el README original.
 
-## 🚨 CRITICAL UPDATE (Agosto 20, 2025) - UNIFIED EDUCATION SYSTEM + CRITICAL FIXES ✅
+## 🚨 CRITICAL UPDATE (Agosto 23, 2025) - MOBILE & UX PERFECTION ✅
+
+### 🚀 MOBILE UX PERFECTION - CRITICAL FIXES DEPLOYED
+- ✅ **MOBILE IPFS UPLOADS**: Exponential backoff retry system (2s→4s→8s) - no más fallos en primer intento
+- ✅ **DAO SHOWCASE UNIFIED**: Sales Masterclass con celebración "¡Ya eres parte de CryptoGift!" en ambos contextos
+- ✅ **THEME TOGGLE FIX**: Selector de tema funciona sin redirigir a página de inicio
+- ✅ **PROGRESSIVE TIMEOUTS**: 15s→30s→45s para mejor propagación IPFS en dispositivos móviles
+- ✅ **NAVIGATION IMPROVEMENTS**: Cambio de tema preserva contexto de página actual
+
+### TECHNICAL IMPLEMENTATIONS
+1. **IPFS Retry Logic** (`utils/ipfs.ts`):
+   - Completed incomplete retry loop (lines 246-356)
+   - Added exponential backoff with progressive timeouts
+   - Early exit on success to avoid unnecessary retries
+
+2. **PreClaim DAO Showcase** (`education/PreClaimFlow.tsx`):
+   - Changed lessonId from "claim-first-gift" to "sales-masterclass"
+   - Unified celebration experience across contexts
+
+3. **Theme Navigation Fix** (`Navbar.tsx`):
+   - Separated ThemeToggle from Link component
+   - Independent theme selector without navigation side-effects
+
+## 🎓 PREVIOUS UPDATE (Agosto 20, 2025) - UNIFIED EDUCATION SYSTEM + CRITICAL FIXES ✅
 
 ### 🎓 UNIFIED KNOWLEDGE ↔ EDUCATIONAL REQUIREMENTS SYSTEM DEPLOYED
 - ✅ **BREAKTHROUGH**: Same Sales Masterclass usado en Knowledge Academy Y Educational Requirements

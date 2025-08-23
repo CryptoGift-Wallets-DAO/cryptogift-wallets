@@ -39,9 +39,16 @@ graph TD
 - **Contratos**: Desplegados en Base Sepolia ✅ **OPERATIVOS** 
 - **Dashboard**: Panel de transparencia con estadísticas en vivo ✅ **FUNCIONAL**
 
-### 🎯 **ESTADO ACTUAL (Agosto 20, 2025):**
+### 🎯 **ESTADO ACTUAL (Agosto 23, 2025):**
 
-#### 🎓 **LATEST: UNIFIED EDUCATION SYSTEM + CRITICAL FIXES DEPLOYED** ✅
+#### 🚀 **LATEST: CRITICAL MOBILE & UX FIXES** ✅
+- ✅ **MOBILE IPFS UPLOADS FIXED**: Exponential backoff retry (2s→4s→8s) para uploads exitosos en primer intento
+- ✅ **DAO SHOWCASE UNIFIED**: Sales Masterclass con celebración comunitaria en PreClaim y Knowledge
+- ✅ **THEME TOGGLE FIX**: Cambio de tema sin redirección a página de inicio
+- ✅ **PROGRESSIVE TIMEOUT**: 15s→30s→45s para mejor propagación IPFS en móvil
+- ✅ **UX IMPROVEMENTS**: Navegación sin interrupciones, experiencia fluida
+
+#### 🎓 **PREVIOUS: UNIFIED EDUCATION SYSTEM + CRITICAL FIXES DEPLOYED** ✅
 - ✅ **UNIFIED KNOWLEDGE ↔ EDUCATIONAL SYSTEM**: Same Sales Masterclass usado en ambos contextos sin duplicación
 - ✅ **LESSON MODAL WRAPPER**: Modal universal con estructura GiftWizard para educación
 - ✅ **AUTOMATIC LESSON REGISTRY**: Nuevas lecciones en Knowledge automáticamente disponibles en Educational Requirements

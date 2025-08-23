@@ -2,7 +2,99 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎨 LATEST SESSION UPDATES (Agosto 21, 2025) - KNOWLEDGE ACADEMY COMPLETE + LEARNING PATH RESTORED ✅
+## 🎨 LATEST SESSION UPDATES (Agosto 23, 2025) - CRITICAL MOBILE & UX FIXES ✅
+
+### 🚀 MOBILE IPFS UPLOAD FIX - EXPONENTIAL BACKOFF RETRY
+**PROBLEMA CRÍTICO RESUELTO**: Los uploads de gifts en móvil siempre fallaban en el primer intento
+
+**Root Cause**:
+- `validateMultiGatewayAccess` tenía un loop de retry **INCOMPLETO** (líneas 246-327 en ipfs.ts)
+- No había delay entre intentos causando fallos consecutivos inmediatos
+- Faltaba return statement para reintentos exitosos
+
+**SOLUCIÓN IMPLEMENTADA (Tipo B - Intermedio)**:
+```typescript
+// Retry con exponential backoff
+for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  // ... validación de gateways ...
+  
+  if (success) {
+    return { success, workingGateways, errors, gatewayDetails };
+  }
+  
+  // Mobile fix: Backoff antes del siguiente intento
+  if (attempt < maxAttempts) {
+    const backoffDelay = Math.min(2000 * Math.pow(2, attempt - 1), 8000);
+    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+  }
+}
+```
+
+**Impact**:
+- ✅ First-time mobile uploads ahora funcionan automáticamente
+- ✅ 3 retry attempts con delays: 2s → 4s → 8s
+- ✅ Progressive timeout: 15s → 30s → 45s por intento
+- ✅ Elimina clicks manuales en "Reintentar"
+
+### 🎯 SALES MASTERCLASS DAO SHOWCASE EN PRECLAIM
+**PROBLEMA**: El DAO showcase "¡Ya eres parte de CryptoGift!" no aparecía en el flujo de PreClaim
+
+**SOLUCIÓN (Tipo A - Puntual)**:
+- Cambio de `lessonId="claim-first-gift"` a `lessonId="sales-masterclass"` en PreClaimFlow
+- Ahora muestra exactamente la misma experiencia espectacular en ambos contextos
+- Confetti y celebración comunitaria unificada
+
+### 🔧 THEME TOGGLE NAVIGATION FIX
+**PROBLEMA**: Cambiar el tema (Dark/Light/Auto) siempre redirigía al inicio
+
+**Root Cause**:
+- `ThemeToggle` estaba anidado dentro del `Link href="/"` del logo
+- Cualquier click en el selector activaba navegación
+
+**SOLUCIÓN (Tipo A - Quirúrgica)**:
+```jsx
+// ANTES - ThemeToggle dentro del Link
+<Link href="/">
+  <Logo />
+  <Text />
+  <ThemeToggle /> ❌ Causaba redirección
+</Link>
+
+// DESPUÉS - ThemeToggle separado
+<div>
+  <Link href="/">
+    <Logo />
+    <Text />
+  </Link>
+  <ThemeToggle /> ✅ Funciona independiente
+</div>
+```
+
+**Impact**:
+- ✅ Cambio de tema sin perder contexto de página
+- ✅ Solo logo/texto navegan al inicio
+- ✅ UX mejorada significativamente
+
+### 📊 SESSION COMMITS (Agosto 23, 2025)
+```bash
+f88a46e - fix: resolve IPFS first-attempt mobile upload failures with exponential backoff retry
+e327582 - fix: add DAO showcase to PreClaim educational flow matching Knowledge experience  
+1d2baf1 - fix: prevent page redirect when changing theme mode
+```
+
+### 📋 FILES MODIFIED THIS SESSION
+```
+3 files changed, 146 insertions(+), 104 deletions(-)
+
+- frontend/src/utils/ipfs.ts                           (Mobile retry logic)
+- frontend/src/components/education/PreClaimFlow.tsx   (DAO showcase integration)
+- frontend/src/components/education/LessonModalWrapper.tsx (Subtitle update)
+- frontend/src/components/Navbar.tsx                   (Theme toggle separation)
+```
+
+---
+
+## 🎨 PREVIOUS SESSION UPDATES (Agosto 21, 2025) - KNOWLEDGE ACADEMY COMPLETE + LEARNING PATH RESTORED ✅
 
 ### 🚀 KNOWLEDGE ACADEMY - SISTEMA COMPLETO IMPLEMENTADO
 
