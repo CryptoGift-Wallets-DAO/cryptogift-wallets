@@ -22,43 +22,44 @@ export const Navbar: React.FC = () => {
     <nav className="bg-bg-primary shadow-lg sticky top-0 z-40 transition-colors duration-300 border-b border-border-primary">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="relative w-12 h-12">
-              <Image
-                src="/logo.png"
-                alt="CryptoGift Wallets Logo"
-                width={48}
-                height={48}
-                className="rounded-xl object-cover shadow-lg"
-                priority
-                onError={(e) => {
-                  // Fallback to emoji if PNG fails to load
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const fallback = target.nextElementSibling as HTMLElement;
-                  if (fallback) {
-                    fallback.style.display = 'flex';
-                  }
-                }}
-              />
-              <div 
-                className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ display: 'none' }}
-              >
-                <SmartIcon icon="🎁" size={24} className="text-white" />
+          {/* Logo and Theme Toggle Container */}
+          <div className="flex items-center space-x-3">
+            {/* Logo - Solo este redirige al inicio */}
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="relative w-12 h-12">
+                <Image
+                  src="/logo.png"
+                  alt="CryptoGift Wallets Logo"
+                  width={48}
+                  height={48}
+                  className="rounded-xl object-cover shadow-lg"
+                  priority
+                  onError={(e) => {
+                    // Fallback to emoji if PNG fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) {
+                      fallback.style.display = 'flex';
+                    }
+                  }}
+                />
+                <div 
+                  className="w-12 h-12 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
+                  style={{ display: 'none' }}
+                >
+                  <SmartIcon icon="🎁" size={24} className="text-white" />
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
               <div>
                 <div className="font-bold text-xl text-text-primary">CryptoGift</div>
                 <div className="text-xs font-medium -mt-1 text-accent-gold dark:text-accent-silver">Wallets</div>
               </div>
-              
-              {/* THEME TOGGLE MINIMALISTA - INMEDIATAMENTE DESPUÉS */}
-              <ThemeToggle />
-            </div>
-          </Link>
+            </Link>
+            
+            {/* THEME TOGGLE SEPARADO - NO REDIRIGE */}
+            <ThemeToggle />
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
