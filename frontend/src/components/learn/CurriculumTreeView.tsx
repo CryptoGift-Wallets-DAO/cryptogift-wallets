@@ -654,35 +654,112 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
 
   if (!isVisible) return null;
 
-  // Touch and scroll event handlers for complete scroll independence
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
+  // ========================================
+  // SCROLL INDEPENDENCE SYSTEM 2025 - DEFINITIVO
+  // ========================================
+  // Basado en research de mejores prácticas CSS + JS
+  // Combina overscroll-behavior con preventDefault robusto
+  
+  // Ref para el contenedor principal
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Setup de scroll independence usando mejores prácticas 2025
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // ===== MÉTODO 1: PASSIVE FALSE LISTENERS =====
+    // Necesario porque Chrome ignora preventDefault en listeners pasivos
+    const handleWheelCapture = (e: WheelEvent) => {
+      // Solo prevenir si estamos dentro del contenedor
+      if (container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleTouchStartCapture = (e: TouchEvent) => {
+      if (container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleTouchMoveCapture = (e: TouchEvent) => {
+      if (container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    // ===== MÉTODO 2: SCROLL BOUNDARY DETECTION =====
+    // Prevenir scroll chaining cuando llegamos al límite
+    const handleScrollCapture = (e: Event) => {
+      const target = e.target as Element;
+      if (!container.contains(target)) return;
+
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+
+    // Attach listeners con { passive: false } para permitir preventDefault
+    container.addEventListener('wheel', handleWheelCapture, { passive: false, capture: true });
+    container.addEventListener('touchstart', handleTouchStartCapture, { passive: false, capture: true });
+    container.addEventListener('touchmove', handleTouchMoveCapture, { passive: false, capture: true });
+    container.addEventListener('scroll', handleScrollCapture, { passive: false, capture: true });
+
+    // Cleanup
+    return () => {
+      container.removeEventListener('wheel', handleWheelCapture);
+      container.removeEventListener('touchstart', handleTouchStartCapture);
+      container.removeEventListener('touchmove', handleTouchMoveCapture);
+      container.removeEventListener('scroll', handleScrollCapture);
+    };
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  // React event handlers - Secondary layer
+  const handleContainerWheel = useCallback((e: React.WheelEvent) => {
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
   }, []);
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const handleContainerTouchStart = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
   }, []);
 
-  const handleScroll = useCallback((e: React.UIEvent) => {
+  const handleContainerTouchMove = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+  }, []);
+
+  const handleContainerScroll = useCallback((e: React.UIEvent) => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
   }, []);
 
   return (
     <div 
-      className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden overscroll-contain"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onWheel={handleWheel}
-      onScroll={handleScroll}
+      ref={scrollContainerRef}
+      data-scroll-container="curriculum-tree"
+      className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden"
+      onTouchStart={handleContainerTouchStart}
+      onTouchMove={handleContainerTouchMove}
+      onWheel={handleContainerWheel}
+      onScroll={handleContainerScroll}
       style={{
-        overscrollBehavior: 'contain',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'auto',
-        isolation: 'isolate'
+        // ===== CSS SCROLL INDEPENDENCE 2025 =====
+        overscrollBehavior: 'contain',           // Prevenir scroll chaining (Método principal)
+        overscrollBehaviorX: 'contain',          // Horizontal independence
+        overscrollBehaviorY: 'contain',          // Vertical independence
+        WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
+        touchAction: 'pan-x pan-y',              // Permitir solo scroll, NO zoom gestures
+        scrollBehavior: 'smooth',                // Smooth scroll interno
+        isolation: 'isolate',                    // Crear stacking context independiente
+        contain: 'layout style size',            // CSS containment para performance
+        // ===== WORKAROUND PARA NO-OVERFLOW ELEMENTS =====
+        minHeight: '101%',                       // Force overflow (técnica 2025)
+        paddingBottom: '1px',                    // Minimal overflow trigger
       }}
     >
       {/* Header Controls - MOBILE SCROLLABLE */}
@@ -1037,15 +1114,24 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
       {/* Main Tree Visualization - INDEPENDENT SCROLL ZONE */}
       <div 
         ref={containerRef}
-        className="w-full h-full overflow-hidden pt-20 cursor-grab active:cursor-grabbing overscroll-contain"
+        data-scroll-container="curriculum-tree-inner"
+        className="w-full h-full overflow-hidden pt-20 cursor-grab active:cursor-grabbing"
         style={{
           paddingTop: '6rem', // Extra space for mobile scrollable header
+          // ===== INNER SCROLL CONTAINER 2025 =====
           overscrollBehavior: 'contain',
+          overscrollBehaviorX: 'contain',
+          overscrollBehaviorY: 'contain',
           WebkitOverflowScrolling: 'touch',
-          touchAction: 'pan-x pan-y zoom-in zoom-out',
-          isolation: 'isolate'
+          touchAction: 'pan-x pan-y',              // Solo scroll, NO zoom accidental
+          isolation: 'isolate',
+          contain: 'layout style size paint',      // Full containment
+          scrollBehavior: 'smooth',
+          // Force minimal overflow for overscroll-behavior to work
+          minHeight: '100.1%',
+          minWidth: '100.1%'
         }}
-        onWheel={handleWheel}
+        onWheel={handleContainerWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

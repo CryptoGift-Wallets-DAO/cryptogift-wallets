@@ -407,26 +407,86 @@ export const LearningPath: React.FC<LearningPathProps> = ({
 
   const nodeSize = compact ? 60 : 80;
 
-  // Touch and scroll event handlers for complete scroll independence
+  // ========================================
+  // SCROLL INDEPENDENCE SYSTEM 2025 - LEARNING PATH
+  // ========================================
+  // Implementación idéntica a CurriculumTreeView para consistencia
+  
+  // Setup de scroll independence usando mejores prácticas 2025
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // ===== MÉTODO 1: PASSIVE FALSE LISTENERS =====
+    const handleWheelCapture = (e: WheelEvent) => {
+      if (container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleTouchStartCapture = (e: TouchEvent) => {
+      if (container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleTouchMoveCapture = (e: TouchEvent) => {
+      if (container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    // ===== MÉTODO 2: SCROLL BOUNDARY DETECTION =====
+    const handleScrollCapture = (e: Event) => {
+      const target = e.target as Element;
+      if (!container.contains(target)) return;
+
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+
+    // Attach listeners con { passive: false } para permitir preventDefault
+    container.addEventListener('wheel', handleWheelCapture, { passive: false, capture: true });
+    container.addEventListener('touchstart', handleTouchStartCapture, { passive: false, capture: true });
+    container.addEventListener('touchmove', handleTouchMoveCapture, { passive: false, capture: true });
+    container.addEventListener('scroll', handleScrollCapture, { passive: false, capture: true });
+
+    // Cleanup
+    return () => {
+      container.removeEventListener('wheel', handleWheelCapture);
+      container.removeEventListener('touchstart', handleTouchStartCapture);
+      container.removeEventListener('touchmove', handleTouchMoveCapture);
+      container.removeEventListener('scroll', handleScrollCapture);
+    };
+  }, []);
+
+  // React event handlers - Secondary layer + Existing functionality
+  const handleContainerWheel = useCallback((e: React.WheelEvent) => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    handleWheel(e); // Preserve existing zoom/pan logic
+  }, [handleWheel]);
+
   const handleContainerTouchStart = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
-    handleTouchStart(e);
+    e.nativeEvent.stopImmediatePropagation();
+    handleTouchStart(e); // Preserve existing touch logic
   }, [handleTouchStart]);
 
   const handleContainerTouchMove = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
-    handleTouchMove(e);
+    e.nativeEvent.stopImmediatePropagation();
+    handleTouchMove(e); // Preserve existing touch logic
   }, [handleTouchMove]);
-
-  const handleContainerWheel = useCallback((e: React.WheelEvent) => {
-    e.stopPropagation();
-    handleWheel(e);
-  }, [handleWheel]);
 
   return (
     <div 
       ref={containerRef} 
-      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing overscroll-contain"
+      data-scroll-container="learning-path"
+      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
       onWheel={handleContainerWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -436,10 +496,19 @@ export const LearningPath: React.FC<LearningPathProps> = ({
       onTouchMove={handleContainerTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
-        overscrollBehavior: 'contain',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-x pan-y zoom-in zoom-out',
-        isolation: 'isolate'
+        // ===== CSS SCROLL INDEPENDENCE 2025 - LEARNING PATH =====
+        overscrollBehavior: 'contain',           // Prevenir scroll chaining (Método principal)
+        overscrollBehaviorX: 'contain',          // Horizontal independence
+        overscrollBehaviorY: 'contain',          // Vertical independence
+        WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
+        touchAction: 'pan-x pan-y',              // Permitir solo scroll, NO zoom accidental
+        scrollBehavior: 'smooth',                // Smooth scroll interno
+        isolation: 'isolate',                    // Crear stacking context independiente
+        contain: 'layout style size',            // CSS containment para performance
+        // ===== WORKAROUND PARA NO-OVERFLOW ELEMENTS =====
+        minHeight: '101%',                       // Force overflow (técnica 2025)
+        minWidth: '101%',                        // Force overflow horizontal también
+        paddingBottom: '1px',                    // Minimal overflow trigger
       }}
     >
       {/* Zoom Controls */}

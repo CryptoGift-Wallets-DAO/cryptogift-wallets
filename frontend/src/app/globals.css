@@ -12,17 +12,69 @@
     display: none;  /* Chrome, Safari and Opera */
   }
   
-  /* Independent scroll container utilities - 2025 best practices */
+  /* ===== SCROLL INDEPENDENCE UTILITIES 2025 - DEFINITIVO ===== */
+  /* Based on research: CSS overscroll-behavior + forced overflow technique */
+  
   .overscroll-x-contain {
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
   }
+  
   .overscroll-contain {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
+  
   .scroll-smooth {
     scroll-behavior: smooth;
+  }
+  
+  /* ===== ADVANCED SCROLL ISOLATION 2025 ===== */
+  .scroll-isolate {
+    overscroll-behavior: contain;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    scroll-behavior: smooth;
+    isolation: isolate;
+    contain: layout style size;
+    /* Force minimal overflow trick */
+    min-height: 100.1%;
+    padding-bottom: 1px;
+  }
+  
+  /* ===== TOUCH ACTION CONTROL ===== */
+  .touch-pan-only {
+    touch-action: pan-x pan-y;
+  }
+  
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* ===== SCROLL CONTAINER VARIANTS ===== */
+  .scroll-container-strict {
+    overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    isolation: isolate;
+    contain: layout style size paint;
+  }
+  
+  .scroll-container-contain {
+    overscroll-behavior: contain;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    isolation: isolate;
+    contain: layout style size;
+    /* Workaround for non-scrolling elements */
+    min-height: 100.1%;
+    padding-bottom: 1px;
   }
 }
 

@@ -29,7 +29,7 @@
  * Co-Author: Godez22
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, BookOpen, TreePine, ArrowLeft, ArrowRight } from 'lucide-react';
 
@@ -256,7 +256,53 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
     sessionStorage.setItem('cg-academy-current-view', currentView);
   }, [currentView]);
 
-  // Touch and scroll event handlers for complete independence
+  // ========================================
+  // LEARNING CONTAINER - SCROLL INDEPENDENCE 2025
+  // ========================================
+  // Contenedor padre que necesita coordinación con componentes hijos
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Setup de scroll independence en el nivel contenedor
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Solo manejar eventos que no son procesados por componentes hijos
+    const handleWheelCapture = (e: WheelEvent) => {
+      // Permitir que los componentes hijos manejen sus propios eventos primero
+      const target = e.target as Element;
+      const isInChildScrollContainer = target.closest('[data-scroll-container]');
+      
+      if (!isInChildScrollContainer && container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    const handleTouchCapture = (e: TouchEvent) => {
+      const target = e.target as Element;
+      const isInChildScrollContainer = target.closest('[data-scroll-container]');
+      
+      if (!isInChildScrollContainer && container.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    // Listeners de nivel contenedor (prioridad más baja)
+    container.addEventListener('wheel', handleWheelCapture, { passive: false, capture: false });
+    container.addEventListener('touchstart', handleTouchCapture, { passive: false, capture: false });
+    container.addEventListener('touchmove', handleTouchCapture, { passive: false, capture: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheelCapture);
+      container.removeEventListener('touchstart', handleTouchCapture);
+      container.removeEventListener('touchmove', handleTouchCapture);
+    };
+  }, []);
+
+  // React event handlers - Nivel contenedor
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
   }, []);
@@ -275,15 +321,25 @@ const LearningContainer: React.FC<LearningContainerProps> = ({
 
   return (
     <div 
+      ref={containerRef}
       className={`relative w-full h-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden ${className}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onWheel={handleWheel}
       onScroll={handleScroll}
       style={{
-        overscrollBehavior: 'contain',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'auto'
+        // ===== CSS SCROLL INDEPENDENCE 2025 - CONTAINER LEVEL =====
+        overscrollBehavior: 'contain',           // Método principal para prevenir scroll chaining
+        overscrollBehaviorX: 'contain',          // Horizontal independence
+        overscrollBehaviorY: 'contain',          // Vertical independence  
+        WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
+        touchAction: 'pan-x pan-y',              // Solo scroll, no zoom gestures
+        scrollBehavior: 'smooth',                // Smooth scroll
+        isolation: 'isolate',                    // Stacking context
+        contain: 'layout style size',            // CSS containment
+        // Force minimal overflow para que overscroll-behavior funcione
+        minHeight: '100.1%',
+        paddingBottom: '1px'
       }}
     >
       {/* Toggle Button - TOP LEFT (as requested) */}
