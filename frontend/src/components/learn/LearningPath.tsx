@@ -200,11 +200,29 @@ export const LearningPath: React.FC<LearningPathProps> = ({
           center: { x: center.x - rect.left, y: center.y - rect.top } 
         });
       }
+    } else if (e.touches.length === 1) {
+      // Single finger - setup for drag-like scrolling
+      setIsDragging(true);
+      setLastMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && lastTouches) {
+    if (e.touches.length === 1 && isDragging) {
+      // Single touch scrolling - like mouse drag
+      e.preventDefault();
+      
+      const deltaX = e.touches[0].clientX - lastMousePos.x;
+      const deltaY = e.touches[0].clientY - lastMousePos.y;
+
+      setPanOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+
+      setLastMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      
+    } else if (e.touches.length === 2 && lastTouches) {
       e.preventDefault();
       
       const currentCenter = getTouchCenter(e.touches);
@@ -217,22 +235,45 @@ export const LearningPath: React.FC<LearningPathProps> = ({
         y: currentCenter.y - rect.top
       };
 
-      // TWO-FINGER PAN ONLY: No zoom gestures, only scrolling
-      const panDeltaX = relativeCenter.x - lastTouches.center.x;
-      const panDeltaY = relativeCenter.y - lastTouches.center.y;
-      
-      setPanOffset(prev => ({
-        x: prev.x + panDeltaX,
-        y: prev.y + panDeltaY
-      }));
+      // ✅ PINCH ZOOM: Detectar cambio de distancia entre dedos
+      const currentDistance = getTouchDistance(e.touches);
+      const distanceChange = Math.abs(currentDistance - lastTouches.distance);
+      const centerChange = Math.sqrt(
+        Math.pow(relativeCenter.x - lastTouches.center.x, 2) + 
+        Math.pow(relativeCenter.y - lastTouches.center.y, 2)
+      );
 
-      // Update last touches (no distance tracking needed)
+      if (distanceChange > 10 && centerChange < 20) {
+        // PINCH ZOOM: Cambio significativo en distancia, poco movimiento de centro
+        const zoomFactor = currentDistance / lastTouches.distance;
+        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
+        
+        // ✅ ZOOM HACIA EL PUNTO EXACTO ENTRE LOS DEDOS
+        const zoomRatio = newZoom / zoomLevel;
+        setPanOffset(prev => ({
+          x: lastTouches.center.x - (lastTouches.center.x - prev.x) * zoomRatio,
+          y: lastTouches.center.y - (lastTouches.center.y - prev.y) * zoomRatio
+        }));
+        
+        setZoomLevel(newZoom);
+      } else if (centerChange > 5) {
+        // TWO-FINGER PAN: Movimiento de centro, mantener zoom
+        const panDeltaX = relativeCenter.x - lastTouches.center.x;
+        const panDeltaY = relativeCenter.y - lastTouches.center.y;
+        
+        setPanOffset(prev => ({
+          x: prev.x + panDeltaX,
+          y: prev.y + panDeltaY
+        }));
+      }
+
+      // Update last touches con nueva distancia y centro
       setLastTouches({ 
-        distance: lastTouches.distance, // Keep same distance
+        distance: currentDistance,
         center: relativeCenter 
       });
     }
-  }, [lastTouches, panOffset]);
+  }, [isDragging, lastMousePos, lastTouches, panOffset, zoomLevel]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (e.touches.length < 2) {
@@ -240,6 +281,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
     }
     if (e.touches.length === 0) {
       setIsTouch(false);
+      setIsDragging(false);
     }
   }, []);
 
@@ -421,56 +463,66 @@ export const LearningPath: React.FC<LearningPathProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    // ===== BOUNDARY-AWARE SCROLL PREVENTION =====
+    // ===== WHEEL: SCROLL + ZOOM SIMPLIFICADO =====
     const handleWheel = (e: WheelEvent) => {
       if (!container.contains(e.target as Node)) return;
 
-      // Encontrar elemento scrollable más cercano
-      let scrollableElement = e.target as Element;
-      while (scrollableElement && scrollableElement !== container) {
-        const overflow = getComputedStyle(scrollableElement).overflow;
-        const overflowY = getComputedStyle(scrollableElement).overflowY;
-        const overflowX = getComputedStyle(scrollableElement).overflowX;
-        
-        if (overflow === 'auto' || overflow === 'scroll' || 
-            overflowY === 'auto' || overflowY === 'scroll' ||
-            overflowX === 'auto' || overflowX === 'scroll') {
-          break;
-        }
-        scrollableElement = scrollableElement.parentElement!;
-      }
-
-      if (!scrollableElement || scrollableElement === document.documentElement) {
-        scrollableElement = container;
-      }
-
-      // Verificar límites de scroll
-      const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = scrollableElement;
-      const deltaY = e.deltaY;
-      const deltaX = e.deltaX;
-
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight;
-      const atLeft = scrollLeft <= 0;
-      const atRight = scrollLeft + clientWidth >= scrollWidth;
-
-      // Solo prevenir propagación si estamos en límites y scrolling en esa dirección
-      let shouldPrevent = false;
-      
-      if (deltaY > 0 && atBottom) shouldPrevent = true; 
-      if (deltaY < 0 && atTop) shouldPrevent = true;    
-      if (deltaX > 0 && atRight) shouldPrevent = true;  
-      if (deltaX < 0 && atLeft) shouldPrevent = true;   
-
-      if (shouldPrevent) {
+      // ===== ZOOM CON CTRL+WHEEL EN EL PUNTO DEL GESTO =====
+      if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        e.stopPropagation();
+        
+        const rect = container.getBoundingClientRect();
+        
+        // ✅ USAR POSICIÓN EXACTA DEL MOUSE/TRACKPAD
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
+        
+        // ✅ ZOOM HACIA EL PUNTO EXACTO DEL GESTO
+        const zoomRatio = newZoom / zoomLevel;
+        setPanOffset(prev => ({
+          x: mouseX - (mouseX - prev.x) * zoomRatio,
+          y: mouseY - (mouseY - prev.y) * zoomRatio
+        }));
+        
+        setZoomLevel(newZoom);
+        return;
       }
+
+      // ===== SCROLL COMO DRAG - DIRECTO A PANOFFSET =====
+      e.preventDefault();
+      e.stopPropagation();
+      
+      setPanOffset(prev => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY
+      }));
     };
 
-    // ===== TOUCH BOUNDARY DETECTION =====
+    // ===== TOUCH: SCROLL COMO DRAG + PINCH ZOOM =====
     let startY = 0;
     let startX = 0;
+    let initialPinchDistance = 0;
+    let initialZoom = 1;
+    let initialPinchCenter = { x: 0, y: 0 }; // ✅ AGREGAR CENTRO INICIAL DEL PINCH
+    let touchStartTime = 0;
+
+    const getTouchDistance = (touches: TouchList) => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const getTouchCenter = (touches: TouchList, rect: DOMRect) => {
+      const centerX = (touches[0].clientX + touches[1].clientX) / 2;
+      const centerY = (touches[0].clientY + touches[1].clientY) / 2;
+      return {
+        x: centerX - rect.left,
+        y: centerY - rect.top
+      };
+    };
 
     const handleTouchStart = (e: TouchEvent) => {
       if (container.contains(e.target as Node) && e.touches.length === 1) {
@@ -479,83 +531,36 @@ export const LearningPath: React.FC<LearningPathProps> = ({
       }
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!container.contains(e.target as Node) || e.touches.length !== 1) return;
-
-      const currentY = e.touches[0].clientY;
-      const currentX = e.touches[0].clientX;
-      const deltaY = startY - currentY;
-      const deltaX = startX - currentX;
-
-      // Encontrar elemento scrollable
-      let scrollableElement = e.target as Element;
-      while (scrollableElement && scrollableElement !== container) {
-        const overflow = getComputedStyle(scrollableElement).overflow;
-        const overflowY = getComputedStyle(scrollableElement).overflowY;
-        if (overflow === 'auto' || overflow === 'scroll' || 
-            overflowY === 'auto' || overflowY === 'scroll') {
-          break;
-        }
-        scrollableElement = scrollableElement.parentElement!;
-      }
-
-      if (!scrollableElement) scrollableElement = container;
-
-      const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = scrollableElement;
-      
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight;
-      const atLeft = scrollLeft <= 0;
-      const atRight = scrollLeft + clientWidth >= scrollWidth;
-
-      let shouldPrevent = false;
-      
-      if (deltaY > 0 && atBottom) shouldPrevent = true; 
-      if (deltaY < 0 && atTop) shouldPrevent = true;    
-      if (deltaX > 0 && atRight) shouldPrevent = true;  
-      if (deltaX < 0 && atLeft) shouldPrevent = true;   
-
-      if (shouldPrevent) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
+    // ===== TOUCH: NO INTERFERENCE - Let React handlers do the work =====
+    // Native touch handlers removed to avoid the "disparado" bug
+    // Touch is handled by React handlers properly
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    // Touch events handled by React, not native listeners
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
     };
+  }, [zoomLevel, panOffset]); // ✅ ADD DEPENDENCIES for proper state updates
+
+  // React event handlers - SIMPLIFIED PARA SCROLL LIBRE
+  // =========================================================
+  // PROBLEMA IDENTIFICADO: Los handlers existentes de zoom/pan 
+  // interfieren con el scroll natural. CurriculumTreeView funciona 
+  // perfecto porque NO llama handlers que interfieren.
+  // SOLUCIÓN: Simplificar como CurriculumTreeView
+  const handleContainerWheel = useCallback((e: React.WheelEvent) => {
+    // Native listener handles all scroll and zoom logic, just prevent basic propagation
   }, []);
 
-  // React event handlers - Preserve existing functionality but allow natural scroll
-  const handleContainerWheel = useCallback((e: React.WheelEvent) => {
-    // Native boundary-aware listener handles prevention
-    // Still call existing zoom/pan logic
-    handleWheel(e); 
-  }, [handleWheel]);
-
-  const handleContainerTouchStart = useCallback((e: React.TouchEvent) => {
-    // Native listener handles boundary detection
-    // Preserve existing touch logic for zoom/pan
-    handleTouchStart(e);
-  }, [handleTouchStart]);
-
-  const handleContainerTouchMove = useCallback((e: React.TouchEvent) => {
-    // Native listener handles boundary detection
-    // Preserve existing touch logic for zoom/pan
-    handleTouchMove(e);
-  }, [handleTouchMove]);
+  const handleContainerTouchStart = handleTouchStart;
+  const handleContainerTouchMove = handleTouchMove;
 
   return (
     <div 
       ref={containerRef} 
       data-scroll-container="learning-path"
-      className="relative w-full h-full overflow-auto cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
       onWheel={handleContainerWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -568,7 +573,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({
         // ===== LEARNING PATH - NATURAL SCROLL + BOUNDARY PREVENTION =====
         overscrollBehavior: 'contain',           // CSS backup method
         WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
-        touchAction: 'auto',                     // Permitir scroll natural (incluye zoom/pan)
+        touchAction: 'none',                     // Prevenir scroll de página, manejar todo internamente
         scrollBehavior: 'smooth',                // Smooth scroll
         isolation: 'isolate',                    // Stacking context
       }}

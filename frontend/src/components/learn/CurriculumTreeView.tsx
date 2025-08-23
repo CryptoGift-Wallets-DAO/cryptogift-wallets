@@ -274,13 +274,28 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         });
       }
     } else if (e.touches.length === 1) {
-      // Single finger - allow normal touch interactions
-      setIsDragging(false);
+      // Single finger - setup for drag-like scrolling
+      setIsDragging(true);
+      setLastMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     }
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && lastTouches) {
+    if (e.touches.length === 1 && isDragging) {
+      // Single touch scrolling - like mouse drag
+      e.preventDefault();
+      
+      const deltaX = e.touches[0].clientX - lastMousePos.x;
+      const deltaY = e.touches[0].clientY - lastMousePos.y;
+
+      setPanOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+
+      setLastMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      
+    } else if (e.touches.length === 2 && lastTouches) {
       e.preventDefault();
       
       const currentCenter = getTouchCenter(e.touches);
@@ -293,22 +308,45 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         y: currentCenter.y - rect.top
       };
 
-      // TWO-FINGER PAN ONLY: No zoom gestures, only scrolling
-      const panDeltaX = relativeCenter.x - lastTouches.center.x;
-      const panDeltaY = relativeCenter.y - lastTouches.center.y;
-      
-      setPanOffset(prev => ({
-        x: prev.x + panDeltaX,
-        y: prev.y + panDeltaY
-      }));
+      // ✅ PINCH ZOOM: Detectar cambio de distancia entre dedos (COPIADO DE LEARNINGPATH)
+      const currentDistance = getTouchDistance(e.touches);
+      const distanceChange = Math.abs(currentDistance - lastTouches.distance);
+      const centerChange = Math.sqrt(
+        Math.pow(relativeCenter.x - lastTouches.center.x, 2) + 
+        Math.pow(relativeCenter.y - lastTouches.center.y, 2)
+      );
 
-      // Update last touches (no distance tracking needed)
+      if (distanceChange > 10 && centerChange < 20) {
+        // PINCH ZOOM: Cambio significativo en distancia, poco movimiento de centro
+        const zoomFactor = currentDistance / lastTouches.distance;
+        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
+        
+        // ✅ ZOOM HACIA EL PUNTO EXACTO ENTRE LOS DEDOS
+        const zoomRatio = newZoom / zoomLevel;
+        setPanOffset(prev => ({
+          x: lastTouches.center.x - (lastTouches.center.x - prev.x) * zoomRatio,
+          y: lastTouches.center.y - (lastTouches.center.y - prev.y) * zoomRatio
+        }));
+        
+        setZoomLevel(newZoom);
+      } else if (centerChange > 5) {
+        // TWO-FINGER PAN: Movimiento de centro, mantener zoom
+        const panDeltaX = relativeCenter.x - lastTouches.center.x;
+        const panDeltaY = relativeCenter.y - lastTouches.center.y;
+        
+        setPanOffset(prev => ({
+          x: prev.x + panDeltaX,
+          y: prev.y + panDeltaY
+        }));
+      }
+
+      // Update last touches con nueva distancia y centro
       setLastTouches({ 
-        distance: lastTouches.distance, // Keep same distance
+        distance: currentDistance,
         center: relativeCenter 
       });
     }
-  }, [lastTouches, panOffset]);
+  }, [isDragging, lastMousePos, lastTouches, panOffset, zoomLevel]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (e.touches.length < 2) {
@@ -316,6 +354,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
     }
     if (e.touches.length === 0) {
       setIsTouch(false);
+      setIsDragging(false);
     }
   }, []);
 
@@ -348,7 +387,15 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
     setIsDragging(false);
   }, []);
 
-  // Zoom reset function
+  // Zoom control functions
+  const zoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(2, prev * 1.2));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(0.5, prev / 1.2));
+  }, []);
+
   const resetZoom = useCallback(() => {
     setZoomLevel(1);
     setPanOffset({ x: 0, y: 0 });
@@ -673,143 +720,72 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // ===== BOUNDARY-AWARE SCROLL PREVENTION =====
-    // Solo prevenir propagación cuando el scroll saldría del contenedor
+    // ===== WHEEL: SCROLL COMO DRAG + ZOOM =====
     const handleWheel = (e: WheelEvent) => {
       if (!container.contains(e.target as Node)) return;
 
-      // Obtener elemento scrollable más cercano
-      let scrollableElement = e.target as Element;
-      while (scrollableElement && scrollableElement !== container) {
-        const overflow = getComputedStyle(scrollableElement).overflow;
-        const overflowY = getComputedStyle(scrollableElement).overflowY;
-        const overflowX = getComputedStyle(scrollableElement).overflowX;
+      // ===== ZOOM CON CTRL+WHEEL EN EL PUNTO DEL GESTO =====
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
         
-        if (overflow === 'auto' || overflow === 'scroll' || 
-            overflowY === 'auto' || overflowY === 'scroll' ||
-            overflowX === 'auto' || overflowX === 'scroll') {
-          break;
-        }
-        scrollableElement = scrollableElement.parentElement!;
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.2, Math.min(3, zoomLevel * zoomFactor));
+        
+        const zoomRatio = newZoom / zoomLevel;
+        setPanOffset(prev => ({
+          x: mouseX - (mouseX - prev.x) * zoomRatio,
+          y: mouseY - (mouseY - prev.y) * zoomRatio
+        }));
+        
+        setZoomLevel(newZoom);
+        return;
       }
 
-      // Si no encontramos elemento scrollable, usar el contenedor
-      if (!scrollableElement || scrollableElement === document.documentElement) {
-        scrollableElement = container;
-      }
-
-      // Verificar límites de scroll
-      const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = scrollableElement;
-      const deltaY = e.deltaY;
-      const deltaX = e.deltaX;
-
-      // Verificar si el scroll está en los límites
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight;
-      const atLeft = scrollLeft <= 0;
-      const atRight = scrollLeft + clientWidth >= scrollWidth;
-
-      // Solo prevenir propagación si estamos en límites y scrolling en esa dirección
-      let shouldPrevent = false;
+      // ===== SCROLL COMO DRAG - DIRECTO A PANOFFSET =====
+      // Esta es la clave: usar setPanOffset como hace el drag libre
+      e.preventDefault();
+      e.stopPropagation();
       
-      if (deltaY > 0 && atBottom) shouldPrevent = true; // Scrolling down at bottom
-      if (deltaY < 0 && atTop) shouldPrevent = true;    // Scrolling up at top
-      if (deltaX > 0 && atRight) shouldPrevent = true;  // Scrolling right at right edge
-      if (deltaX < 0 && atLeft) shouldPrevent = true;   // Scrolling left at left edge
-
-      if (shouldPrevent) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      setPanOffset(prev => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY
+      }));
     };
 
-    // ===== TOUCH SCROLL BOUNDARY DETECTION =====
-    let startY = 0;
-    let startX = 0;
+    // ===== TOUCH: NO INTERFERENCE - Let React handlers do the work =====
+    // Native touch handlers removed to avoid the "disparado" bug
+    // Single touch is handled by overflow:auto natural scrolling
+    // Two-finger touch is handled by React handlers for pinch zoom
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (container.contains(e.target as Node) && e.touches.length === 1) {
-        startY = e.touches[0].clientY;
-        startX = e.touches[0].clientX;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!container.contains(e.target as Node) || e.touches.length !== 1) return;
-
-      const currentY = e.touches[0].clientY;
-      const currentX = e.touches[0].clientX;
-      const deltaY = startY - currentY;
-      const deltaX = startX - currentX;
-
-      // Encontrar elemento scrollable
-      let scrollableElement = e.target as Element;
-      while (scrollableElement && scrollableElement !== container) {
-        const overflow = getComputedStyle(scrollableElement).overflow;
-        const overflowY = getComputedStyle(scrollableElement).overflowY;
-        if (overflow === 'auto' || overflow === 'scroll' || 
-            overflowY === 'auto' || overflowY === 'scroll') {
-          break;
-        }
-        scrollableElement = scrollableElement.parentElement!;
-      }
-
-      if (!scrollableElement) scrollableElement = container;
-
-      const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } = scrollableElement;
-      
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight;
-      const atLeft = scrollLeft <= 0;
-      const atRight = scrollLeft + clientWidth >= scrollWidth;
-
-      let shouldPrevent = false;
-      
-      if (deltaY > 0 && atBottom) shouldPrevent = true; // Scrolling down at bottom
-      if (deltaY < 0 && atTop) shouldPrevent = true;    // Scrolling up at top
-      if (deltaX > 0 && atRight) shouldPrevent = true;  // Scrolling right at right edge
-      if (deltaX < 0 && atLeft) shouldPrevent = true;   // Scrolling left at left edge
-
-      if (shouldPrevent) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-
-    // Usar passive: false solo para permitir preventDefault cuando necesario
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    // Touch events handled by React, not native listeners
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
     };
-  }, []);
+  }, [zoomLevel, panOffset]);
 
-  // React event handlers - Simplified (native listeners do the heavy lifting)
+  // React event handlers - NATURAL SCROLL + BOUNDARY PREVENTION
   const handleContainerWheel = useCallback((e: React.WheelEvent) => {
-    // Native listener handles boundary detection, just prevent basic propagation
+    // Allow natural wheel events, boundary detection via native listener
   }, []);
 
-  const handleContainerTouchStart = useCallback((e: React.TouchEvent) => {
-    // Native listener handles touch logic
-  }, []);
-
-  const handleContainerTouchMove = useCallback((e: React.TouchEvent) => {
-    // Native listener handles boundary detection
-  }, []);
+  const handleContainerTouchStart = handleTouchStart;
+  const handleContainerTouchMove = handleTouchMove;
 
   const handleContainerScroll = useCallback((e: React.UIEvent) => {
-    // Allow normal scrolling behavior
+    // Allow normal scrolling behavior - this is the key for natural scroll
   }, []);
 
   return (
     <div 
       ref={scrollContainerRef}
       data-scroll-container="curriculum-tree"
-      className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-auto"
+      className="w-full h-full relative bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden"
       onTouchStart={handleContainerTouchStart}
       onTouchMove={handleContainerTouchMove}
       onWheel={handleContainerWheel}
@@ -820,7 +796,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
         overscrollBehaviorX: 'contain',          // Horizontal independence
         overscrollBehaviorY: 'contain',          // Vertical independence
         WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
-        touchAction: 'auto',                     // Permitir scroll natural (NO restricciones)
+        touchAction: 'none',                     // Prevenir scroll de página, manejar todo internamente
         scrollBehavior: 'smooth',                // Smooth scroll interno
         isolation: 'isolate',                    // Crear stacking context independiente
       }}
@@ -988,10 +964,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Zoom Controls */}
+            {/* Zoom Controls - Restored */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-1 flex items-center gap-1">
               <button
-                onClick={() => setZoomLevel(prev => Math.min(3, prev * 1.2))}
+                onClick={zoomIn}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Acercar"
               >
@@ -1001,7 +977,7 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                 {Math.round(zoomLevel * 100)}%
               </div>
               <button
-                onClick={() => setZoomLevel(prev => Math.max(0.2, prev * 0.8))}
+                onClick={zoomOut}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                 title="Alejar"
               >
@@ -1023,152 +999,150 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
                 <Maximize2 size={16} />
               </button>
             </div>
-
-            {/* Stats Display with Zoom Control */}
-            <div className="flex items-center gap-2">
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 px-3 py-1.5">
-                <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-                  <div className="text-center">
-                    <div className="font-bold text-sm text-blue-600 dark:text-blue-400">{filteredNodes.filter(n => n.type === 'module').length}</div>
-                    <div>Módulos</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-sm text-green-600 dark:text-green-400">{filteredNodes.filter(n => n.type === 'lesson').length}</div>
-                    <div>Lecciones</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-sm text-orange-600 dark:text-orange-400">{filteredNodes.filter(n => n.type === 'lesson' && (n.data as Lesson).isQuest).length}</div>
-                    <div>Quests</div>
-                  </div>
+            
+            {/* Stats Display */}
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 px-3 py-1.5">
+              <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-center">
+                  <div className="font-bold text-sm text-blue-600 dark:text-blue-400">{filteredNodes.filter(n => n.type === 'module').length}</div>
+                  <div>Módulos</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-sm text-green-600 dark:text-green-400">{filteredNodes.filter(n => n.type === 'lesson').length}</div>
+                  <div>Lecciones</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-sm text-orange-600 dark:text-orange-400">{filteredNodes.filter(n => n.type === 'lesson' && (n.data as Lesson).isQuest).length}</div>
+                  <div>Quests</div>
                 </div>
               </div>
-              
-              {/* Advanced Zoom Control Button */}
-              <div className="relative" data-zoom-control>
-                <motion.button
-                  onClick={() => setShowZoomControl(!showZoomControl)}
-                  className="w-8 h-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Zoom Control"
-                >
-                  <Sliders size={14} />
-                </motion.button>
+            </div>
+            
+            {/* Advanced Zoom Control Button */}
+            <div className="relative" data-zoom-control>
+              <motion.button
+                onClick={() => setShowZoomControl(!showZoomControl)}
+                className="w-8 h-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-lg border border-gray-200/50 dark:border-gray-700/50 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Zoom Control"
+              >
+                <Sliders size={14} />
+              </motion.button>
 
-                {/* Zoom Control Panel */}
-                <AnimatePresence>
-                  {showZoomControl && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute top-10 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl p-4 w-64"
-                    >
-                      {/* Mode Toggle */}
-                      <div className="mb-4">
-                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
-                          Zoom Mode
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setZoomMode('interactive')}
-                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                              zoomMode === 'interactive' 
-                                ? 'bg-blue-500 text-white' 
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            <MousePointer2 size={12} className="inline mr-1" />
-                            Interactive
-                          </button>
-                          <button
-                            onClick={() => setZoomMode('fixed')}
-                            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                              zoomMode === 'fixed' 
-                                ? 'bg-purple-500 text-white' 
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            <Settings size={12} className="inline mr-1" />
-                            Fixed
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Zoom Slider */}
-                      <div className="mb-4">
-                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 block flex items-center justify-between">
-                          <span>Zoom Level</span>
-                          <span className="text-blue-600 dark:text-blue-400">{Math.round(zoomLevel * 100)}%</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="range"
-                            min="20"
-                            max="300"
-                            step="10"
-                            value={zoomLevel * 100}
-                            onChange={(e) => {
-                              const newZoom = parseInt(e.target.value) / 100;
-                              setZoomLevel(newZoom);
-                              // Auto-switch to Fixed mode when using slider
-                              if (zoomMode === 'interactive') {
-                                setZoomMode('fixed');
-                              }
-                            }}
-                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                          <div className="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>20%</span>
-                            <span>100%</span>
-                            <span>300%</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quick Zoom Buttons */}
+              {/* Zoom Control Panel */}
+              <AnimatePresence>
+                {showZoomControl && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    className="absolute top-10 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl p-4 w-64"
+                  >
+                    {/* Mode Toggle */}
+                    <div className="mb-4">
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+                        Zoom Mode
+                      </label>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => {
-                            setZoomLevel(1);
-                            setPanOffset({ x: 0, y: 0 });
-                            setZoomMode('fixed');
-                          }}
-                          className="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                          onClick={() => setZoomMode('interactive')}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                            zoomMode === 'interactive' 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
                         >
-                          Reset
+                          <MousePointer2 size={12} className="inline mr-1" />
+                          Interactive
                         </button>
                         <button
-                          onClick={() => {
-                            fitToScreen();
-                            setZoomMode('fixed');
-                          }}
-                          className="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                          onClick={() => setZoomMode('fixed')}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                            zoomMode === 'fixed' 
+                              ? 'bg-purple-500 text-white' 
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
                         >
-                          Fit Screen
+                          <Settings size={12} className="inline mr-1" />
+                          Fixed
                         </button>
                       </div>
+                    </div>
 
-                      {/* Mode Description */}
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {zoomMode === 'interactive' ? (
-                            <>
-                              <MousePointer2 size={10} className="inline mr-1" />
-                              Use gestures to zoom and pan
-                            </>
-                          ) : (
-                            <>
-                              <Settings size={10} className="inline mr-1" />
-                              Fixed zoom level, gestures disabled
-                            </>
-                          )}
-                        </p>
+                    {/* Zoom Slider */}
+                    <div className="mb-4">
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 block flex items-center justify-between">
+                        <span>Zoom Level</span>
+                        <span className="text-blue-600 dark:text-blue-400">{Math.round(zoomLevel * 100)}%</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="range"
+                          min="20"
+                          max="300"
+                          step="10"
+                          value={zoomLevel * 100}
+                          onChange={(e) => {
+                            const newZoom = parseInt(e.target.value) / 100;
+                            setZoomLevel(newZoom);
+                            // Auto-switch to Fixed mode when using slider
+                            if (zoomMode === 'interactive') {
+                              setZoomMode('fixed');
+                            }
+                          }}
+                          className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>20%</span>
+                          <span>100%</span>
+                          <span>300%</span>
+                        </div>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                    </div>
+
+                    {/* Quick Zoom Buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setZoomLevel(1);
+                          setPanOffset({ x: 0, y: 0 });
+                          setZoomMode('fixed');
+                        }}
+                        className="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        onClick={() => {
+                          fitToScreen();
+                          setZoomMode('fixed');
+                        }}
+                        className="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Fit Screen
+                      </button>
+                    </div>
+
+                    {/* Mode Description */}
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {zoomMode === 'interactive' ? (
+                          <>
+                            <MousePointer2 size={10} className="inline mr-1" />
+                            Use gestures to zoom and pan
+                          </>
+                        ) : (
+                          <>
+                            <Settings size={10} className="inline mr-1" />
+                            Fixed zoom level, gestures disabled
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -1178,13 +1152,13 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
       <div 
         ref={containerRef}
         data-scroll-container="curriculum-tree-inner"
-        className="w-full h-full overflow-auto pt-20 cursor-grab active:cursor-grabbing"
+        className="w-full h-full overflow-hidden pt-20 cursor-grab active:cursor-grabbing"
         style={{
           paddingTop: '6rem', // Extra space for mobile scrollable header
           // ===== INNER SCROLL CONTAINER - NATURAL SCROLLING =====
           overscrollBehavior: 'contain',           // CSS backup method
           WebkitOverflowScrolling: 'touch',        // iOS smooth scrolling
-          touchAction: 'auto',                     // Permitir scroll natural
+          touchAction: 'none',                     // Prevenir scroll de página
           isolation: 'isolate',
         }}
         onWheel={handleContainerWheel}
