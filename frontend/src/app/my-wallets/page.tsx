@@ -15,7 +15,7 @@ import { getAuthState, isAuthValid } from '../../lib/siweClient';
 import { NFTImage } from '../../components/NFTImage';
 import { NFTImageModal } from '../../components/ui/NFTImageModal';
 import { DashboardGlassHeader } from '../../components/ui/GlassPanelHeader';
-import { ChainSwitcher } from '../../components/ChainSwitcher';
+import { NetworkInfoCard } from '../../components/ui/NetworkInfoCard';
 
 interface UserWallet {
   id: string;
@@ -214,20 +214,21 @@ export default function MyWalletsPage() {
         }
         className="mb-8"
       >
-        {/* Header Actions - Compact for mobile */}
-        <div className="flex items-center gap-3 max-w-[150px] sm:max-w-none">
-          <ConnectAndAuthButton className="text-xs sm:text-sm" />
+        {/* Header Actions - Ultra compact for mobile */}
+        <div className="flex items-center">
+          <div className="px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-green-700 dark:text-green-400 font-medium">
+              {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Conectado'}
+            </span>
+          </div>
         </div>
       </DashboardGlassHeader>
 
       <div className="container mx-auto px-4 py-8">
 
-        {/* Chain Switcher - Critical for mobile wallets */}
-        <div className="max-w-4xl mx-auto mb-6">
-          <ChainSwitcher onChainChanged={(chainId) => {
-            console.log('🔗 Chain changed in my-wallets:', chainId);
-          }} />
-        </div>
+        {/* Network Information Card */}
+        <NetworkInfoCard />
 
         {/* Wallet Selector */}
         <div className="max-w-4xl mx-auto mb-8">
