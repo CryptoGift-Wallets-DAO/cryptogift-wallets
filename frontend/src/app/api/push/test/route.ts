@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRedisConnection } from '@/lib/redis/redisConfig';
 import webpush from 'web-push';
 import type { PushSubscription, PushNotification } from '@/lib/push/config';
+import { PushCategory } from '@/lib/push/config';
 
 // Configure web-push with VAPID (server-side only)
 const vapidPublicKey = process.env.NEXT_PUBLIC_WEBPUSH_PUBLIC_KEY || '';
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const subscription: PushSubscription = JSON.parse(subscriptionData);
+    const subscription: PushSubscription = JSON.parse(subscriptionData as string);
     
     // Create test notification
     const notification: PushNotification = {
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       requireInteraction: false,
-      category: 'system',
+      category: PushCategory.SYSTEM,
     };
     
     // Send notification

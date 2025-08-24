@@ -466,7 +466,7 @@ export function NetworkAssetManager({
             {networkInfo.chainName} Network Details
           </h4>
           
-          <div style={{ fontSize: '14px', space: 'y-2' }}>
+          <div style={{ fontSize: '14px' }} className="space-y-2">
             {[
               { label: 'Network Name', value: networkInfo.chainName },
               { label: 'Chain ID', value: parseInt(networkInfo.chainId, 16).toString() },

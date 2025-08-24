@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       const existingSubs = await redis.get(addressKey);
       
       if (existingSubs) {
-        const subs = JSON.parse(existingSubs);
+        const subs = JSON.parse(existingSubs as string);
         const filtered = subs.filter((hash: string) => hash !== userAgentHash);
         
         if (filtered.length > 0) {

@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
       const subHashes = await redis.get(addressKey);
       
       if (subHashes) {
-        const hashes = JSON.parse(subHashes);
+        const hashes = JSON.parse(subHashes as string);
         for (const hash of hashes) {
           const subData = await redis.get(`push:subscription:${hash}`);
           if (subData) {
-            subscriptions.push(JSON.parse(subData));
+            subscriptions.push(JSON.parse(subData as string));
           }
         }
       }
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       for (const key of keys) {
         const subData = await redis.get(key);
         if (subData) {
-          subscriptions.push(JSON.parse(subData));
+          subscriptions.push(JSON.parse(subData as string));
         }
       }
     }

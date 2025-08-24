@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (address) {
       const addressKey = `push:address:${address.toLowerCase()}`;
       const existingSubs = await redis.get(addressKey);
-      const subs = existingSubs ? JSON.parse(existingSubs) : [];
+      const subs = existingSubs ? JSON.parse(existingSubs as string) : [];
       
       // Add this subscription if not already present
       if (!subs.includes(userAgentHash)) {

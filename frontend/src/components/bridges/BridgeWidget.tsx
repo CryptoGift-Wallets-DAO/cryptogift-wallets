@@ -64,7 +64,7 @@ export function BridgeWidget() {
   const handleSwapChains = () => {
     setFromChain(toChain);
     setToChain(fromChain);
-    setQuote(null);
+    // Quote will be cleared automatically when chains change
   };
   
   const handleGetQuote = async () => {

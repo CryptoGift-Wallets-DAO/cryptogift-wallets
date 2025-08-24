@@ -8,7 +8,7 @@ import { getProductionConfig } from '@/lib/config/production';
 // Google Analytics 4
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: (command: string, ...args: any[]) => void;
     dataLayer?: any[];
   }
 }

@@ -3,7 +3,7 @@
  * Operational event handlers that trigger push notifications
  */
 
-import type { PushCategory } from './config';
+import { PushCategory } from './config';
 
 interface NotificationTrigger {
   address?: string;
@@ -63,7 +63,7 @@ export async function notifyTransactionReceived(
     address,
     title: '💰 Funds Received',
     body: `You received ${amount} ${token}`,
-    category: 'transaction',
+    category: PushCategory.TRANSACTION,
     data: {
       type: 'receive',
       amount,
@@ -97,7 +97,7 @@ export async function notifyTransactionSent(
     address,
     title: '📤 Transaction Sent',
     body: `Successfully sent ${amount} ${token}`,
-    category: 'transaction',
+    category: PushCategory.TRANSACTION,
     data: {
       type: 'send',
       amount,
@@ -133,7 +133,7 @@ export async function notifySwapCompleted(
     address,
     title: '🔄 Swap Completed',
     body: `Swapped ${fromAmount} ${fromToken} for ${toAmount} ${toToken}`,
-    category: 'transaction',
+    category: PushCategory.TRANSACTION,
     data: {
       type: 'swap',
       fromAmount,
@@ -174,7 +174,7 @@ export async function notifySecurityAlert(
     address,
     title: titles[alertType],
     body: details,
-    category: 'security',
+    category: PushCategory.SECURITY,
     data: {
       type: alertType,
       url: '/wallet/security',
@@ -204,7 +204,7 @@ export async function notifyGiftReceived(
     address,
     title: '🎁 Gift Received!',
     body: message || 'You have received a new CryptoGift',
-    category: 'claim',
+    category: PushCategory.CLAIM,
     data: {
       type: 'gift_received',
       tokenId,
@@ -235,7 +235,7 @@ export async function notifyGiftExpiring(
     address,
     title: '⏰ Gift Expiring Soon',
     body: `Your gift expires in ${hoursLeft} hours. Claim it now!`,
-    category: 'claim',
+    category: PushCategory.CLAIM,
     data: {
       type: 'gift_expiring',
       tokenId,
@@ -266,7 +266,7 @@ export async function notifySystemUpdate(
   return sendNotification({
     title: `📢 ${title}`,
     body: message,
-    category: 'system',
+    category: PushCategory.SYSTEM,
     data: {
       type: 'system_update',
       url: url || '/',

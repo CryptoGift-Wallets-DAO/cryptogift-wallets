@@ -18,10 +18,11 @@ import {
   AlertCircle,
   TestTube,
   Settings,
+  Megaphone,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useWebPush } from '@/hooks/useWebPush';
-import type { PushCategory } from '@/lib/push/config';
+import { PushCategory } from '@/lib/push/config';
 
 const CATEGORY_INFO: Record<PushCategory, {
   label: string;
@@ -29,29 +30,35 @@ const CATEGORY_INFO: Record<PushCategory, {
   icon: React.ElementType;
   color: string;
 }> = {
-  transaction: {
+  [PushCategory.TRANSACTION]: {
     label: 'Transactions',
     description: 'Receive, send, and swap notifications',
     icon: ArrowUpDown,
     color: 'text-blue-600 dark:text-blue-400',
   },
-  security: {
+  [PushCategory.SECURITY]: {
     label: 'Security Alerts',
     description: 'Important security updates and warnings',
     icon: Shield,
     color: 'text-red-600 dark:text-red-400',
   },
-  claim: {
+  [PushCategory.CLAIM]: {
     label: 'Gift Claims',
     description: 'New gifts and claim reminders',
     icon: Gift,
     color: 'text-purple-600 dark:text-purple-400',
   },
-  system: {
+  [PushCategory.SYSTEM]: {
     label: 'System Updates',
     description: 'App updates and maintenance notices',
     icon: Settings,
     color: 'text-gray-600 dark:text-gray-400',
+  },
+  [PushCategory.MARKETING]: {
+    label: 'Marketing',
+    description: 'Promotional updates and offers',
+    icon: Megaphone,
+    color: 'text-green-600 dark:text-green-400',
   },
 };
 

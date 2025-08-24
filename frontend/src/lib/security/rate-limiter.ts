@@ -67,10 +67,10 @@ export const RATE_LIMITS = {
 /**
  * Get client identifier (IP or wallet address)
  */
-export function getClientId(request?: Request): string {
+export async function getClientId(request?: Request): Promise<string> {
   if (!request) {
     // Server component - use headers
-    const headersList = headers();
+    const headersList = await headers();
     const forwardedFor = headersList.get('x-forwarded-for');
     const realIp = headersList.get('x-real-ip');
     const ip = forwardedFor?.split(',')[0] || realIp || 'unknown';
@@ -118,15 +118,15 @@ export async function rateLimit(
   
   try {
     // Remove old entries
-    await redis.zremrangebyscore(key, '-inf', windowStart);
+    await redis.zremrangebyscore(key, '-inf', windowStart.toString());
     
     // Count current requests in window
     const count = await redis.zcard(key);
     
     if (count >= config.maxRequests) {
       // Rate limit exceeded
-      const oldestEntry = await redis.zrange(key, 0, 0, 'WITHSCORES');
-      const oldestTime = oldestEntry?.[1] ? parseInt(oldestEntry[1]) : now;
+      const oldestEntry = await redis.zrange(key, 0, 0, { withScores: true });
+      const oldestTime = oldestEntry?.[1] ? parseInt(oldestEntry[1] as string) : now;
       const reset = oldestTime + config.interval;
       
       return {
@@ -138,7 +138,7 @@ export async function rateLimit(
     }
     
     // Add current request
-    await redis.zadd(key, now, `${now}-${Math.random()}`);
+    await redis.zadd(key, { score: now, member: `${now}-${Math.random()}` });
     await redis.expire(key, Math.ceil(config.interval / 1000));
     
     return {
