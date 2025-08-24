@@ -2764,8 +2764,11 @@ export default async function handler(
       educationModules = [] // Optional education requirements
     }: MintEscrowRequest = req.body;
     
-    // 🚨 TEMPORARY GASLESS DISABLE: Force gas-paid for system robustness
-    const gaslessTemporarilyDisabled = true;
+    // 🚨 GASLESS FALLBACK SYSTEM: Prioritize gas-paid for reliability
+    // When Biconomy SDK is installed and configured, gasless will work
+    // Otherwise, system automatically falls back to gas-paid
+    const biconomyAvailable = validateBiconomyConfig();
+    const gaslessTemporarilyDisabled = !biconomyAvailable; // Auto-detect availability
     const finalGasless = gaslessTemporarilyDisabled ? false : gasless;
     
     if (gasless && gaslessTemporarilyDisabled) {

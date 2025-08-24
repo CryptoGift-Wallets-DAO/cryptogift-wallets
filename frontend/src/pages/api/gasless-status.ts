@@ -5,6 +5,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { validateBiconomyConfig } from '../../lib/biconomy';
 
 interface GaslessStatusResponse {
   enabled: boolean;
@@ -32,15 +33,9 @@ export default async function handler(
   }
   
   try {
-    // Check the same gasless temporary disable flag used in mint-escrow.ts
-    const gaslessTemporarilyDisabled = true; // This should match the flag in mint-escrow.ts
-    
-    // Check if Biconomy is properly configured
-    const biconomyConfigured = !!(
-      process.env.NEXT_PUBLIC_BICONOMY_PAYMASTER_URL &&
-      process.env.NEXT_PUBLIC_BICONOMY_BUNDLER_URL &&
-      process.env.PRIVATE_KEY_DEPLOY
-    );
+    // Check if Biconomy is available (auto-detects SDK installation and config)
+    const biconomyConfigured = validateBiconomyConfig();
+    const gaslessTemporarilyDisabled = !biconomyConfigured; // Auto-detect availability
     
     console.log('🔍 GASLESS STATUS CHECK:', {
       gaslessTemporarilyDisabled,

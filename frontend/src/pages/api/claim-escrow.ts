@@ -38,6 +38,7 @@ import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../lib/
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { executeClaimTransaction } from '../../lib/gasPaidTransactions';
 import { debugLogger } from '../../lib/secureDebugLogger';
+import { validateBiconomyConfig } from '../../lib/biconomy';
 
 // Types
 interface ClaimEscrowRequest {
@@ -377,8 +378,11 @@ export default async function handler(
       gasless = false // 🚨 TEMPORARILY DISABLED: Gasless flow disabled to focus on robust gas-paid implementation
     }: ClaimEscrowRequest = req.body;
     
-    // 🚨 TEMPORARY GASLESS DISABLE: Force gas-paid for system robustness
-    const gaslessTemporarilyDisabled = true;
+    // 🚨 GASLESS FALLBACK SYSTEM: Prioritize gas-paid for reliability
+    // When Biconomy SDK is installed and configured, gasless will work
+    // Otherwise, system automatically falls back to gas-paid
+    const biconomyAvailable = validateBiconomyConfig();
+    const gaslessTemporarilyDisabled = !biconomyAvailable; // Auto-detect availability
     const finalGasless = gaslessTemporarilyDisabled ? false : gasless;
     
     if (gasless && gaslessTemporarilyDisabled) {

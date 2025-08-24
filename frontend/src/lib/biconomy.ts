@@ -82,12 +82,19 @@ export async function createBiconomySmartAccount(privateKey: string) {
       };
     }
 
-    // TODO: Restore when @biconomy/account package installation completes
-    // const smartAccount = await createSmartAccountClient(smartAccountConfig);
-    // console.log("Smart Account created:", await smartAccount.getAccountAddress());
-    // return smartAccount;
+    // FALLBACK: Return a mock smart account that will trigger gas-paid fallback
+    console.log('⚠️ Biconomy SDK not installed - returning fallback wrapper');
+    console.log('📍 All transactions will use gas-paid method until SDK is installed');
     
-    throw new Error('Biconomy Smart Account temporarily disabled - package installation in progress');
+    return {
+      type: 'fallback',
+      getAccountAddress: async () => account.address,
+      isDeployed: async () => false,
+      buildUserOp: async () => { throw new Error('Biconomy SDK not installed - use gas-paid'); },
+      sendUserOp: async () => { throw new Error('Biconomy SDK not installed - use gas-paid'); },
+      signer: walletClient,
+      account,
+    };
   } catch (error) {
     console.error("Error creating Biconomy Smart Account:", error);
     throw error;
