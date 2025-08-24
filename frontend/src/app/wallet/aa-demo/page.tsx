@@ -128,7 +128,7 @@ export default function AADemoPage() {
               <div className="flex items-center justify-center gap-2">
                 <Fuel className="w-4 h-4" />
                 <span>ERC-20 Paymaster</span>
-                {config.erc20Paymaster && (
+                {config.erc20PaymasterEnabled && (
                   <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
                     Active
                   </span>

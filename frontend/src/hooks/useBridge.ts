@@ -8,7 +8,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import { prepareTransaction, sendTransaction } from 'thirdweb';
-import { client } from '@/lib/thirdweb-client';
+import { client } from '@/app/client';
 import { baseSepolia } from 'thirdweb/chains';
 import { BRIDGE_CONFIG, calculateSlippage } from '@/lib/bridges/config';
 import { lifiClient, type Route, type QuoteRequest } from '@/lib/bridges/lifi-client';

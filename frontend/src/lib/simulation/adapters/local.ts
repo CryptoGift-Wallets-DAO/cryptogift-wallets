@@ -63,7 +63,7 @@ export class LocalSimulationAdapter extends SimulationAdapter {
       this.clients.set(id, createPublicClient({
         chain,
         transport: http(rpc),
-      }));
+      }) as any);
     });
   }
   

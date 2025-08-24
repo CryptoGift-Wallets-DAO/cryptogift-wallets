@@ -33,9 +33,9 @@ export function initSentry() {
     
     // Integrations
     integrations: [
-      new Sentry.BrowserTracing({
+      (Sentry as any).BrowserTracing && new (Sentry as any).BrowserTracing({
         // Navigation transactions
-        routingInstrumentation: Sentry.nextRouterInstrumentation,
+        routingInstrumentation: (Sentry as any).nextRouterInstrumentation,
         // Trace fetch/XHR
         tracingOrigins: [
           'localhost',
@@ -43,7 +43,7 @@ export function initSentry() {
           process.env.NEXT_PUBLIC_APP_URL || '',
         ],
       }),
-      new Sentry.Replay({
+      (Sentry as any).Replay && new (Sentry as any).Replay({
         // Mask sensitive content
         maskAllText: false,
         maskAllInputs: true,
@@ -59,12 +59,12 @@ export function initSentry() {
         const error = hint.originalException;
         
         // Ignore network errors
-        if (error?.message?.includes('Network request failed')) {
+        if ((error as any)?.message?.includes('Network request failed')) {
           return null;
         }
         
         // Ignore user cancellations
-        if (error?.message?.includes('User cancelled')) {
+        if ((error as any)?.message?.includes('User cancelled')) {
           return null;
         }
         
@@ -142,7 +142,7 @@ export function captureMessage(
  * Performance transaction
  */
 export function startTransaction(name: string, op: string) {
-  return Sentry.startTransaction({
+  return (Sentry as any).startTransaction({
     name,
     op,
   });

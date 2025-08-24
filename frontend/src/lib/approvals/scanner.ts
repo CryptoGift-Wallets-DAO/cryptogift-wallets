@@ -414,10 +414,10 @@ export class ApprovalScanner {
         const contract = getContract({
           address: token,
           abi: ERC1155_ABI,
-          client: this.client,
+          client: this.client as any,
         });
         
-        const isApproved = await contract.read.isApprovedForAll([owner, operator]);
+        const isApproved = await (contract as any).read.isApprovedForAll([owner, operator]);
         
         if (isApproved) {
           return {

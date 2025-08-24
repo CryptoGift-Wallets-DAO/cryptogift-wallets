@@ -125,7 +125,7 @@ export async function rateLimit(
     
     if (count >= config.maxRequests) {
       // Rate limit exceeded
-      const oldestEntry = await redis.zrange(key, 0, 0, { withScores: true });
+      const oldestEntry = await redis.zrange(key, 0, 0, { withScores: true }) as Array<{value: string, score: number}>;
       const oldestTime = oldestEntry?.[0]?.score ? oldestEntry[0].score : now;
       const reset = oldestTime + config.interval;
       
@@ -137,8 +137,8 @@ export async function rateLimit(
       };
     }
     
-    // Add current request - using correct parameter format
-    await redis.zadd(key, now, `${now}-${Math.random()}`);
+    // Add current request - using correct parameter format for Upstash Redis
+    await redis.zadd(key, { score: now, member: `${now}-${Math.random()}` });
     await redis.expire(key, Math.ceil(config.interval / 1000));
     
     return {

@@ -54,7 +54,7 @@ export function useERC20Paymaster(chainId?: number): UseERC20PaymasterReturn {
   
   // Check if feature is enabled and supported
   const config = getAAConfig(currentChainId);
-  const enabled = config.enabled && config.erc20Paymaster;
+  const enabled = config.enabled && config.erc20PaymasterEnabled;
   const isSupported = isAASupportedOnChain(currentChainId);
   
   // Load supported tokens

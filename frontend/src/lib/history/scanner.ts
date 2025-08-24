@@ -39,7 +39,7 @@ export class TransactionScanner {
       const client = createPublicClient({
         chain: config.chain,
         transport: http(config.rpc),
-      });
+      }) as any;
       this.clients.set(parseInt(chainId), client);
     });
   }
