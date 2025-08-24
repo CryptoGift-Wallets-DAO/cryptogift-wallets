@@ -144,7 +144,7 @@ export async function createMEVProtectedClient(
     client: createPublicClient({
       chain,
       transport: http(publicRPC),
-    }) as PublicClient,
+    }) as any,
     isMEVProtected: false,
     rpcUrl: publicRPC,
   };

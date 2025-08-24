@@ -27,8 +27,6 @@ const nextConfig = {
     'ethers'
   ],
   productionBrowserSourceMaps: false,
-  // Optimize build output
-  swcMinify: true,
   // STRATEGIC APPROACH: Allow deployment with detailed Vercel logs
   typescript: {
     // Allow build with TypeScript warnings to get specific Vercel logs
