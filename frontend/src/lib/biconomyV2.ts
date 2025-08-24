@@ -46,11 +46,12 @@ interface TransactionResult {
 
 interface SmartAccountWithFallback {
   type: 'smart' | 'fallback';
-  getAccountAddress: () => Promise<string>;
-  buildUserOp?: (transactions: any[]) => Promise<any>;
-  sendUserOp?: (userOp: any) => Promise<any>;
+  smartAccount: any | null;
   wallet: WalletClient<Transport, Chain, Account>;
   address: string;
+  getAccountAddress?: () => Promise<string>;
+  buildUserOp?: (transactions: any[]) => Promise<any>;
+  sendUserOp?: (userOp: any) => Promise<any>;
 }
 
 /**
@@ -127,10 +128,13 @@ export async function createBiconomySmartAccountWithFallback(privateKey: string)
         console.log('✅ Smart Account created:', address);
         
         return {
-          type: 'biconomy' as const,
+          type: 'smart' as const,
           smartAccount,
           wallet,
           address,
+          getAccountAddress: () => smartAccount.getAccountAddress(),
+          buildUserOp: (transactions: any[]) => smartAccount.buildUserOp(transactions),
+          sendUserOp: (userOp: any) => smartAccount.sendUserOp(userOp),
         };
       }
     } catch (error) {
@@ -141,7 +145,7 @@ export async function createBiconomySmartAccountWithFallback(privateKey: string)
   
   // Return gas-paid wallet as fallback
   return {
-    type: 'gas-paid' as const,
+    type: 'fallback' as const,
     smartAccount: null,
     wallet,
     address: wallet.account.address,
@@ -175,7 +179,7 @@ export async function sendTransactionWithFallback(
   };
   
   // STEP 1: Try gasless if available
-  if (account.type === 'biconomy' && account.smartAccount) {
+  if (account.type === 'smart' && account.smartAccount) {
     try {
       console.log('🎯 Attempting gasless transaction...');
       
@@ -246,11 +250,11 @@ async function sendGasPaidTransaction(
     // Send transaction using the account
     const hash = await wallet.sendTransaction({
       account: wallet.account!,
-      to: transaction.to as `0x${string}`,
-      data: transaction.data as `0x${string}`,
+      to: transaction.to,
+      data: transaction.data,
       value: transaction.value,
       gas: gasEstimate * BigInt(120) / BigInt(100), // 20% buffer
-    });
+    } as any);
     
     console.log('📮 Transaction sent:', hash);
     
@@ -330,5 +334,5 @@ export function getTransactionMethod(): 'gasless' | 'gas-paid' {
   return 'gas-paid';
 }
 
-// Export types for TypeScript
-export type SmartAccountWithFallback = Awaited<ReturnType<typeof createBiconomySmartAccountWithFallback>>;
+// Export the interface for external use
+export type { SmartAccountWithFallback };
