@@ -57,7 +57,7 @@ export function createGasPaidWallet(privateKey: string): WalletClient {
     account,
     chain: baseSepolia,
     transport: http(biconomyConfig.rpcUrl),
-  });
+  }) as WalletClient;
 }
 
 /**
@@ -178,15 +178,15 @@ export async function sendTransactionWithFallback(
       const receipt = await Promise.race([
         userOpResponse.wait(),
         timeoutPromise
-      ]);
+      ]) as any;
       
-      const txHash = receipt.receipt?.transactionHash || receipt.receipt?.hash || receipt.userOpHash;
+      const txHash = receipt?.receipt?.transactionHash || receipt?.receipt?.hash || receipt?.userOpHash;
       
       console.log('✅ Gasless transaction successful:', txHash);
       
       return {
         transactionHash: txHash,
-        receipt: receipt.receipt || receipt,
+        receipt: receipt?.receipt || receipt,
         isGasless: true,
       };
     } catch (gaslessError) {
@@ -218,29 +218,38 @@ async function sendGasPaidTransaction(
   console.log('📍 Fallback reason:', fallbackReason);
   
   try {
-    // Estimate gas
-    const gasEstimate = await wallet.estimateGas({
-      account: wallet.account!,
-      to: transaction.to,
-      data: transaction.data,
-      value: transaction.value,
-    });
+    // Estimate gas using request method
+    const gasEstimate = await wallet.request({
+      method: 'eth_estimateGas',
+      params: [{
+        from: wallet.account!.address,
+        to: transaction.to,
+        data: transaction.data,
+        value: transaction.value?.toString(),
+      }],
+    }) as bigint;
     
     console.log('⛽ Gas estimate:', gasEstimate.toString());
     
-    // Send transaction
+    // Send transaction using the account
     const hash = await wallet.sendTransaction({
       account: wallet.account!,
-      to: transaction.to,
-      data: transaction.data,
+      to: transaction.to as `0x${string}`,
+      data: transaction.data as `0x${string}`,
       value: transaction.value,
       gas: gasEstimate * BigInt(120) / BigInt(100), // 20% buffer
     });
     
     console.log('📮 Transaction sent:', hash);
     
-    // Wait for confirmation
-    const receipt = await wallet.waitForTransactionReceipt({
+    // Wait for confirmation using publicClient
+    const { createPublicClient } = await import('viem');
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(biconomyConfig.rpcUrl),
+    });
+    
+    const receipt = await publicClient.waitForTransactionReceipt({
       hash,
       confirmations: 1,
     });

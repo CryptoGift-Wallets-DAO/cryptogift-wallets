@@ -135,7 +135,7 @@ export function useWalletDashboard() {
             symbol: symbol,
             decimals: decimals,
           },
-        },
+        } as any,
       });
 
       return { success: wasAdded };
