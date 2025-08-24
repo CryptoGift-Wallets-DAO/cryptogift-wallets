@@ -19,7 +19,7 @@ import { NFTImage } from '../../components/NFTImage';
 import { NFTImageModal } from '../../components/ui/NFTImageModal';
 import { DashboardGlassHeader } from '../../components/ui/GlassPanelHeader';
 import { NetworkInfoCard } from '../../components/ui/NetworkInfoCard';
-import { X } from 'lucide-react';
+import { X, Copy, Check } from 'lucide-react';
 
 // Lazy load the WalletDashboard
 const WalletDashboard = dynamic(
@@ -95,6 +95,76 @@ function GlassOverlay({
       </div>
     </div>,
     document.body
+  );
+}
+
+// Modern Copy Address Button Component
+function CopyAddressButton({ address, size = 'normal' }: { address: string; size?: 'small' | 'normal' }) {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent parent click events
+    
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      
+      // Reset after 2 seconds
+      setTimeout(() => setCopied(false), 2000);
+      
+      // Telemetry
+      try {
+        window.dispatchEvent(new CustomEvent('telemetry', {
+          detail: { ev: 'wallet.address.copied' }
+        }));
+      } catch {}
+    } catch (error) {
+      console.error('Failed to copy address:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = address;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+  
+  const iconSize = size === 'small' ? 'w-3 h-3' : 'w-3.5 h-3.5';
+  const buttonPadding = size === 'small' ? 'p-0.5' : 'p-1';
+  
+  return (
+    <button
+      onClick={handleCopy}
+      className={`${buttonPadding} hover:bg-green-100 dark:hover:bg-green-800/30 rounded transition-all duration-200
+                 group relative`}
+      title={copied ? 'Copiado!' : 'Copiar dirección completa'}
+      aria-label={copied ? 'Dirección copiada' : 'Copiar dirección de wallet'}
+    >
+      {copied ? (
+        <Check className={`${iconSize} text-green-600 dark:text-green-400`} />
+      ) : (
+        <Copy className={`${iconSize} text-gray-500 dark:text-gray-400 
+                        group-hover:text-green-600 dark:group-hover:text-green-400
+                        group-hover:scale-110 transition-all duration-200`} />
+      )}
+      
+      {/* Tooltip */}
+      <span className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 text-xs
+                       bg-gray-900 dark:bg-gray-700 text-white rounded whitespace-nowrap
+                       pointer-events-none transition-opacity duration-200 z-50
+                       ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+        {copied ? '¡Copiado!' : 'Copiar dirección'}
+      </span>
+    </button>
   );
 }
 
@@ -329,12 +399,15 @@ export default function MyWalletsPage() {
         title={
           <div className="flex items-center gap-3">
             <span>Mis CryptoGift Wallets</span>
-            {/* Wallet address badge right next to title */}
+            {/* Wallet address badge with copy button */}
             <div className="px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center space-x-2">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
               <span className="text-xs text-green-700 dark:text-green-400 font-medium">
                 {account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Conectado'}
               </span>
+              {account?.address && (
+                <CopyAddressButton address={account.address} />
+              )}
             </div>
           </div>
         }
@@ -438,30 +511,10 @@ export default function MyWalletsPage() {
                               {wallet.tbaAddress.slice(0, 6)}...{wallet.tbaAddress.slice(-4)}
                             </p>
                             {/* Modern Copy Button */}
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  await navigator.clipboard.writeText(wallet.tbaAddress);
-                                  // Visual feedback
-                                  const btn = e.currentTarget;
-                                  const originalHTML = btn.innerHTML;
-                                  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                                  setTimeout(() => {
-                                    btn.innerHTML = originalHTML;
-                                  }, 1500);
-                                } catch (err) {
-                                  console.error('Failed to copy:', err);
-                                }
-                              }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-200"
-                              title="Copiar dirección"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 dark:text-gray-400">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                              </svg>
-                            </button>
+                            <CopyAddressButton 
+                              address={wallet.tbaAddress} 
+                              size="small"
+                            />
                             <span className="text-sm text-text-secondary">• {wallet.balance.total}</span>
                           </div>
                         </div>
