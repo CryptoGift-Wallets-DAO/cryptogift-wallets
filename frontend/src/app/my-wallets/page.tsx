@@ -630,7 +630,7 @@ export default function MyWalletsPage() {
           <WalletDashboard 
             wallet={dashboardWallet} 
             onClose={closeDashboard}
-            {...(initialTab ? { initialTab } : {})}
+            initialTab={initialTab}
           />
         </GlassOverlay>
       )}

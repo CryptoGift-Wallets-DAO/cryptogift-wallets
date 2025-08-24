@@ -6,7 +6,7 @@ import {
   Wallet, Shield, History, CreditCard, Bell, Settings, 
   ChevronRight, Zap, Lock, Globe, Layers, AlertCircle,
   TrendingUp, Eye, EyeOff, RefreshCw, Plus, X,
-  Fingerprint, Users, Key, Bridge, DollarSign
+  Fingerprint, Users, Key, ArrowRightLeft, DollarSign
 } from 'lucide-react';
 import { useActiveAccount } from 'thirdweb/react';
 
@@ -15,19 +15,16 @@ import { MEVProtectionToggle } from '../wallet/MEVProtectionToggle';
 import { ApprovalsManager } from '../wallet/ApprovalsManager';
 import { TransactionHistory } from '../history/TransactionHistory';
 import { NetworkAssetManager } from '../wallet/NetworkAssetManager';
-// TBA Wallet components
-import { WalletInterface } from '../TBAWallet/WalletInterface';
-// Will create minimal stubs for missing components
-import dynamic from 'next/dynamic';
 
 interface WalletDashboardProps {
   wallet: any;
   onClose: () => void;
+  initialTab?: string;
 }
 
-export const WalletDashboard: React.FC<WalletDashboardProps> = ({ wallet, onClose }) => {
+export const WalletDashboard: React.FC<WalletDashboardProps> = ({ wallet, onClose, initialTab }) => {
   const account = useActiveAccount();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Tab configuration with all new features
@@ -35,7 +32,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ wallet, onClos
     { id: 'overview', label: 'Overview', icon: Wallet, color: 'from-blue-500 to-cyan-500' },
     { id: 'security', label: 'Security', icon: Shield, color: 'from-purple-500 to-pink-500' },
     { id: 'history', label: 'History', icon: History, color: 'from-green-500 to-emerald-500' },
-    { id: 'bridge', label: 'Bridge & Buy', icon: Bridge, color: 'from-orange-500 to-red-500' },
+    { id: 'bridge', label: 'Bridge & Buy', icon: ArrowRightLeft, color: 'from-orange-500 to-red-500' },
     { id: 'aa', label: 'Smart Account', icon: Zap, color: 'from-indigo-500 to-purple-500' },
     { id: 'notifications', label: 'Alerts', icon: Bell, color: 'from-yellow-500 to-orange-500' },
     { id: 'settings', label: 'Settings', icon: Settings, color: 'from-gray-500 to-gray-600' },
@@ -260,9 +257,8 @@ const SecurityTab: React.FC<{ wallet: any }> = ({ wallet }) => {
     <div className="space-y-6">
       <MEVProtectionToggle showDetails={true} />
       <ApprovalsManager 
-        address={wallet.tbaAddress} 
-        chainId={84532}
         className="w-full"
+        compactMode={false}
       />
     </div>
   );
@@ -273,9 +269,9 @@ const BridgeAndBuyTab: React.FC<{ wallet: any }> = ({ wallet }) => {
   return (
     <div className="space-y-6">
       <NetworkAssetManager 
-        address={wallet.tbaAddress}
-        chainId={84532}
         className="w-full"
+        compactMode={false}
+        requiredChainId={84532}
       />
       <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 
                     backdrop-blur-sm border border-white/20">
@@ -411,3 +407,6 @@ const SettingsTab: React.FC<{ wallet: any }> = ({ wallet }) => {
     </div>
   );
 };
+
+// Export default for dynamic import
+export default WalletDashboard;
