@@ -86,7 +86,11 @@ function generateCSP(): string {
       // Analytics
       'https://api2.amplitude.com',
       'https://*.amplitude.com',
+      'https://sr-client-cfg.amplitude.com',
+      'https://api.amplitude.com',
       'https://us.i.posthog.com',
+      'https://*.posthog.com',
+      'https://app.posthog.com',
       'https://*.sentry.io',
       'https://plausible.io',
       // 0x API
@@ -183,13 +187,27 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/static/') ||
     request.nextUrl.pathname.includes('.')
   ) {
-    return NextResponse.next();
+    // For API routes, add CORS headers
+    const response = NextResponse.next();
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
+    return response;
   }
   
   // Create response
   const response = NextResponse.next();
   
-  // Apply security headers
+  // In development, skip most security headers to avoid issues
+  if (isDevelopment) {
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN'); // Allow same-origin framing
+    return response;
+  }
+  
+  // Apply security headers only in production
   const securityHeaders = getSecurityHeaders();
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value as string);

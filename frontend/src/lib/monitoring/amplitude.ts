@@ -13,6 +13,10 @@ let initialized = false;
  * Must only run client-side
  */
 export function initAmplitude() {
+  // TEMPORARILY DISABLED TO FIX CORS ISSUES
+  console.log('[Amplitude] Temporarily disabled to avoid CORS errors');
+  return;
+  
   // Only initialize once
   if (initialized) return;
   
