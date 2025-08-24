@@ -44,6 +44,15 @@ interface TransactionResult {
   fallbackReason?: string;
 }
 
+interface SmartAccountWithFallback {
+  type: 'smart' | 'fallback';
+  getAccountAddress: () => Promise<string>;
+  buildUserOp?: (transactions: any[]) => Promise<any>;
+  sendUserOp?: (userOp: any) => Promise<any>;
+  wallet: WalletClient<Transport, Chain, Account>;
+  address: string;
+}
+
 /**
  * Create a wallet client for gas-paid transactions
  */
@@ -143,7 +152,7 @@ export async function createBiconomySmartAccountWithFallback(privateKey: string)
  * Send transaction with automatic gasless → gas-paid fallback
  */
 export async function sendTransactionWithFallback(
-  account: Awaited<ReturnType<typeof createBiconomySmartAccountWithFallback>>,
+  account: SmartAccountWithFallback,
   transaction: TransactionRequest
 ): Promise<TransactionResult> {
   console.log('📤 Sending transaction with fallback support...');
