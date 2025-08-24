@@ -97,7 +97,7 @@ export class ApprovalScanner {
     this.client = createPublicClient({
       chain,
       transport: http(),
-    }) as PublicClient;
+    }) as any;
   }
 
   private getChain(chainId: number) {

@@ -241,7 +241,8 @@ export class PerformanceMonitor {
    * Start timing
    */
   start(name: string): void {
-    this.marks.set(name, performance.now());
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    this.marks.set(name, now);
   }
   
   /**
@@ -251,7 +252,8 @@ export class PerformanceMonitor {
     const start = this.marks.get(name);
     if (!start) return 0;
     
-    const duration = performance.now() - start;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const duration = now - start;
     this.marks.delete(name);
     
     // Record metric
