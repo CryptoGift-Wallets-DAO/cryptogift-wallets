@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+import { createPortal } from 'react-dom';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { client } from '../client';
 import { RightSlideWallet } from '../../components/TBAWallet/RightSlideWallet';
@@ -16,6 +19,20 @@ import { NFTImage } from '../../components/NFTImage';
 import { NFTImageModal } from '../../components/ui/NFTImageModal';
 import { DashboardGlassHeader } from '../../components/ui/GlassPanelHeader';
 import { NetworkInfoCard } from '../../components/ui/NetworkInfoCard';
+import { X } from 'lucide-react';
+
+// Lazy load the WalletDashboard
+const WalletDashboard = dynamic(
+  () => import('../../components/WalletDashboard/WalletDashboard'),
+  { 
+    ssr: false, 
+    loading: () => (
+      <div className="fixed inset-0 grid place-items-center bg-black/40">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-white/80" />
+      </div>
+    )
+  }
+);
 
 interface UserWallet {
   id: string;
@@ -34,8 +51,57 @@ interface UserWallet {
   isActive: boolean;
 }
 
+// Glass Overlay Component
+function GlassOverlay({
+  open,
+  onClose,
+  children,
+  ariaLabel = 'Wallet Dashboard'
+}: React.PropsWithChildren<{ open: boolean; onClose: () => void; ariaLabel?: string }>) {
+  const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { 
+      document.removeEventListener('keydown', onKey); 
+      document.body.style.overflow = original; 
+    };
+  }, [open, onClose]);
+
+  if (!mounted || !open) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50"
+      aria-hidden={!open}
+      aria-label={ariaLabel}
+      role="dialog"
+    >
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        ref={dialogRef}
+        className="relative mx-auto my-4 h-[92vh] w-[min(1200px,95vw)] overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-0 shadow-2xl backdrop-blur-xl"
+      >
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function MyWalletsPage() {
   const account = useActiveAccount();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [wallets, setWallets] = useState<UserWallet[]>([]);
   const [activeWallet, setActiveWallet] = useState<string | null>(null);
@@ -43,6 +109,9 @@ export default function MyWalletsPage() {
   const [showWalletInterface, setShowWalletInterface] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashboardWallet, setDashboardWallet] = useState<UserWallet | null>(null);
+  const [initialTab, setInitialTab] = useState<string | undefined>(undefined);
   const [imageModalData, setImageModalData] = useState<{
     isOpen: boolean;
     image: string;
@@ -50,6 +119,9 @@ export default function MyWalletsPage() {
     tokenId: string;
     contractAddress: string;
   }>({ isOpen: false, image: '', name: '', tokenId: '', contractAddress: '' });
+  
+  // Feature flag check
+  const isDashboardEnabled = process.env.NEXT_PUBLIC_FEATURE_WALLET_DASHBOARD === 'on';
 
   useEffect(() => {
     setMounted(true);
@@ -120,9 +192,67 @@ export default function MyWalletsPage() {
   }, [account, isAuthenticated, loadUserWallets]);
 
   const handleWalletSelect = (wallet: UserWallet) => {
-    setSelectedWallet(wallet);
-    setShowWalletInterface(true);
+    // If dashboard is enabled, open it instead of the old interface
+    if (isDashboardEnabled) {
+      openDashboard(wallet);
+    } else {
+      setSelectedWallet(wallet);
+      setShowWalletInterface(true);
+    }
   };
+  
+  const openDashboard = useCallback((wallet: UserWallet, tab?: string) => {
+    setDashboardWallet(wallet);
+    setInitialTab(tab);
+    setShowDashboard(true);
+    
+    // Telemetry
+    try { 
+      window.dispatchEvent(new CustomEvent('telemetry', { 
+        detail: { ev: 'dashboard.open', chainId: 84532 } 
+      })); 
+    } catch {}
+    
+    // Update URL
+    const params = new URLSearchParams(window.location.search);
+    params.set('open', wallet.tbaAddress);
+    if (tab) params.set('tab', tab);
+    router.replace(`?${params.toString()}`);
+  }, [router]);
+  
+  const closeDashboard = useCallback(() => {
+    setShowDashboard(false);
+    setDashboardWallet(null);
+    
+    // Telemetry
+    try { 
+      window.dispatchEvent(new CustomEvent('telemetry', { 
+        detail: { ev: 'dashboard.close' } 
+      })); 
+    } catch {}
+    
+    // Clear URL params
+    const params = new URLSearchParams(window.location.search);
+    params.delete('open');
+    params.delete('tab');
+    router.replace(`?${params.toString()}`);
+  }, [router]);
+  
+  // Deep link support
+  useEffect(() => {
+    const qOpen = searchParams.get('open');
+    const qTab = searchParams.get('tab') || undefined;
+    if (isDashboardEnabled && qOpen && wallets.length > 0) {
+      const wallet = wallets.find(w => 
+        w.tbaAddress.toLowerCase() === qOpen.toLowerCase()
+      );
+      if (wallet) {
+        setDashboardWallet(wallet);
+        setInitialTab(qTab);
+        setShowDashboard(true);
+      }
+    }
+  }, [isDashboardEnabled, searchParams, wallets]);
 
   // Helper function to get active wallet (prevents complex inline logic)
   const getActiveWallet = (): UserWallet | null => {
@@ -350,8 +480,26 @@ export default function MyWalletsPage() {
                           onClick={() => handleWalletSelect(wallet)}
                           className="px-3 py-1.5 bg-blue-500 dark:bg-accent-gold text-white dark:text-bg-primary rounded-lg hover:bg-blue-600 dark:hover:bg-accent-gold/80 transition-all duration-300 text-sm"
                         >
-                          Abrir
+                          {isDashboardEnabled ? 'Dashboard' : 'Abrir'}
                         </button>
+                        {isDashboardEnabled && (
+                          <>
+                            <button
+                              onClick={() => openDashboard(wallet, 'history')}
+                              className="hidden sm:block px-2 py-1.5 border border-border-primary rounded-lg hover:bg-bg-secondary transition-all duration-300 text-xs text-text-secondary hover:text-text-primary"
+                              title="Ver historial"
+                            >
+                              History
+                            </button>
+                            <button
+                              onClick={() => openDashboard(wallet, 'security')}
+                              className="hidden sm:block px-2 py-1.5 border border-border-primary rounded-lg hover:bg-bg-secondary transition-all duration-300 text-xs text-text-secondary hover:text-text-primary"
+                              title="Ver seguridad"
+                            >
+                              Security
+                            </button>
+                          </>
+                        )}
                         {!wallet.isActive && (
                           <button
                             onClick={() => handleSetAsActive(wallet.id)}
@@ -475,6 +623,17 @@ export default function MyWalletsPage() {
           ]
         }}
       />
+      
+      {/* Wallet Dashboard Overlay - Glass Morphism */}
+      {isDashboardEnabled && showDashboard && dashboardWallet && (
+        <GlassOverlay open={showDashboard} onClose={closeDashboard} ariaLabel="Wallet Dashboard">
+          <WalletDashboard 
+            wallet={dashboardWallet} 
+            onClose={closeDashboard}
+            {...(initialTab ? { initialTab } : {})}
+          />
+        </GlassOverlay>
+      )}
     </div>
   );
 }
