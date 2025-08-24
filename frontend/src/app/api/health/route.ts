@@ -114,36 +114,16 @@ async function checkApp(): Promise<HealthCheck> {
  */
 async function checkDatabase(): Promise<HealthCheck> {
   try {
-    if (!process.env.DATABASE_URL) {
-      return {
-        status: 'healthy',
-        message: 'Database not configured',
-      };
-    }
-    
-    // Ping database
-    const { prisma } = await import('@/lib/prisma');
-    const startTime = Date.now();
-    await prisma.$queryRaw`SELECT 1`;
-    const responseTime = Date.now() - startTime;
-    
-    if (responseTime > 1000) {
-      return {
-        status: 'degraded',
-        message: 'Slow database response',
-        details: { responseTime },
-      };
-    }
-    
+    // Database is not used in this project
+    // Return healthy status as it's not a required component
     return {
       status: 'healthy',
-      message: 'Database connected',
-      details: { responseTime },
+      message: 'Database not configured (not required)',
     };
   } catch (error) {
     return {
       status: 'unhealthy',
-      message: 'Database connection failed',
+      message: 'Database check failed',
       error: (error as Error).message,
     };
   }
