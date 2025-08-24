@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Scale, CheckCircle, Info, BookOpen, Gavel } from 'lucide-react';
+import { ArrowLeft, FileText, Scale, CheckCircle, Info, BookOpen, Gavel, Shield } from 'lucide-react';
 
 export default function TermsPage() {
   return (
