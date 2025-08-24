@@ -47,7 +47,7 @@ export default function RootLayout({
       <head>
         {/* PWA Configuration */}
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#0052ff" />
+        {/* Theme color will be set dynamically by ClientLayout based on theme */}
         
         {/* iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -68,7 +68,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         
         {/* Microsoft Support */}
-        <meta name="msapplication-TileColor" content="#0052ff" />
+        <meta name="msapplication-TileColor" content="#0a0a0a" />
         <meta name="msapplication-tap-highlight" content="no" />
         
         {/* Viewport for mobile optimization */}
