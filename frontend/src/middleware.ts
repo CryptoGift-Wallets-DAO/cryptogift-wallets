@@ -1,0 +1,202 @@
+/**
+ * Security Middleware
+ * CSP and security headers for production
+ */
+
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// Environment check
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
+
+// CSP Report endpoint
+const CSP_REPORT_URI = '/api/security/csp-report';
+
+/**
+ * Generate Content Security Policy
+ */
+function generateCSP(): string {
+  // Base directives
+  const directives: Record<string, string[]> = {
+    'default-src': ["'self'"],
+    'script-src': [
+      "'self'",
+      "'unsafe-inline'", // Required for Next.js
+      "'unsafe-eval'", // Required for development
+      'https://*.thirdweb.com',
+      'https://global.transak.com',
+      'https://buy.moonpay.com',
+      'https://buy-sandbox.moonpay.com',
+    ],
+    'style-src': [
+      "'self'",
+      "'unsafe-inline'", // Required for styled components
+      'https://fonts.googleapis.com',
+    ],
+    'font-src': [
+      "'self'",
+      'https://fonts.gstatic.com',
+    ],
+    'img-src': [
+      "'self'",
+      'data:',
+      'blob:',
+      'https://*.thirdweb.com',
+      'https://ipfs.io',
+      'https://*.ipfs.io',
+      'https://gateway.pinata.cloud',
+      'https://nftstorage.link',
+      'https://*.nftstorage.link',
+      'https://arweave.net',
+      'https://*.arweave.net',
+    ],
+    'connect-src': [
+      "'self'",
+      // RPCs
+      'https://*.alchemy.com',
+      'https://*.infura.io',
+      'https://mainnet.base.org',
+      'https://sepolia.base.org',
+      'https://eth.llamarpc.com',
+      'https://rpc.sepolia.org',
+      // APIs
+      'https://*.thirdweb.com',
+      'https://li.quest',
+      'https://api.socket.tech',
+      'https://global.transak.com',
+      'https://api.moonpay.com',
+      'https://api-sandbox.moonpay.com',
+      'wss://*.walletconnect.com',
+      'wss://*.walletconnect.org',
+      // IPFS
+      'https://ipfs.io',
+      'https://*.ipfs.io',
+      'https://gateway.pinata.cloud',
+      'https://nftstorage.link',
+      // Push Protocol
+      'https://backend.epns.io',
+      'https://backend-staging.epns.io',
+      // Pimlico
+      'https://api.pimlico.io',
+      // Upstash Redis
+      'https://*.upstash.io',
+    ],
+    'frame-src': [
+      "'self'",
+      'https://global.transak.com',
+      'https://buy.moonpay.com',
+      'https://buy-sandbox.moonpay.com',
+      'https://pay.coinbase.com',
+      'https://verify.walletconnect.com',
+      'https://verify.walletconnect.org',
+      'https://li.quest',
+      'https://jumper.exchange',
+    ],
+    'frame-ancestors': ["'none'"],
+    'object-src': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'media-src': ["'self'"],
+    'worker-src': ["'self'", 'blob:'],
+    'manifest-src': ["'self'"],
+  };
+  
+  // Remove unsafe-eval in production
+  if (isProduction) {
+    directives['script-src'] = directives['script-src'].filter(
+      src => src !== "'unsafe-eval'"
+    );
+    
+    // Add report URI
+    directives['report-uri'] = [CSP_REPORT_URI];
+  }
+  
+  // Build CSP string
+  return Object.entries(directives)
+    .map(([key, values]) => `${key} ${values.join(' ')}`)
+    .join('; ');
+}
+
+/**
+ * Security headers configuration
+ */
+function getSecurityHeaders(): HeadersInit {
+  const csp = generateCSP();
+  
+  const headers: HeadersInit = {
+    // CSP - Start with Report-Only in production
+    'Content-Security-Policy-Report-Only': csp,
+    
+    // Security headers
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    
+    // Permissions Policy
+    'Permissions-Policy': [
+      'camera=(self)',
+      'microphone=()',
+      'geolocation=()',
+      'payment=(self https://global.transak.com https://buy.moonpay.com)',
+      'usb=()',
+      'magnetometer=()',
+      'gyroscope=()',
+      'accelerometer=()',
+    ].join(', '),
+    
+    // HSTS (only in production)
+    ...(isProduction && {
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    }),
+    
+    // COOP/COEP - Adjusted for Coinbase Wallet SDK compatibility
+    // Don't set to 'same-origin' as it breaks Coinbase Smart Wallet
+    // See: https://www.smartwallet.dev/guides/tips/popup-tips#cross-origin-opener-policy
+    'Cross-Origin-Opener-Policy': 'unsafe-none',
+    'Cross-Origin-Embedder-Policy': 'unsafe-none',
+  };
+  
+  return headers;
+}
+
+export function middleware(request: NextRequest) {
+  // Skip middleware for API routes and static files
+  if (
+    request.nextUrl.pathname.startsWith('/api/') ||
+    request.nextUrl.pathname.startsWith('/_next/') ||
+    request.nextUrl.pathname.startsWith('/static/') ||
+    request.nextUrl.pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
+  
+  // Create response
+  const response = NextResponse.next();
+  
+  // Apply security headers
+  const securityHeaders = getSecurityHeaders();
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value as string);
+  });
+  
+  // Add CSP nonce for inline scripts (if needed)
+  // const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  // response.headers.set('X-CSP-Nonce', nonce);
+  
+  return response;
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - api routes
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+};

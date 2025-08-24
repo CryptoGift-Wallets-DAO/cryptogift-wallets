@@ -53,16 +53,16 @@ export class LocalSimulationAdapter extends SimulationAdapter {
   private initializeClients() {
     // Initialize clients for supported chains
     const chains = [
-      { id: 1, chain: mainnet },
-      { id: 11155111, chain: sepolia },
-      { id: 8453, chain: base },
-      { id: 84532, chain: baseSepolia },
+      { id: 1, chain: mainnet, rpc: 'https://eth.llamarpc.com' },
+      { id: 11155111, chain: sepolia, rpc: 'https://sepolia.gateway.tenderly.co' },
+      { id: 8453, chain: base, rpc: 'https://mainnet.base.org' },
+      { id: 84532, chain: baseSepolia, rpc: process.env.NEXT_PUBLIC_RPC_URL || 'https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e' },
     ];
     
-    chains.forEach(({ id, chain }) => {
+    chains.forEach(({ id, chain, rpc }) => {
       this.clients.set(id, createPublicClient({
         chain,
-        transport: http(),
+        transport: http(rpc),
       }));
     });
   }

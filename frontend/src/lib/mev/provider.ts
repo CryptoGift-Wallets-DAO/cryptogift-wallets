@@ -20,7 +20,7 @@ const DEFAULT_RPC_ENDPOINTS: Record<number, string> = {
   1: 'https://eth.llamarpc.com',
   11155111: 'https://sepolia.gateway.tenderly.co',
   8453: 'https://mainnet.base.org',
-  84532: 'https://sepolia.base.org',
+  84532: process.env.NEXT_PUBLIC_RPC_URL || 'https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e',
 };
 
 // Health check cache
