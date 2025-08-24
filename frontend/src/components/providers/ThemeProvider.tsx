@@ -13,23 +13,35 @@ function ThemeColorUpdater({ children }: { children: React.ReactNode }) {
     // Update theme-color meta tag based on current theme
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      // Make it semi-transparent matching navbar background
-      // Dark mode: dark with transparency, Light mode: white with transparency
-      // Using rgba format for Android Chrome, falls back to solid on iOS
-      metaThemeColor.setAttribute('content', currentTheme === 'dark' ? 'rgba(10, 10, 10, 0.8)' : 'rgba(255, 255, 255, 0.8)');
+      // Use EXACT same colors as navbar (bg-bg-primary from globals.css)
+      // Dark mode: #0A0E15 (rgb(10, 14, 21))
+      // Light mode: #FFFFFF (rgb(255, 255, 255))
+      // Using solid hex colors for maximum compatibility
+      const darkColor = '#0A0E15'; // Exacto mismo color que navbar dark
+      const lightColor = '#FFFFFF'; // Exacto mismo color que navbar light
+      metaThemeColor.setAttribute('content', currentTheme === 'dark' ? darkColor : lightColor);
     } else {
       // Create the meta tag if it doesn't exist
       const meta = document.createElement('meta');
       meta.name = 'theme-color';
-      meta.content = currentTheme === 'dark' ? 'rgba(10, 10, 10, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+      meta.content = currentTheme === 'dark' ? '#0A0E15' : '#FFFFFF';
       document.head.appendChild(meta);
     }
     
-    // Also add a media query for translucent status bar on iOS
+    // For iOS: set translucent status bar
     const metaStatusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     if (metaStatusBar) {
-      // iOS 15+ supports translucent with theme matching
-      metaStatusBar.setAttribute('content', currentTheme === 'dark' ? 'black-translucent' : 'default');
+      // black-translucent allows content to show through on iOS
+      metaStatusBar.setAttribute('content', 'black-translucent');
+    }
+    
+    // Android Chrome specific: supports alpha channel
+    const metaThemeColorAndroid = document.querySelector('meta[name="theme-color-android"]');
+    if (!metaThemeColorAndroid && navigator.userAgent.includes('Android')) {
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.content = currentTheme === 'dark' ? 'rgba(10, 14, 21, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+      document.head.appendChild(meta);
     }
   }, [theme, systemTheme]);
   
