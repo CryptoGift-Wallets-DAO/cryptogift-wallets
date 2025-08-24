@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wallet, Shield, History, CreditCard, Bell, Settings, 
@@ -10,11 +10,18 @@ import {
 } from 'lucide-react';
 import { useActiveAccount } from 'thirdweb/react';
 
-// Import REAL existing modules from the project
-import { MEVProtectionToggle } from '../wallet/MEVProtectionToggle';
-import { ApprovalsManager } from '../wallet/ApprovalsManager';
-import { TransactionHistory } from '../history/TransactionHistory';
-import { NetworkAssetManager } from '../wallet/NetworkAssetManager';
+// Lazy load heavy components for better performance
+const MEVProtectionToggle = lazy(() => import('../wallet/MEVProtectionToggle').then(m => ({ default: m.MEVProtectionToggle })));
+const ApprovalsManager = lazy(() => import('../wallet/ApprovalsManager').then(m => ({ default: m.ApprovalsManager })));
+const TransactionHistory = lazy(() => import('../history/TransactionHistory').then(m => ({ default: m.TransactionHistory })));
+const NetworkAssetManager = lazy(() => import('../wallet/NetworkAssetManager').then(m => ({ default: m.NetworkAssetManager })));
+
+// Loading component
+const TabLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-500" />
+  </div>
+);
 
 interface WalletDashboardProps {
   wallet: any;
@@ -22,7 +29,7 @@ interface WalletDashboardProps {
   initialTab?: string;
 }
 
-export const WalletDashboard: React.FC<WalletDashboardProps> = ({ wallet, onClose, initialTab }) => {
+export const WalletDashboard: React.FC<WalletDashboardProps> = memo(({ wallet, onClose, initialTab }) => {
   const account = useActiveAccount();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -39,24 +46,32 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ wallet, onClos
   ];
 
   const renderTabContent = () => {
-    switch(activeTab) {
-      case 'overview':
-        return <OverviewTab wallet={wallet} />;
-      case 'security':
-        return <SecurityTab wallet={wallet} />;
-      case 'history':
-        return <TransactionHistory className="w-full" compactMode={false} />;
-      case 'bridge':
-        return <BridgeAndBuyTab wallet={wallet} />;
-      case 'aa':
-        return <AccountAbstractionTab wallet={wallet} />;
-      case 'notifications':
-        return <NotificationsTab wallet={wallet} />;
-      case 'settings':
-        return <SettingsTab wallet={wallet} />;
-      default:
-        return null;
-    }
+    const content = (() => {
+      switch(activeTab) {
+        case 'overview':
+          return <OverviewTab wallet={wallet} />;
+        case 'security':
+          return <SecurityTab wallet={wallet} />;
+        case 'history':
+          return (
+            <Suspense fallback={<TabLoader />}>
+              <TransactionHistory className="w-full" compactMode={false} />
+            </Suspense>
+          );
+        case 'bridge':
+          return <BridgeAndBuyTab wallet={wallet} />;
+        case 'aa':
+          return <AccountAbstractionTab wallet={wallet} />;
+        case 'notifications':
+          return <NotificationsTab wallet={wallet} />;
+        case 'settings':
+          return <SettingsTab wallet={wallet} />;
+        default:
+          return null;
+      }
+    })();
+    
+    return <div className="min-h-[400px]">{content}</div>;
   };
 
   return (
@@ -140,7 +155,7 @@ export const WalletDashboard: React.FC<WalletDashboardProps> = ({ wallet, onClos
       </motion.div>
     </motion.div>
   );
-};
+});
 
 // Overview Tab Component
 const OverviewTab: React.FC<{ wallet: any }> = ({ wallet }) => {
@@ -251,28 +266,34 @@ const OverviewTab: React.FC<{ wallet: any }> = ({ wallet }) => {
   );
 };
 
-// Security Tab Component
-const SecurityTab: React.FC<{ wallet: any }> = ({ wallet }) => {
+// Security Tab Component with Suspense
+const SecurityTab: React.FC<{ wallet: any }> = memo(({ wallet }) => {
   return (
     <div className="space-y-6">
-      <MEVProtectionToggle showDetails={true} />
-      <ApprovalsManager 
-        className="w-full"
-        compactMode={false}
-      />
+      <Suspense fallback={<TabLoader />}>
+        <MEVProtectionToggle showDetails={true} />
+      </Suspense>
+      <Suspense fallback={<TabLoader />}>
+        <ApprovalsManager 
+          className="w-full"
+          compactMode={false}
+        />
+      </Suspense>
     </div>
   );
-};
+});
 
 // Bridge & Buy Tab Component - Uses NetworkAssetManager
-const BridgeAndBuyTab: React.FC<{ wallet: any }> = ({ wallet }) => {
+const BridgeAndBuyTab: React.FC<{ wallet: any }> = memo(({ wallet }) => {
   return (
     <div className="space-y-6">
-      <NetworkAssetManager 
-        className="w-full"
-        compactMode={false}
-        requiredChainId={84532}
-      />
+      <Suspense fallback={<TabLoader />}>
+        <NetworkAssetManager 
+          className="w-full"
+          compactMode={false}
+          requiredChainId={84532}
+        />
+      </Suspense>
       <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 
                     backdrop-blur-sm border border-white/20">
         <h3 className="text-lg font-semibold mb-3">Bridge & On-Ramp</h3>
@@ -283,7 +304,7 @@ const BridgeAndBuyTab: React.FC<{ wallet: any }> = ({ wallet }) => {
       </div>
     </div>
   );
-};
+});
 
 // Account Abstraction Tab Component - Placeholder for now
 const AccountAbstractionTab: React.FC<{ wallet: any }> = ({ wallet }) => {
