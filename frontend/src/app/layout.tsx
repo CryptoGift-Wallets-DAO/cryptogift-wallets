@@ -15,6 +15,14 @@ export const metadata: Metadata = {
   description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
   keywords: "crypto, NFT, wallet, gift, regalo, blockchain, Base, USDC",
   authors: [{ name: "CryptoGift Wallets Team" }],
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/cg-wallet-logo.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.png',
+  },
   openGraph: {
     title: "CryptoGift Wallets - Regala el Futuro",
     description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
