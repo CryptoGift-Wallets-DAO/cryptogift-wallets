@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { StaticBackground } from "./ui/StaticBackground";
+import { AmplitudeProvider } from "./monitoring/AmplitudeProvider";
 
 const ThirdwebWrapper = dynamic(() => import("./ThirdwebWrapper").then(mod => ({ default: mod.ThirdwebWrapper })), {
   ssr: false,
@@ -33,25 +34,27 @@ export function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <ThemeProvider>
       <ThirdwebWrapper>
-        <ErrorBoundary>
-          {/* FONDO ESTÁTICO */}
-          <StaticBackground />
-          
-          {/* ESTRUCTURA PRINCIPAL */}
-          <div className="relative min-h-screen flex flex-col">
-            {/* NAVBAR ORIGINAL CON THEME TOGGLE */}
-            <Navbar />
+        <AmplitudeProvider>
+          <ErrorBoundary>
+            {/* FONDO ESTÁTICO */}
+            <StaticBackground />
             
-            {/* CONTENIDO PRINCIPAL */}
-            <main className="flex-1 relative z-0">
-              {children}
-            </main>
-            
-            {/* FOOTER */}
-            <Footer />
-            <MintDebugger />
-          </div>
-        </ErrorBoundary>
+            {/* ESTRUCTURA PRINCIPAL */}
+            <div className="relative min-h-screen flex flex-col">
+              {/* NAVBAR ORIGINAL CON THEME TOGGLE */}
+              <Navbar />
+              
+              {/* CONTENIDO PRINCIPAL */}
+              <main className="flex-1 relative z-0">
+                {children}
+              </main>
+              
+              {/* FOOTER */}
+              <Footer />
+              <MintDebugger />
+            </div>
+          </ErrorBoundary>
+        </AmplitudeProvider>
       </ThirdwebWrapper>
     </ThemeProvider>
   );
