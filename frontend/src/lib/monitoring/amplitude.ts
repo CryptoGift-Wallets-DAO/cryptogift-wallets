@@ -79,7 +79,12 @@ export function setAmplitudeUser(userId: string, userProperties?: Record<string,
   try {
     amplitude.setUserId(userId);
     if (userProperties) {
-      amplitude.setUserProperties(userProperties);
+      // Use the Identify class for user properties
+      const identify = new amplitude.Identify();
+      Object.entries(userProperties).forEach(([key, value]) => {
+        identify.set(key, value);
+      });
+      amplitude.identify(identify);
     }
   } catch (error) {
     console.debug('[Amplitude] Set user error:', error);
