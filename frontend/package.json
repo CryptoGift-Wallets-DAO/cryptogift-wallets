@@ -19,6 +19,7 @@
     "@hey-api/openapi-ts": "^0.73.0",
     "@multiformats/multiaddr": "^12.1.14",
     "@multiformats/multiaddr-to-uri": "^10.0.1",
+    "@sentry/nextjs": "^10.5.0",
     "@tailwindcss/typography": "^0.5.16",
     "@upstash/redis": "^1.35.1",
     "@vercel/kv": "^3.0.0",
@@ -40,7 +41,10 @@
     "react-dropzone": "^14.3.8",
     "tailwindcss-animate": "^1.0.7",
     "thirdweb": "^5.105.10",
-    "viem": "^2.21.0"
+    "viem": "^2.21.0",
+    "web-push": "^3.6.7",
+    "web-vitals": "^4.2.4",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",

@@ -310,7 +310,7 @@ export default function PWASettingsPage() {
           </div>
         </div>
 
-        {/* Lighthouse Scores -->
+        {/* Lighthouse Scores */}
         <div className="mb-8 p-6 rounded-lg border bg-card">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -330,7 +330,7 @@ export default function PWASettingsPage() {
           </p>
         </div>
 
-        {/* Configuration -->
+        {/* Configuration */}
         <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
           <h3 className="font-semibold mb-2 text-sm">Current Configuration</h3>
           <div className="space-y-1 text-xs font-mono">
@@ -342,7 +342,7 @@ export default function PWASettingsPage() {
           </div>
         </div>
 
-        {/* Install/Update Prompts -->
+        {/* Install/Update Prompts */}
         <PWAInstallPrompt />
         <PWAUpdatePrompt />
       </div>
