@@ -193,7 +193,7 @@ const OverviewTab: React.FC<{ wallet: any }> = ({ wallet }) => {
                            hover:bg-white/70 dark:hover:bg-gray-600/50 
                            flex items-center justify-between group transition-all">
             <span className="flex items-center gap-2">
-              <Bridge className="w-4 h-4" />
+              <ArrowRightLeft className="w-4 h-4" />
               <span>Bridge</span>
             </span>
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
