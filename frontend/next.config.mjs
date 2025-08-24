@@ -27,6 +27,16 @@ const nextConfig = {
     'ethers'
   ],
   productionBrowserSourceMaps: false,
+  
+  // OPTIMIZACIONES DE BUILD:
+  // Reducir el output y mejorar velocidad
+  compress: true,
+  poweredByHeader: false,
+  generateBuildId: async () => {
+    // Usar timestamp como build ID para cache busting
+    return Date.now().toString();
+  },
+  
   // STRATEGIC APPROACH: Allow deployment with detailed Vercel logs
   typescript: {
     // Allow build with TypeScript warnings to get specific Vercel logs
@@ -86,8 +96,8 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // DESHABILITADO: Upload a larger set of source maps (causa warnings y lentitud)
+  widenClientFileUpload: false,
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
@@ -103,4 +113,22 @@ export default withSentryConfig(nextConfig, {
   // https://docs.sentry.io/product/crons/
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
+  
+  // OPTIMIZACIONES PARA REDUCIR TIEMPO DE BUILD:
+  // Deshabilitar source maps upload (principal causa de lentitud)
+  sourcemaps: {
+    disable: true,
+  },
+  
+  // Ignorar archivos temporales que causan warnings
+  ignore: ['node_modules', '.next', '**/*~*', '**/tmp/*'],
+  
+  // Deshabilitar telemetría
+  telemetry: false,
 });
+
+// Si no hay SENTRY_AUTH_TOKEN, exportar config sin Sentry
+if (!process.env.SENTRY_AUTH_TOKEN) {
+  console.log('⚠️ SENTRY_AUTH_TOKEN not found, building without Sentry integration');
+  module.exports = nextConfig;
+}
