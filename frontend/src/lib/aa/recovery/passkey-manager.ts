@@ -131,8 +131,12 @@ export async function createPasskey(
     
     const response = credential.response as AuthenticatorAttestationResponse;
     
-    // Extract public key from attestation
-    const publicKey = extractPublicKey(response.publicKey);
+    // Extract public key from attestation using the correct method
+    const publicKeyData = response.getPublicKey ? response.getPublicKey() : null;
+    if (!publicKeyData) {
+      return { success: false, error: 'Failed to get public key from response' };
+    }
+    const publicKey = extractPublicKey(publicKeyData);
     if (!publicKey) {
       return { success: false, error: 'Failed to extract public key' };
     }
@@ -382,7 +386,8 @@ function extractPublicKey(publicKeyBuffer: ArrayBuffer | null): string | null {
     const y = bytes.slice(xStart + 32, xStart + 64);
     
     // Return as hex string (0x04 indicates uncompressed)
-    return '0x04' + bufferToHex(x) + bufferToHex(y);
+    // Convert Uint8Array to ArrayBuffer for bufferToHex
+    return '0x04' + bufferToHex(x.buffer as ArrayBuffer) + bufferToHex(y.buffer as ArrayBuffer);
   } catch (error) {
     console.error('[Passkey] Failed to extract public key:', error);
     return null;

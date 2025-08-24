@@ -117,8 +117,8 @@ export async function rateLimit(
   const windowStart = now - config.interval;
   
   try {
-    // Remove old entries
-    await redis.zremrangebyscore(key, '-inf', windowStart.toString());
+    // Remove old entries - using correct Upstash Redis API
+    await redis.zremrangebyscore(key, 0, windowStart);
     
     // Count current requests in window
     const count = await redis.zcard(key);
@@ -126,7 +126,7 @@ export async function rateLimit(
     if (count >= config.maxRequests) {
       // Rate limit exceeded
       const oldestEntry = await redis.zrange(key, 0, 0, { withScores: true });
-      const oldestTime = oldestEntry?.[1] ? parseInt(oldestEntry[1] as string) : now;
+      const oldestTime = oldestEntry?.[0]?.score ? oldestEntry[0].score : now;
       const reset = oldestTime + config.interval;
       
       return {
@@ -137,8 +137,8 @@ export async function rateLimit(
       };
     }
     
-    // Add current request
-    await redis.zadd(key, { score: now, member: `${now}-${Math.random()}` });
+    // Add current request - using correct parameter format
+    await redis.zadd(key, now, `${now}-${Math.random()}`);
     await redis.expire(key, Math.ceil(config.interval / 1000));
     
     return {
@@ -163,7 +163,7 @@ export async function rateLimit(
 export function rateLimitMiddleware(configName: keyof typeof RATE_LIMITS) {
   return async (req: Request): Promise<Response | null> => {
     const config = RATE_LIMITS[configName];
-    const clientId = getClientId(req);
+    const clientId = await getClientId(req);
     
     const result = await rateLimit(clientId, config);
     

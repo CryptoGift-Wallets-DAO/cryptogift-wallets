@@ -9,7 +9,7 @@ import {
   encodeFunctionData,
   type WalletClient,
 } from 'viem';
-import { prepareContractCall, sendTransaction } from 'thirdweb';
+import { prepareContractCall, sendTransaction, waitForReceipt } from 'thirdweb';
 import type { TokenApproval } from './scanner';
 
 // Contract ABIs for revocation
@@ -76,7 +76,7 @@ export class ApprovalRevoker {
       // Execute revocation
       const tx = await prepareContractCall({
         contract: {
-          address: approval.token,
+          address: approval.token as `0x${string}`,
           chain: this.client.chain,
           client: this.client,
         },
@@ -86,14 +86,21 @@ export class ApprovalRevoker {
       
       const result = await sendTransaction({
         transaction: tx,
-        account: this.account,
+        account: this.account as any, // Type compatibility between viem and thirdweb
+      });
+      
+      // Wait for transaction receipt to get gas info
+      const receipt = await waitForReceipt({
+        client: this.client,
+        chain: this.client.chain,
+        transactionHash: result.transactionHash,
       });
       
       return {
         success: true,
         transactionHash: result.transactionHash,
-        gasUsed: result.gasUsed,
-        effectiveGasPrice: result.effectiveGasPrice,
+        gasUsed: receipt.gasUsed,
+        effectiveGasPrice: receipt.effectiveGasPrice || 0n,
       };
       
     } catch (error: any) {

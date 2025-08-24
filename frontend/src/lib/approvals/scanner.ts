@@ -97,7 +97,7 @@ export class ApprovalScanner {
     this.client = createPublicClient({
       chain,
       transport: http(),
-    });
+    }) as PublicClient;
   }
 
   private getChain(chainId: number) {
@@ -258,7 +258,10 @@ export class ApprovalScanner {
     owner: Address
   ): Promise<TokenApproval | null> {
     try {
-      const { address: token, topics, data, blockNumber, transactionHash } = log;
+      // Cast to any to access topics which might not be in type definition
+      const logWithTopics = log as any;
+      const { address: token, data, blockNumber, transactionHash } = log;
+      const topics = logWithTopics.topics || [];
       
       // Determine token type and extract data
       if (topics[0] === '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925') {
@@ -292,20 +295,21 @@ export class ApprovalScanner {
     log: Log,
     owner: Address
   ): Promise<TokenApproval | null> {
-    const spender = log.topics[2] as Address;
+    const logWithTopics = log as any;
+    const spender = (logWithTopics.topics?.[2] || logWithTopics.args?.spender) as Address;
     
     // Try ERC-20 first
     try {
       const contract = getContract({
         address: token,
         abi: ERC20_ABI,
-        client: this.client,
+        client: this.client as any,
       });
       
       const [allowance, symbol, name] = await Promise.all([
-        contract.read.allowance([owner, spender]),
-        contract.read.symbol().catch(() => 'UNKNOWN'),
-        contract.read.name().catch(() => 'Unknown Token'),
+        (contract as any).read.allowance([owner, spender]),
+        (contract as any).read.symbol().catch(() => 'UNKNOWN'),
+        (contract as any).read.name().catch(() => 'Unknown Token'),
       ]);
       
       // Only include if allowance > 0
@@ -326,20 +330,20 @@ export class ApprovalScanner {
     } catch (error) {
       // Not ERC-20, try ERC-721
       try {
-        const tokenId = log.topics[3] ? BigInt(log.topics[3]) : undefined;
+        const tokenId = logWithTopics.topics?.[3] ? BigInt(logWithTopics.topics[3]) : undefined;
         if (tokenId !== undefined) {
           const contract = getContract({
             address: token,
             abi: ERC721_ABI,
-            client: this.client,
+            client: this.client as any,
           });
           
-          const approved = await contract.read.getApproved([tokenId]);
+          const approved = await (contract as any).read.getApproved([tokenId]);
           
           if (approved === spender) {
             const [symbol, name] = await Promise.all([
-              contract.read.symbol().catch(() => 'NFT'),
-              contract.read.name().catch(() => 'Unknown NFT'),
+              (contract as any).read.symbol().catch(() => 'NFT'),
+              (contract as any).read.name().catch(() => 'Unknown NFT'),
             ]);
             
             return {
@@ -372,22 +376,23 @@ export class ApprovalScanner {
     log: Log,
     owner: Address
   ): Promise<TokenApproval | null> {
-    const operator = log.topics[2] as Address;
+    const logWithTopics = log as any;
+    const operator = (logWithTopics.topics?.[2] || logWithTopics.args?.operator) as Address;
     
     // Try ERC-721
     try {
       const contract = getContract({
         address: token,
         abi: ERC721_ABI,
-        client: this.client,
+        client: this.client as any,
       });
       
-      const isApproved = await contract.read.isApprovedForAll([owner, operator]);
+      const isApproved = await (contract as any).read.isApprovedForAll([owner, operator]);
       
       if (isApproved) {
         const [symbol, name] = await Promise.all([
-          contract.read.symbol().catch(() => 'NFT'),
-          contract.read.name().catch(() => 'Unknown NFT'),
+          (contract as any).read.symbol().catch(() => 'NFT'),
+          (contract as any).read.name().catch(() => 'Unknown NFT'),
         ]);
         
         return {

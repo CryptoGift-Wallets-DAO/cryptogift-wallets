@@ -13,9 +13,9 @@ export const CHAIN_IDS = {
 export const AA_CONFIG = {
   // Feature flags
   enabled: process.env.NEXT_PUBLIC_FEATURE_AA === 'on',
-  erc20Paymaster: process.env.NEXT_PUBLIC_FEATURE_ERC20_PAYMASTER === 'on',
-  sessionKeys: process.env.NEXT_PUBLIC_FEATURE_SESSION_KEYS === 'on',
-  recovery: process.env.NEXT_PUBLIC_FEATURE_RECOVERY === 'on',
+  erc20PaymasterEnabled: process.env.NEXT_PUBLIC_FEATURE_ERC20_PAYMASTER === 'on',
+  sessionKeysEnabled: process.env.NEXT_PUBLIC_FEATURE_SESSION_KEYS === 'on',
+  recoveryEnabled: process.env.NEXT_PUBLIC_FEATURE_RECOVERY === 'on',
   
   // Pimlico configuration
   pimlico: {
@@ -144,9 +144,9 @@ export const AA_CONFIG = {
  */
 export function getAAConfig(chainId: number) {
   // Check feature flags
-  const erc20Paymaster = process.env.NEXT_PUBLIC_FEATURE_ERC20_PAYMASTER === 'on';
-  const sessionKeys = process.env.NEXT_PUBLIC_FEATURE_SESSION_KEYS === 'on';
-  const recovery = process.env.NEXT_PUBLIC_FEATURE_RECOVERY === 'on';
+  const erc20PaymasterEnabled = process.env.NEXT_PUBLIC_FEATURE_ERC20_PAYMASTER === 'on';
+  const sessionKeysEnabled = process.env.NEXT_PUBLIC_FEATURE_SESSION_KEYS === 'on';
+  const recoveryEnabled = process.env.NEXT_PUBLIC_FEATURE_RECOVERY === 'on';
   
   return {
     ...AA_CONFIG,
@@ -156,9 +156,9 @@ export function getAAConfig(chainId: number) {
     simpleAccountFactory: AA_CONFIG.implementation.simpleAccountFactory[chainId as keyof typeof AA_CONFIG.implementation.simpleAccountFactory],
     safeFactory: AA_CONFIG.implementation.safeFactory[chainId as keyof typeof AA_CONFIG.implementation.safeFactory],
     // Feature flags
-    erc20Paymaster,
-    sessionKeys,
-    recovery,
+    erc20PaymasterEnabled,
+    sessionKeysEnabled,
+    recoveryEnabled,
   };
 }
 
