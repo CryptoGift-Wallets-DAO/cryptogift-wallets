@@ -17,11 +17,12 @@ export const metadata: Metadata = {
   authors: [{ name: "CryptoGift Wallets Team" }],
   icons: {
     icon: [
-      { url: '/favicon.png', type: 'image/png' },
-      { url: '/cg-wallet-logo.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico?v=3', sizes: 'any' },
+      { url: '/favicon.png?v=3', type: 'image/png', sizes: '32x32' },
+      { url: '/icon.png?v=3', sizes: '512x512', type: 'image/png' },
     ],
-    apple: '/apple-touch-icon.png',
-    shortcut: '/favicon.png',
+    apple: '/apple-touch-icon.png?v=3',
+    shortcut: '/favicon.ico?v=3',
   },
   openGraph: {
     title: "CryptoGift Wallets - Regala el Futuro",
@@ -45,8 +46,14 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
+        {/* Favicons with cache busting */}
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=3" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png?v=3" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+        
         {/* PWA Configuration */}
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="manifest" href="/manifest.webmanifest?v=3" />
         {/* Theme color will be set dynamically by ClientLayout based on theme */}
         
         {/* iOS Support */}
