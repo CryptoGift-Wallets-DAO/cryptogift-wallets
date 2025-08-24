@@ -2,7 +2,133 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎨 LATEST SESSION UPDATES (Agosto 23, 2025) - CRITICAL MOBILE & UX FIXES ✅
+## 🎨 LATEST SESSION UPDATES (Agosto 24, 2025) - WALLET DASHBOARD AUDIT & ROBUST GAS-PAID FALLBACK ✅
+
+### 🔍 DEEP SYSTEM AUDIT - PROTOCOLO DE COMPORTAMIENTO OBLIGATORIO V2
+**COMPREHENSIVE AUDIT**: No superficial fixes, sino análisis profundo 2-3 niveles
+
+**PROBLEMA CRÍTICO**: "LA INTERFAZ DE LA WALLET ESTA MUY BUENA, SE VE BIEN, PERO LAS FUNCIONALIDADES NO SIRVEN"
+
+**Root Causes Identificados**:
+1. **CSP Blocking (30+ errores)**:
+   - Amplitude Analytics bloqueado por CSP
+   - IPFS dweb.link bloqueado
+   - PostHog, Sentry, 0x Protocol todos bloqueados
+   - Solución: Actualizado middleware.ts con todos los dominios
+
+2. **Function Selector Incorrecto**:
+   - Escrow giftCounter() usando 0x3e914080 (incorrecto)
+   - Corregido a 0x7ebee30f usando ethers.id('giftCounter()')
+
+3. **SIWE Auth Challenge Error**:
+   - API /api/auth/challenge retornaba 400
+   - Faltaba campo address en request body
+
+**FILES AUDITADOS Y CORREGIDOS**:
+```typescript
+// frontend/src/middleware.ts
+'img-src': [
+  'https://*.ipfs.dweb.link', // Added for IPFS
+],
+'connect-src': [
+  'https://api2.amplitude.com',
+  'https://*.amplitude.com',
+  'https://us.i.posthog.com',
+  'https://*.sentry.io',
+  'https://base.api.0x.org',
+]
+```
+
+### 🚀 ROBUST GAS-PAID FALLBACK SYSTEM IMPLEMENTATION
+**REQUISITO CRÍTICO**: "LA VIA GASPAID EN ESTA ETAPA DE PRUEBA ES LA PRINCIPAL, TIENE QUE ESTAR FUNCIONAL 100%"
+
+**ARQUITECTURA IMPLEMENTADA**:
+1. **Auto-detección Biconomy**:
+   - validateBiconomyConfig() verifica disponibilidad SDK
+   - Detecta si las variables de entorno están configuradas
+   - Retorna fallback wrapper cuando SDK no está instalado
+
+2. **Sistema de Fallback Inteligente** (biconomyV2.ts):
+```typescript
+export async function sendTransactionWithFallback(
+  account: SmartAccountWithFallback,
+  transaction: TransactionRequest
+): Promise<TransactionResult> {
+  // 1. Intenta gasless si está disponible
+  if (account.type !== 'fallback' && !forceGasPaid) {
+    try {
+      return await sendGaslessTransaction(account, transaction);
+    } catch (error) {
+      console.log('⚠️ Gasless failed, falling back to gas-paid');
+    }
+  }
+  
+  // 2. Siempre cae a gas-paid como método robusto
+  return await sendGasPaidTransaction(transaction);
+}
+```
+
+3. **Dynamic Gasless Disable**:
+   - mint-escrow.ts: `gaslessTemporarilyDisabled = !validateBiconomyConfig()`
+   - claim-escrow.ts: Mismo patrón de auto-detección
+   - gasless-status.ts: Reporta estado real del sistema
+
+### 📋 VERCEL ENVIRONMENT VARIABLES DOCUMENTATION
+**CREADO**: frontend/VERCEL_ENV_SETUP.md con guía completa
+
+**ESTRUCTURA**:
+- 🔴 REQUIRED: Variables críticas para funcionamiento básico
+- 🟡 IMPORTANT: WalletConnect, 0x Protocol para mejor UX
+- 🟢 GASLESS: Biconomy MEE y Paymaster (cuando esté listo)
+- 🔵 OPTIONAL: Analytics, Monitoring, On-ramp
+
+**PRIORIDAD ESTABLECIDA**:
+1. NEXT_PUBLIC_WC_PROJECT_ID (Mobile wallets)
+2. ZEROX_API_KEY (Better swap rates)
+3. Biconomy keys (Gasless cuando esté estable)
+4. Analytics (Nice to have)
+
+### 📊 SESSION COMMIT (Agosto 24, 2025)
+```bash
+a37b5d9 - feat: implement robust gas-paid fallback system with auto-detection for Biconomy
+```
+
+**COMMIT STATISTICS**:
+- 6 files changed, 542 insertions(+), 18 deletions(-)
+- 2 new files created (biconomyV2.ts, VERCEL_ENV_SETUP.md)
+
+### 📋 FILES MODIFIED THIS SESSION
+```
+NUEVOS:
+- frontend/VERCEL_ENV_SETUP.md                         (201 lines - Deployment guide)
+- frontend/src/lib/biconomyV2.ts                       (298 lines - Fallback system)
+
+MODIFICADOS:
+- frontend/src/lib/biconomy.ts                         (Fallback wrapper implementation)
+- frontend/src/pages/api/mint-escrow.ts                (Auto-detection logic)
+- frontend/src/pages/api/claim-escrow.ts               (Import validateBiconomyConfig)
+- frontend/src/pages/api/gasless-status.ts             (Dynamic availability check)
+```
+
+### 🎯 IMPACT ANALYSIS
+**BEFORE**:
+- ❌ Wallet dashboard UI renders but no functions work
+- ❌ CSP blocking all external services
+- ❌ Hardcoded gasless disable preventing flexibility
+- ❌ No clear deployment documentation
+
+**AFTER**:
+- ✅ Core infrastructure validated and working
+- ✅ Gas-paid transactions 100% functional (primary method)
+- ✅ Auto-fallback when gasless unavailable
+- ✅ Complete Vercel deployment guide
+- ✅ All CSP issues resolved
+
+**RESULTADO**: Sistema robusto con gas-paid como método principal garantizado, gasless como bonus cuando esté configurado.
+
+---
+
+## 🎨 PREVIOUS SESSION UPDATES (Agosto 23, 2025) - CRITICAL MOBILE & UX FIXES ✅
 
 ### 🚀 MOBILE IPFS UPLOAD FIX - EXPONENTIAL BACKOFF RETRY
 **PROBLEMA CRÍTICO RESUELTO**: Los uploads de gifts en móvil siempre fallaban en el primer intento

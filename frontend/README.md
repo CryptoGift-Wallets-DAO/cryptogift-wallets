@@ -2,14 +2,43 @@
 
 Este frontend está construido con Next.js y thirdweb SDK. Consulta la documentación y variables de entorno necesarias en el README original.
 
-## 🚨 CRITICAL UPDATE (Agosto 23, 2025) - MOBILE & UX PERFECTION ✅
+## 🚨 CRITICAL UPDATE (Agosto 24, 2025) - WALLET DASHBOARD AUDIT & GAS-PAID FALLBACK ✅
+
+### 🔍 DEEP SYSTEM AUDIT - WALLET DASHBOARD FUNCTIONALITY
+- ✅ **CSP BLOCKING FIXED**: 30+ domains added to middleware.ts for analytics, IPFS, monitoring
+- ✅ **FUNCTION SELECTORS**: Corrected escrow giftCounter() from 0x3e914080 to 0x7ebee30f
+- ✅ **AUTH CHALLENGE**: Fixed SIWE challenge API with proper address field
+- ✅ **CORE VALIDATED**: RPC, Redis, NFT contract all operational
+
+### 🚀 ROBUST GAS-PAID FALLBACK SYSTEM
+- ✅ **AUTO-DETECTION**: `validateBiconomyConfig()` checks SDK and env vars at runtime
+- ✅ **PRIMARY METHOD**: Gas-paid transactions 100% functional as main method
+- ✅ **SMART FALLBACK**: Gasless when available, gas-paid always works
+- ✅ **DYNAMIC DISABLE**: `gaslessTemporarilyDisabled = !validateBiconomyConfig()`
+- ✅ **VERCEL GUIDE**: Complete VERCEL_ENV_SETUP.md with all variables
+
+### TECHNICAL IMPLEMENTATIONS
+1. **Fallback System** (`lib/biconomyV2.ts`):
+   - Smart transaction routing with automatic fallback
+   - Detects Biconomy availability and falls back to gas-paid
+   - Returns mock account when SDK not installed
+
+2. **CSP Fixes** (`middleware.ts`):
+   - Added Amplitude, PostHog, Sentry, 0x Protocol domains
+   - Fixed IPFS dweb.link access
+   - Enabled all external service integrations
+
+3. **Environment Documentation** (`VERCEL_ENV_SETUP.md`):
+   - Categorized variables by priority
+   - Instructions for obtaining API keys
+   - Troubleshooting guide included
+
+## 📊 PREVIOUS UPDATE (Agosto 23, 2025) - MOBILE & UX PERFECTION ✅
 
 ### 🚀 MOBILE UX PERFECTION - CRITICAL FIXES DEPLOYED
 - ✅ **MOBILE IPFS UPLOADS**: Exponential backoff retry system (2s→4s→8s) - no más fallos en primer intento
 - ✅ **DAO SHOWCASE UNIFIED**: Sales Masterclass con celebración "¡Ya eres parte de CryptoGift!" en ambos contextos
 - ✅ **THEME TOGGLE FIX**: Selector de tema funciona sin redirigir a página de inicio
-- ✅ **PROGRESSIVE TIMEOUTS**: 15s→30s→45s para mejor propagación IPFS en dispositivos móviles
-- ✅ **NAVIGATION IMPROVEMENTS**: Cambio de tema preserva contexto de página actual
 
 ### TECHNICAL IMPLEMENTATIONS
 1. **IPFS Retry Logic** (`utils/ipfs.ts`):

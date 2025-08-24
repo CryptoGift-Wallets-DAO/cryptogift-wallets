@@ -38,16 +38,18 @@ vercel --prod
 
 ### 3. ⚙️ Variables de Entorno en Vercel
 
+**📋 IMPORTANTE**: Consulta `frontend/VERCEL_ENV_SETUP.md` para guía completa con todas las variables categorizadas por prioridad.
+
 En el dashboard de Vercel, ve a **Settings > Environment Variables** y añade:
 
-#### 🔧 CORE SYSTEM VARIABLES
+#### 🔧 CORE SYSTEM VARIABLES (REQUERIDAS)
 ```
 NEXT_PUBLIC_TW_CLIENT_ID=your_thirdweb_client_id
 TW_SECRET_KEY=your_thirdweb_secret_key
-NFT_STORAGE_API_KEY=your_nft_storage_api_key
-NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS=0x_your_deployed_contract_address
-NEXT_PUBLIC_CHAIN_ID=84532
 PRIVATE_KEY_DEPLOY=your_wallet_private_key
+NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS=0xE9F316159a0830114252a96a6B7CA6efD874650F
+NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS=0x46175CfC233500DA803841DEef7f2816e7A129E0
+NEXT_PUBLIC_CHAIN_ID=84532
 NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS=0x000000006551c19487814612e58FE06813775758
 NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS=0x2d25602551487c3f3354dd80d76d54383a243358
 ```

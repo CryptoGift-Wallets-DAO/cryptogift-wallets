@@ -19,10 +19,11 @@
 - **📊 Estado**: PRODUCTION READY ✅ FUNCIONAL ✅ OPTIMIZADO ✅
 
 ### 🔒 ÚLTIMO COMMIT & CAMBIOS RECIENTES
-- **Commit**: `b670aff` - "fix: move wallet address badge next to title to prevent mobile overflow"
-- **Problema**: Badge de dirección causaba overflow horizontal en móvil
-- **Solución**: Movido junto al título "Mis CryptoGift Wallets" 
-- **Files**: `my-wallets/page.tsx`, `ui/GlassPanelHeader.tsx`
+- **Commit**: `a37b5d9` - "feat: implement robust gas-paid fallback system with auto-detection for Biconomy"
+- **Fecha**: Agosto 24, 2025
+- **Problema**: Wallet dashboard UI funciona pero ninguna funcionalidad servía
+- **Solución**: Sistema robusto de fallback gas-paid con auto-detección Biconomy
+- **Files**: `biconomy.ts`, `biconomyV2.ts`, `mint-escrow.ts`, `claim-escrow.ts`, `gasless-status.ts`, `VERCEL_ENV_SETUP.md`
 
 ---
 
@@ -51,8 +52,15 @@ ERC6551_IMPLEMENTATION = "0x2d25602551487c3f3354dd80d76d54383a243358"     // Acc
 #### **Blockchain & Web3:**
 - **Base Sepolia** (L2) - Transacciones rápidas y baratas
 - **ERC-6551** Token Bound Accounts - NFT = Wallet breakthrough
-- **Account Abstraction** - Paymaster gasless con Biconomy v4.5.7
+- **Account Abstraction** - Paymaster gasless con Biconomy v4.5.7 (FALLBACK ROBUSTO)
 - **OpenZeppelin** - Contratos seguros y auditados
+
+#### **🚀 SISTEMA DE FALLBACK CRÍTICO (NUEVO):**
+- **Auto-detección Biconomy**: `validateBiconomyConfig()` verifica disponibilidad en runtime
+- **Gas-Paid Primary**: Método principal 100% funcional siempre
+- **Gasless Bonus**: Se activa automáticamente cuando está configurado
+- **Dynamic Disable**: `gaslessTemporarilyDisabled = !validateBiconomyConfig()`
+- **Fallback Wrapper**: Retorna mock account cuando SDK no instalado
 
 #### **Integraciones Críticas:**
 - **NFT.Storage + IPFS** - Almacenamiento descentralizado permanente
