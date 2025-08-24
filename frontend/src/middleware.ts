@@ -45,6 +45,7 @@ function generateCSP(): string {
       'https://*.thirdweb.com',
       'https://ipfs.io',
       'https://*.ipfs.io',
+      'https://*.ipfs.dweb.link',
       'https://gateway.pinata.cloud',
       'https://nftstorage.link',
       'https://*.nftstorage.link',
@@ -72,6 +73,7 @@ function generateCSP(): string {
       // IPFS
       'https://ipfs.io',
       'https://*.ipfs.io',
+      'https://*.ipfs.dweb.link',
       'https://gateway.pinata.cloud',
       'https://nftstorage.link',
       // Push Protocol
@@ -81,6 +83,18 @@ function generateCSP(): string {
       'https://api.pimlico.io',
       // Upstash Redis
       'https://*.upstash.io',
+      // Analytics
+      'https://api2.amplitude.com',
+      'https://*.amplitude.com',
+      'https://us.i.posthog.com',
+      'https://*.sentry.io',
+      'https://plausible.io',
+      // 0x API
+      'https://base.api.0x.org',
+      'https://api.0x.org',
+      // Base Sepolia Explorer
+      'https://base-sepolia.blockscout.com',
+      'https://sepolia.basescan.org',
     ],
     'frame-src': [
       "'self'",
