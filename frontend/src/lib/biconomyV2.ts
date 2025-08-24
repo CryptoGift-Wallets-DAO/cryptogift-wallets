@@ -4,9 +4,10 @@
  * Priority: Gasless → Gas-paid fallback
  */
 
-import { createWalletClient, http, parseEther, type WalletClient } from "viem";
+import { createWalletClient, http, parseEther } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
+import type { Account, Chain, Transport, WalletClient } from "viem";
 
 // Biconomy configuration for Base Sepolia - SERVER-SIDE ONLY
 export const biconomyConfig = {
@@ -46,18 +47,20 @@ interface TransactionResult {
 /**
  * Create a wallet client for gas-paid transactions
  */
-export function createGasPaidWallet(privateKey: string): WalletClient {
+export function createGasPaidWallet(privateKey: string): WalletClient<Transport, Chain, Account> {
   const formattedPrivateKey = privateKey.startsWith('0x') 
     ? privateKey as `0x${string}`
     : `0x${privateKey}` as `0x${string}`;
     
   const account = privateKeyToAccount(formattedPrivateKey);
   
-  return createWalletClient({
+  const client = createWalletClient({
     account,
     chain: baseSepolia,
     transport: http(biconomyConfig.rpcUrl),
-  }) as WalletClient;
+  });
+  
+  return client as WalletClient<Transport, Chain, Account>;
 }
 
 /**
@@ -206,7 +209,7 @@ export async function sendTransactionWithFallback(
  * Send gas-paid transaction
  */
 async function sendGasPaidTransaction(
-  wallet: WalletClient,
+  wallet: WalletClient<Transport, Chain, Account>,
   transaction: {
     to: `0x${string}`;
     data: `0x${string}`;
