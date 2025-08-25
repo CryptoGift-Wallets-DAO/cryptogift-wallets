@@ -3,15 +3,16 @@
 import React, { useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-// Use Modern Museum Gallery for immersive experience
-const ModernMuseumGallery = dynamic(() => import('./ModernMuseumGallery'), { 
+// Use Luxury Glass Museum Gallery for ultimate experience
+const LuxuryGlassMuseumGallery = dynamic(() => import('./LuxuryGlassMuseumGallery'), { 
   ssr: false,
   loading: () => (
-    <div className="w-full h-screen bg-black flex items-center justify-center">
+    <div className="w-full h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black flex items-center justify-center">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent 
-                      rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-cyan-400">Inicializando museo digital...</p>
+        <div className="w-20 h-20 border-4 border-cyan-400 border-t-transparent 
+                      rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-cyan-400/30" />
+        <p className="text-cyan-300 text-lg font-medium">Inicializando Galería de Lujo...</p>
+        <p className="text-slate-400 text-sm mt-2">Cargando obras de arte crypto-glass</p>
       </div>
     </div>
   )
@@ -31,11 +32,12 @@ export default function Gallery3D({ gpuTier }: Gallery3DProps) {
 
   if (!isReady) {
     return (
-      <div className="w-full h-screen bg-black flex items-center justify-center">
+      <div className="w-full h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent 
-                        rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-purple-400">Inicializando museo digital...</p>
+          <div className="w-20 h-20 border-4 border-cyan-400 border-t-transparent 
+                        rounded-full animate-spin mx-auto mb-6 shadow-lg shadow-cyan-400/30" />
+          <p className="text-cyan-300 text-lg font-medium">Preparando experiencia de lujo...</p>
+          <p className="text-slate-400 text-sm mt-2">Calibrando glassmorphism extremo</p>
         </div>
       </div>
     );
@@ -65,5 +67,5 @@ export default function Gallery3D({ gpuTier }: Gallery3DProps) {
 
   const settings = qualitySettings[gpuTier];
 
-  return <ModernMuseumGallery gpuTier={gpuTier} />;
+  return <LuxuryGlassMuseumGallery gpuTier={gpuTier} />;
 }
