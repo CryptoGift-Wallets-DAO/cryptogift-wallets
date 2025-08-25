@@ -121,19 +121,19 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
             width: '0px', // Container at center point
             height: '0px',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${currentWall * 90}deg)`, // Positive rotation for interior view
+            transform: `rotateY(${-currentWall * 90}deg)`, // Negative rotation for interior view
             transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {/* Room Walls - INTERIOR PERSPECTIVE */}
+          {/* Room Walls - REAL INTERIOR CONFIGURATION */}
           {walls.map((wall, index) => {
-            // CORRECT INTERIOR CONFIGURATION:
-            // We're INSIDE looking OUT, so walls face INWARD
+            // INTERIOR VIEW: Walls surround the user at center
+            // Each wall positioned around user and facing INWARD
             let transform = '';
-            if (index === 0) transform = 'rotateY(0deg) translateZ(-400px) rotateY(180deg)';    // Front wall facing us
-            if (index === 1) transform = 'rotateY(90deg) translateZ(-400px) rotateY(180deg)';   // Right wall facing us  
-            if (index === 2) transform = 'rotateY(180deg) translateZ(-400px) rotateY(180deg)';  // Back wall facing us
-            if (index === 3) transform = 'rotateY(270deg) translateZ(-400px) rotateY(180deg)';  // Left wall facing us
+            if (index === 0) transform = 'translateZ(400px)';                    // Front wall (facing user)
+            if (index === 1) transform = 'rotateY(90deg) translateZ(400px)';     // Right wall (facing user) 
+            if (index === 2) transform = 'rotateY(180deg) translateZ(400px)';    // Back wall (facing user)
+            if (index === 3) transform = 'rotateY(270deg) translateZ(400px)';    // Left wall (facing user)
             
             return (
               <div
@@ -147,7 +147,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
                   marginLeft: '-400px', // Center the larger walls
                   marginTop: '-300px',  // Center the larger walls
                   transform,
-                  backfaceVisibility: 'visible', // Show interior faces
+                  backfaceVisibility: 'hidden', // Hide back faces for clean interior
                 }}
               onClick={(e) => {
                 e.stopPropagation();
