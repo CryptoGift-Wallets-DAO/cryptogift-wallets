@@ -322,8 +322,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
               <div key={i} className="relative">
                 <div className="w-20 h-1 bg-cyan-400 blur-sm animate-pulse" 
                      style={{ animationDelay: `${i * 0.2}s` }} />
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-32 
-                              bg-gradient-to-b from-cyan-400/20 to-transparent" />
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-32 bg-gradient-to-b from-cyan-400/20 to-transparent" />
               </div>
             ))}
           </div>
@@ -411,8 +410,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
                       return (
                         <div
                           key={artwork.id}
-                          className={`absolute ${sizes[artwork.size]} cursor-pointer 
-                                    transform hover:scale-105 transition-all duration-300`}
+                          className={`absolute ${sizes[artwork.size]} cursor-pointer transform hover:scale-105 transition-all duration-300`}
                           style={{
                             left: `${50 + artwork.position.x}%`,
                             top: `${50 + artwork.position.y}%`,
@@ -421,11 +419,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
                           onClick={() => setSelectedArt(artwork)}
                         >
                           {/* Frame */}
-                          <div className={`relative w-full h-full p-2 
-                                        ${artwork.futuristic 
-                                          ? 'bg-gradient-to-br from-cyan-600 to-purple-600' 
-                                          : 'bg-gradient-to-br from-amber-800 to-amber-900'}
-                                        shadow-2xl`}>
+                          <div className={`relative w-full h-full p-2 ${artwork.futuristic ? 'bg-gradient-to-br from-cyan-600 to-purple-600' : 'bg-gradient-to-br from-amber-800 to-amber-900'} shadow-2xl`}>
                             {/* Artwork */}
                             <div className="relative w-full h-full bg-black overflow-hidden">
                               {artwork.image.startsWith('/') ? (
@@ -477,11 +471,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           {walls.map((_, index) => (
             <div
               key={index}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                currentWall === index 
-                  ? 'bg-cyan-400 w-8 shadow-lg shadow-cyan-400/50' 
-                  : 'bg-gray-600 hover:bg-gray-500'
-              }`}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${currentWall === index ? 'bg-cyan-400 w-8 shadow-lg shadow-cyan-400/50' : 'bg-gray-600 hover:bg-gray-500'}`}
             />
           ))}
         </div>
