@@ -113,28 +113,27 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         />
       </div>
 
-      {/* 3D Museum Simulation - Vista Interior */}
-      <div className="relative h-full flex items-center justify-center" style={{ perspective: '800px' }}>
+      {/* 3D Museum Room - Vista desde el Interior */}
+      <div className="relative h-full flex items-center justify-center" style={{ perspective: '600px' }}>
         <div 
           className="relative"
           style={{
-            width: '75%',
-            height: '75%',
-            maxWidth: '900px',
-            maxHeight: '600px',
+            width: '600px',
+            height: '450px',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${currentWall * 90}deg)`,
+            transform: `rotateY(${-currentWall * 90}deg)`,
             transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {/* Museum Walls - Configuración para vista interior */}
+          {/* Paredes del Museo - Vista Interior Correcta */}
           {walls.map((wall, index) => {
-            // Posicionamiento de las paredes alrededor del espectador
+            // Configuración correcta para vista desde dentro
+            // Primero rotamos, luego trasladamos hacia afuera
             let transform = '';
-            if (index === 0) transform = 'rotateY(0deg) translateZ(-300px)';      // Frente
-            if (index === 1) transform = 'rotateY(-90deg) translateZ(-300px)';    // Derecha
-            if (index === 2) transform = 'rotateY(-180deg) translateZ(-300px)';   // Atrás
-            if (index === 3) transform = 'rotateY(-270deg) translateZ(-300px)';   // Izquierda
+            if (index === 0) transform = 'rotateY(0deg) translateZ(300px)';       // Frente
+            if (index === 1) transform = 'rotateY(90deg) translateZ(300px)';      // Derecha  
+            if (index === 2) transform = 'rotateY(180deg) translateZ(300px)';     // Atrás
+            if (index === 3) transform = 'rotateY(270deg) translateZ(300px)';     // Izquierda
             
             return (
               <div
@@ -142,11 +141,13 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
                 className="absolute cursor-pointer"
                 style={{
                   width: '600px',
-                  height: '100%',
+                  height: '450px',
                   left: '50%',
+                  top: '50%',
                   marginLeft: '-300px',
+                  marginTop: '-225px',
                   transform,
-                  backfaceVisibility: 'visible',
+                  backfaceVisibility: 'hidden',
                 }}
               onClick={(e) => {
                 e.stopPropagation();
