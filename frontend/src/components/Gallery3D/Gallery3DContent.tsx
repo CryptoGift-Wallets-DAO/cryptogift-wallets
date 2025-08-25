@@ -91,6 +91,14 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
   const handleWallClick = (index: number) => {
     setCurrentWall(index);
   };
+  
+  const handleNextWall = () => {
+    setCurrentWall((prev) => (prev + 1) % walls.length);
+  };
+  
+  const handlePrevWall = () => {
+    setCurrentWall((prev) => (prev - 1 + walls.length) % walls.length);
+  };
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative">
@@ -105,32 +113,44 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         />
       </div>
 
-      {/* 3D Museum Simulation */}
-      <div className="relative h-full flex items-center justify-center" style={{ perspective: '1200px' }}>
+      {/* 3D Museum Simulation - Vista Interior */}
+      <div className="relative h-full flex items-center justify-center" style={{ perspective: '800px' }}>
         <div 
-          className="relative w-full h-full max-w-4xl max-h-[80vh]"
+          className="relative"
           style={{
+            width: '75%',
+            height: '75%',
+            maxWidth: '900px',
+            maxHeight: '600px',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${-currentWall * 90}deg)`,
-            transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: `rotateY(${currentWall * 90}deg)`,
+            transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {/* Museum Walls - Vista desde dentro */}
+          {/* Museum Walls - Configuración para vista interior */}
           {walls.map((wall, index) => {
-            const rotation = index * 90;
+            // Posicionamiento de las paredes alrededor del espectador
+            let transform = '';
+            if (index === 0) transform = 'rotateY(0deg) translateZ(-300px)';      // Frente
+            if (index === 1) transform = 'rotateY(-90deg) translateZ(-300px)';    // Derecha
+            if (index === 2) transform = 'rotateY(-180deg) translateZ(-300px)';   // Atrás
+            if (index === 3) transform = 'rotateY(-270deg) translateZ(-300px)';   // Izquierda
+            
             return (
               <div
                 key={wall.id}
-                className={`absolute w-full h-full cursor-pointer transition-opacity duration-500 ${
-                  Math.abs((currentWall - index + 4) % 4) <= 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
+                className="absolute cursor-pointer"
                 style={{
-                  transform: `rotateY(${rotation}deg) translateZ(400px)`,
-                  backfaceVisibility: 'hidden',
+                  width: '600px',
+                  height: '100%',
+                  left: '50%',
+                  marginLeft: '-300px',
+                  transform,
+                  backfaceVisibility: 'visible',
                 }}
               onClick={(e) => {
                 e.stopPropagation();
-                handleWallClick(index);
+                handleNextWall();
               }}
             >
               {/* Glass Panel Effect */}
@@ -199,23 +219,43 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         </div>
       </div>
 
-      {/* Navigation Dots */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
-        {walls.map((wall, index) => (
-          <button
-            key={wall.id}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleWallClick(index);
-            }}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              currentWall === index 
-                ? 'bg-white scale-125' 
-                : 'bg-white/30 hover:bg-white/60'
-            }`}
-            aria-label={`View ${wall.title}`}
-          />
-        ))}
+      {/* Navigation Controls */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-6 z-20">
+        <button
+          onClick={handlePrevWall}
+          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm 
+                   border border-white/20 flex items-center justify-center transition-all"
+          aria-label="Previous wall"
+        >
+          <span className="text-white">←</span>
+        </button>
+        
+        <div className="flex gap-2">
+          {walls.map((wall, index) => (
+            <button
+              key={wall.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleWallClick(index);
+              }}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                currentWall === index 
+                  ? 'bg-white w-8' 
+                  : 'bg-white/30 hover:bg-white/60'
+              }`}
+              aria-label={`View ${wall.title}`}
+            />
+          ))}
+        </div>
+        
+        <button
+          onClick={handleNextWall}
+          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm 
+                   border border-white/20 flex items-center justify-center transition-all"
+          aria-label="Next wall"
+        >
+          <span className="text-white">→</span>
+        </button>
       </div>
 
       {/* Title Overlay */}
@@ -231,8 +271,8 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
 
       {/* Instructions */}
       <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 
-                    text-center text-gray-500 text-sm">
-        Click en los puntos o usa ← → para navegar
+                    text-center text-gray-400 text-sm bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
+        Usa las flechas ← → o click en las paredes para rotar
       </div>
     </div>
   );
