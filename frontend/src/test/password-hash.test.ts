@@ -10,8 +10,8 @@ const testParams = {
   password: "mySecurePassword123",
   salt: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
   giftId: 42,
-  contractAddress: "0x46175CfC233500DA803841DEef7f2816e7A129E0", // Example escrow contract
-  chainId: 84532 // Base Sepolia
+  contractAddress: process.env.NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000", // Test contract address
+  chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "84532") // Base Sepolia
 };
 
 function runPasswordHashTest() {

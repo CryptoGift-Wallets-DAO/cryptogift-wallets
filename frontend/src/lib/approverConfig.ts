@@ -17,11 +17,11 @@
 
 import { ethers } from 'ethers';
 
-// The deployed contract's immutable approver address (NEW CONTRACT)
-export const DEPLOYED_APPROVER_ADDRESS = '0x75e32B5BA0817fEF917f21902EC5a84005d00943';
+// The deployed contract's immutable approver address (loaded from environment)
+export const DEPLOYED_APPROVER_ADDRESS = process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_APPROVER || process.env.APPROVER_ADDRESS;
 
-// SimpleApprovalGate contract address on Base Sepolia (NEW DEPLOYMENT)
-export const APPROVAL_GATE_ADDRESS = '0x99cCBE808cf4c01382779755DEf1562905ceb0d2';
+// SimpleApprovalGate contract address on Base Sepolia (loaded from environment)  
+export const APPROVAL_GATE_ADDRESS = process.env.NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS;
 
 /**
  * Get the approver wallet for signing education bypass signatures
@@ -43,13 +43,11 @@ export function getApproverWallet(): ethers.Wallet | null {
       const wallet = new ethers.Wallet(approverKey);
       
       // CRITICAL VALIDATION: Ensure the wallet matches the deployed approver
-      if (wallet.address.toLowerCase() === DEPLOYED_APPROVER_ADDRESS.toLowerCase()) {
-        console.log('✅ Using configured APPROVER_PRIVATE_KEY for address:', wallet.address);
+      if (wallet.address.toLowerCase() === DEPLOYED_APPROVER_ADDRESS?.toLowerCase()) {
+        console.log('✅ Using configured APPROVER_PRIVATE_KEY');
         return wallet;
       } else {
         console.error('❌ APPROVER_PRIVATE_KEY does not match deployed approver!');
-        console.error('Expected:', DEPLOYED_APPROVER_ADDRESS);
-        console.error('Got:', wallet.address);
         console.error('The contract will reject all signatures from this address.');
       }
     } catch (error) {
@@ -64,12 +62,11 @@ export function getApproverWallet(): ethers.Wallet | null {
       const wallet = new ethers.Wallet(deployKey);
       
       // Check if deploy key matches the approver
-      if (wallet.address.toLowerCase() === DEPLOYED_APPROVER_ADDRESS.toLowerCase()) {
+      if (wallet.address.toLowerCase() === DEPLOYED_APPROVER_ADDRESS?.toLowerCase()) {
         console.log('✅ Using PRIVATE_KEY_DEPLOY as approver (deployer is approver)');
         return wallet;
       } else {
-        console.log('ℹ️ Deploy key address:', wallet.address);
-        console.log('ℹ️ Does not match approver:', DEPLOYED_APPROVER_ADDRESS);
+        console.log('ℹ️ Deploy key does not match configured approver');
       }
     } catch (error) {
       console.error('❌ Invalid PRIVATE_KEY_DEPLOY format:', error);
@@ -78,8 +75,7 @@ export function getApproverWallet(): ethers.Wallet | null {
   
   console.error('🚨 CRITICAL: No valid approver key found!');
   console.error('The education bypass system will not work.');
-  console.error('Required approver address:', DEPLOYED_APPROVER_ADDRESS);
-  console.error('Please set APPROVER_PRIVATE_KEY with the private key for this address.');
+  console.error('Please set APPROVER_PRIVATE_KEY with the correct private key.');
   
   return null;
 }
@@ -97,15 +93,15 @@ export function validateApproverConfig(): {
   if (!wallet) {
     return {
       isValid: false,
-      error: `No private key configured for approver ${DEPLOYED_APPROVER_ADDRESS}`
+      error: 'No private key configured for education approver'
     };
   }
   
-  if (wallet.address.toLowerCase() !== DEPLOYED_APPROVER_ADDRESS.toLowerCase()) {
+  if (wallet.address.toLowerCase() !== DEPLOYED_APPROVER_ADDRESS?.toLowerCase()) {
     return {
       isValid: false,
       approverAddress: wallet.address,
-      error: `Wallet address ${wallet.address} does not match deployed approver ${DEPLOYED_APPROVER_ADDRESS}`
+      error: 'Wallet address does not match configured approver'
     };
   }
   
