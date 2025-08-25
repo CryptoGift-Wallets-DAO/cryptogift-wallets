@@ -3,15 +3,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-// Use CSS3D Content while Three.js loads
-const Gallery3DContent = dynamic(() => import('./Gallery3DContent'), { 
+// Use Modern Museum Gallery for immersive experience
+const ModernMuseumGallery = dynamic(() => import('./ModernMuseumGallery'), { 
   ssr: false,
   loading: () => (
     <div className="w-full h-screen bg-black flex items-center justify-center">
       <div className="text-center">
-        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent 
+        <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent 
                       rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-purple-400">Cargando experiencia 3D...</p>
+        <p className="text-cyan-400">Inicializando museo digital...</p>
       </div>
     </div>
   )
@@ -65,5 +65,5 @@ export default function Gallery3D({ gpuTier }: Gallery3DProps) {
 
   const settings = qualitySettings[gpuTier];
 
-  return <Gallery3DContent gpuTier={gpuTier} />;
+  return <ModernMuseumGallery gpuTier={gpuTier} />;
 }
