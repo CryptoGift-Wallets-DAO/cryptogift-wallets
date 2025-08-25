@@ -113,41 +113,41 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         />
       </div>
 
-      {/* 3D Museum Room - Vista desde el Interior */}
-      <div className="relative h-full flex items-center justify-center" style={{ perspective: '600px' }}>
+      {/* 3D Museum Room - INTERIOR VIEW CORRECTED */}
+      <div className="relative h-full flex items-center justify-center" style={{ perspective: '1200px' }}>
         <div 
           className="relative"
           style={{
-            width: '600px',
-            height: '450px',
+            width: '0px', // Container at center point
+            height: '0px',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${-currentWall * 90}deg)`,
+            transform: `rotateY(${currentWall * 90}deg)`, // Positive rotation for interior view
             transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {/* Paredes del Museo - Vista Interior Correcta */}
+          {/* Room Walls - INTERIOR PERSPECTIVE */}
           {walls.map((wall, index) => {
-            // Configuración correcta para vista desde dentro
-            // Primero rotamos, luego trasladamos hacia afuera
+            // CORRECT INTERIOR CONFIGURATION:
+            // We're INSIDE looking OUT, so walls face INWARD
             let transform = '';
-            if (index === 0) transform = 'rotateY(0deg) translateZ(300px)';       // Frente
-            if (index === 1) transform = 'rotateY(90deg) translateZ(300px)';      // Derecha  
-            if (index === 2) transform = 'rotateY(180deg) translateZ(300px)';     // Atrás
-            if (index === 3) transform = 'rotateY(270deg) translateZ(300px)';     // Izquierda
+            if (index === 0) transform = 'rotateY(0deg) translateZ(-400px) rotateY(180deg)';    // Front wall facing us
+            if (index === 1) transform = 'rotateY(90deg) translateZ(-400px) rotateY(180deg)';   // Right wall facing us  
+            if (index === 2) transform = 'rotateY(180deg) translateZ(-400px) rotateY(180deg)';  // Back wall facing us
+            if (index === 3) transform = 'rotateY(270deg) translateZ(-400px) rotateY(180deg)';  // Left wall facing us
             
             return (
               <div
                 key={wall.id}
                 className="absolute cursor-pointer"
                 style={{
-                  width: '600px',
-                  height: '450px',
+                  width: '800px',  // Larger for immersive view
+                  height: '600px', // Larger for immersive view
                   left: '50%',
                   top: '50%',
-                  marginLeft: '-300px',
-                  marginTop: '-225px',
+                  marginLeft: '-400px', // Center the larger walls
+                  marginTop: '-300px',  // Center the larger walls
                   transform,
-                  backfaceVisibility: 'hidden',
+                  backfaceVisibility: 'visible', // Show interior faces
                 }}
               onClick={(e) => {
                 e.stopPropagation();
