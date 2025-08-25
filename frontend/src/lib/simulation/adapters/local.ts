@@ -252,7 +252,7 @@ export class LocalSimulationAdapter extends SimulationAdapter {
               address: request.to,
               abi: ERC20_ABI,
               functionName: 'symbol',
-            }) as string;
+            } as any) as string;
           } catch {}
           
           approvals.push({
@@ -275,7 +275,7 @@ export class LocalSimulationAdapter extends SimulationAdapter {
               address: request.to,
               abi: ERC20_ABI,
               functionName: 'symbol',
-            }) as string;
+            } as any) as string;
           } catch {}
           
           tokens.push({

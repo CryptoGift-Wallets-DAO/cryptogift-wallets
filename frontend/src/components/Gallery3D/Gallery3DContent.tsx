@@ -106,24 +106,28 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
       </div>
 
       {/* 3D Museum Simulation */}
-      <div className="relative h-full flex items-center justify-center perspective-1000 z-10">
+      <div className="relative h-full flex items-center justify-center" style={{ perspective: '1200px' }}>
         <div 
-          className="relative w-[80%] h-[80%] max-w-6xl max-h-[600px] transform-style-3d transition-transform duration-1000"
+          className="relative w-full h-full max-w-4xl max-h-[80vh]"
           style={{
-            transform: `rotateY(${currentWall * 90}deg)`,
+            transformStyle: 'preserve-3d',
+            transform: `rotateY(${-currentWall * 90}deg)`,
+            transition: 'transform 1s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
           {/* Museum Walls - Vista desde dentro */}
-          {walls.map((wall, index) => (
-            <div
-              key={wall.id}
-              className={`absolute inset-0 cursor-pointer transition-all duration-500 ${
-                currentWall === index ? 'opacity-100 pointer-events-auto' : 'opacity-40 pointer-events-none'
-              }`}
-              style={{
-                transform: `rotateY(${index * -90}deg) translateZ(-300px)`,
-                backfaceVisibility: 'visible',
-              }}
+          {walls.map((wall, index) => {
+            const rotation = index * 90;
+            return (
+              <div
+                key={wall.id}
+                className={`absolute w-full h-full cursor-pointer transition-opacity duration-500 ${
+                  Math.abs((currentWall - index + 4) % 4) <= 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+                style={{
+                  transform: `rotateY(${rotation}deg) translateZ(400px)`,
+                  backfaceVisibility: 'hidden',
+                }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleWallClick(index);
@@ -190,7 +194,8 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
