@@ -244,8 +244,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-6 z-20">
         <button
           onClick={handlePrevWall}
-          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm 
-                   border border-white/20 flex items-center justify-center transition-all"
+          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all"
           aria-label="Previous wall"
         >
           <span className="text-white">←</span>
@@ -271,8 +270,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         
         <button
           onClick={handleNextWall}
-          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm 
-                   border border-white/20 flex items-center justify-center transition-all"
+          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all"
           aria-label="Next wall"
         >
           <span className="text-white">→</span>
@@ -281,8 +279,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
 
       {/* Title Overlay */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 
-                     bg-clip-text text-transparent mb-2">
+        <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2">
           CRYPTOGIFT GALLERY
         </h1>
         <p className="text-gray-400 text-lg">
@@ -291,8 +288,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
       </div>
 
       {/* Instructions */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 
-                    text-center text-gray-400 text-sm bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center text-gray-400 text-sm bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
         Usa las flechas ← → o click en las paredes para rotar
       </div>
     </div>
