@@ -9,7 +9,14 @@ interface Gallery3DContentProps {
 // Placeholder component until Three.js dependencies are installed
 export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
   const [currentWall, setCurrentWall] = useState(0);
-  const [rotation, setRotation] = useState(0);
+  const [rotationAngle, setRotationAngle] = useState(0); // Accumulated rotation angle for smooth transitions
+  
+  // GPU-based quality settings
+  const quality = {
+    low: { particles: 5, blur: 'backdrop-blur-sm', transition: '1s' },
+    medium: { particles: 10, blur: 'backdrop-blur-md', transition: '0.8s' },
+    high: { particles: 20, blur: 'backdrop-blur-xl', transition: '0.6s' }
+  }[gpuTier];
 
   const walls = [
     {
@@ -67,51 +74,64 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
   ];
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation((prev) => (prev + 1) % 360);
-    }, 50);
-    
     // Keyboard navigation
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
-        setCurrentWall((prev) => (prev - 1 + walls.length) % walls.length);
+        handlePrevWall();
       } else if (e.key === 'ArrowRight') {
-        setCurrentWall((prev) => (prev + 1) % walls.length);
+        handleNextWall();
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     
     return () => {
-      clearInterval(interval);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [walls.length]);
+  }, []);
 
   const handleWallClick = (index: number) => {
+    // Calculate shortest rotation path to target wall
+    const diff = index - currentWall;
+    const shortestPath = diff > 2 ? diff - 4 : diff < -2 ? diff + 4 : diff;
+    setRotationAngle(prev => prev + (shortestPath * 90));
     setCurrentWall(index);
   };
   
   const handleNextWall = () => {
+    setRotationAngle(prev => prev - 90); // Continuous rotation
     setCurrentWall((prev) => (prev + 1) % walls.length);
   };
   
   const handlePrevWall = () => {
+    setRotationAngle(prev => prev + 90); // Continuous rotation
     setCurrentWall((prev) => (prev - 1 + walls.length) % walls.length);
   };
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative">
-      {/* Animated Background */}
+      {/* Animated Background with CSS Animation */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20" />
         <div 
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-30 animate-gradient-shift"
           style={{
-            background: `radial-gradient(circle at ${50 + Math.sin(rotation * Math.PI / 180) * 20}% ${50 + Math.cos(rotation * Math.PI / 180) * 20}%, purple 0%, transparent 50%)`,
+            background: `radial-gradient(circle at 50% 50%, purple 0%, transparent 50%)`,
           }}
         />
       </div>
+      
+      <style jsx>{`
+        @keyframes gradient-shift {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          25% { transform: scale(1.1) rotate(90deg); }
+          50% { transform: scale(1) rotate(180deg); }
+          75% { transform: scale(1.1) rotate(270deg); }
+        }
+        .animate-gradient-shift {
+          animation: gradient-shift 20s ease-in-out infinite;
+        }
+      `}</style>
 
       {/* 3D Museum Room - INTERIOR VIEW CORRECTED */}
       <div className="relative h-full flex items-center justify-center" style={{ perspective: '1200px' }}>
@@ -121,19 +141,19 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
             width: '0px', // Container at center point
             height: '0px',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${-currentWall * 90}deg)`, // Negative rotation for interior view
-            transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: `rotateY(${rotationAngle}deg)`, // Use accumulated rotation angle
+            transition: `transform ${quality.transition} cubic-bezier(0.4, 0, 0.2, 1)`,
           }}
         >
-          {/* Room Walls - REAL INTERIOR CONFIGURATION */}
+          {/* Room Walls - TRUE INTERIOR VIEW */}
           {walls.map((wall, index) => {
-            // INTERIOR VIEW: Walls surround the user at center
-            // Each wall positioned around user and facing INWARD
+            // INTERIOR VIEW: We are INSIDE looking at walls that surround us
+            // First rotate to position, then translate BACKWARDS to create interior
             let transform = '';
-            if (index === 0) transform = 'translateZ(400px)';                    // Front wall (facing user)
-            if (index === 1) transform = 'rotateY(90deg) translateZ(400px)';     // Right wall (facing user) 
-            if (index === 2) transform = 'rotateY(180deg) translateZ(400px)';    // Back wall (facing user)
-            if (index === 3) transform = 'rotateY(270deg) translateZ(400px)';    // Left wall (facing user)
+            if (index === 0) transform = 'rotateY(0deg) translateZ(-400px)';      // Front wall - push back
+            if (index === 1) transform = 'rotateY(-90deg) translateZ(-400px)';    // Right wall - rotate left, push back
+            if (index === 2) transform = 'rotateY(-180deg) translateZ(-400px)';   // Back wall - rotate 180, push back
+            if (index === 3) transform = 'rotateY(-270deg) translateZ(-400px)';   // Left wall - rotate right, push back
             
             return (
               <div
@@ -156,12 +176,12 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
             >
               {/* Glass Panel Effect */}
               <div className={`w-full h-full rounded-2xl bg-gradient-to-br ${wall.color} 
-                            backdrop-blur-xl border border-white/10 p-8
+                            ${quality.blur} border border-white/10 p-8
                             shadow-2xl relative overflow-hidden`}>
                 
-                {/* Animated Particles */}
+                {/* Animated Particles - GPU optimized */}
                 <div className="absolute inset-0 overflow-hidden">
-                  {[...Array(20)].map((_, i) => (
+                  {[...Array(quality.particles)].map((_, i) => (
                     <div
                       key={i}
                       className="absolute w-1 h-1 bg-white/20 rounded-full animate-float"
