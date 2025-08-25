@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getRedisConnection } from '@/lib/redis/redisConfig';
+import { getRedisConnection } from '@/lib/redisConfig';
 
 export async function POST(request: NextRequest) {
   try {

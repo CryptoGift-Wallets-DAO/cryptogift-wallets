@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getRedisConnection } from '@/lib/redis/redisConfig';
+import { getRedisConnection } from '@/lib/redisConfig';
 import webpush from 'web-push';
 import type { PushSubscription, PushNotification } from '@/lib/push/config';
 import { PushCategory } from '@/lib/push/config';

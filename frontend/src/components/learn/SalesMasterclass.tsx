@@ -2043,6 +2043,7 @@ const CaptureBlock: React.FC<{
 
   // UI principal unificada para ambos modos
   return (
+    <>
     <div className="py-12">
       <h2 className="text-5xl font-bold text-center mb-8">
         {content.title} 🚀
@@ -2564,6 +2565,7 @@ const SuccessBlock: React.FC<{
       title="✉️ Verificación de Email"
       subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
     />
+    </>
   );
 };
 
