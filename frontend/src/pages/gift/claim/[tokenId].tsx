@@ -13,6 +13,11 @@ import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../components/ui/NotificationSystem';
+import { 
+  loadClaimSession, 
+  updateClaimSession,
+  cleanupExpiredSessions 
+} from '../../../lib/claimSessionStorage';
 
 interface GiftInfo {
   creator: string;
@@ -69,9 +74,50 @@ export default function ClaimGiftPage() {
     setMounted(true);
   }, []);
 
-  // Load gift information when page loads
+  // Load gift information when page loads and recover session if exists
   useEffect(() => {
     if (tokenId && typeof tokenId === 'string') {
+      // Clean up any expired sessions
+      cleanupExpiredSessions();
+      
+      // Try to recover existing session
+      const existingSession = loadClaimSession(tokenId);
+      if (existingSession) {
+        console.log('🔄 Recovering claim session:', {
+          tokenId,
+          flowState: existingSession.flowState,
+          passwordValidated: existingSession.passwordValidated,
+          educationCompleted: existingSession.educationCompleted,
+          hasGateData: !!existingSession.educationGateData
+        });
+        
+        // Restore session state based on where user left off
+        if (existingSession.educationCompleted && existingSession.educationGateData) {
+          // User completed education, go directly to claim
+          setFlowState(ClaimFlowState.CLAIM);
+          setEducationGateData(existingSession.educationGateData);
+          setEducationSession({
+            sessionToken: existingSession.sessionToken,
+            requiresEducation: false,
+            requiredModules: []
+          });
+        } else if (existingSession.passwordValidated && existingSession.requiresEducation) {
+          // User validated password but didn't complete education
+          setFlowState(ClaimFlowState.EDUCATION);
+          setEducationSession({
+            sessionToken: existingSession.sessionToken,
+            requiresEducation: true,
+            requiredModules: existingSession.educationModules,
+            currentModuleIndex: existingSession.currentModuleIndex || 0
+          });
+        } else if (existingSession.passwordValidated && !existingSession.requiresEducation) {
+          // User validated password and no education required
+          setFlowState(ClaimFlowState.CLAIM);
+          setEducationGateData('0x');
+        }
+        // If nothing validated yet, PreClaimFlow will handle recovery
+      }
+      
       loadGiftInfo(tokenId);
       checkGiftRequirements(tokenId);
     }
@@ -219,6 +265,18 @@ export default function ClaimGiftPage() {
       educationModules 
     });
     
+    // Update session storage with validation results
+    if (typeof tokenId === 'string') {
+      updateClaimSession(tokenId, {
+        sessionToken,
+        requiresEducation,
+        educationModules,
+        passwordValidated: true,
+        flowState: requiresEducation ? 'education' : 'claim',
+        educationGateData: gateData
+      });
+    }
+    
     // Store the education gate data for use in claim transaction
     if (gateData) {
       setEducationGateData(gateData);
@@ -306,15 +364,32 @@ export default function ClaimGiftPage() {
     const nextIndex = (educationSession.currentModuleIndex || 0) + 1;
     
     if (nextIndex < educationSession.requiredModules.length) {
-      // Move to next module
-      setEducationSession({
+      // Move to next module and update session
+      const updatedSession = {
         ...educationSession,
         currentModuleIndex: nextIndex
-      });
+      };
+      setEducationSession(updatedSession);
+      
+      // Update localStorage with progress
+      if (typeof tokenId === 'string') {
+        updateClaimSession(tokenId, {
+          currentModuleIndex: nextIndex
+        });
+      }
     } else {
       // All modules completed, proceed to claim
       console.log('🎓 All education modules completed with gate data!');
       setFlowState(ClaimFlowState.CLAIM);
+      
+      // Mark education as completed in localStorage
+      if (typeof tokenId === 'string') {
+        updateClaimSession(tokenId, {
+          educationCompleted: true,
+          educationGateData: gateData,
+          flowState: 'claim'
+        });
+      }
     }
   };
 
@@ -323,8 +398,12 @@ export default function ClaimGiftPage() {
     setClaimed(true);
     setFlowState(ClaimFlowState.SUCCESS);
     
-    // Refresh gift info to show claimed status
-    if (tokenId && typeof tokenId === 'string') {
+    // Clear session storage since claim is complete
+    if (typeof tokenId === 'string') {
+      const { clearClaimSession } = require('../../../lib/claimSessionStorage');
+      clearClaimSession(tokenId);
+      
+      // Refresh gift info to show claimed status
       setTimeout(() => {
         loadGiftInfo(tokenId);
       }, 2000);

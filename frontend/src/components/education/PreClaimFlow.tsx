@@ -10,6 +10,14 @@ import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { 
+  saveClaimSession, 
+  loadClaimSession, 
+  clearClaimSession,
+  updateClaimSession,
+  canSkipEducation,
+  sessionNeedsRefresh
+} from '../../lib/claimSessionStorage';
 
 // Confetti function - misma que se usa en LessonModalWrapper
 function triggerConfetti(options?: any) {
@@ -142,19 +150,66 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     setShowEducationalModule(true);
   }, []);
 
-  // Generate salt on mount and trigger confetti
+  // State for showing reinit button
+  const [canReinitialize, setCanReinitialize] = useState(false);
+
+  // Generate salt on mount, recover session if exists, and trigger confetti
   useEffect(() => {
-    const newSalt = generateSalt();
-    setSalt(newSalt);
+    // Try to recover existing session first
+    const existingSession = loadClaimSession(tokenId);
     
-    // AUDIT: Salt generation logging
-    console.log('🧂 FRONTEND SALT GENERATION:', {
-      salt: newSalt,
-      saltType: typeof newSalt,
-      saltLength: newSalt.length,
-      saltStartsWith0x: newSalt.startsWith('0x'),
-      timestamp: new Date().toISOString()
-    });
+    if (existingSession && !sessionNeedsRefresh(tokenId)) {
+      console.log('🔄 Recovering existing session:', {
+        tokenId,
+        passwordValidated: existingSession.passwordValidated,
+        educationCompleted: existingSession.educationCompleted,
+        hasGateData: !!existingSession.educationGateData
+      });
+      
+      // Restore session state
+      setSalt(existingSession.salt);
+      setValidationState({
+        isValidating: false,
+        isValid: existingSession.passwordValidated,
+        requiresEducation: existingSession.requiresEducation,
+        educationModules: existingSession.educationModules,
+        sessionToken: existingSession.sessionToken
+      });
+      
+      // If education was completed, show option to skip or restart
+      if (existingSession.educationCompleted && existingSession.educationGateData) {
+        setCanReinitialize(true);
+        
+        // Automatically call onValidationSuccess with recovered data
+        onValidationSuccess(
+          existingSession.sessionToken,
+          existingSession.requiresEducation,
+          existingSession.educationGateData,
+          existingSession.educationModules
+        );
+      }
+    } else {
+      // Generate new salt if no valid session
+      const newSalt = generateSalt();
+      setSalt(newSalt);
+      
+      // AUDIT: Salt generation logging
+      console.log('🧂 FRONTEND SALT GENERATION:', {
+        salt: newSalt,
+        saltType: typeof newSalt,
+        saltLength: newSalt.length,
+        saltStartsWith0x: newSalt.startsWith('0x'),
+        timestamp: new Date().toISOString()
+      });
+      
+      // Save initial session
+      saveClaimSession(tokenId, {
+        salt: newSalt,
+        flowState: 'pre_validation',
+        passwordValidated: false,
+        educationCompleted: false
+      });
+    }
     
     // Trigger confetti when component mounts (user lands on claim page)
     triggerConfetti({
@@ -163,7 +218,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       origin: { y: 0.6 },
       colors: ['#FFD700', '#FFA500', '#FF6347']
     });
-  }, []);
+  }, [tokenId, onValidationSuccess]);
 
   // Check if password is required
   useEffect(() => {
@@ -195,6 +250,21 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       return;
     }
 
+    // FIX: Don't allow validation without wallet connected
+    if (!account?.address) {
+      setValidationState(prev => ({
+        ...prev,
+        error: 'Por favor, conecta tu wallet antes de continuar'
+      }));
+      addNotification({
+        type: 'warning',
+        title: 'Wallet Requerida',
+        message: 'Necesitas conectar tu wallet para reclamar el regalo',
+        duration: 5000
+      });
+      return;
+    }
+
     setValidationState(prev => ({
       ...prev,
       isValidating: true,
@@ -202,12 +272,12 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     }));
 
     try {
-      // Include claimer address in the validation request
+      // Include REAL claimer address in the validation request (no more 0x000...)
       const validationPayload = {
         tokenId,
         password,
         salt,
-        claimerAddress: account?.address || '0x0000000000000000000000000000000000000000'
+        claimerAddress: account.address // Always use real address
       };
 
       console.log('🔐 Validating password for token:', tokenId);
@@ -233,6 +303,18 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           educationRequirements: data.educationRequirements,
           sessionToken: data.sessionToken,
           educationModules: data.educationModules // Store modules for later use
+        });
+
+        // Save session to localStorage for recovery
+        saveClaimSession(tokenId, {
+          sessionToken: data.sessionToken,
+          salt,
+          requiresEducation: data.requiresEducation || false,
+          educationModules: data.educationModules,
+          flowState: data.requiresEducation ? 'education' : 'claim',
+          passwordValidated: true,
+          educationCompleted: false,
+          educationGateData: data.educationGateData || '0x'
         });
 
         // FIX: Pass the educationGateData and modules from validation
@@ -269,6 +351,17 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       return;
     }
 
+    // FIX: Don't allow bypass without wallet connected (same as validation)
+    if (!account?.address) {
+      addNotification({
+        type: 'warning',
+        title: 'Wallet Requerida',
+        message: 'Necesitas conectar tu wallet para obtener la aprobación educativa',
+        duration: 5000
+      });
+      return;
+    }
+
     try {
       console.log('🎓 Requesting educational bypass approval...');
       const response = await fetch('/api/education/approve', {
@@ -277,7 +370,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         body: JSON.stringify({
           tokenId,
           sessionToken: validationState.sessionToken,
-          claimerAddress: account?.address || '0x0000000000000000000000000000000000000000'
+          claimerAddress: account?.address // Don't send if not available
         })
       });
 
@@ -285,6 +378,14 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
 
       if (data.success && data.educationGateData) {
         console.log('✅ Educational bypass approved, proceeding to claim');
+        
+        // Update session as education completed
+        updateClaimSession(tokenId, {
+          educationCompleted: true,
+          educationGateData: data.educationGateData,
+          flowState: 'claim'
+        });
+
         onValidationSuccess(
           validationState.sessionToken,
           false, // No education needed anymore
@@ -514,10 +615,70 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
                   </div>
                 )}
 
+                {/* Show Continue or Restart buttons if session was recovered */}
+                {canReinitialize && (
+                  <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                    <div className="flex items-start">
+                      <span className="text-green-500 text-xl mr-3">✅</span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
+                          Sesión de educación recuperada
+                        </h4>
+                        <p className="text-sm text-green-700 dark:text-green-400 mb-3">
+                          Ya completaste los requisitos educativos anteriormente. Puedes continuar con el reclamo o reiniciar el proceso.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              // Continue with existing session
+                              const session = loadClaimSession(tokenId);
+                              if (session) {
+                                onValidationSuccess(
+                                  session.sessionToken,
+                                  session.requiresEducation,
+                                  session.educationGateData,
+                                  session.educationModules
+                                );
+                              }
+                            }}
+                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                          >
+                            Continuar con el reclamo
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Clear session and restart
+                              clearClaimSession(tokenId);
+                              setCanReinitialize(false);
+                              setValidationState({
+                                isValidating: false,
+                                isValid: false,
+                                requiresEducation: false
+                              });
+                              setPassword('');
+                              const newSalt = generateSalt();
+                              setSalt(newSalt);
+                              saveClaimSession(tokenId, {
+                                salt: newSalt,
+                                flowState: 'pre_validation',
+                                passwordValidated: false,
+                                educationCompleted: false
+                              });
+                            }}
+                            className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                          >
+                            Reiniciar proceso
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Validate Button */}
                 <button
                   onClick={handlePasswordValidation}
-                  disabled={!password || validationState.isValidating}
+                  disabled={!password || validationState.isValidating || canReinitialize}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {validationState.isValidating ? (
