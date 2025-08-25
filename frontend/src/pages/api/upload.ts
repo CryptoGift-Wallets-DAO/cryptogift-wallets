@@ -115,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // Create File object with potentially compressed data
-    const nftFile = new File([fileData], uploadedFile.originalFilename || 'image', {
+    const nftFile = new File([fileData as BlobPart], uploadedFile.originalFilename || 'image', {
       type: uploadedFile.mimetype || 'image/jpeg',
     });
 

@@ -132,7 +132,7 @@ export function useWebPush() {
       // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey) as ArrayBuffer | ArrayBufferView,
       });
       
       subscriptionRef.current = subscription;

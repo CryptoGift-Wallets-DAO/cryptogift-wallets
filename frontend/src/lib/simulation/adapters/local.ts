@@ -248,9 +248,9 @@ export class LocalSimulationAdapter extends SimulationAdapter {
           // Try to get token info
           let symbol = 'TOKEN';
           try {
-            const contract = { address: request.to, abi: ERC20_ABI };
             symbol = await client.readContract({
-              ...contract,
+              address: request.to,
+              abi: ERC20_ABI,
               functionName: 'symbol',
             }) as string;
           } catch {}
@@ -271,9 +271,9 @@ export class LocalSimulationAdapter extends SimulationAdapter {
           
           let symbol = 'TOKEN';
           try {
-            const contract = { address: request.to, abi: ERC20_ABI };
             symbol = await client.readContract({
-              ...contract,
+              address: request.to,
+              abi: ERC20_ABI,
               functionName: 'symbol',
             }) as string;
           } catch {}

@@ -110,10 +110,10 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         <div 
           className="relative w-[80%] h-[80%] max-w-6xl max-h-[600px] transform-style-3d transition-transform duration-1000"
           style={{
-            transform: `rotateY(${currentWall * -90}deg)`,
+            transform: `rotateY(${currentWall * 90}deg)`,
           }}
         >
-          {/* Museum Walls */}
+          {/* Museum Walls - Vista desde dentro */}
           {walls.map((wall, index) => (
             <div
               key={wall.id}
@@ -121,8 +121,8 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
                 currentWall === index ? 'opacity-100 pointer-events-auto' : 'opacity-40 pointer-events-none'
               }`}
               style={{
-                transform: `rotateY(${index * 90}deg) translateZ(300px)`,
-                backfaceVisibility: 'hidden',
+                transform: `rotateY(${index * -90}deg) translateZ(-300px)`,
+                backfaceVisibility: 'visible',
               }}
               onClick={(e) => {
                 e.stopPropagation();
