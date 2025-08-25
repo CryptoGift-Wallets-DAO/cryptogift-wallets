@@ -13,6 +13,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
+import { Calendar, Trophy, Gift } from 'lucide-react';
+import EmailVerificationModal from '../email/EmailVerificationModal';
+import CalendarBookingModal from '../calendar/CalendarBookingModal';
 // Enhanced confetti function matching KnowledgeLessonModal implementation
 function triggerConfetti(options?: any) {
   // Visual confetti effect using CSS animation
@@ -2194,9 +2197,6 @@ const CaptureBlock: React.FC<{
           )}
         </motion.form>
       )}
-    </div>
-  );
-};
 
 const SuccessBlock: React.FC<{
   content: any;
