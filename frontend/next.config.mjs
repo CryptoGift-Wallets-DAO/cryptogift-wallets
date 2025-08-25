@@ -82,7 +82,7 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default withSentryConfig(nextConfig, {
+const sentryConfig = {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -125,10 +125,16 @@ export default withSentryConfig(nextConfig, {
   
   // Deshabilitar telemetría
   telemetry: false,
-});
+};
 
 // Si no hay SENTRY_AUTH_TOKEN, exportar config sin Sentry
+let finalConfig;
 if (!process.env.SENTRY_AUTH_TOKEN) {
   console.log('⚠️ SENTRY_AUTH_TOKEN not found, building without Sentry integration');
-  module.exports = nextConfig;
+  finalConfig = nextConfig;
+} else {
+  // Con Sentry integration
+  finalConfig = withSentryConfig(nextConfig, sentryConfig);
 }
+
+export default finalConfig;

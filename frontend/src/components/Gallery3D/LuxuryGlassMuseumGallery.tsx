@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NFTImage } from '../NFTImage';
+import { NeonFrame } from './NeonFrame';
+import { LightRig } from './LightRig';
 
 interface Artwork {
   id: string;
@@ -26,6 +28,7 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
   const [currentWall, setCurrentWall] = useState(0);
   const [selectedArt, setSelectedArt] = useState<Artwork | null>(null);
   const [rotationAngle, setRotationAngle] = useState(0);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const galleryRef = useRef<HTMLDivElement>(null);
 
   // GPU-based quality settings
@@ -441,6 +444,29 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
     setCurrentWall(index);
   };
 
+  // Premium parallax mouse tracking (desktop only, respects reduced motion)
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // Only on desktop and if neon gallery is enabled
+      if (window.innerWidth < 768 || process.env.NEXT_PUBLIC_FEATURE_NEON_GALLERY !== '1') return;
+      
+      // Respect user preference for reduced motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+      
+      // Normalize to -1 to 1 range with subtle multiplier
+      const x = (clientX / innerWidth - 0.5) * 0.6;
+      const y = (clientY / innerHeight - 0.5) * 0.4;
+      
+      setMousePosition({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') handlePrevWall();
@@ -452,8 +478,27 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Check if neon gallery is enabled
+  const isNeonEnabled = process.env.NEXT_PUBLIC_FEATURE_NEON_GALLERY === '1';
+
   return (
-    <div className="w-full h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black overflow-hidden relative">
+    <div className="w-full h-screen overflow-hidden relative">
+      {/* 3D PRERENDERIZED BACKGROUND - Feature Flag Controlled */}
+      {isNeonEnabled ? (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('/museum/gallery_back.png')`,
+            filter: 'brightness(0.7) contrast(1.1) saturate(1.2)',
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-black" />
+      )}
+
+      {/* LIGHT RIG SYSTEM - Luxury Museum Lighting */}
+      <LightRig tier={gpuTier} intensity={0.8} />
+
       {/* LUXURY MUSEUM ATMOSPHERE */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Premium gradient background */}
@@ -545,15 +590,23 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
           </div>
         </div>
 
-        {/* ARCHITECTURAL GALLERY CUBE - Perfect perspective */}
-        <div 
+        {/* ARCHITECTURAL GALLERY CUBE - Perfect perspective with Premium Parallax */}
+        <motion.div 
           className="relative"
           style={{
             width: '0px',
             height: '0px', 
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${rotationAngle}deg)`,
-            transition: `transform ${quality.transition} cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
+          }}
+          animate={{
+            rotateY: rotationAngle + (isNeonEnabled ? mousePosition.x * 1.2 : 0),
+            rotateX: isNeonEnabled ? mousePosition.y * 0.8 : 0,
+          }}
+          transition={{
+            type: 'spring',
+            stiffness: 300,
+            damping: 25,
+            duration: 0.6
           }}
         >
           {/* FOUR WALLS - Each wall with architectural precision */}
@@ -655,121 +708,33 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
                           glassSize = { width: 130, height: 100 };
                         }
 
+                        // Determine neon color based on crypto type
+                        const neonColor = {
+                          'NFT': '#58c4ff',      // Cyan blue
+                          'Wallet': '#40e0d0',   // Turquoise  
+                          'Academy': '#32cd32',  // Green
+                          'Community': '#ff6b35' // Orange
+                        }[artwork.cryptoType || 'NFT'] || '#58c4ff';
+
                         return (
-                          <div
+                          <NeonFrame
                             key={artwork.id}
-                            className="absolute cursor-pointer group"
+                            src={artwork.image}
+                            alt={artwork.title}
+                            neon={neonColor}
+                            tier={gpuTier}
+                            size={artwork.size}
+                            onClick={(e) => {
+                              e?.stopPropagation();
+                              setSelectedArt(artwork);
+                            }}
+                            className="absolute"
                             style={{
                               left: `calc(50% + ${artwork.position.x}%)`,
                               top: `calc(50% + ${artwork.position.y}%)`,
                               transform: 'translate(-50%, -50%)',
-                              width: frameSize.width,
-                              height: frameSize.height,
                             }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedArt(artwork);
-                            }}
-                          >
-                            {/* LUXURY GLASS FRAME - Museum quality with crypto styling */}
-                            <div 
-                              className={`w-full h-full relative overflow-hidden rounded-xl transition-all duration-500 group-hover:scale-105 ${quality.blur}`}
-                              style={{
-                                background: `linear-gradient(135deg, 
-                                  rgba(6, 182, 212, 0.15) 0%,
-                                  rgba(14, 165, 233, 0.1) 25%,
-                                  rgba(59, 130, 246, 0.08) 50%,
-                                  rgba(147, 51, 234, 0.1) 75%,
-                                  rgba(6, 182, 212, 0.15) 100%
-                                )`,
-                                border: '2px solid rgba(6, 182, 212, 0.4)',
-                                boxShadow: `
-                                  0 0 30px rgba(6, 182, 212, 0.3),
-                                  inset 0 0 20px rgba(255, 255, 255, 0.1),
-                                  0 8px 32px rgba(0, 0, 0, 0.3)
-                                `,
-                                backdropFilter: 'blur(12px) saturate(180%)',
-                              }}
-                            >
-                              {/* Glass inner glow effect */}
-                              <div 
-                                className="absolute inset-1 rounded-lg pointer-events-none"
-                                style={{
-                                  background: 'linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(6, 182, 212, 0.1) 100%)',
-                                  border: '1px solid rgba(255, 255, 255, 0.2)'
-                                }}
-                              />
-                              
-                              {/* ARTWORK IMAGE - Using our perfect NFTImage component */}
-                              <div 
-                                className="absolute inset-4 rounded-lg overflow-hidden"
-                                style={{
-                                  width: glassSize.width,
-                                  height: glassSize.height,
-                                  left: '50%',
-                                  top: '50%',
-                                  transform: 'translate(-50%, -50%)'
-                                }}
-                              >
-                                <NFTImage
-                                  src={artwork.image}
-                                  alt={artwork.title}
-                                  width={glassSize.width}
-                                  height={glassSize.height}
-                                  className="w-full h-full object-cover rounded-lg"
-                                  fit="cover"
-                                  priority={artwork.size === 'hero'}
-                                />
-                              </div>
-                              
-                              {/* CRYPTO TYPE INDICATOR - Top right corner */}
-                              <div className="absolute top-2 right-2 z-10">
-                                <div className={`px-2 py-1 rounded-full text-[10px] font-bold ${
-                                  artwork.cryptoType === 'NFT' ? 'bg-purple-500/80 text-white' :
-                                  artwork.cryptoType === 'Wallet' ? 'bg-blue-500/80 text-white' :
-                                  artwork.cryptoType === 'Academy' ? 'bg-green-500/80 text-white' :
-                                  artwork.cryptoType === 'Community' ? 'bg-orange-500/80 text-white' :
-                                  'bg-cyan-500/80 text-white'
-                                }`}>
-                                  {artwork.cryptoType}
-                                </div>
-                              </div>
-
-                              {/* ARTWORK INFO - Bottom overlay with glass effect */}
-                              <div 
-                                className="absolute bottom-0 left-0 right-0 p-3 bg-black/40 backdrop-blur-md"
-                                style={{
-                                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%)',
-                                }}
-                              >
-                                <h3 className={`font-bold text-white mb-1 ${
-                                  artwork.size === 'hero' ? 'text-sm' : 
-                                  artwork.size === 'large' ? 'text-xs' : 'text-[10px]'
-                                }`}>
-                                  {artwork.title}
-                                </h3>
-                                <div className="flex justify-between items-center">
-                                  <span className={`text-cyan-300 font-medium ${
-                                    artwork.size === 'hero' ? 'text-xs' : 'text-[9px]'
-                                  }`}>
-                                    {artwork.artist}
-                                  </span>
-                                  {artwork.price && (
-                                    <span className={`text-yellow-400 font-bold ${
-                                      artwork.size === 'hero' ? 'text-xs' : 'text-[9px]'
-                                    }`}>
-                                      {artwork.price}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* GLASS REFLECTION EFFECTS - Luxury details */}
-                              <div className="absolute top-4 left-4 w-8 h-8 bg-white/20 rounded-full blur-md pointer-events-none" />
-                              <div className="absolute top-1/3 right-6 w-2 h-16 bg-white/10 rounded-full blur-sm pointer-events-none" />
-                              <div className="absolute bottom-1/4 left-1/2 w-12 h-1 bg-cyan-400/30 rounded-full blur-sm pointer-events-none" />
-                            </div>
-                          </div>
+                          />
                         );
                       })}
                     </div>
@@ -778,7 +743,7 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
               </div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
 
       {/* NAVIGATION CONTROLS - Museum style */}

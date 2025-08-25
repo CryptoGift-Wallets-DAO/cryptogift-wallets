@@ -187,6 +187,9 @@ export class PlausibleAnalytics {
         props,
       };
       
+      // Temporarily disabled to prevent NetworkError console warnings
+      console.debug('[Plausible] Event tracking disabled to prevent CORS issues:', name);
+      /*
       await fetch(url, {
         method: 'POST',
         headers: {
@@ -194,6 +197,7 @@ export class PlausibleAnalytics {
         },
         body: JSON.stringify(payload),
       });
+      */
     } catch (error) {
       // Silent fail
       console.debug('[Plausible] Track error:', error);
