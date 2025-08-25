@@ -14,7 +14,7 @@ interface NeonFrameProps {
   neon?: string;
   tier?: GPUTier;
   size?: 'small' | 'medium' | 'large' | 'hero';
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent) => void;
   className?: string;
 }
 
@@ -81,11 +81,11 @@ export const NeonFrame = memo(({
       scale: 1.02,
       rotateX: -2,
       rotateY: 1,
-      transition: { type: 'spring', stiffness: 300, damping: 25 }
+      transition: { type: 'spring' as const, stiffness: 300, damping: 25 }
     },
     tap: {
       scale: 0.98,
-      transition: { type: 'spring', stiffness: 300, damping: 25, duration: 0.1 }
+      transition: { type: 'spring' as const, stiffness: 300, damping: 25, duration: 0.1 }
     }
   };
 
