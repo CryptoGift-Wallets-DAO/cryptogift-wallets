@@ -9,7 +9,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
-import { getRedisConnection } from '../../../lib/redis/redisConfig';
+import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -60,8 +60,14 @@ export default async function handler(
       });
     }
 
-    // Get Redis connection
-    const redis = await getRedisConnection();
+    // Get Redis connection with critical validation
+    const redis = validateRedisForCriticalOps('email_verification_send');
+    if (!redis) {
+      return res.status(500).json({
+        success: false,
+        message: 'Servicio temporalmente no disponible'
+      });
+    }
     
     // Rate limiting check
     const rateLimitKey = `email_rate_limit:${email}`;

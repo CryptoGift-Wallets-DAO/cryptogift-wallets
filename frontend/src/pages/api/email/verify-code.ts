@@ -8,7 +8,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getRedisConnection } from '../../../lib/redis/redisConfig';
+import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 
 interface VerifyCodeRequest {
   email: string;
@@ -54,8 +54,14 @@ export default async function handler(
       });
     }
 
-    // Get Redis connection
-    const redis = await getRedisConnection();
+    // Get Redis connection with critical validation  
+    const redis = validateRedisForCriticalOps('email_verification_verify');
+    if (!redis) {
+      return res.status(500).json({
+        success: false,
+        message: 'Servicio temporalmente no disponible'
+      });
+    }
     
     const verificationKey = `email_verification:${email}`;
     const lockoutKey = `email_lockout:${email}`;
