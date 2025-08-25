@@ -1,6 +1,7 @@
 {
   "name": "cryptogift-wallets",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.15.0",
   "main": "index.js",
   "scripts": {
     "test": "cd frontend && npm test",

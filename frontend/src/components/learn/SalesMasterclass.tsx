@@ -13,9 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
-import { Calendar, Trophy, Gift } from 'lucide-react';
-import EmailVerificationModal from '../email/EmailVerificationModal';
-import CalendarBookingModal from '../calendar/CalendarBookingModal';
+import { EmailVerificationModal } from '../email/EmailVerificationModal';
+import { CalendarBookingModal } from '../calendar/CalendarBookingModal';
 // Enhanced confetti function matching KnowledgeLessonModal implementation
 function triggerConfetti(options?: any) {
   // Visual confetti effect using CSS animation
@@ -125,11 +124,8 @@ import {
   Hash,
   AtSign,
   Code,
-  BookOpen,
-  Calendar
+  BookOpen
 } from 'lucide-react';
-import { CalendarBookingModal } from '../calendar/CalendarBookingModal';
-import { EmailVerificationModal } from '../email/EmailVerificationModal';
 
 // Types
 interface SalesBlock {
@@ -546,8 +542,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [showQuestionFeedback, setShowQuestionFeedback] = useState(false);
   const [canProceed, setCanProceed] = useState(false);
   const [showEducationalValidation, setShowEducationalValidation] = useState(false);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   
   const router = useRouter();
@@ -826,21 +822,15 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Email verification handler
   const handleEmailVerified = useCallback((email: string) => {
-    console.log('✅ Email verified:', email);
     setVerifiedEmail(email);
     setShowEmailVerification(false);
-    
-    // Update lead data with verified email
-    setLeadData(prev => ({
-      ...prev,
-      contact: email,
-      verified: true
-    }));
-    
-    // Auto-open calendar modal after email verification
-    setTimeout(() => {
-      setShowCalendarModal(true);
-    }, 500);
+    setShowCalendar(true);
+  }, []);
+
+  // Calendar booking success handler
+  const handleBookingSuccess = useCallback(() => {
+    setShowCalendar(false);
+    console.log('📅 Calendar booking completed successfully');
   }, []);
 
   // ✅ FIX #2: ELIMINAR EL PADDING BOTTOM QUE CAUSA EL ESPACIO VACÍO
@@ -2046,7 +2036,6 @@ const CaptureBlock: React.FC<{
 
   // UI principal unificada para ambos modos
   return (
-    <>
     <div className="py-12">
       <h2 className="text-5xl font-bold text-center mb-8">
         {content.title} 🚀
@@ -2197,6 +2186,27 @@ const CaptureBlock: React.FC<{
           )}
         </motion.form>
       )}
+      
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        isOpen={showEmailVerification}
+        onClose={() => setShowEmailVerification(false)}
+        onVerified={handleEmailVerified}
+        source="masterclass"
+        title="✉️ Verificación de Email"
+        subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
+      />
+
+      {/* Calendar Booking Modal */}
+      <CalendarBookingModal
+        isOpen={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        onBookingSuccess={handleBookingSuccess}
+        prefillData={leadData}
+      />
+    </div>
+  );
+};
 
 const SuccessBlock: React.FC<{
   content: any;
@@ -2508,64 +2518,26 @@ const SuccessBlock: React.FC<{
                 </button>
               </>
             ) : (
-              // EDUCATIONAL MODE - Claim button with calendar integration
-              <div className="flex gap-4">
-                <button
-                  onClick={() => {
-                    // Trigger completion event
-                    if (window.parent !== window) {
-                      window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
-                    }
-                  }}
-                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Trophy className="w-6 h-6" />
-                    <span>Reclamar mi regalo</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </div>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    if (verifiedEmail) {
-                      setShowCalendarModal(true);
-                    } else {
-                      setShowEmailVerification(true);
-                    }
-                  }}
-                  className="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5" />
-                    <span>{verifiedEmail ? 'Agendar Consulta' : 'Verificar Email'}</span>
-                  </div>
-                </button>
-              </div>
+              // EDUCATIONAL MODE - Claim button
+              <button
+                onClick={() => {
+                  // Trigger completion event
+                  if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
+                  }
+                }}
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <Trophy className="w-6 h-6" />
+                  <span>IR AL CLAIM</span>
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </button>
             )}
           </div>
         </div>
     </div>
-    
-    {/* Calendar Booking Modal */}
-    <CalendarBookingModal
-      isOpen={showCalendarModal}
-      onClose={() => setShowCalendarModal(false)}
-      userEmail={verifiedEmail || leadData.contact || ''}
-      userName={verifiedEmail || leadData.contact || ''}
-      source="masterclass"
-    />
-
-    {/* Email Verification Modal */}
-    <EmailVerificationModal
-      isOpen={showEmailVerification}
-      onClose={() => setShowEmailVerification(false)}
-      onVerified={handleEmailVerified}
-      source="masterclass"
-      title="✉️ Verificación de Email"
-      subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
-    />
-    </>
   );
 };
 

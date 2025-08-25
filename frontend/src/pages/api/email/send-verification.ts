@@ -11,6 +11,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 
+// Step 5.A - Robust RESEND_API_KEY validation
+if (!process.env.RESEND_API_KEY) {
+  throw new Error('RESEND_API_KEY is required but not configured in environment variables');
+}
+
+if (!process.env.RESEND_API_KEY.startsWith('re_')) {
+  throw new Error('RESEND_API_KEY appears to be invalid (should start with "re_")');
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface SendVerificationRequest {
@@ -57,6 +66,18 @@ export default async function handler(
       return res.status(400).json({ 
         success: false, 
         message: 'Email válido es requerido' 
+      });
+    }
+
+    // Step 5.D - Additional runtime validation of email service
+    try {
+      // Test Resend API key validity with a minimal call
+      await resend.domains.list();
+    } catch (resendError: any) {
+      console.error('RESEND_API_KEY validation failed:', resendError?.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Servicio de email no disponible - configuración inválida'
       });
     }
 
