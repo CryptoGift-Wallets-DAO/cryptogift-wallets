@@ -248,7 +248,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
               <div className="flex items-start space-x-3">
                 <div className="text-yellow-500 dark:text-yellow-400 text-lg">🛡️</div>
                 <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                  <p className="font-medium mb-2">🔐 Generando Token de Seguridad Temporal</p>
+                  <p className="font-medium mb-2">🔐 Su Token de Seguridad está siendo Activado</p>
                   <p className="mb-2">Estamos creando un token de autenticación que expirará en 30 minutos para proteger todas tus transacciones.</p>
                   <div className="text-xs text-yellow-600 dark:text-yellow-400 space-y-1">
                     <p>✅ Previene ataques maliciosos</p>
@@ -373,7 +373,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
             <div className="flex items-start space-x-2">
               <div className="text-green-500 dark:text-green-400 text-lg">🛡️</div>
               <div className="text-xs text-green-700 dark:text-green-300">
-                <p className="font-medium mb-1">Token de Seguridad Activo</p>
+                <p className="font-medium mb-1">Su Token de Seguridad está siendo Activado</p>
                 <p>Tu token temporal está protegiendo todas las transacciones. Expirará automáticamente en 30 minutos por seguridad.</p>
               </div>
             </div>
