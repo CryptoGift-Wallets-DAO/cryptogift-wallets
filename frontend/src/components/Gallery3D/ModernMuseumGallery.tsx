@@ -27,6 +27,18 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
   
   // Generate dynamic artworks
   const generateArtworks = (): Record<string, Artwork[]> => {
+    // Helper function to safely encode SVG
+    const encodeSVG = (svgString: string): string => {
+      try {
+        // Remove any problematic characters and encode properly
+        const cleaned = svgString.replace(/[\r\n]+/g, ' ').trim();
+        return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(cleaned)));
+      } catch (e) {
+        // Fallback to URL encoding if base64 fails
+        return 'data:image/svg+xml,' + encodeURIComponent(svgString);
+      }
+    };
+
     return {
       front: [
         // Hero piece - center
@@ -48,7 +60,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Neon Dreams',
           artist: 'CryptoArtist #001',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('gradient1')),
+          image: encodeSVG(generateArtSVG('gradient1')),
           description: 'Abstract representation of digital consciousness',
           price: '₿ 0.8',
           size: 'small',
@@ -59,7 +71,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Quantum Particles',
           artist: 'Neural Network',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('particles')),
+          image: encodeSVG(generateArtSVG('particles')),
           description: 'Visualization of quantum superposition',
           price: '₿ 1.2',
           size: 'small',
@@ -71,7 +83,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Binary Sunset',
           artist: 'Digital Nomad',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('sunset')),
+          image: encodeSVG(generateArtSVG('sunset')),
           description: 'The last sunset in the metaverse',
           price: '₿ 1.5',
           size: 'small',
@@ -82,7 +94,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Neural Pathways',
           artist: 'Synaptic Artist',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('neural')),
+          image: encodeSVG(generateArtSVG('neural')),
           description: 'Mapping the digital mind',
           price: '₿ 0.9',
           size: 'small',
@@ -95,7 +107,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Holographic Memory',
           artist: 'Time Traveler',
           year: '2055',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('hologram')),
+          image: encodeSVG(generateArtSVG('hologram')),
           description: 'Memories stored in light',
           price: '₿ 3.0',
           size: 'large',
@@ -107,7 +119,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Code Rain',
           artist: 'The Architect',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('matrix')),
+          image: encodeSVG(generateArtSVG('matrix')),
           description: 'The fabric of digital reality',
           price: '₿ 2.1',
           size: 'medium',
@@ -120,7 +132,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Interdimensional Gateway',
           artist: 'Void Walker',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('portal')),
+          image: encodeSVG(generateArtSVG('portal')),
           description: 'Gateway to parallel universes',
           price: '₿ 5.0',
           size: 'hero',
@@ -134,7 +146,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Data Crystals',
           artist: 'Quantum Sculptor',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('crystal')),
+          image: encodeSVG(generateArtSVG('crystal')),
           description: 'Information crystallized',
           price: '₿ 1.8',
           size: 'medium',
@@ -145,7 +157,7 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
           title: 'Sine Wave Symphony',
           artist: 'Frequency Master',
           year: '2024',
-          image: 'data:image/svg+xml;base64,' + btoa(generateArtSVG('wave')),
+          image: encodeSVG(generateArtSVG('wave')),
           description: 'Music visualized',
           price: '₿ 1.3',
           size: 'medium',
@@ -171,31 +183,9 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
 
     const selectedColors = colors[type] || colors.gradient1;
     
-    return `
-      <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="grad-${type}" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:${selectedColors[0]};stop-opacity:1" />
-            <stop offset="50%" style="stop-color:${selectedColors[1]};stop-opacity:1" />
-            <stop offset="100%" style="stop-color:${selectedColors[2]};stop-opacity:1" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <rect width="400" height="400" fill="url(#grad-${type})" />
-        ${type === 'particles' ? generateParticles() : ''}
-        ${type === 'neural' ? generateNeuralNetwork() : ''}
-        ${type === 'matrix' ? generateMatrix() : ''}
-        ${type === 'wave' ? generateWaves() : ''}
-        ${type === 'crystal' ? generateCrystal() : ''}
-        ${type === 'portal' ? generatePortal() : ''}
-      </svg>
-    `;
+    const svg = `<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grad-${type}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${selectedColors[0]};stop-opacity:1" /><stop offset="50%" style="stop-color:${selectedColors[1]};stop-opacity:1" /><stop offset="100%" style="stop-color:${selectedColors[2]};stop-opacity:1" /></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="4" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="400" height="400" fill="url(#grad-${type})" />${type === 'particles' ? generateParticles() : ''}${type === 'neural' ? generateNeuralNetwork() : ''}${type === 'matrix' ? generateMatrix() : ''}${type === 'wave' ? generateWaves() : ''}${type === 'crystal' ? generateCrystal() : ''}${type === 'portal' ? generatePortal() : ''}</svg>`;
+    
+    return svg;
   }
 
   function generateParticles(): string {
@@ -216,20 +206,19 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
       const y1 = Math.random() * 400;
       const x2 = Math.random() * 400;
       const y2 = Math.random() * 400;
-      paths += `<path d="M ${x1} ${y1} Q ${(x1+x2)/2} ${(y1+y2)/2 - 50} ${x2} ${y2}" 
-                     stroke="white" stroke-width="1" fill="none" opacity="0.3"/>`;
+      paths += `<path d="M ${x1} ${y1} Q ${(x1+x2)/2} ${(y1+y2)/2 - 50} ${x2} ${y2}" stroke="white" stroke-width="1" fill="none" opacity="0.3"/>`;
     }
     return paths;
   }
 
   function generateMatrix(): string {
     let text = '';
+    const chars = '0123456789ABCDEF';
     for (let i = 0; i < 30; i++) {
       const x = Math.random() * 400;
       const y = Math.random() * 400;
-      const char = String.fromCharCode(0x30A0 + Math.random() * 96);
-      text += `<text x="${x}" y="${y}" fill="#10B981" font-family="monospace" 
-                     font-size="14" opacity="${Math.random()}">${char}</text>`;
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      text += `<text x="${x}" y="${y}" fill="#10B981" font-family="monospace" font-size="14" opacity="${Math.random()}">${char}</text>`;
     }
     return text;
   }
@@ -244,30 +233,20 @@ export default function ModernMuseumGallery({ gpuTier }: ModernMuseumGalleryProp
         const y = 200 + Math.sin(x * frequency) * amplitude;
         path += `L ${x} ${y} `;
       }
-      waves += `<path d="${path}" stroke="white" stroke-width="${3-i*0.5}" 
-                      fill="none" opacity="${0.8 - i * 0.1}"/>`;
+      waves += `<path d="${path}" stroke="white" stroke-width="${3-i*0.5}" fill="none" opacity="${0.8 - i * 0.1}"/>`;
     }
     return waves;
   }
 
   function generateCrystal(): string {
-    return `
-      <polygon points="200,50 300,150 250,350 150,350 100,150" 
-               fill="none" stroke="white" stroke-width="2" opacity="0.8"/>
-      <polygon points="200,100 250,150 225,250 175,250 150,150" 
-               fill="white" opacity="0.2"/>
-      <line x1="200" y1="50" x2="200" y2="350" stroke="white" opacity="0.4"/>
-      <line x1="100" y1="150" x2="300" y2="150" stroke="white" opacity="0.4"/>
-    `;
+    return `<polygon points="200,50 300,150 250,350 150,350 100,150" fill="none" stroke="white" stroke-width="2" opacity="0.8"/><polygon points="200,100 250,150 225,250 175,250 150,150" fill="white" opacity="0.2"/><line x1="200" y1="50" x2="200" y2="350" stroke="white" opacity="0.4"/><line x1="100" y1="150" x2="300" y2="150" stroke="white" opacity="0.4"/>`;
   }
 
   function generatePortal(): string {
     let rings = '';
     for (let i = 0; i < 10; i++) {
       const r = 50 + i * 15;
-      rings += `<circle cx="200" cy="200" r="${r}" fill="none" 
-                       stroke="white" stroke-width="${3 - i * 0.2}" 
-                       opacity="${1 - i * 0.08}"/>`;
+      rings += `<circle cx="200" cy="200" r="${r}" fill="none" stroke="white" stroke-width="${3 - i * 0.2}" opacity="${1 - i * 0.08}"/>`;
     }
     return rings;
   }
