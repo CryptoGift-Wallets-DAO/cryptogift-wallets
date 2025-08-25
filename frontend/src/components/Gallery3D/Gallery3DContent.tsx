@@ -70,8 +70,23 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
     const interval = setInterval(() => {
       setRotation((prev) => (prev + 1) % 360);
     }, 50);
-    return () => clearInterval(interval);
-  }, []);
+    
+    // Keyboard navigation
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setCurrentWall((prev) => (prev - 1 + walls.length) % walls.length);
+      } else if (e.key === 'ArrowRight') {
+        setCurrentWall((prev) => (prev + 1) % walls.length);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [walls.length]);
 
   const handleWallClick = (index: number) => {
     setCurrentWall(index);
@@ -80,7 +95,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative">
       {/* Animated Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20" />
         <div 
           className="absolute inset-0 opacity-30"
@@ -91,7 +106,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
       </div>
 
       {/* 3D Museum Simulation */}
-      <div className="relative h-full flex items-center justify-center perspective-1000">
+      <div className="relative h-full flex items-center justify-center perspective-1000 z-10">
         <div 
           className="relative w-[80%] h-[80%] max-w-6xl max-h-[600px] transform-style-3d transition-transform duration-1000"
           style={{
@@ -102,13 +117,17 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
           {walls.map((wall, index) => (
             <div
               key={wall.id}
-              className={`absolute inset-0 backface-hidden cursor-pointer transition-all duration-500 ${
-                currentWall === index ? 'opacity-100' : 'opacity-40'
+              className={`absolute inset-0 cursor-pointer transition-all duration-500 ${
+                currentWall === index ? 'opacity-100 pointer-events-auto' : 'opacity-40 pointer-events-none'
               }`}
               style={{
                 transform: `rotateY(${index * 90}deg) translateZ(300px)`,
+                backfaceVisibility: 'hidden',
               }}
-              onClick={() => handleWallClick(index)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleWallClick(index);
+              }}
             >
               {/* Glass Panel Effect */}
               <div className={`w-full h-full rounded-2xl bg-gradient-to-br ${wall.color} 
@@ -176,11 +195,14 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
       </div>
 
       {/* Navigation Dots */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
         {walls.map((wall, index) => (
           <button
             key={wall.id}
-            onClick={() => handleWallClick(index)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleWallClick(index);
+            }}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
               currentWall === index 
                 ? 'bg-white scale-125' 
@@ -205,7 +227,7 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
       {/* Instructions */}
       <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 
                     text-center text-gray-500 text-sm">
-        Click en las paredes o usa los puntos para navegar
+        Click en los puntos o usa ← → para navegar
       </div>
     </div>
   );
