@@ -6,10 +6,11 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { prepareTransaction, sendTransaction } from 'thirdweb';
 import { client } from '@/app/client';
-import { baseSepolia } from 'thirdweb/chains';
+import { baseSepolia, base, mainnet, optimism, arbitrum, polygon } from 'thirdweb/chains';
 import { BRIDGE_CONFIG, calculateSlippage } from '@/lib/bridges/config';
 import { lifiClient, type Route, type QuoteRequest } from '@/lib/bridges/lifi-client';
 
@@ -22,9 +23,41 @@ export interface BridgeQuote {
   selectedRoute?: Route;
 }
 
+// Dynamic chain mapping based on route/params
+function getDynamicChain(router?: ReturnType<typeof useRouter>, searchParams?: ReturnType<typeof useSearchParams>) {
+  // Try to get chain from URL params first
+  const chainParam = searchParams?.get('chain');
+  if (chainParam) {
+    switch (chainParam) {
+      case 'base': return base;
+      case 'base-sepolia': return baseSepolia;
+      case 'mainnet': return mainnet;
+      case 'optimism': return optimism;
+      case 'arbitrum': return arbitrum;
+      case 'polygon': return polygon;
+      default: break;
+    }
+  }
+
+  // Try to derive from pathname
+  const pathname = router?.pathname || window?.location?.pathname || '';
+  if (pathname.includes('/base')) return base;
+  if (pathname.includes('/optimism')) return optimism;
+  if (pathname.includes('/arbitrum')) return arbitrum;
+  if (pathname.includes('/polygon')) return polygon;
+  
+  // Default fallback to base sepolia for development
+  return baseSepolia;
+}
+
 export function useBridge() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const account = useActiveAccount();
   const address = account?.address;
+  
+  // Dynamic chain derivation
+  const currentChain = getDynamicChain(router, searchParams);
   
   const [enabled] = useState(() => BRIDGE_CONFIG.enabled);
   const [isLoading, setIsLoading] = useState(false);
@@ -214,7 +247,7 @@ export function useBridge() {
       // Prepare transaction
       setStatus('sending_transaction');
       const tx = prepareTransaction({
-        chain: baseSepolia, // TODO: Get chain dynamically based on route
+        chain: currentChain, // Dynamic chain based on route/params
         client,
         to: txData.transactionRequest.to,
         data: txData.transactionRequest.data,
@@ -326,6 +359,7 @@ export function useBridge() {
     quote,
     txHash,
     status,
+    currentChain, // Dynamic chain for debugging/display
     
     // Actions
     getQuote,

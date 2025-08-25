@@ -1,10 +1,17 @@
 # Dependencies
 node_modules/
+package-lock.json
+yarn.lock
 .pnpm-debug.log*
 .yarn-integrity
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Backup files
+*.backup
+*.bak
+*.old
 
 # Production builds
 .next/

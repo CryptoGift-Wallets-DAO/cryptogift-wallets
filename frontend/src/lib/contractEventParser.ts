@@ -5,6 +5,7 @@
  */
 
 import { readContract } from 'thirdweb';
+import { decodeEventLog } from 'viem';
 import { client } from '../app/client';
 import { baseSepolia } from 'thirdweb/chains';
 import { 
@@ -25,86 +26,58 @@ const escrowContract = {
 } as const;
 
 /**
- * Parse GiftCreated event log - REAL ABI IMPLEMENTATION
- * @param log - Raw transaction log
+ * Parse GiftCreated event log - REAL ABI IMPLEMENTATION using viem
+ * @param log - Raw transaction log  
  * @returns Parsed GiftCreated event data
  */
 export function parseGiftCreatedLog(log: any): GiftCreatedEvent | null {
   try {
-    // Verify this is a GiftCreated event
-    const giftCreatedTopic = '0x' + 'GiftCreated(uint256,address,address,uint256,uint40,address,string)'
-      .split('')
-      .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
-      .join('');
-    
-    if (!log.topics || log.topics[0] !== giftCreatedTopic) {
-      return null;
-    }
+    // Use viem's decodeEventLog with real ABI
+    const decodedLog = decodeEventLog({
+      abi: ESCROW_ABI_V2,
+      eventName: 'GiftCreated',
+      topics: log.topics,
+      data: log.data
+    });
 
-    // Extract indexed parameters from topics
-    const giftId = BigInt(log.topics[1]);
-    const creator = '0x' + log.topics[2].slice(26); // Remove padding
-    const nftContract = '0x' + log.topics[3].slice(26); // Remove padding
-    
-    // Decode non-indexed parameters from data
-    // This would normally use ethers.utils.defaultAbiCoder.decode or similar
-    // For now, implementing basic parsing
-    const data = log.data.slice(2); // Remove 0x
-    
-    // Parse tokenId (first 32 bytes)
-    const tokenId = BigInt('0x' + data.slice(0, 64));
-    
-    // Parse expiresAt (next 32 bytes, but only use last 10 bytes for uint40)
-    const expiresAtHex = data.slice(128, 192);
-    const expiresAt = BigInt('0x' + expiresAtHex.slice(-20)); // Last 20 chars = 10 bytes
-    
-    // Parse gate address (next 32 bytes)
-    const gate = '0x' + data.slice(192, 256).slice(-40); // Last 40 chars = 20 bytes
-    
-    // Parse giftMessage string (offset-based)
-    const messageOffset = parseInt(data.slice(256, 320), 16) * 2;
-    const messageLength = parseInt(data.slice(320, 384), 16) * 2;
-    const messageHex = data.slice(384, 384 + messageLength);
-    const giftMessage = Buffer.from(messageHex, 'hex').toString('utf8');
-
+    // Map to our interface
     return {
-      giftId,
-      creator,
-      nftContract,
-      tokenId,
-      expiresAt,
-      gate,
-      giftMessage
+      giftId: decodedLog.args.giftId,
+      creator: decodedLog.args.creator,
+      nftContract: decodedLog.args.nftContract,
+      tokenId: decodedLog.args.tokenId,
+      expiresAt: decodedLog.args.expiresAt,
+      gate: decodedLog.args.gate,
+      giftMessage: decodedLog.args.giftMessage
     };
   } catch (error) {
-    console.error('Error parsing GiftCreated log:', error);
+    console.error('Error parsing GiftCreated log with viem:', error);
     return null;
   }
 }
 
 /**
- * Parse GiftClaimed event log - REAL ABI IMPLEMENTATION
+ * Parse GiftClaimed event log - REAL ABI IMPLEMENTATION using viem
  */
 export function parseGiftClaimedLog(log: any): GiftClaimedEvent | null {
   try {
-    // Similar implementation to GiftCreated but for claimed events
-    // Extract giftId, claimer, recipient, timestamp
-    const giftId = BigInt(log.topics[1]);
-    const claimer = '0x' + log.topics[2].slice(26);
-    const recipient = '0x' + log.topics[3].slice(26);
-    
-    // Parse timestamp from data
-    const data = log.data.slice(2);
-    const timestamp = BigInt('0x' + data.slice(0, 64));
+    // Use viem's decodeEventLog with real ABI
+    const decodedLog = decodeEventLog({
+      abi: ESCROW_ABI_V2,
+      eventName: 'GiftClaimed',
+      topics: log.topics,
+      data: log.data
+    });
 
+    // Map to our interface
     return {
-      giftId,
-      claimer, 
-      recipient,
-      timestamp
+      giftId: decodedLog.args.giftId,
+      claimer: decodedLog.args.claimer,
+      recipient: decodedLog.args.recipient,
+      timestamp: decodedLog.args.timestamp
     };
   } catch (error) {
-    console.error('Error parsing GiftClaimed log:', error);
+    console.error('Error parsing GiftClaimed log with viem:', error);
     return null;
   }
 }

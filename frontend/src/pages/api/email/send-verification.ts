@@ -11,16 +11,28 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 
-// Step 5.A - Robust RESEND_API_KEY validation
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is required but not configured in environment variables');
+// Step 5.A - Robust RESEND_API_KEY validation with proper HTTP codes
+function validateResendApiKey(): string {
+  if (!process.env.RESEND_API_KEY) {
+    // 503 Service Unavailable - service not configured
+    const error = new Error('RESEND_API_KEY is required but not configured in environment variables');
+    (error as any).statusCode = 503;
+    throw error;
+  }
+
+  if (!process.env.RESEND_API_KEY.startsWith('re_')) {
+    // 502 Bad Gateway - invalid upstream configuration 
+    const error = new Error('RESEND_API_KEY appears to be invalid (should start with "re_")');
+    (error as any).statusCode = 502;
+    throw error;
+  }
+  
+  return process.env.RESEND_API_KEY;
 }
 
-if (!process.env.RESEND_API_KEY.startsWith('re_')) {
-  throw new Error('RESEND_API_KEY appears to be invalid (should start with "re_")');
-}
+const RESEND_API_KEY = validateResendApiKey();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(RESEND_API_KEY);
 
 interface SendVerificationRequest {
   email: string;
@@ -54,6 +66,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<SendVerificationResponse>
 ) {
+  // Handle startup validation errors
+  try {
+    validateResendApiKey();
+  } catch (startupError: any) {
+    const statusCode = startupError.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: startupError.message || 'Email service configuration error'
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
@@ -75,7 +98,7 @@ export default async function handler(
       await resend.domains.list();
     } catch (resendError: any) {
       console.error('RESEND_API_KEY validation failed:', resendError?.message);
-      return res.status(500).json({
+      return res.status(502).json({
         success: false,
         message: 'Servicio de email no disponible - configuración inválida'
       });

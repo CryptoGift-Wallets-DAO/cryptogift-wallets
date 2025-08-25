@@ -4,10 +4,10 @@
   "packageManager": "pnpm@10.15.0",
   "main": "index.js",
   "scripts": {
-    "test": "cd frontend && npm test",
-    "test:coverage": "cd frontend && npm run test:coverage",
-    "test:watch": "cd frontend && npm run test:watch",
-    "test:ci": "cd frontend && npm run test:ci"
+    "test": "cd frontend && pnpm test",
+    "test:coverage": "cd frontend && pnpm run test:coverage", 
+    "test:watch": "cd frontend && pnpm run test:watch",
+    "test:ci": "cd frontend && pnpm run test:ci"
   },
   "keywords": [],
   "author": "",

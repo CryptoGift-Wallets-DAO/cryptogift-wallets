@@ -12,6 +12,89 @@ import {
 } from '@/lib/aa/session-keys/config';
 import { getSessionKeyManager } from '@/lib/aa/session-keys/manager';
 
+// Daily spending tracker for session keys
+class DailySpendingTracker {
+  private static instance: DailySpendingTracker;
+  private spendingData: Map<string, { amount: string; date: string; }> = new Map();
+
+  static getInstance(): DailySpendingTracker {
+    if (!DailySpendingTracker.instance) {
+      DailySpendingTracker.instance = new DailySpendingTracker();
+    }
+    return DailySpendingTracker.instance;
+  }
+
+  private getTodayKey(): string {
+    return new Date().toDateString(); // "Mon Aug 25 2025"
+  }
+
+  private getStorageKey(sessionId: string): string {
+    return `session_daily_spent_${sessionId}`;
+  }
+
+  addSpending(sessionId: string, amount: string): void {
+    const today = this.getTodayKey();
+    const key = this.getStorageKey(sessionId);
+    
+    try {
+      // Load existing data
+      const stored = localStorage.getItem(key);
+      const data = stored ? JSON.parse(stored) : { amount: '0', date: today };
+      
+      // Reset if different day
+      if (data.date !== today) {
+        data.amount = '0';
+        data.date = today;
+      }
+      
+      // Add to daily total (simple string addition for eth amounts)
+      const currentAmount = parseFloat(data.amount || '0');
+      const addAmount = parseFloat(amount || '0');
+      data.amount = (currentAmount + addAmount).toString();
+      
+      // Store updated data
+      localStorage.setItem(key, JSON.stringify(data));
+      this.spendingData.set(sessionId, data);
+    } catch (error) {
+      console.error('Error tracking daily spending:', error);
+    }
+  }
+
+  getDailySpent(sessionId: string): string {
+    const today = this.getTodayKey();
+    const key = this.getStorageKey(sessionId);
+    
+    try {
+      // Check memory first
+      const memData = this.spendingData.get(sessionId);
+      if (memData && memData.date === today) {
+        return memData.amount;
+      }
+      
+      // Load from localStorage
+      const stored = localStorage.getItem(key);
+      if (!stored) return '0';
+      
+      const data = JSON.parse(stored);
+      if (data.date !== today) {
+        return '0'; // Different day, reset
+      }
+      
+      // Update memory cache
+      this.spendingData.set(sessionId, data);
+      return data.amount;
+    } catch (error) {
+      console.error('Error getting daily spending:', error);
+      return '0';
+    }
+  }
+
+  refresh(sessionId: string): void {
+    // Force reload from localStorage (for indexer reconciliation)
+    this.spendingData.delete(sessionId);
+  }
+}
+
 interface UseSessionKeysReturn {
   enabled: boolean;
   sessions: SessionPolicy[];
@@ -23,6 +106,8 @@ interface UseSessionKeysReturn {
   revokeAllSessions: () => Promise<number>;
   useSession: (sessionId: string, operation: any) => Promise<boolean>;
   getSessionStats: (sessionId: string) => SessionStats | null;
+  addSessionSpending: (sessionId: string, amount: string) => void;
+  refreshDailySpent: (sessionId: string) => void;
 }
 
 interface SessionStats {
@@ -198,7 +283,7 @@ export function useSessionKeys(): UseSessionKeysReturn {
       usageCount: session.useCount,
       lastUsed: session.lastUsedAt,
       remainingTime,
-      dailySpent: '0', // TODO: Track actual spending
+      dailySpent: DailySpendingTracker.getInstance().getDailySpent(sessionId),
       isExpired: remainingTime === 0,
     };
   }, [sessions]);
@@ -220,5 +305,11 @@ export function useSessionKeys(): UseSessionKeysReturn {
     revokeAllSessions,
     useSession,
     getSessionStats,
+    addSessionSpending: useCallback((sessionId: string, amount: string) => {
+      DailySpendingTracker.getInstance().addSpending(sessionId, amount);
+    }, []),
+    refreshDailySpent: useCallback((sessionId: string) => {
+      DailySpendingTracker.getInstance().refresh(sessionId);
+    }, []),
   };
 }

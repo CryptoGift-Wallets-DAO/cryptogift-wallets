@@ -13,10 +13,62 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
+import { 
+  CheckCircle, 
+  Sparkles, 
+  Flame,
+  BarChart3,
+  Lock,
+  Rocket,
+  Banknote,
+  Globe,
+  Trophy,
+  Clock,
+  Heart,
+  Gift,
+  Shield,
+  TrendingUp,
+  Users,
+  Zap,
+  ArrowRight,
+  Lightbulb,
+  AlertCircle,
+  Target,
+  DollarSign,
+  Award,
+  Star,
+  MessageCircle,
+  Play,
+  ChevronRight,
+  X,
+  Check,
+  Circle,
+  Square,
+  Triangle,
+  Hexagon,
+  Palette,
+  Building2,
+  ShoppingBag,
+  RefreshCw,
+  PartyPopper,
+  Mail,
+  Gamepad2,
+  Briefcase,
+  UserCheck,
+  TrendingDown,
+  CheckSquare,
+  XCircle,
+  CircleDot,
+  Hash,
+  AtSign,
+  Code,
+  BookOpen,
+  Calendar
+} from 'lucide-react';
 import { EmailVerificationModal } from '../email/EmailVerificationModal';
 import { CalendarBookingModal } from '../calendar/CalendarBookingModal';
 // Enhanced confetti function matching KnowledgeLessonModal implementation
-function triggerConfetti(options?: any) {
+function triggerConfetti(options?: ConfettiOptions) {
   // Visual confetti effect using CSS animation
   const duration = 3000;
   const animationEnd = Date.now() + duration;
@@ -72,68 +124,30 @@ function triggerConfetti(options?: any) {
 }
 
 // Backward compatibility
-function confetti(options: any) {
+function confetti(options: ConfettiOptions) {
   triggerConfetti(options);
 }
-import { 
-  CheckCircle, 
-  Sparkles, 
-  Flame,
-  BarChart3,
-  Lock,
-  Rocket,
-  Banknote,
-  Globe,
-  Trophy,
-  Clock,
-  Heart,
-  Gift,
-  Shield,
-  TrendingUp,
-  Users,
-  Zap,
-  ArrowRight,
-  Lightbulb,
-  AlertCircle,
-  Target,
-  DollarSign,
-  Award,
-  Star,
-  MessageCircle,
-  Play,
-  ChevronRight,
-  X,
-  Check,
-  Circle,
-  Square,
-  Triangle,
-  Hexagon,
-  Palette,
-  Building2,
-  ShoppingBag,
-  RefreshCw,
-  PartyPopper,
-  Mail,
-  Gamepad2,
-  Briefcase,
-  UserCheck,
-  TrendingDown,
-  CheckSquare,
-  XCircle,
-  CircleDot,
-  Hash,
-  AtSign,
-  Code,
-  BookOpen
-} from 'lucide-react';
-
 // Types
+interface ConfettiOptions {
+  startVelocity?: number;
+  spread?: number;
+  ticks?: number;
+  zIndex?: number;
+}
+
+interface SalesBlockContent {
+  title: string;
+  description: string;
+  urgency?: string;
+  [key: string]: any; // For flexibility while migrating
+}
+
 interface SalesBlock {
   id: string;
   title: string;
   duration: number;
   type: 'opening' | 'problem' | 'solution' | 'demo' | 'comparison' | 'cases' | 'business' | 'roadmap' | 'close' | 'capture' | 'success';
-  content: any;
+  content: SalesBlockContent;
   question?: {
     text: string;
     options: Array<{

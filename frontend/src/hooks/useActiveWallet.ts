@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 
 export interface TBAWallet {
@@ -17,6 +17,8 @@ export function useActiveWallet() {
   const account = useActiveAccount();
   const [tbaWallet, setTbaWallet] = useState<TBAWallet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [lastSync, setLastSync] = useState<number | null>(null);
 
   // Load active TBA wallet from localStorage
   useEffect(() => {
@@ -27,6 +29,55 @@ export function useActiveWallet() {
       setIsLoading(false);
     }
   }, [account]);
+
+  // Periodic sync with backend (every 5 minutes)
+  useEffect(() => {
+    if (!account?.address) return;
+    
+    const interval = setInterval(() => {
+      if (syncStatus !== 'syncing') {
+        syncWithBackend(account.address);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => clearInterval(interval);
+  }, [account?.address, syncStatus, syncWithBackend]);
+
+  const syncWithBackend = useCallback(async (address: string) => {
+    try {
+      setSyncStatus('syncing');
+      
+      // Ping backend to mark wallet as active
+      const response = await fetch('/api/wallet/active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address,
+          chainId: 84532, // Base Sepolia default
+          syncBalances: false, // Quick sync without heavy balance calls
+          syncTransactions: false,
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setSyncStatus('success');
+          setLastSync(Date.now());
+          console.log('[useActiveWallet] Backend sync successful:', data);
+        } else {
+          setSyncStatus('error');
+          console.warn('[useActiveWallet] Backend sync failed:', data);
+        }
+      } else {
+        setSyncStatus('error');
+        console.warn('[useActiveWallet] Backend sync HTTP error:', response.status);
+      }
+    } catch (error) {
+      setSyncStatus('error');
+      console.error('[useActiveWallet] Backend sync error:', error);
+    }
+  }, []);
 
   const loadActiveTBAWallet = async () => {
     try {
@@ -41,7 +92,10 @@ export function useActiveWallet() {
         setTbaWallet(walletData);
       }
       
-      // TODO: Also sync with API to get latest wallet data
+      // Sync with backend if we have an active account
+      if (account?.address) {
+        await syncWithBackend(account.address);
+      }
       
     } catch (error) {
       console.error('Error loading active TBA wallet:', error);
@@ -50,12 +104,14 @@ export function useActiveWallet() {
     }
   };
 
-  const setActiveTBAWallet = (wallet: TBAWallet | null) => {
+  const setActiveTBAWallet = async (wallet: TBAWallet | null) => {
     setTbaWallet(wallet);
     
     if (wallet) {
       localStorage.setItem('activeTBAWalletId', wallet.id);
       localStorage.setItem('activeTBAWalletData', JSON.stringify(wallet));
+      // Sync TBA wallet activation with backend
+      await syncWithBackend(wallet.tbaAddress);
     } else {
       localStorage.removeItem('activeTBAWalletId');
       localStorage.removeItem('activeTBAWalletData');
@@ -95,6 +151,17 @@ export function useActiveWallet() {
     getWalletDisplayName,
     getWalletType,
     isLoading,
+    
+    // Backend sync status
+    syncStatus,
+    lastSync,
+    syncWithBackend: useCallback((address?: string) => {
+      const targetAddress = address || account?.address;
+      if (targetAddress) {
+        return syncWithBackend(targetAddress);
+      }
+      return Promise.resolve();
+    }, [account?.address, syncWithBackend]),
     
     // For switching between wallets
     currentWalletAddress: tbaWallet?.tbaAddress || account?.address || null,

@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useActiveAccount, useActiveWalletChain } from 'thirdweb/react';
 import type { Address } from 'viem';
+import { client } from '@/app/client';
 import { ApprovalScanner, type TokenApproval, type ScanProgress } from '@/lib/approvals/scanner';
 import { ApprovalRevoker, type RevocationResult } from '@/lib/approvals/revoker';
 import { 
@@ -104,8 +105,22 @@ export function useApprovals() {
     if (!isEnabled || !chainId || !account) return;
     
     scannerRef.current = new ApprovalScanner(chainId);
-    // TODO: Initialize revoker with proper ThirdWeb client
-    // revokerRef.current = new ApprovalRevoker(client, account);
+    
+    // Initialize revoker with feature flag
+    const revokeEnabled = process.env.NEXT_PUBLIC_FEATURE_APPROVAL_REVOKE === 'true';
+    if (revokeEnabled) {
+      try {
+        revokerRef.current = new ApprovalRevoker(client, account);
+        console.log('[useApprovals] Revoker initialized successfully');
+      } catch (error) {
+        console.error('[useApprovals] Failed to initialize revoker:', error);
+        // Fallback to read-only mode
+        revokerRef.current = null;
+      }
+    } else {
+      console.log('[useApprovals] Revocation disabled via feature flag');
+      revokerRef.current = null;
+    }
     
     return () => {
       scannerRef.current = null;
@@ -230,6 +245,15 @@ export function useApprovals() {
       simulate?: boolean;
     } = {}
   ): Promise<RevocationResult> => {
+    // Check feature flag
+    const revokeEnabled = process.env.NEXT_PUBLIC_FEATURE_APPROVAL_REVOKE === 'true';
+    if (!revokeEnabled) {
+      return {
+        success: false,
+        error: 'Approval revocation is disabled',
+      };
+    }
+    
     if (!revokerRef.current) {
       return {
         success: false,
@@ -295,6 +319,13 @@ export function useApprovals() {
   const batchRevokeApprovals = useCallback(async (
     approvals: TokenApproval[]
   ) => {
+    // Check feature flag
+    const revokeEnabled = process.env.NEXT_PUBLIC_FEATURE_APPROVAL_REVOKE === 'true';
+    if (!revokeEnabled) {
+      toast.error('Batch revocation is disabled');
+      return null;
+    }
+    
     if (!revokerRef.current || approvals.length === 0) {
       return null;
     }
@@ -367,6 +398,12 @@ export function useApprovals() {
     }
   }, [isEnabled, owner, chainId, scanApprovals, state.isScanning, state.lastScan]);
   
+  // Helper to check if revocation is available
+  const isRevocationAvailable = useCallback(() => {
+    const revokeEnabled = process.env.NEXT_PUBLIC_FEATURE_APPROVAL_REVOKE === 'true';
+    return revokeEnabled && !!revokerRef.current;
+  }, []);
+
   return {
     // State
     approvals: getApprovalsWithMetadata(),
@@ -381,6 +418,9 @@ export function useApprovals() {
     cancelScan,
     revokeApproval,
     batchRevokeApprovals,
+    
+    // Status
+    isRevocationAvailable,
     
     // Config
     isEnabled,
