@@ -133,66 +133,125 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         }
       `}</style>
 
-      {/* 3D Museum Room - INTERIOR VIEW CORRECTED */}
+      {/* Modern Gallery Room - Professional Museum Style */}
       <div className="relative h-full flex items-center justify-center" style={{ perspective: '1200px' }}>
+        {/* Professional Gallery Ceiling with Recessed Lighting */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-gray-900 to-gray-850 z-10">
+          {/* Main ceiling surface */}
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-800 to-gray-900">
+            {/* Subtle texture */}
+            <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-700" />
+          </div>
+          
+          {/* Recessed LED Track Lighting */}
+          <div className="absolute inset-x-0 top-4 flex justify-center gap-24">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="relative">
+                {/* Light housing */}
+                <div className="w-6 h-6 bg-black rounded-full shadow-inner">
+                  <div className="w-4 h-4 mx-auto mt-1 bg-yellow-100 rounded-full blur-sm" />
+                </div>
+                {/* Light beam */}
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 w-20 h-96 bg-gradient-to-b from-yellow-50/20 via-yellow-50/5 to-transparent" 
+                     style={{ clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Marble Floor with Reflections */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 z-10">
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900 to-transparent">
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-800/20 via-transparent to-gray-800/20" />
+            {/* Marble Pattern */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700" 
+                   style={{ backgroundSize: '100px 100px' }} />
+            </div>
+            {/* Reflection Effect */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          </div>
+        </div>
+
         <div 
           className="relative"
           style={{
-            width: '0px', // Container at center point
+            width: '0px',
             height: '0px',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${rotationAngle}deg)`, // Use accumulated rotation angle
+            transform: `rotateY(${rotationAngle}deg)`,
             transition: `transform ${quality.transition} cubic-bezier(0.4, 0, 0.2, 1)`,
           }}
         >
-          {/* Room Walls - TRUE INTERIOR VIEW */}
+          {/* Gallery Walls - Only Front Wall Fully Visible */}
           {walls.map((wall, index) => {
-            // INTERIOR VIEW: We are INSIDE looking at walls that surround us
-            // First rotate to position, then translate BACKWARDS to create interior
+            // Configure walls for museum-style view
             let transform = '';
-            if (index === 0) transform = 'rotateY(0deg) translateZ(-400px)';      // Front wall - push back
-            if (index === 1) transform = 'rotateY(-90deg) translateZ(-400px)';    // Right wall - rotate left, push back
-            if (index === 2) transform = 'rotateY(-180deg) translateZ(-400px)';   // Back wall - rotate 180, push back
-            if (index === 3) transform = 'rotateY(-270deg) translateZ(-400px)';   // Left wall - rotate right, push back
+            let opacity = 1;
+            let width = '800px';
+            
+            if (index === 0) {
+              transform = 'rotateY(0deg) translateZ(-500px)';      // Front wall - main display
+              opacity = 1;
+            } else if (index === 1) {
+              transform = 'rotateY(-90deg) translateZ(-500px) translateX(-350px)';    // Right wall - partial
+              opacity = 0.3;
+              width = '200px';
+            } else if (index === 2) {
+              transform = 'rotateY(-180deg) translateZ(-500px)';   // Back wall - hidden
+              opacity = 0;
+            } else if (index === 3) {
+              transform = 'rotateY(-270deg) translateZ(-500px) translateX(350px)';   // Left wall - partial
+              opacity = 0.3;
+              width = '200px';
+            }
             
             return (
               <div
                 key={wall.id}
                 className="absolute cursor-pointer"
                 style={{
-                  width: '800px',  // Larger for immersive view
-                  height: '600px', // Larger for immersive view
+                  width: index === 1 || index === 3 ? width : '800px',
+                  height: '500px',
                   left: '50%',
                   top: '50%',
-                  marginLeft: '-400px', // Center the larger walls
-                  marginTop: '-300px',  // Center the larger walls
+                  marginLeft: index === 1 || index === 3 ? '-100px' : '-400px',
+                  marginTop: '-250px',
                   transform,
-                  backfaceVisibility: 'hidden', // Hide back faces for clean interior
+                  opacity,
+                  backfaceVisibility: 'hidden',
+                  pointerEvents: index === 2 ? 'none' : 'auto', // Disable clicks on hidden wall
                 }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleNextWall();
               }}
             >
-              {/* Glass Panel Effect */}
-              <div className={`w-full h-full rounded-2xl bg-gradient-to-br ${wall.color} 
-                            ${quality.blur} border border-white/10 p-8
-                            shadow-2xl relative overflow-hidden`}>
+              {/* Museum Art Frame */}
+              <div className={`w-full h-full ${index === 1 || index === 3 ? 'bg-gray-800' : `bg-gradient-to-br ${wall.color}`} 
+                            border-8 border-amber-900 shadow-2xl relative overflow-hidden`}
+                   style={{ 
+                     boxShadow: '0 10px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5)',
+                     background: index === 1 || index === 3 ? '#1a1a1a' : undefined 
+                   }}>
                 
-                {/* Animated Particles - GPU optimized */}
-                <div className="absolute inset-0 overflow-hidden">
-                  {[...Array(quality.particles)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-1 h-1 bg-white/20 rounded-full animate-float"
-                      style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        animationDelay: `${Math.random() * 5}s`,
-                        animationDuration: `${5 + Math.random() * 10}s`,
-                      }}
-                    />
-                  ))}
+                {/* Only show content on front wall */}
+                {index === 0 && (
+                  <>
+                    {/* Animated Particles - GPU optimized */}
+                    <div className="absolute inset-0 overflow-hidden">
+                      {[...Array(quality.particles)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute w-1 h-1 bg-white/20 rounded-full animate-float"
+                          style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            animationDuration: `${5 + Math.random() * 10}s`,
+                          }}
+                        />
+                      ))}
                 </div>
 
                 {/* Content */}
@@ -218,21 +277,12 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
                     </ul>
                   </div>
 
-                  {/* Security Panel */}
-                  <div className="mt-6 p-4 bg-black/30 rounded-xl backdrop-blur-sm border border-white/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-green-400 text-sm font-mono">SECURITY: VERIFIED</span>
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-100" />
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse delay-200" />
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Glass Refraction Effect */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+                  </>
+                )}
               </div>
             </div>
             );
@@ -277,15 +327,6 @@ export default function Gallery3DContent({ gpuTier }: Gallery3DContentProps) {
         </button>
       </div>
 
-      {/* Title Overlay */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2">
-          CRYPTOGIFT GALLERY
-        </h1>
-        <p className="text-gray-400 text-lg">
-          Museo Digital Inmersivo • GPU: {gpuTier.toUpperCase()}
-        </p>
-      </div>
 
       {/* Instructions */}
       <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center text-gray-400 text-sm bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
