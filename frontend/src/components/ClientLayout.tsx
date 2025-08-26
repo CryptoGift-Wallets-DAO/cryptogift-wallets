@@ -3,8 +3,13 @@
 import dynamic from "next/dynamic";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeProvider } from "./providers/ThemeProvider";
-import { StaticBackground } from "./ui/StaticBackground";
 import { AmplitudeProvider } from "./monitoring/AmplitudeProvider";
+
+// KILL-SWITCH: Dynamic import with SSR disabled for StaticBackground
+const StaticBackground = dynamic(() => import("./ui/StaticBackground").then(mod => ({ default: mod.StaticBackground })), {
+  ssr: false,
+  loading: () => null
+});
 
 const ThirdwebWrapper = dynamic(() => import("./ThirdwebWrapper").then(mod => ({ default: mod.ThirdwebWrapper })), {
   ssr: false,
@@ -36,8 +41,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
       <ThirdwebWrapper>
         <AmplitudeProvider>
           <ErrorBoundary>
-            {/* FONDO ESTÁTICO */}
-            <StaticBackground />
+            {/* FONDO ESTÁTICO - CON KILL-SWITCH */}
+            {process.env.NEXT_PUBLIC_DISABLE_BG !== '1' && <StaticBackground />}
             
             {/* ESTRUCTURA PRINCIPAL */}
             <div className="relative min-h-screen flex flex-col">
