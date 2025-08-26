@@ -190,7 +190,8 @@ interface PathItem {
   description: string;
   difficulty?: string; // Opcional
   timeline?: string; // Opcional
-  spots?: string; // Número de spots disponibles
+  spots?: number | string; // Número de spots disponibles - permite tanto number como string
+  benefit?: string; // Beneficio específico del path
 }
 
 interface BenefitItem {
@@ -857,7 +858,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     // Store lead data including selected path
     setLeadData(prev => ({
       ...prev,
-      path: data.path || prev.path,
+      path: (data.path as 'quest' | 'integration' | 'whitelabel' | 'investor' | 'community') || prev.path,
       contact: data.contact || prev.contact,
       questionsCorrect: data.questionsScore?.correct || prev.questionsCorrect,
       totalQuestions: data.questionsScore?.total || prev.totalQuestions
@@ -2330,22 +2331,26 @@ const CaptureBlock: React.FC<{
       )}
       
       {/* Email Verification Modal */}
-      <EmailVerificationModal
-        isOpen={showEmailVerification}
-        onClose={() => setShowEmailVerification(false)}
-        onVerified={handleEmailVerified}
-        source="masterclass"
-        title="✉️ Verificación de Email"
-        subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
-      />
+      {showEmailVerification !== undefined && (
+        <EmailVerificationModal
+          isOpen={showEmailVerification}
+          onClose={() => setShowEmailVerification(false)}
+          onVerified={handleEmailVerified}
+          source="masterclass"
+          title="✉️ Verificación de Email"
+          subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
+        />
+      )}
 
       {/* Calendar Booking Modal */}
-      <CalendarBookingModal
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        userEmail={verifiedEmail || undefined}
-        source="masterclass"
-      />
+      {showCalendar !== undefined && (
+        <CalendarBookingModal
+          isOpen={showCalendar}
+          onClose={() => setShowCalendar(false)}
+          userEmail={verifiedEmail || undefined}
+          source="masterclass"
+        />
+      )}
     </div>
   );
 };
