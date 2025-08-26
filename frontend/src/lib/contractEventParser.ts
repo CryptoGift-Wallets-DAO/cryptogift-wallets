@@ -101,7 +101,7 @@ export async function fetchGiftDetails(giftId: bigint): Promise<EscrowGift | nul
       creator: giftData[0],
       nftContract: giftData[1], 
       tokenId: giftData[2],
-      expiresAt: typeof giftData[3] === 'bigint' ? Number(giftData[3]) : giftData[3],
+      expiresAt: BigInt(giftData[3]),
       status: giftData[4],
       attempts: giftData[5],
       cooldownUntil: giftData[6],
