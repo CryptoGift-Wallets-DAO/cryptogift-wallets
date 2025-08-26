@@ -30,19 +30,6 @@ export function useActiveWallet() {
     }
   }, [account]);
 
-  // Periodic sync with backend (every 5 minutes)
-  useEffect(() => {
-    if (!account?.address) return;
-    
-    const interval = setInterval(() => {
-      if (syncStatus !== 'syncing') {
-        syncWithBackend(account.address);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-    
-    return () => clearInterval(interval);
-  }, [account?.address, syncStatus, syncWithBackend]);
-
   const syncWithBackend = useCallback(async (address: string) => {
     try {
       setSyncStatus('syncing');
@@ -78,6 +65,19 @@ export function useActiveWallet() {
       console.error('[useActiveWallet] Backend sync error:', error);
     }
   }, []);
+
+  // Periodic sync with backend (every 5 minutes)
+  useEffect(() => {
+    if (!account?.address) return;
+    
+    const interval = setInterval(() => {
+      if (syncStatus !== 'syncing') {
+        syncWithBackend(account.address);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => clearInterval(interval);
+  }, [account?.address, syncStatus, syncWithBackend]);
 
   const loadActiveTBAWallet = async () => {
     try {

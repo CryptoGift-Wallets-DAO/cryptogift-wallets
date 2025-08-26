@@ -136,8 +136,8 @@ interface ConfettiOptions {
 }
 
 interface SalesBlockContent {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   urgency?: string;
   [key: string]: any; // For flexibility while migrating
 }
@@ -2215,8 +2215,8 @@ const CaptureBlock: React.FC<{
       <CalendarBookingModal
         isOpen={showCalendar}
         onClose={() => setShowCalendar(false)}
-        onBookingSuccess={handleBookingSuccess}
-        prefillData={leadData}
+        userEmail={verifiedEmail || undefined}
+        source="masterclass"
       />
     </div>
   );

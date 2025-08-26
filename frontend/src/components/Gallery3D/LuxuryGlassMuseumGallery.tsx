@@ -163,6 +163,8 @@ export default function LuxuryGlassMuseumGallery({ gpuTier }: LuxuryGlassMuseumG
               <NFTImage
                 src={selectedArt.image}
                 alt={selectedArt.title}
+                width={800}
+                height={600}
                 className="w-full h-auto rounded-2xl shadow-2xl"
                 priority
               />

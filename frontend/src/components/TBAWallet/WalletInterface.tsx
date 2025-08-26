@@ -133,7 +133,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
       const mockTransactions: Transaction[] = [
         {
           hash: '0x123...abc',
-          type: 'received',
+          type: 'receive',
           amount: '0.001',
           token: 'ETH',
           from: '0x742d35Cc6634C0532925a3b8D8de8E00eD14c0d8',
