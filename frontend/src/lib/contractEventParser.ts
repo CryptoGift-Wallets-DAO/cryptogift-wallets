@@ -22,7 +22,7 @@ import {
 const escrowContract = {
   client,
   chain: baseSepolia,
-  address: ESCROW_CONTRACT_ADDRESS_V2,
+  address: ESCROW_CONTRACT_ADDRESS_V2 as `0x${string}`,
 } as const;
 
 /**
@@ -46,7 +46,7 @@ export function parseGiftCreatedLog(log: any): GiftCreatedEvent | null {
       creator: decodedLog.args.creator,
       nftContract: decodedLog.args.nftContract,
       tokenId: decodedLog.args.tokenId,
-      expiresAt: decodedLog.args.expiresAt,
+      expiresAt: BigInt(decodedLog.args.expiresAt || 0),
       gate: decodedLog.args.gate,
       giftMessage: decodedLog.args.giftMessage
     };
@@ -69,12 +69,13 @@ export function parseGiftClaimedLog(log: any): GiftClaimedEvent | null {
       data: log.data
     });
 
-    // Map to our interface
+    // Map to our interface  
     return {
       giftId: decodedLog.args.giftId,
       claimer: decodedLog.args.claimer,
       recipient: decodedLog.args.recipient,
-      timestamp: decodedLog.args.timestamp
+      gate: decodedLog.args.gate,
+      gateReason: decodedLog.args.gateReason
     };
   } catch (error) {
     console.error('Error parsing GiftClaimed log with viem:', error);

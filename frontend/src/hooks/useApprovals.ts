@@ -110,7 +110,9 @@ export function useApprovals() {
     const revokeEnabled = process.env.NEXT_PUBLIC_FEATURE_APPROVAL_REVOKE === 'true';
     if (revokeEnabled) {
       try {
-        revokerRef.current = new ApprovalRevoker(client, account);
+        // Convert thirdweb Account to viem-compatible format
+        const viemAccount = account as any; // Type assertion for compatibility
+        revokerRef.current = new ApprovalRevoker(client, viemAccount);
         console.log('[useApprovals] Revoker initialized successfully');
       } catch (error) {
         console.error('[useApprovals] Failed to initialize revoker:', error);

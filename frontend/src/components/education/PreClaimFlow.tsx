@@ -277,7 +277,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         tokenId,
         password,
         salt,
-        claimerAddress: account.address // Always use real address
+        claimer: account.address // FIXED: Unified property name with API
       };
 
       console.log('🔐 Validating password for token:', tokenId);
@@ -370,7 +370,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         body: JSON.stringify({
           tokenId,
           sessionToken: validationState.sessionToken,
-          claimerAddress: account?.address // Don't send if not available
+          claimer: account?.address // FIXED: Unified property name with API
         })
       });
 

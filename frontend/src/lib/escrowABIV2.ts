@@ -827,6 +827,7 @@ export const ESCROW_CONTRACT_ADDRESS_V2 = process.env.NEXT_PUBLIC_ESCROW_CONTRAC
 
 // Unified type definition for V2 (backward compatible)
 export interface EscrowGift {
+  giftId?: bigint; // Added for contractEventParser compatibility
   creator: string;
   expirationTime: bigint;
   nftContract: string;

@@ -10,7 +10,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
-import { kv } from '@vercel/kv';
+// Removed @vercel/kv import - using unified redisConfig instead
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { 
@@ -32,6 +32,7 @@ interface PreClaimValidationRequest {
   tokenId: string;
   password: string;
   salt: string;
+  claimer: string; // FIXED: Unified property name with validate-claim API
   deviceId?: string;
 }
 
@@ -48,6 +49,7 @@ interface PreClaimValidationResponse {
   requiresEducation: boolean;
   educationRequirements?: EducationRequirement[];
   educationModules?: number[]; // CRITICAL FIX: Raw module IDs for direct use
+  educationGateData?: string; // AUDIT FIX #6: Education gate data for bypass signatures
   giftInfo?: {
     creator: string;
     expirationTime: number;
@@ -123,9 +125,15 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
     const windowStart = now - RATE_LIMIT_WINDOW;
     
     // Get attempts in current window
-    // Note: Using simpler rate limiting for unified Redis compatibility
+    // UNIFIED REDIS CLIENT: Use redisConfig instead of @vercel/kv
+    const redis = validateRedisForCriticalOps('Rate limiting');
+    if (!redis) {
+      console.warn('⚠️ Redis not available - bypassing rate limit (unsafe)');
+      return { allowed: true, remaining: MAX_ATTEMPTS_PER_WINDOW };
+    }
+    
     const attemptKey = `rate_limit_simple:${key}`;
-    const attempts = await kv.get<number>(attemptKey) || 0;
+    const attempts = Number(await redis.get(attemptKey)) || 0;
     
     if (attempts >= MAX_ATTEMPTS_PER_WINDOW) {
       return { allowed: false, remaining: 0 };
@@ -137,8 +145,8 @@ async function checkRateLimit(key: string): Promise<{ allowed: boolean; remainin
       return { allowed: false, remaining: MAX_ATTEMPTS_PER_WINDOW - attempts };
     }
     
-    // Add current attempt (simplified)
-    await kv.setex(attemptKey, RATE_LIMIT_WINDOW / 1000, attempts + 1);
+    // Add current attempt (unified Redis)
+    await redis.setex(attemptKey, Math.floor(RATE_LIMIT_WINDOW / 1000), attempts + 1);
     
     return { 
       allowed: true, 
@@ -354,10 +362,11 @@ async function validatePasswordWithContract(
     
     console.log('SOLIDITY HASH GENERATION DETAILS:');
     console.log(`  • Types: ['string', 'bytes32', 'uint256', 'address', 'uint256']`);
-    console.log(`  • Values: ['${password}', '${saltToUse}', ${giftId}, '${ESCROW_CONTRACT_ADDRESS}', 84532]`);
+    console.log(`  • Values: ['[REDACTED]', '${saltToUse}', ${giftId}, '${ESCROW_CONTRACT_ADDRESS}', 84532]`);
+    console.log(`  • Password Length: ${password.length} chars`);
     console.log(`  • ARCHITECTURAL FIX: ${originalSalt ? 'Using original mint salt' : 'Using provided salt (fallback)'}`);
     
-    // Store in debugLogger for persistence
+    // Store in debugLogger for persistence (password already sanitized in debugData)
     debugLogger.operation('Password validation deep analysis', debugData);
     
     if (providedHash.toLowerCase() !== gift.passwordHash.toLowerCase()) {

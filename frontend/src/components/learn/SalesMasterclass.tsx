@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
@@ -135,11 +135,77 @@ interface ConfettiOptions {
   zIndex?: number;
 }
 
+// AUDIT FIX #8: Comprehensive typing to eliminate any types - Updated to match actual usage
+interface BrechaItem {
+  title: string;
+  description: string;
+  impact?: string; // Optional porque no siempre se usa
+}
+
+interface FeatureItem {
+  icon?: string; // Añadido porque se usa en el código
+  title: string;
+  description: string;
+  benefit: string;
+}
+
+interface ComparisonItem {
+  aspect: string;
+  traditional?: string; // Usado en el código
+  competitor?: string;
+  cryptogift: string;
+  advantage: string;
+}
+
+interface MetricItem {
+  label: string;
+  number?: string; // Usado en el código
+  value: string;
+  improvement: string;
+}
+
+interface StreamItem {
+  name: string;
+  model?: string; // Usado en el código
+  description: string;
+  potential: string;
+}
+
+interface PhaseItem {
+  phase: string;
+  name?: string; // Usado en el código
+  timeline: string;
+  description: string;
+  milestones: string[];
+}
+
+interface PathItem {
+  title: string;
+  description: string;
+  difficulty: string;
+  timeline: string;
+}
+
+interface BenefitItem {
+  icon: string;
+  title: string;
+  description: string;
+}
+
 interface SalesBlockContent {
   title?: string;
   description?: string;
   urgency?: string;
-  [key: string]: any; // For flexibility while migrating
+  headline?: string; // Usado en el código
+  instruction?: string; // Usado en el código
+  brechas?: BrechaItem[];
+  features?: FeatureItem[];
+  comparisons?: ComparisonItem[];
+  metrics?: MetricItem[];
+  streams?: StreamItem[];
+  phases?: PhaseItem[];
+  paths?: PathItem[];
+  benefits?: BenefitItem[];
 }
 
 interface SalesBlock {
@@ -745,7 +811,13 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   }, [celebrate]);
 
   // Lead Submission
-  const handleLeadSubmit = useCallback(async (data: any) => {
+  const handleLeadSubmit = useCallback(async (data: {
+    name: string;
+    email: string;
+    company: string;
+    role: string;
+    interest: string;
+  }) => {
     console.log('📝 LEAD SUBMIT:', { data, educationalMode, hasOnEducationComplete: !!onEducationComplete });
     
     // Store lead data including selected path
@@ -1213,8 +1285,13 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 };
 
 // Question Component
+interface QuestionType {
+  text: string;
+  options: Array<{ text: string; isCorrect: boolean; }>;
+}
+
 const QuestionSection: React.FC<{
-  question: any;
+  question: QuestionType;
   onAnswer: (index: number) => void;
   selectedAnswer: number | null;
   showFeedback: boolean;
@@ -1400,8 +1477,8 @@ const NavigationArea: React.FC<{
 
 // Block Components with Questions
 const OpeningBlock: React.FC<{ 
-  content: any; 
-  question: any;
+  content: SalesBlockContent; 
+  question: QuestionType;
   onAnswer: (idx: number) => void;
   selectedAnswer: number | null;
   showFeedback: boolean;

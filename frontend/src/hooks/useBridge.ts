@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { prepareTransaction, sendTransaction } from 'thirdweb';
 import { client } from '@/app/client';
@@ -39,8 +39,8 @@ function getDynamicChain(router?: ReturnType<typeof useRouter>, searchParams?: R
     }
   }
 
-  // Try to derive from pathname
-  const pathname = router?.pathname || window?.location?.pathname || '';
+  // Try to derive from pathname - AppRouterInstance doesn't have pathname
+  const pathname = window?.location?.pathname || '';
   if (pathname.includes('/base')) return base;
   if (pathname.includes('/optimism')) return optimism;
   if (pathname.includes('/arbitrum')) return arbitrum;
@@ -53,10 +53,11 @@ function getDynamicChain(router?: ReturnType<typeof useRouter>, searchParams?: R
 export function useBridge() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const account = useActiveAccount();
   const address = account?.address;
   
-  // Dynamic chain derivation
+  // Dynamic chain derivation - fixed for App Router
   const currentChain = getDynamicChain(router, searchParams);
   
   const [enabled] = useState(() => BRIDGE_CONFIG.enabled);

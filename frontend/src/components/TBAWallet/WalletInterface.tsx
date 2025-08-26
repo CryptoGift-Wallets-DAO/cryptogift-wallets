@@ -27,6 +27,8 @@ interface Transaction {
   from: string;
   to: string;
   value: string;
+  amount: string; // Para compatibilidad con el código existente
+  token: string; // Token symbol (ETH, USDC, etc.)
   timestamp: number;
   status: 'pending' | 'confirmed' | 'failed';
   type: 'send' | 'receive' | 'swap' | 'mint';
@@ -134,6 +136,7 @@ export const TBAWalletInterface: React.FC<WalletInterfaceProps> = ({
         {
           hash: '0x123...abc',
           type: 'receive',
+          value: '0.001',
           amount: '0.001',
           token: 'ETH',
           from: '0x742d35Cc6634C0532925a3b8D8de8E00eD14c0d8',

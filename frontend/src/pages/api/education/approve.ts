@@ -10,7 +10,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ethers } from 'ethers';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
-import { kv } from '@vercel/kv';
+// AUDIT FIX #7: Removed unused @vercel/kv import - using unified redisConfig
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { secureLogger } from '../../../lib/secureLogger';
 import { getApproverWallet, validateApproverConfig, APPROVAL_GATE_ADDRESS } from '../../../lib/approverConfig';
