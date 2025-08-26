@@ -529,6 +529,13 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 }) => {
   console.log('🚀 SALES MASTERCLASS INIT:', { educationalMode, hasOnEducationComplete: !!onEducationComplete });
   
+  // Defensive initialization - ensure all state variables are properly initialized
+  const [isComponentInitialized, setIsComponentInitialized] = useState(false);
+  useEffect(() => {
+    setIsComponentInitialized(true);
+    console.log('✅ SalesMasterclass component fully initialized');
+  }, []);
+  
   // Hooks
   const account = useActiveAccount();
   
@@ -556,7 +563,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [showQuestionFeedback, setShowQuestionFeedback] = useState(false);
   const [canProceed, setCanProceed] = useState(false);
   const [showEducationalValidation, setShowEducationalValidation] = useState(false);
-  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState<boolean>(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   
@@ -839,7 +846,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     setVerifiedEmail(email);
     setShowEmailVerification(false);
     setShowCalendar(true);
-  }, []);
+  }, [setVerifiedEmail, setShowEmailVerification, setShowCalendar]);
 
   // Calendar booking success handler
   const handleBookingSuccess = useCallback(() => {
@@ -874,6 +881,11 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Render Block Content
   const renderBlockContent = () => {
+    // Safety check - ensure component is fully initialized
+    if (!isComponentInitialized) {
+      return <div className="py-12 text-center">Inicializando...</div>;
+    }
+    
     // Show educational validation page if flag is set
     if (showEducationalValidation && educationalMode) {
       return (
@@ -1083,6 +1095,11 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         return null;
     }
   };
+
+  // Prevent rendering before component is fully initialized
+  if (!isComponentInitialized) {
+    return <div className="py-12 text-center">Inicializando...</div>;
+  }
 
   return (
     <div 
@@ -2202,22 +2219,26 @@ const CaptureBlock: React.FC<{
       )}
       
       {/* Email Verification Modal */}
-      <EmailVerificationModal
-        isOpen={showEmailVerification}
-        onClose={() => setShowEmailVerification(false)}
-        onVerified={handleEmailVerified}
-        source="masterclass"
-        title="✉️ Verificación de Email"
-        subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
-      />
+      {typeof showEmailVerification !== 'undefined' && (
+        <EmailVerificationModal
+          isOpen={showEmailVerification}
+          onClose={() => setShowEmailVerification(false)}
+          onVerified={handleEmailVerified}
+          source="masterclass"
+          title="✉️ Verificación de Email"
+          subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
+        />
+      )}
 
       {/* Calendar Booking Modal */}
-      <CalendarBookingModal
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        userEmail={verifiedEmail || undefined}
-        source="masterclass"
-      />
+      {typeof showCalendar !== 'undefined' && (
+        <CalendarBookingModal
+          isOpen={showCalendar}
+          onClose={() => setShowCalendar(false)}
+          userEmail={verifiedEmail || undefined}
+          source="masterclass"
+        />
+      )}
     </div>
   );
 };
