@@ -830,6 +830,7 @@ export interface EscrowGift {
   giftId?: bigint; // Added for contractEventParser compatibility
   creator: string;
   expirationTime: bigint;
+  expiresAt?: bigint; // Alternative name for expirationTime (contractEventParser compatibility)
   nftContract: string;
   tokenId: bigint;
   passwordHash: string;

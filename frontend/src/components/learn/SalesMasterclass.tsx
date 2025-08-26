@@ -190,6 +190,7 @@ interface PathItem {
   description: string;
   difficulty?: string; // Opcional
   timeline?: string; // Opcional
+  spots?: string; // Número de spots disponibles
 }
 
 interface BenefitItem {
@@ -218,6 +219,10 @@ interface SalesBlockContent {
   message?: string; // Mensaje específico
   breakthrough?: string; // Mensaje de breakthrough tecnológico
   callToAction?: string; // Call to action específico
+  tagline?: string; // Línea descriptiva adicional
+  testimonial?: string; // Testimonio o quote
+  final?: string; // Mensaje final
+  finalMessage?: string; // Mensaje final alternativo
   brechas?: BrechaItem[];
   features?: FeatureItem[];
   comparisons?: ComparisonItem[];
@@ -840,6 +845,12 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     company: string;
     role: string;
     interest: string;
+    path?: string;
+    contact?: string;
+    questionsScore?: {
+      correct: number;
+      total: number;
+    };
   }) => {
     console.log('📝 LEAD SUBMIT:', { data, educationalMode, hasOnEducationComplete: !!onEducationComplete });
     
@@ -2319,26 +2330,22 @@ const CaptureBlock: React.FC<{
       )}
       
       {/* Email Verification Modal */}
-      {typeof showEmailVerification !== 'undefined' && (
-        <EmailVerificationModal
-          isOpen={showEmailVerification}
-          onClose={() => setShowEmailVerification(false)}
-          onVerified={handleEmailVerified}
-          source="masterclass"
-          title="✉️ Verificación de Email"
-          subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
-        />
-      )}
+      <EmailVerificationModal
+        isOpen={showEmailVerification}
+        onClose={() => setShowEmailVerification(false)}
+        onVerified={handleEmailVerified}
+        source="masterclass"
+        title="✉️ Verificación de Email"
+        subtitle="Necesitamos verificar tu email antes de agendar tu consulta gratuita"
+      />
 
       {/* Calendar Booking Modal */}
-      {typeof showCalendar !== 'undefined' && (
-        <CalendarBookingModal
-          isOpen={showCalendar}
-          onClose={() => setShowCalendar(false)}
-          userEmail={verifiedEmail || undefined}
-          source="masterclass"
-        />
-      )}
+      <CalendarBookingModal
+        isOpen={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        userEmail={verifiedEmail || undefined}
+        source="masterclass"
+      />
     </div>
   );
 };
