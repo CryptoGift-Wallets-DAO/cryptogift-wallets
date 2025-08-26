@@ -3,7 +3,7 @@
  * Viem-based blockchain interaction with fallback support
  */
 
-import { createPublicClient, http, webSocket, Log, Block } from 'viem';
+import { createPublicClient, http, webSocket, Log, Block, parseEventLogs } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { config, GIFT_EVENT_SIGNATURE } from './config.js';
 import { logger } from './logger.js';
@@ -265,6 +265,21 @@ export function getBatchConfig(): BatchConfig {
 }
 
 // Parse log data into structured format
+// GiftCreated event ABI definition
+const GIFT_CREATED_ABI = {
+  type: 'event',
+  name: 'GiftCreated',
+  inputs: [
+    { name: 'giftId', type: 'uint256', indexed: true },
+    { name: 'creator', type: 'address', indexed: true },
+    { name: 'nftContract', type: 'address', indexed: true },
+    { name: 'tokenId', type: 'uint256', indexed: false },
+    { name: 'expiresAt', type: 'uint40', indexed: false },
+    { name: 'gate', type: 'address', indexed: false },
+    { name: 'giftMessage', type: 'string', indexed: false }
+  ]
+} as const;
+
 export function parseGiftLog(log: Log): {
   tokenId: string;
   giftId: string;
@@ -276,30 +291,55 @@ export function parseGiftLog(log: Log): {
   registeredBy: string;
 } {
   try {
-    // Topics are indexed parameters
+    // Use viem's parseEventLogs for proper ABI decoding
+    const client = getHttpClient();
+    const parsedLogs = parseEventLogs({
+      abi: [GIFT_CREATED_ABI],
+      logs: [log]
+    });
+    
+    if (parsedLogs.length === 0) {
+      throw new Error('No parsed logs found');
+    }
+    
+    const parsedLog = parsedLogs[0];
+    const args = parsedLog.args as {
+      giftId: bigint;
+      creator: string;
+      nftContract: string;
+      tokenId: bigint;
+      expiresAt: number;
+      gate: string;
+      giftMessage: string;
+    };
+    
+    return {
+      tokenId: args.tokenId.toString(),
+      giftId: args.giftId.toString(),
+      creator: args.creator,
+      nftContract: args.nftContract,
+      expiresAt: args.expiresAt,
+      gate: args.gate,
+      giftMessage: args.giftMessage,
+      registeredBy: args.creator // Creator is the registrant
+    };
+  } catch (error) {
+    logger.error('❌ Failed to parse gift log:', error);
+    // Fallback to basic topic parsing if ABI decoding fails
     const giftId = log.topics[1] ? BigInt(log.topics[1]).toString() : '0';
     const creator = log.topics[2] || '0x0';
     const nftContract = log.topics[3] || '0x0';
-
-    // Decode non-indexed data (simplified approach)
-    // Note: In production, use proper ABI decoding
-    const data = log.data;
     
-    // For now, return basic structure
-    // TODO: Implement proper ABI decoding
     return {
-      tokenId: '0', // Will be decoded from data
+      tokenId: '0',
       giftId,
       creator: creator as string,
       nftContract: nftContract as string,
       expiresAt: 0,
       gate: '0x0',
-      giftMessage: '',
-      registeredBy: '0x0'
+      giftMessage: 'Error parsing message',
+      registeredBy: creator as string
     };
-  } catch (error) {
-    logger.error('❌ Failed to parse gift log:', error);
-    throw error;
   }
 }
 

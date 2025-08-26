@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
@@ -143,53 +143,59 @@ interface BrechaItem {
 }
 
 interface FeatureItem {
-  icon?: string; // Añadido porque se usa en el código
-  title: string;
-  description: string;
-  benefit: string;
+  icon?: React.ComponentType<{ className?: string }>; // Componente React para lucide-react
+  text?: string; // Para features simples que solo tienen texto
+  title?: string; // Para features más complejas
+  description?: string;
+  benefit?: string;
 }
 
 interface ComparisonItem {
-  aspect: string;
+  aspect?: string; // Opcional para permitir objetos simples
   traditional?: string; // Usado en el código
   competitor?: string;
-  cryptogift: string;
-  advantage: string;
+  cryptogift?: string; // Opcional para flexibilidad
+  advantage?: string; // Opcional para flexibilidad
 }
 
 interface MetricItem {
-  label: string;
-  number?: string; // Usado en el código
-  value: string;
-  improvement: string;
+  label?: string; // Opcional para flexibilidad
+  number?: string; // Usado en el código 
+  value?: string; // Opcional
+  improvement?: string; // Opcional
 }
 
 interface StreamItem {
   name: string;
   model?: string; // Usado en el código
-  description: string;
-  potential: string;
+  description?: string; // Opcional
+  potential?: string; // Opcional
+  icon?: React.ComponentType<{ className?: string }>; // Componente React para lucide-react
 }
 
 interface PhaseItem {
-  phase: string;
+  phase?: string; // Opcional
   name?: string; // Usado en el código
-  timeline: string;
-  description: string;
-  milestones: string[];
+  timeline?: string; // Opcional
+  description?: string; // Opcional
+  milestones?: string[]; // Opcional
+  goal?: string; // Objetivo de la fase
+  features?: string; // Características de la fase
 }
 
 interface PathItem {
-  title: string;
+  name?: string; // Nombre del path/rol
+  title?: string; // Título alternativo
   description: string;
-  difficulty: string;
-  timeline: string;
+  difficulty?: string; // Opcional
+  timeline?: string; // Opcional
 }
 
 interface BenefitItem {
-  icon: string;
-  title: string;
-  description: string;
+  icon: React.ComponentType<{ className?: string }>; // Componente React para lucide-react
+  text: string; // Texto del beneficio
+  title?: string; // Opcional para compatibilidad
+  description?: string; // Opcional para compatibilidad
 }
 
 interface SalesBlockContent {
@@ -198,13 +204,25 @@ interface SalesBlockContent {
   urgency?: string;
   headline?: string; // Usado en el código
   instruction?: string; // Usado en el código
+  story?: string; // Usado para el contenido narrativo del opening
+  stat?: string; // Usado para mostrar estadísticas importantes
+  steps?: string[]; // Lista de pasos del proceso
+  goal?: string; // Objetivo o meta específica
+  inspiration?: string; // Texto inspiracional del cierre
+  emphasis?: string; // Texto de énfasis adicional
+  hook?: string; // Gancho final para engagement
+  paths?: PathItem[]; // Rutas de participación disponibles
+  stats?: Record<string, string>; // Estadísticas del final
+  vision?: string; // Visión del proyecto
+  message?: string; // Mensaje específico
+  breakthrough?: string; // Mensaje de breakthrough tecnológico
+  callToAction?: string; // Call to action específico
   brechas?: BrechaItem[];
   features?: FeatureItem[];
   comparisons?: ComparisonItem[];
   metrics?: MetricItem[];
   streams?: StreamItem[];
   phases?: PhaseItem[];
-  paths?: PathItem[];
   benefits?: BenefitItem[];
 }
 
@@ -233,6 +251,10 @@ interface LeadData {
   claimedGift?: boolean;
   questionsCorrect?: number;
   totalQuestions?: number;
+  questionsScore?: {
+    correct: number;
+    total: number;
+  };
 }
 
 interface Metrics {

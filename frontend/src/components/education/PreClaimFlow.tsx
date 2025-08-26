@@ -250,20 +250,8 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       return;
     }
 
-    // FIX: Don't allow validation without wallet connected
-    if (!account?.address) {
-      setValidationState(prev => ({
-        ...prev,
-        error: 'Por favor, conecta tu wallet antes de continuar'
-      }));
-      addNotification({
-        type: 'warning',
-        title: 'Wallet Requerida',
-        message: 'Necesitas conectar tu wallet para reclamar el regalo',
-        duration: 5000
-      });
-      return;
-    }
+    // CRITICAL FIX: Allow password validation WITHOUT wallet
+    // Wallet is only required for EIP-712 signature at the END of education module
 
     setValidationState(prev => ({
       ...prev,

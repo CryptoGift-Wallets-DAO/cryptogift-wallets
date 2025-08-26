@@ -18,9 +18,9 @@
     "ab-check": "tsx src/scripts/ab-check.ts",
     "test:unit": "tsx src/tests/unit.test.ts",
     "db:migrate": "psql $DATABASE_URL -f migrations/001_init.sql",
-    "db:reset": "psql $DATABASE_URL -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;' && npm run db:migrate",
+    "db:reset": "psql $DATABASE_URL -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;' && pnpm run db:migrate",
     "lint": "echo 'No linting configured'",
-    "test": "npm run test:unit"
+    "test": "pnpm run test:unit"
   },
   "dependencies": {
     "viem": "^2.21.46",
