@@ -8,7 +8,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+// Removed useRouter import to avoid App Router/Pages Router conflicts
+// Using window.location.href for navigation instead
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
@@ -655,7 +656,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [showCalendar, setShowCalendar] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   
-  const router = useRouter();
+  // Removed router dependency to avoid App Router/Pages Router conflicts
   const timerRef = useRef<NodeJS.Timeout>();
 
   // Educational Mode Initialization
@@ -2348,7 +2349,7 @@ const SuccessBlock: React.FC<{
   metrics: any;
   educationalMode?: boolean;
 }> = ({ content, leadData, metrics, educationalMode = false }) => {
-  const router = useRouter();
+  // Removed router dependency to avoid App Router/Pages Router conflicts
   
   return (
     <div className="py-12 text-center">
@@ -2606,7 +2607,7 @@ const SuccessBlock: React.FC<{
             
             <div className="flex justify-center gap-4 flex-wrap">
               <button
-                onClick={() => router.push('/knowledge')}
+                onClick={() => window.location.href = '/knowledge'}
                 className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
               >
                 <div className="flex items-center gap-2">
@@ -2616,7 +2617,7 @@ const SuccessBlock: React.FC<{
               </button>
               
               <button
-                onClick={() => router.push('/')}
+                onClick={() => window.location.href = '/'}
                 className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
               >
                 <div className="flex items-center gap-2">
@@ -2632,7 +2633,7 @@ const SuccessBlock: React.FC<{
               // KNOWLEDGE MODE - Navigation buttons
               <>
                 <button
-                  onClick={() => router.push('/knowledge')}
+                  onClick={() => window.location.href = '/knowledge'}
                   className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
                 >
                   <div className="flex items-center gap-2">
@@ -2642,7 +2643,7 @@ const SuccessBlock: React.FC<{
                 </button>
                 
                 <button
-                  onClick={() => router.push('/')}
+                  onClick={() => window.location.href = '/'}
                   className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
                 >
                   <div className="flex items-center gap-2">
