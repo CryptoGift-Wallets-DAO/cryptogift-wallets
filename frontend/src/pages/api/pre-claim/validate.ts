@@ -32,7 +32,8 @@ interface PreClaimValidationRequest {
   tokenId: string;
   password: string;
   salt: string;
-  claimer: string; // FIXED: Unified property name with validate-claim API
+  // REMOVED: claimer - not required for password validation step
+  // Wallet connection only required for final EIP-712 education bypass
   deviceId?: string;
 }
 
@@ -696,30 +697,25 @@ export default async function handler(
       });
     }
     
-    // CRITICAL FIX: Claimer address is OPTIONAL for password validation
-    // Only required later for bypass/claim
-    const claimer = req.body?.claimer || req.headers['x-wallet-address'] as string || 'pending';
+    // CRITICAL FIX: REMOVE CLAIMER REQUIREMENT FOR PASSWORD VALIDATION
+    // Password validation must work WITHOUT wallet connection
+    // Claimer address only required for final EIP-712 bypass/claim step
     
-    // For password validation, we don't need a valid address yet
-    // We'll validate it later during bypass or claim
-    const isValidAddress = claimer && claimer !== 'pending' && ethers.isAddress(claimer);
+    console.log(`🔐 PASSWORD VALIDATION: No wallet connection required at this step`);
+    console.log(`🎯 Wallet will be required ONLY at final EIP-712 education bypass step`);
     
-    if (isValidAddress) {
-      console.log(`✅ Real claimer address provided: ${claimer.slice(0, 10)}...`);
-    } else {
-      console.log(`⚠️ No claimer address yet - will be required for bypass/claim`);
-    }
+    // Use placeholder for session tracking - real address added later
+    const placeholderClaimer = 'pending_wallet_connection';
     
-    // Check gate requirements (use placeholder if no address yet)
-    const addressForGateCheck = isValidAddress ? claimer : ethers.ZeroAddress;
-    const gateCheck = await checkGateRequirements(giftId, addressForGateCheck);
+    // Check gate requirements (no real address needed for password validation)
+    const gateCheck = await checkGateRequirements(giftId, ethers.ZeroAddress);
     
-    // Generate session token for tracking (use placeholder if needed)
-    const sessionToken = generateSessionToken(tokenId, claimer);
+    // Generate session token for tracking (no real address needed yet)
+    const sessionToken = generateSessionToken(tokenId, placeholderClaimer);
     
     console.log(`🎫 Session token generated:`, {
       tokenId,
-      claimer: claimer ? `${claimer.slice(0, 10)}...` : 'null',
+      claimer: placeholderClaimer,
       sessionToken,
       sessionKey: `preclaim:session:${sessionToken}`
     });
@@ -731,7 +727,7 @@ export default async function handler(
       const sessionData = {
         tokenId,
         giftId,
-        claimer,
+        claimer: placeholderClaimer, // Will be updated when wallet connects
         passwordValidated: true,
         requiresEducation: gateCheck.requiresEducation,
         modules: gateCheck.modules,

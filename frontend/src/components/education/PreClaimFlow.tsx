@@ -251,7 +251,8 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     }
 
     // CRITICAL FIX: Allow password validation WITHOUT wallet
-    // Wallet is only required for EIP-712 signature at the END of education module
+    // Wallet is ONLY required for EIP-712 signature at the END of education module
+    // PASSWORD VALIDATION MUST WORK WITHOUT WALLET CONNECTION
 
     setValidationState(prev => ({
       ...prev,
@@ -260,12 +261,13 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
     }));
 
     try {
-      // Include REAL claimer address in the validation request (no more 0x000...)
+      // PASSWORD VALIDATION PAYLOAD - NO WALLET REQUIRED
       const validationPayload = {
         tokenId,
         password,
-        salt,
-        claimer: account.address // FIXED: Unified property name with API
+        salt
+        // REMOVED: claimer field - not needed for password validation
+        // Wallet connection only required at final EIP-712 step
       };
 
       console.log('🔐 Validating password for token:', tokenId);

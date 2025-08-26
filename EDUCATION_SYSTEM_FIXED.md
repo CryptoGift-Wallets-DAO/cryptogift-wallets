@@ -25,14 +25,17 @@ El contrato SimpleApprovalGate original (`0x3FEb03368cbF0970D4f29561dA200342D788
 2. Va directo a `ClaimEscrowInterface`
 3. Ingresa password → Claim → ✅ NFT claimed
 
-### Gifts CON Education Requirements
+### Gifts CON Education Requirements (FLUJO CORREGIDO Aug 26, 2025)
 1. Usuario ingresa al link `/gift/claim/[tokenId]`
 2. Sistema detecta education requirements → `PreClaimFlow`
-3. Ingresa password correcta (ej: "Rafael1996.C")
-4. Aparece botón "Bypass Education" 
-5. Click bypass → Genera firma EIP-712 válida
-6. Redirige a `ClaimEscrowInterface` con gateData
-7. Claim → ✅ NFT claimed con bypass autorizado
+3. **PASO CONTRASEÑA - SIN WALLET**: Ingresa password correcta (ej: "Rafael1996.C")
+4. **PASO EDUCACIÓN**: Completa Sales Masterclass (5-15 minutos)
+5. **PASO WALLET - ÚNICO MOMENTO**: Conectar wallet al FINALIZAR educación
+6. **EIP-712 SIGNATURE**: Sistema genera firma válida automáticamente
+7. Redirige a `ClaimEscrowInterface` con gateData
+8. Claim → ✅ NFT claimed con education completada
+
+**REGLA CRÍTICA**: Wallet SOLO requerida al FINAL del proceso educativo, nunca durante validación de contraseña.
 
 ## 📋 CONFIGURACIÓN EN VERCEL
 
