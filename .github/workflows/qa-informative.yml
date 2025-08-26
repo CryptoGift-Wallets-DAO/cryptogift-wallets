@@ -18,20 +18,24 @@ jobs:
     - name: 📦 Install pnpm
       uses: pnpm/action-setup@v4
       with:
-        version: 9
+        version: 9.15.9
+        run_install: false
         
     - name: 🟢 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
+        registry-url: 'https://registry.npmjs.org/'
         cache: 'pnpm'
         cache-dependency-path: pnpm-lock.yaml
 
     - name: 📦 Install Dependencies
       run: |
-        pnpm install --frozen-lockfile
-        cd frontend && pnpm install
+        echo "🔍 Installing dependencies with pnpm $(pnpm --version)..."
+        pnpm install --frozen-lockfile --prefer-offline
       continue-on-error: true
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
 
     - name: 🔍 TypeScript Analysis (Non-blocking)
       run: |
