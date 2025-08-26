@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 
 export function StaticBackground() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const updateMousePosition = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
@@ -81,13 +83,15 @@ export function StaticBackground() {
       </div>
 
       {/* EFECTO PARALLAX CON MOUSE - ADAPTATIVO */}
-      <motion.div
-        className="absolute inset-0 opacity-5 dark:opacity-10"
-        style={{
-          background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, 
-                      rgb(251, 191, 36) 0%, transparent 60%)`
-        }}
-      />
+      {isClient && (
+        <motion.div
+          className="absolute inset-0 opacity-5 dark:opacity-10"
+          style={{
+            background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, 
+                        rgb(251, 191, 36) 0%, transparent 60%)`
+          }}
+        />
+      )}
 
       {/* GRID PATTERN SUTIL */}
       <div 

@@ -103,10 +103,13 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   const controls = useAnimation();
   const isInView = useInView(svgRef);
   
+  // SSR protection
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  
   // State para controlar qué cards están visibles
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set());
   
-  // Zoom and Pan state (similar a CurriculumTreeView)
+  // Zoom and Pan state (similar a CurriculumTreeView) - safe defaults
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -115,6 +118,11 @@ export const LearningPath: React.FC<LearningPathProps> = ({
   // Touch gesture state for pinch-zoom
   const [lastTouches, setLastTouches] = useState<{ distance: number; center: { x: number; y: number } } | null>(null);
   const [isTouch, setIsTouch] = useState<boolean>(false);
+
+  // Mount effect for SSR safety
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Ref para el contenedor principal
   const containerRef = useRef<HTMLDivElement>(null);

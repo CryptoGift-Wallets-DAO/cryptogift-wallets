@@ -178,7 +178,10 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
   
-  // Zoom and Pan state
+  // SSR protection
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  
+  // Zoom and Pan state - initialized with safe defaults
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -191,6 +194,11 @@ const CurriculumTreeView: React.FC<CurriculumTreeViewProps> = ({
   
   // Touch gesture state for pinch-zoom
   const [lastTouches, setLastTouches] = useState<{ distance: number; center: { x: number; y: number } } | null>(null);
+
+  // Mount effect for SSR safety
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
