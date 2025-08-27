@@ -141,12 +141,72 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
   const account = useActiveAccount();
 
+  // FASE 4: connectWallet() abstraction with Promise-based API
+  const connectWallet = useCallback((): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      console.log('🔗 connectWallet() abstraction called');
+      
+      // If already connected, resolve immediately
+      if (account?.address) {
+        console.log('✅ Wallet already connected:', account.address);
+        resolve(account.address);
+        return;
+      }
+      
+      // Set up connection monitoring
+      setShowConnectWallet(true);
+      
+      // Create connection watcher
+      let connectionTimeout: NodeJS.Timeout;
+      
+      const checkConnection = () => {
+        // This will be resolved by the useEffect when connection succeeds
+        connectionTimeout = setTimeout(() => {
+          console.log('❌ Wallet connection timeout');
+          setShowConnectWallet(false);
+          reject(new Error('Wallet connection timeout'));
+        }, 30000); // 30 second timeout
+      };
+      
+      // Store resolve/reject functions for useEffect to call
+      (window as any).__walletConnectionResolve = resolve;
+      (window as any).__walletConnectionReject = reject;
+      (window as any).__walletConnectionTimeout = connectionTimeout;
+      
+      checkConnection();
+    });
+  }, [account?.address]);
+
+  // canProceed logic abstraction  
+  const canProceedToNextStep = useCallback((): boolean => {
+    if (mode !== 'educational') return true;
+    
+    // Educational mode requires wallet connection
+    return !!account?.address;
+  }, [mode, account?.address]);
+
   // Watch for wallet connection when in connect wallet state
   useEffect(() => {
     if (showConnectWallet && account?.address) {
-      console.log('🔗 Wallet connected, proceeding to EIP-712 generation');
+      console.log('🔗 Wallet connected via useEffect, resolving Promise');
       setShowConnectWallet(false);
-      processEIP712Generation();
+      
+      // Resolve the Promise from connectWallet abstraction
+      const resolve = (window as any).__walletConnectionResolve;
+      const timeout = (window as any).__walletConnectionTimeout;
+      
+      if (resolve) {
+        clearTimeout(timeout);
+        resolve(account.address);
+        
+        // Clean up global references
+        delete (window as any).__walletConnectionResolve;
+        delete (window as any).__walletConnectionReject;
+        delete (window as any).__walletConnectionTimeout;
+        
+        // Proceed to EIP-712 generation
+        processEIP712Generation();
+      }
     }
   }, [account?.address, showConnectWallet]);
 
@@ -176,6 +236,58 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     }
   };
 
+  // FASE 1.2: Async functions for email verification and calendar
+  const handleShowEmailVerification = async (): Promise<void> => {
+    console.log('📧 Showing email verification modal');
+    setShowEmailVerification(true);
+    
+    // Return a Promise that resolves when modal closes
+    return new Promise((resolve) => {
+      const checkModalClosed = () => {
+        if (!showEmailVerification) {
+          resolve();
+        } else {
+          setTimeout(checkModalClosed, 100);
+        }
+      };
+      // Start checking after a short delay
+      setTimeout(checkModalClosed, 100);
+    });
+  };
+
+  const handleShowCalendar = async (): Promise<void> => {
+    console.log('📅 Showing calendar booking modal');
+    setShowCalendar(true);
+    
+    // Return a Promise that resolves when modal closes
+    return new Promise((resolve) => {
+      const checkModalClosed = () => {
+        if (!showCalendar) {
+          resolve();
+        } else {
+          setTimeout(checkModalClosed, 100);
+        }
+      };
+      // Start checking after a short delay
+      setTimeout(checkModalClosed, 100);
+    });
+  };
+
+  // Handle email verification completion callback
+  const handleEmailVerified = async (email: string) => {
+    console.log('✅ Email verified in wrapper:', email);
+    setVerifiedEmail(email);
+    setShowEmailVerification(false);
+  };
+
+  // Handle calendar booking completion
+  const handleCalendarBooked = () => {
+    console.log('✅ Calendar booking completed');
+    setShowCalendar(false);
+    // After calendar completes, trigger education completion
+    handleEducationCompletionAfterEmail();
+  };
+
   // NEW: Handle completion AFTER email verification completes
   const handleEducationCompletionAfterEmail = async () => {
     console.log('📧 Email verification completed, now proceeding to success overlay');
@@ -190,16 +302,18 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
       colors: ['#FFD700', '#FFA500', '#FF6347']
     });
 
-    // CRITICAL UX FIX: Show connect wallet step BEFORE EIP-712 generation
-    // User should connect wallet in the same "¡Felicidades!" screen
-    if (!account?.address) {
-      console.log('🔗 Education completed but wallet not connected - showing connect step');
-      setShowConnectWallet(true);
-      return;
+    // FASE 4: Use connectWallet() abstraction instead of manual state management
+    try {
+      console.log('🔗 Using connectWallet() abstraction for wallet connection');
+      const walletAddress = await connectWallet();
+      console.log('✅ Wallet connected via abstraction:', walletAddress);
+      
+      // Proceed to EIP-712 generation after successful connection
+      await processEIP712Generation();
+    } catch (error) {
+      console.error('❌ Wallet connection failed:', error);
+      // Show error state or allow retry
     }
-
-    // If wallet is already connected, proceed directly to EIP-712
-    await processEIP712Generation();
   };
 
   // Separate function for EIP-712 generation after wallet connection
@@ -425,8 +539,8 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                   <SalesMasterclass
                     educationalMode={mode === 'educational'}
                     onEducationComplete={handleLessonComplete}
-                    onShowEmailVerification={() => setShowEmailVerification(true)}
-                    onShowCalendar={() => setShowCalendar(true)}
+                    onShowEmailVerification={handleShowEmailVerification}
+                    onShowCalendar={handleShowCalendar}
                     verifiedEmail={verifiedEmail}
                   />
                 </div>
@@ -466,12 +580,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
             <EmailVerificationModal
               isOpen={showEmailVerification}
               onClose={() => setShowEmailVerification(false)}
-              onVerified={(email) => {
-                setVerifiedEmail(email);
-                setShowEmailVerification(false);
-                setShowCalendar(true);
-                console.log('✅ Email verified for educational masterclass:', email);
-              }}
+              onVerified={handleEmailVerified}
               source="educational-masterclass"
               title="📧 ¡Necesitamos tu Email!"
               subtitle="Para enviarte información exclusiva sobre cripto"
@@ -479,13 +588,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
             <CalendarBookingModal
               isOpen={showCalendar}
-              onClose={() => {
-                setShowCalendar(false);
-                // AFTER calendar completes, proceed to education completion
-                if (mode === 'educational') {
-                  handleEducationCompletionAfterEmail();
-                }
-              }}
+              onClose={handleCalendarBooked}
               userEmail={verifiedEmail || undefined}
               source="educational-masterclass"
             />

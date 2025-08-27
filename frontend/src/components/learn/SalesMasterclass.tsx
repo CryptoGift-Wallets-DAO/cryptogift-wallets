@@ -247,6 +247,8 @@ interface SalesBlock {
     }>;
   };
   triggers: string[];
+  // FASE 2: Next pointer para state machine declarativa
+  nextBlock?: string;
 }
 
 interface LeadData {
@@ -302,7 +304,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: 'La velocidad de las transacciones', isCorrect: false }
       ]
     },
-    triggers: ['emotional_connection', 'curiosity']
+    triggers: ['emotional_connection', 'curiosity'],
+    nextBlock: 'problem'
   },
   {
     id: 'problem',
@@ -334,7 +337,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: '10% - Muy pocos', isCorrect: false }
       ]
     },
-    triggers: ['pain_agitation', 'statistics']
+    triggers: ['pain_agitation', 'statistics'],
+    nextBlock: 'solution'
   },
   {
     id: 'solution',
@@ -359,7 +363,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: 'Proof of Stake', isCorrect: false }
       ]
     },
-    triggers: ['solution_reveal', 'innovation']
+    triggers: ['solution_reveal', 'innovation'],
+    nextBlock: 'demo'
   },
   {
     id: 'demo',
@@ -384,7 +389,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: '0.001 ETH', isCorrect: false }
       ]
     },
-    triggers: ['live_demo', 'endowment_effect']
+    triggers: ['live_demo', 'endowment_effect'],
+    nextBlock: 'comparison'
   },
   {
     id: 'comparison',
@@ -420,7 +426,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: 'Trading avanzado', isCorrect: false }
       ]
     },
-    triggers: ['contrast', 'differentiation']
+    triggers: ['contrast', 'differentiation'],
+    nextBlock: 'cases'
   },
   {
     id: 'cases',
@@ -444,7 +451,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: '100% - Todos regalan una vez', isCorrect: false }
       ]
     },
-    triggers: ['social_proof', 'metrics']
+    triggers: ['social_proof', 'metrics'],
+    nextBlock: 'business'
   },
   {
     id: 'business',
@@ -485,7 +493,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: '2% de comisión', isCorrect: false }
       ]
     },
-    triggers: ['transparency', 'trust']
+    triggers: ['transparency', 'trust'],
+    nextBlock: 'roadmap'
   },
   {
     id: 'roadmap',
@@ -519,7 +528,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: 'NFTs de arte digital', isCorrect: false }
       ]
     },
-    triggers: ['vision', 'fomo']
+    triggers: ['vision', 'fomo'],
+    nextBlock: 'close'
   },
   {
     id: 'close',
@@ -543,7 +553,8 @@ const SALES_BLOCKS: SalesBlock[] = [
         { text: 'Lo pensaré', isCorrect: false }
       ]
     },
-    triggers: ['inspiration', 'commitment']
+    triggers: ['inspiration', 'commitment'],
+    nextBlock: 'capture'
   },
   {
     id: 'capture',
@@ -586,7 +597,8 @@ const SALES_BLOCKS: SalesBlock[] = [
       ],
       urgency: 'Bonus 20% lifetime para los primeros 100'
     },
-    triggers: ['urgency', 'scarcity']
+    triggers: ['urgency', 'scarcity'],
+    nextBlock: 'success'
   },
   {
     id: 'success',
@@ -616,8 +628,8 @@ const SALES_BLOCKS: SalesBlock[] = [
 interface SalesMasterclassProps {
   educationalMode?: boolean;
   onEducationComplete?: () => void;
-  onShowEmailVerification?: () => void;
-  onShowCalendar?: () => void;
+  onShowEmailVerification?: () => Promise<void>;
+  onShowCalendar?: () => Promise<void>;
   verifiedEmail?: string;
 }
 
@@ -762,26 +774,52 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     }, 1500);
   }, [currentBlock, celebrate]);
 
+  // FASE 2: State machine declarativa con next pointers
+  const getNextBlock = useCallback((currentBlockIndex: number): number | null => {
+    const currentBlockData = SALES_BLOCKS[currentBlockIndex];
+    
+    if (!currentBlockData || !currentBlockData.nextBlock) {
+      console.log('🏁 End of flow reached, no next block defined');
+      return null;
+    }
+    
+    // Find next block by ID using the next pointer
+    const nextBlockIndex = SALES_BLOCKS.findIndex(block => block.id === currentBlockData.nextBlock);
+    
+    if (nextBlockIndex === -1) {
+      console.error('❌ Next block not found:', currentBlockData.nextBlock);
+      return null;
+    }
+    
+    console.log('🔄 State machine navigation:', {
+      currentBlock: currentBlockData.id,
+      nextBlock: currentBlockData.nextBlock,
+      nextBlockIndex
+    });
+    
+    return nextBlockIndex;
+  }, []);
+
   // Block Navigation
   const handleNextBlock = useCallback(() => {
-    const nextBlock = currentBlock + 1;
+    // Use state machine with next pointers instead of sequential navigation
+    const nextBlockIndex = getNextBlock(currentBlock);
     
-    console.log('🎬 BLOCK NAVIGATION:', {
+    console.log('🎬 BLOCK NAVIGATION (State Machine):', {
       currentBlock,
       currentBlockId: SALES_BLOCKS[currentBlock].id,
-      nextBlock,
-      nextBlockId: nextBlock < SALES_BLOCKS.length ? SALES_BLOCKS[nextBlock].id : 'END',
-      totalBlocks: SALES_BLOCKS.length,
+      nextBlockIndex,
+      nextBlockId: nextBlockIndex !== null ? SALES_BLOCKS[nextBlockIndex].id : 'END',
       educationalMode
     });
     
-    if (nextBlock < SALES_BLOCKS.length) {
-      setCurrentBlock(nextBlock);
+    if (nextBlockIndex !== null) {
+      setCurrentBlock(nextBlockIndex);
       
       // Set appropriate duration for educational vs normal mode
       const blockDuration = educationalMode 
-        ? Math.min(SALES_BLOCKS[nextBlock].duration, 15) // Max 15s in educational mode
-        : SALES_BLOCKS[nextBlock].duration; // Full duration in normal mode
+        ? Math.min(SALES_BLOCKS[nextBlockIndex].duration, 15) // Max 15s in educational mode
+        : SALES_BLOCKS[nextBlockIndex].duration; // Full duration in normal mode
         
       setTimeLeft(blockDuration);
       setSelectedAnswer(null);
@@ -791,8 +829,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       setCanProceed(educationalMode);
       
       console.log('⏱️ Next block timing:', {
-        blockId: SALES_BLOCKS[nextBlock].id,
-        originalDuration: SALES_BLOCKS[nextBlock].duration,
+        blockId: SALES_BLOCKS[nextBlockIndex].id,
+        originalDuration: SALES_BLOCKS[nextBlockIndex].duration,
         actualDuration: blockDuration,
         educationalMode
       });
@@ -807,12 +845,12 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       }));
 
       // Special actions per block
-      if (SALES_BLOCKS[nextBlock].type === 'demo') {
+      if (SALES_BLOCKS[nextBlockIndex].type === 'demo') {
         setShowQR(true);
         startClaimMonitoring();
       }
     }
-  }, [currentBlock, educationalMode]);
+  }, [currentBlock, educationalMode, getNextBlock]);
 
   // Claim Monitoring
   const startClaimMonitoring = useCallback(() => {
@@ -2152,22 +2190,61 @@ const CaptureBlock: React.FC<{
     contact: ''
   });
   const [showValidation, setShowValidation] = useState(false);
+  
+  // FASE 1.1: Guard idempotente para email verification
+  const emailShownRef = useRef(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [calendarScheduled, setCalendarScheduled] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // FASE 1.2: Callback explícito para email verification
+  const handleEmailVerified = async (email: string) => {
+    console.log('✅ Email verified:', email);
+    setEmailVerified(true);
+    
+    // Después de verificar email, mostrar calendario
+    if (onShowCalendar) {
+      try {
+        await onShowCalendar();
+        setCalendarScheduled(true);
+        console.log('✅ Calendar booking completed');
+      } catch (error) {
+        console.error('❌ Calendar booking error:', error);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // En modo educacional, mostrar validación después de seleccionar rol
     if (educationalMode && selectedPath) {
       setShowValidation(true);
-      // Esperar un momento para mostrar la validación antes de continuar
-      setTimeout(() => {
+      
+      // FASE 1.1: Guard idempotente para evitar dobles invocaciones
+      if (emailShownRef.current) return;
+      emailShownRef.current = true;
+      
+      try {
+        // Esperar un momento para mostrar la validación
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Ejecutar email verification y esperar a que termine
+        if (onShowEmailVerification) {
+          await onShowEmailVerification();
+        }
+        
+        // Solo continuar después de que el modal se haya cerrado
         onSubmit({
           path: selectedPath,
           ...formData,
           questionsScore,
           educationalMode: true
         });
-      }, 1500);
+      } catch (error) {
+        console.error('❌ Error in educational flow:', error);
+        // Reset guard en caso de error
+        emailShownRef.current = false;
+      }
       return;
     }
     
@@ -2629,36 +2706,13 @@ const SuccessBlock: React.FC<{
               🎉 ¡El futuro de los pagos digitales comienza contigo! 🎉
             </p>
             
-            <div className="flex justify-center gap-4 flex-wrap">
-              <button
-                onClick={() => window.location.href = '/knowledge'}
-                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
-              >
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
-                  <span>Explorar Knowledge</span>
-                </div>
-              </button>
-              
-              <button
-                onClick={() => window.location.href = '/'}
-                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
-              >
-                <div className="flex items-center gap-2">
-                  <Gift className="w-5 h-5" />
-                  <span>Crear mi Primer Regalo</span>
-                </div>
-              </button>
-            </div>
-          </motion.div>
-          {/* Different CTAs based on mode */}
-          <div className="flex justify-center gap-4 flex-wrap">
-            {!educationalMode ? (
-              // KNOWLEDGE MODE - Navigation buttons
-              <>
+            {/* FASE 3: Condicionar CTAs - ocultar en modo educacional */}
+            {!educationalMode && (
+              <div className="flex justify-center gap-4 flex-wrap">
                 <button
                   onClick={() => window.location.href = '/knowledge'}
                   className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
+                  data-testid="explorar-knowledge-button"
                 >
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
@@ -2669,23 +2723,35 @@ const SuccessBlock: React.FC<{
                 <button
                   onClick={() => window.location.href = '/'}
                   className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20"
+                  data-testid="crear-primer-regalo-button"
                 >
                   <div className="flex items-center gap-2">
                     <Gift className="w-5 h-5" />
                     <span>Crear mi Primer Regalo</span>
                   </div>
                 </button>
-              </>
-            ) : (
-              // EDUCATIONAL MODE - Claim button
+              </div>
+            )}
+          </motion.div>
+          {/* FASE 3: Educational mode - Fixed IR AL CLAIM button */}
+          {educationalMode && (
+            <div className="flex justify-center">
               <button
                 onClick={() => {
-                  // Trigger completion event
-                  if (window.parent !== window) {
-                    window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
+                  console.log('🎯 IR AL CLAIM clicked - completing education and advancing');
+                  
+                  // Call the education complete callback instead of just postMessage
+                  if (onEducationComplete) {
+                    onEducationComplete();
+                  } else {
+                    // Fallback to postMessage if no callback provided
+                    if (window.parent !== window) {
+                      window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
+                    }
                   }
                 }}
                 className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
+                data-testid="ir-al-claim-button"
               >
                 <div className="flex items-center gap-3">
                   <Trophy className="w-6 h-6" />
@@ -2693,8 +2759,8 @@ const SuccessBlock: React.FC<{
                   <ArrowRight className="w-5 h-5" />
                 </div>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
     </div>
   );
