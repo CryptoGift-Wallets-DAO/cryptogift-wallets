@@ -2166,13 +2166,14 @@ const CaptureBlock: React.FC<{
       return;
     }
     
-    // NUEVO: Modo normal con flujo de email verification + Calendly
-    if (!educationalMode && selectedPath && onShowEmailVerification) {
+    // FIXED: Email verification debe ejecutarse TAMBIÉN en educational mode
+    if (selectedPath && onShowEmailVerification) {
       console.log('🎯 MASTERCLASS COMPLETED - Starting email verification flow');
       console.log('Selected path:', selectedPath);
+      console.log('Educational mode:', educationalMode);
       console.log('Form data:', formData);
       
-      // Mostrar modal de verificación de email
+      // Mostrar modal de verificación de email (tanto modo normal como educacional)
       onShowEmailVerification();
       return;
     }

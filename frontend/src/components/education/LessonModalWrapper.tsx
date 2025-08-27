@@ -13,8 +13,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useActiveAccount } from 'thirdweb/react';
+import { useActiveAccount, ConnectButton } from 'thirdweb/react';
 import { useEffect } from 'react';
+import { client } from '../../app/client';
+import { baseSepolia } from 'thirdweb/chains';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
 const SalesMasterclass = dynamic(
@@ -46,6 +48,17 @@ const ClaimFirstGift = dynamic(
       </div>
     )
   }
+);
+
+// Import dinámico para Email Verification y Calendar Booking
+const EmailVerificationModal = dynamic(
+  () => import('../ui/EmailVerificationModal').then(mod => ({ default: mod.EmailVerificationModal })),
+  { ssr: false }
+);
+
+const CalendarBookingModal = dynamic(
+  () => import('../ui/CalendarBookingModal').then(mod => ({ default: mod.CalendarBookingModal })),
+  { ssr: false }
 );
 
 // Simple confetti implementation matching existing celebration
@@ -123,6 +136,9 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConnectWallet, setShowConnectWallet] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState<string>('');
   const account = useActiveAccount();
 
   // Watch for wallet connection when in connect wallet state
@@ -137,28 +153,14 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const handleLessonComplete = async () => {
     console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
     
-    // En mode educational, necesitamos manejar la completion con API
+    // En mode educational, first check if email verification is needed
     if (mode === 'educational' && onComplete) {
-      setShowSuccess(true);
+      // EDUCATIONAL MODE: Email verification will be handled by SalesMasterclass
+      // and when email verification completes, THEN show success overlay
+      console.log('🎓 Educational mode - waiting for email verification or direct completion');
       
-      // Trigger celebration - PRESERVAR EXACTAMENTE como está
-      triggerConfetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FFD700', '#FFA500', '#FF6347']
-      });
-
-      // CRITICAL UX FIX: Show connect wallet step BEFORE EIP-712 generation
-      // User should connect wallet in the same "¡Felicidades!" screen
-      if (!account?.address) {
-        console.log('🔗 Education completed but wallet not connected - showing connect step');
-        setShowConnectWallet(true);
-        return;
-      }
-
-      // If wallet is already connected, proceed directly to EIP-712
-      await processEIP712Generation();
+      // This will be called after email verification completes
+      return; // Let SalesMasterclass handle the email verification flow first
     } else if (mode === 'knowledge') {
       // En knowledge mode, simplemente mostrar celebración y cerrar
       triggerConfetti({
@@ -172,6 +174,32 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         onClose();
       }, 3000);
     }
+  };
+
+  // NEW: Handle completion AFTER email verification completes
+  const handleEducationCompletionAfterEmail = async () => {
+    console.log('📧 Email verification completed, now proceeding to success overlay');
+    
+    setShowSuccess(true);
+    
+    // Trigger celebration - PRESERVAR EXACTAMENTE como está
+    triggerConfetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#FFA500', '#FF6347']
+    });
+
+    // CRITICAL UX FIX: Show connect wallet step BEFORE EIP-712 generation
+    // User should connect wallet in the same "¡Felicidades!" screen
+    if (!account?.address) {
+      console.log('🔗 Education completed but wallet not connected - showing connect step');
+      setShowConnectWallet(true);
+      return;
+    }
+
+    // If wallet is already connected, proceed directly to EIP-712
+    await processEIP712Generation();
   };
 
   // Separate function for EIP-712 generation after wallet connection
@@ -338,7 +366,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                     </p>
                   </div>
                   
-                  {/* CRITICAL UX FIX: Show Connect Wallet OR EIP-712 Generation */}
+                  {/* CONNECT WALLET USING THIRDWEB MODAL - NO OVERLAY PANEL */}
                   {showConnectWallet ? (
                     <>
                       <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4 mb-4">
@@ -350,24 +378,18 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                         </p>
                       </div>
                       
-                      <motion.button
-                        onClick={() => {
-                          // Wait for account connection to be detected
-                          // The account hook will trigger re-render when connected
-                          console.log('🔗 Waiting for wallet connection...');
-                        }}
-                        className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-xl rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
-                        animate={{ 
-                          boxShadow: [
-                            '0 0 20px rgba(59, 130, 246, 0.5)',
-                            '0 0 40px rgba(59, 130, 246, 0.8)',
-                            '0 0 20px rgba(59, 130, 246, 0.5)'
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        🔗 CONECTAR WALLET PARA CONTINUAR
-                      </motion.button>
+                      {/* USE THIRDWEB CONNECT BUTTON - NOT CUSTOM OVERLAY */}
+                      <div className="flex justify-center">
+                        <ConnectButton
+                          client={client}
+                          chain={baseSepolia}
+                          connectModal={{
+                            size: "wide",
+                            titleIcon: "🔗",
+                            showThirdwebBranding: false,
+                          }}
+                        />
+                      </div>
                     </>
                   ) : (
                     <>
@@ -403,6 +425,9 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                   <SalesMasterclass
                     educationalMode={mode === 'educational'}
                     onEducationComplete={handleLessonComplete}
+                    onShowEmailVerification={() => setShowEmailVerification(true)}
+                    onShowCalendar={() => setShowCalendar(true)}
+                    verifiedEmail={verifiedEmail}
                   />
                 </div>
               ) : lessonId === 'claim-first-gift' ? (
@@ -434,6 +459,38 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
             </div>
           )}
         </motion.div>
+
+        {/* EMAIL VERIFICATION MODAL - ONLY SHOW WHEN NOT SUCCESS OVERLAY */}
+        {!showSuccess && (
+          <>
+            <EmailVerificationModal
+              isOpen={showEmailVerification}
+              onClose={() => setShowEmailVerification(false)}
+              onVerified={(email) => {
+                setVerifiedEmail(email);
+                setShowEmailVerification(false);
+                setShowCalendar(true);
+                console.log('✅ Email verified for educational masterclass:', email);
+              }}
+              source="educational-masterclass"
+              title="📧 ¡Necesitamos tu Email!"
+              subtitle="Para enviarte información exclusiva sobre cripto"
+            />
+
+            <CalendarBookingModal
+              isOpen={showCalendar}
+              onClose={() => {
+                setShowCalendar(false);
+                // AFTER calendar completes, proceed to education completion
+                if (mode === 'educational') {
+                  handleEducationCompletionAfterEmail();
+                }
+              }}
+              userEmail={verifiedEmail || undefined}
+              source="educational-masterclass"
+            />
+          </>
+        )}
       </motion.div>
     </AnimatePresence>
   );
