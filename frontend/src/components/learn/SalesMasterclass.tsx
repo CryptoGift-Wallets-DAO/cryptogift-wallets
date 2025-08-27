@@ -682,7 +682,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   // Removed router dependency to avoid App Router/Pages Router conflicts
   const timerRef = useRef<NodeJS.Timeout>();
 
-  // Educational Mode Initialization
+  // Educational Mode Initialization - Only on mount or mode change
   useEffect(() => {
     if (educationalMode) {
       console.log('🎓 EDUCATIONAL MODE ACTIVATED - Setting optimized flow');
@@ -690,17 +690,17 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       setCanProceed(true); // Allow immediate progression if needed
       
       // Reduce block duration for educational mode (faster pace)
-      const currentBlockDuration = SALES_BLOCKS[currentBlock].duration;
+      const currentBlockDuration = SALES_BLOCKS[0].duration; // Use initial block
       const educationalDuration = Math.min(currentBlockDuration, 15); // Max 15 seconds per block
       setTimeLeft(educationalDuration);
       
       console.log('⏱️ Educational mode timing:', {
         originalDuration: currentBlockDuration,
         educationalDuration,
-        currentBlock: SALES_BLOCKS[currentBlock].id
+        currentBlock: SALES_BLOCKS[0].id
       });
     }
-  }, [educationalMode, currentBlock]);
+  }, [educationalMode]); // Remove currentBlock dependency to avoid loops
 
   // QR Generation
   const generateDemoGiftUrl = useCallback(() => {

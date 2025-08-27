@@ -69,7 +69,8 @@ export default async function handler(
     // Check if account is locked out
     const lockout = await redis.get(lockoutKey);
     if (lockout) {
-      const lockoutData = JSON.parse(lockout.toString());
+      // Upstash Redis auto-parses JSON, so check if it's already an object
+      const lockoutData = typeof lockout === 'string' ? JSON.parse(lockout) : lockout;
       const timeRemaining = Math.ceil((lockoutData.expiresAt - Date.now()) / 1000 / 60);
       
       return res.status(429).json({
@@ -89,7 +90,8 @@ export default async function handler(
       });
     }
 
-    const data = JSON.parse(verificationData.toString());
+    // Upstash Redis auto-parses JSON, so check if it's already an object
+    const data = typeof verificationData === 'string' ? JSON.parse(verificationData) : verificationData;
     
     // Check if code has expired
     if (Date.now() > data.expiresAt) {

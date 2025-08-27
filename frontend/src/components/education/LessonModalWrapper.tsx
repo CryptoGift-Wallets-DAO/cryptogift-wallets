@@ -186,28 +186,23 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
   // Watch for wallet connection when in connect wallet state
   useEffect(() => {
-    if (showConnectWallet && account?.address) {
-      console.log('🔗 Wallet connected via useEffect, resolving Promise');
+    if (showConnectWallet && account?.address && showSuccess) {
+      console.log('🔗 Wallet connected! Processing EIP-712 generation...');
+      console.log('📊 Connection state:', {
+        showConnectWallet,
+        address: account.address,
+        showSuccess
+      });
+      
+      // Hide the connect button since wallet is now connected
       setShowConnectWallet(false);
       
-      // Resolve the Promise from connectWallet abstraction
-      const resolve = (window as any).__walletConnectionResolve;
-      const timeout = (window as any).__walletConnectionTimeout;
-      
-      if (resolve) {
-        clearTimeout(timeout);
-        resolve(account.address);
-        
-        // Clean up global references
-        delete (window as any).__walletConnectionResolve;
-        delete (window as any).__walletConnectionReject;
-        delete (window as any).__walletConnectionTimeout;
-        
-        // Proceed to EIP-712 generation
+      // Process EIP-712 generation after a small delay to ensure smooth UX
+      setTimeout(() => {
         processEIP712Generation();
-      }
+      }, 500);
     }
-  }, [account?.address, showConnectWallet]);
+  }, [account?.address, showConnectWallet, showSuccess]);
 
   const handleLessonComplete = async () => {
     console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
@@ -290,6 +285,11 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   // Handle completion showing success overlay and wallet connection
   const handleEducationCompletionAfterEmail = async () => {
     console.log('🎆 Showing success overlay: ¡Ya eres parte de CryptoGift!');
+    console.log('📊 Current states:', {
+      showSuccess,
+      showConnectWallet,
+      hasAccount: !!account?.address
+    });
     
     setShowSuccess(true);
     
@@ -303,7 +303,10 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
     // FIX: NO conectar wallet automáticamente
     // Mostrar el botón ConnectButton y esperar a que el usuario conecte
-    setShowConnectWallet(true);
+    setTimeout(() => {
+      console.log('🔗 Setting showConnectWallet to true after delay');
+      setShowConnectWallet(true);
+    }, 100); // Small delay to ensure state updates properly
     
     // El useEffect detectará cuando se conecte la wallet y procederá con EIP-712
   };
@@ -475,6 +478,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                   {/* CONNECT WALLET USING THIRDWEB MODAL - NO OVERLAY PANEL */}
                   {showConnectWallet ? (
                     <>
+                      {console.log('🎯 Rendering ConnectButton section, showConnectWallet:', showConnectWallet)}
                       <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4 mb-4">
                         <p className="text-blue-400 font-bold text-lg mb-2">
                           🔗 Ahora conecta tu wallet para reclamar el regalo
