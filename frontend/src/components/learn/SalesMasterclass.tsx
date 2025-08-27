@@ -1190,6 +1190,10 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             total: leadData.totalQuestions || 0
           }}
           educationalMode={educationalMode}
+          // Email verification props
+          onShowEmailVerification={() => setShowEmailVerification(true)}
+          onShowCalendar={() => setShowCalendar(true)}
+          verifiedEmail={verifiedEmail}
         />;
       case 'success':
         return <SuccessBlock
@@ -1314,6 +1318,30 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           <div>Lead: {metrics.leadSubmitted ? '✅' : '⏳'}</div>
         </div>
       )}
+
+      {/* EMAIL VERIFICATION MODAL */}
+      <EmailVerificationModal
+        isOpen={showEmailVerification}
+        onClose={() => setShowEmailVerification(false)}
+        onVerified={(email) => {
+          setVerifiedEmail(email);
+          setShowEmailVerification(false);
+          setShowCalendar(true);
+          console.log('✅ Email verified for masterclass:', email);
+        }}
+        source="masterclass"
+        title="📧 ¡Necesitamos tu Email!"
+        subtitle="Para enviarte información exclusiva y próximos pasos"
+      />
+
+      {/* CALENDAR BOOKING MODAL */}
+      <CalendarBookingModal
+        isOpen={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        userEmail={verifiedEmail || undefined}
+        userName={leadData.contact || undefined}
+        source="masterclass"
+      />
       </div>
     </div>
   );
@@ -2108,7 +2136,10 @@ const CaptureBlock: React.FC<{
   onSubmit: (data: any) => void;
   questionsScore: { correct: number; total: number };
   educationalMode?: boolean;
-}> = ({ content, onSubmit, questionsScore, educationalMode = false }) => {
+  onShowEmailVerification?: () => void;
+  onShowCalendar?: () => void;
+  verifiedEmail?: string | null;
+}> = ({ content, onSubmit, questionsScore, educationalMode = false, onShowEmailVerification, onShowCalendar, verifiedEmail }) => {
   const account = useActiveAccount(); 
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -2135,7 +2166,18 @@ const CaptureBlock: React.FC<{
       return;
     }
     
-    // Modo normal
+    // NUEVO: Modo normal con flujo de email verification + Calendly
+    if (!educationalMode && selectedPath && onShowEmailVerification) {
+      console.log('🎯 MASTERCLASS COMPLETED - Starting email verification flow');
+      console.log('Selected path:', selectedPath);
+      console.log('Form data:', formData);
+      
+      // Mostrar modal de verificación de email
+      onShowEmailVerification();
+      return;
+    }
+    
+    // Fallback para modo normal sin email verification
     onSubmit({
       path: selectedPath,
       ...formData,
@@ -2254,43 +2296,23 @@ const CaptureBlock: React.FC<{
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
               />
               
-              {/* Check wallet connection for educational mode */}
-              {!account ? (
-                <div className="space-y-4">
-                  <p className="text-yellow-400 font-semibold text-lg text-center">
-                    🔒 Conecta tu wallet para continuar
-                  </p>
-                  <div className="flex justify-center">
-                    <ConnectButton
-                      client={client}
-                      appMetadata={{
-                        name: "CryptoGift Wallets",
-                        url: typeof window !== 'undefined' ? window.location.origin : 'https://cryptogift-wallets.vercel.app'
-                      }}
-                      theme="dark"
-                    />
-                  </div>
-                  <p className="text-gray-400 text-sm text-center">
-                    Tu wallet es necesaria para generar la firma EIP-712
-                  </p>
+              {/* REMOVED: Wallet connection check - now handled in LessonModalWrapper after completion */}
+              {/* Connect wallet flow moved to "¡Felicidades!" screen as requested */}
+              <motion.button
+                type="submit"
+                className="w-full py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                }}
+              >
+                <div className="flex items-center justify-center gap-3">
+                  <Trophy className="w-8 h-8" />
+                  CONTINUAR AL REGALO
+                  <Gift className="w-8 h-8" />
                 </div>
-              ) : (
-                <motion.button
-                  type="submit"
-                  className="w-full py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                  }}
-                >
-                  <div className="flex items-center justify-center gap-3">
-                    <Trophy className="w-8 h-8" />
-                    CONTINUAR AL REGALO
-                    <Gift className="w-8 h-8" />
-                  </div>
-                </motion.button>
-              )}
+              </motion.button>
             </>
           ) : (
             /* Modo normal - formulario completo */
