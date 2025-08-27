@@ -21,7 +21,7 @@
     "@hey-api/openapi-ts": "^0.73.0",
     "@multiformats/multiaddr": "^12.1.14",
     "@multiformats/multiaddr-to-uri": "^10.0.1",
-    "@mux/mux-player-react": "^2.4.0",
+    "@mux/mux-player-react": "^2.9.1",
     "@sentry/nextjs": "^10.5.0",
     "@tailwindcss/typography": "^0.5.16",
     "@upstash/redis": "^1.35.1",
