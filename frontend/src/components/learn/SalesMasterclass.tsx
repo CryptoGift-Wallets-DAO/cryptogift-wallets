@@ -666,7 +666,6 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [showEducationalValidation, setShowEducationalValidation] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState<boolean>(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   
   // Removed router dependency to avoid App Router/Pages Router conflicts
   const timerRef = useRef<NodeJS.Timeout>();
@@ -956,10 +955,10 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Email verification handler
   const handleEmailVerified = useCallback((email: string) => {
-    setVerifiedEmail(email);
+    // verifiedEmail is now managed by parent LessonModalWrapper
     setShowEmailVerification(false);
     setShowCalendar(true);
-  }, [setVerifiedEmail, setShowEmailVerification, setShowCalendar]);
+  }, [setShowEmailVerification, setShowCalendar]);
 
   // Calendar booking success handler
   const handleBookingSuccess = useCallback(() => {
@@ -1330,7 +1329,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         isOpen={showEmailVerification}
         onClose={() => setShowEmailVerification(false)}
         onVerified={(email) => {
-          setVerifiedEmail(email);
+          // verifiedEmail is now managed by parent LessonModalWrapper
           setShowEmailVerification(false);
           setShowCalendar(true);
           console.log('✅ Email verified for masterclass:', email);
