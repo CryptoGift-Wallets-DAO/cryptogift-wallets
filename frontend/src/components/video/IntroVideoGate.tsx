@@ -17,7 +17,7 @@ import { Volume2, VolumeX, SkipForward, Play, Pause, Maximize, Minimize } from '
 // Carga perezosa del Mux Player para optimización
 // @ts-ignore - Mux player types may not be available
 const MuxPlayer = dynamic(
-  () => import('@mux/mux-player-react/lazy').then(mod => mod.MuxPlayer),
+  () => import('@mux/mux-player-react').then(mod => mod.default),
   { 
     ssr: false,
     loading: () => (
@@ -67,20 +67,43 @@ export default function IntroVideoGate({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const playerRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout>();
 
-  // Check si ya se vio antes (solo si autoSkip está habilitado)
+  // Detectar móvil para auto-fullscreen
   useEffect(() => {
-    if (!forceShow && autoSkip && typeof window !== "undefined") {
-      const seen = localStorage.getItem(storageKey);
-      if (seen === "completed") {
-        setShow(false);
-        onFinish();
-      }
-    }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Check si ya se vio antes (solo si autoSkip está habilitado)
+  // REMOVIDO: En módulo educacional, siempre mostrar video
+  useEffect(() => {
+    // Comentado para siempre mostrar el video en educacional
+    // if (!forceShow && autoSkip && typeof window !== "undefined") {
+    //   const seen = localStorage.getItem(storageKey);
+    //   if (seen === "completed") {
+    //     setShow(false);
+    //     onFinish();
+    //   }
+    // }
   }, [storageKey, onFinish, autoSkip, forceShow]);
+
+  // Auto-fullscreen en móvil cuando el video empiece
+  useEffect(() => {
+    if (isMobile && playing && !fullscreen && playerRef.current) {
+      // Pequeño delay para asegurar que el video está listo
+      setTimeout(() => {
+        toggleFullscreen();
+      }, 500);
+    }
+  }, [isMobile, playing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-hide controls after 3 seconds of no activity
   useEffect(() => {
@@ -182,7 +205,6 @@ export default function IntroVideoGate({
           <MuxPlayer
             ref={playerRef}
             playbackId={muxPlaybackId}
-            envKey={process.env.NEXT_PUBLIC_MUX_ENV_KEY}
             streamType="on-demand"
             autoPlay
             muted={muted}
@@ -190,6 +212,12 @@ export default function IntroVideoGate({
             poster={poster}
             onEnded={handleFinish}
             onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={() => {
+              console.log('🎬 Video metadata loaded, ready to play');
+              if (playerRef.current && playerRef.current.play) {
+                playerRef.current.play();
+              }
+            }}
             style={{ 
               width: "100%", 
               height: "100%",
@@ -319,37 +347,21 @@ export default function IntroVideoGate({
                       {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                     </button>
 
-                    {/* Skip button */}
+                    {/* Skip button - ÚNICO BOTÓN */}
                     <button
                       onClick={handleSkip}
-                      className="px-4 py-3 rounded-xl 
-                        bg-white/90 hover:bg-white 
-                        text-black font-semibold 
-                        backdrop-blur-xl border border-white/20
+                      className="px-6 py-3 rounded-xl 
+                        bg-gradient-to-r from-purple-500 to-pink-500 
+                        hover:from-purple-600 hover:to-pink-600
+                        text-white font-bold 
+                        backdrop-blur-xl border border-purple-400/30
                         transition-all hover:scale-105
-                        shadow-lg shadow-white/20
+                        shadow-lg shadow-purple-500/30
                         flex items-center gap-2"
                       aria-label="Saltar introducción"
                     >
-                      <SkipForward className="w-4 h-4" />
+                      <SkipForward className="w-5 h-5" />
                       <span>Saltar intro</span>
-                    </button>
-
-                    {/* Continue button (prominent) */}
-                    <button
-                      onClick={handleFinish}
-                      className="px-6 py-3 rounded-xl 
-                        bg-gradient-to-r from-green-500 to-emerald-500 
-                        hover:from-green-600 hover:to-emerald-600
-                        text-white font-bold 
-                        backdrop-blur-xl border border-green-400/30
-                        transition-all hover:scale-105
-                        shadow-lg shadow-green-500/30
-                        flex items-center gap-2"
-                      aria-label="Continuar a la masterclass"
-                    >
-                      <span>Continuar</span>
-                      <Play className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

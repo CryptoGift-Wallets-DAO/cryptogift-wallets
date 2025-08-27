@@ -1332,8 +1332,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
               // Start the masterclass timer when video finishes
               setTimeLeft(SALES_BLOCKS[0].duration);
             }}
-            autoSkip={true} // Will skip if already seen
-            forceShow={false} // Set to true to force show even if already seen (useful for testing)
+            autoSkip={false} // Nunca saltar automáticamente en educacional
+            forceShow={true} // Siempre mostrar en módulo educacional
           />
         </div>
       )}
