@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { Volume2, VolumeX, SkipForward, Play, Pause, Maximize, Minimize } from 'lucide-react';
 
-// Carga perezosa del Mux Player para optimización
+// Carga perezosa del Mux Player para optimizaciÃ³n
 // @ts-ignore - Mux player types may not be available
 const MuxPlayer = dynamic(
   () => import('@mux/mux-player-react/lazy').then(mod => mod.MuxPlayer),
@@ -34,14 +34,14 @@ const MuxPlayer = dynamic(
 );
 
 interface IntroVideoGateProps {
-  lessonId: string;           // ID único de la lección (para persistencia)
+  lessonId: string;           // ID Ãºnico de la lecciÃ³n (para persistencia)
   muxPlaybackId: string;      // Playback ID de Mux
   poster?: string;            // Imagen de portada opcional
-  captionsVtt?: string;       // Subtítulos opcionales
-  title?: string;             // Título del video
-  description?: string;       // Descripción opcional
+  captionsVtt?: string;       // SubtÃ­tulos opcionales
+  title?: string;             // TÃ­tulo del video
+  description?: string;       // DescripciÃ³n opcional
   onFinish: () => void;       // Callback al terminar/saltar
-  autoSkip?: boolean;         // Si debe saltarse automáticamente si ya se vio
+  autoSkip?: boolean;         // Si debe saltarse automÃ¡ticamente si ya se vio
   forceShow?: boolean;        // Forzar mostrar aunque ya se haya visto
 }
 
@@ -56,7 +56,7 @@ export default function IntroVideoGate({
   autoSkip = true,
   forceShow = false,
 }: IntroVideoGateProps) {
-  // Key para localStorage - permite resetear fácilmente cambiando el lessonId
+  // Key para localStorage - permite resetear fÃ¡cilmente cambiando el lessonId
   const storageKey = useMemo(() => `intro_video_seen:${lessonId}`, [lessonId]);
   
   // Estados
@@ -71,7 +71,7 @@ export default function IntroVideoGate({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout>();
 
-  // Check si ya se vio antes (solo si autoSkip está habilitado)
+  // Check si ya se vio antes (solo si autoSkip estÃ¡ habilitado)
   useEffect(() => {
     if (!forceShow && autoSkip && typeof window !== "undefined") {
       const seen = localStorage.getItem(storageKey);
@@ -209,7 +209,7 @@ export default function IntroVideoGate({
                 srcLang="es" 
                 src={captionsVtt} 
                 default 
-                label="Español" 
+                label="EspaÃ±ol" 
               />
             )}
           </MuxPlayer>
@@ -329,7 +329,7 @@ export default function IntroVideoGate({
                         transition-all hover:scale-105
                         shadow-lg shadow-white/20
                         flex items-center gap-2"
-                      aria-label="Saltar introducción"
+                      aria-label="Saltar introducciÃ³n"
                     >
                       <SkipForward className="w-4 h-4" />
                       <span>Saltar intro</span>
