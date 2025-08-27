@@ -102,12 +102,13 @@ export async function fetchGiftDetails(giftId: bigint): Promise<EscrowGift | nul
       nftContract: giftData[1], 
       tokenId: giftData[2],
       expiresAt: BigInt(giftData[3]),
+      expirationTime: BigInt(giftData[3]), // Same as expiresAt, required by EscrowGift interface
       status: giftData[4],
       // attempts: giftData[5], // REMOVED: Not in EscrowGift interface
       // cooldownUntil: giftData[6], // REMOVED: Not in EscrowGift interface
       // gate: giftData[7], // REMOVED: Not in EscrowGift interface
-      passwordHash: giftData[8],
-      giftMessage: giftData[9]
+      passwordHash: giftData[8]
+      // giftMessage: giftData[9] // REMOVED: Not in EscrowGift interface
     };
   } catch (error) {
     console.error('Error fetching gift details:', error);
