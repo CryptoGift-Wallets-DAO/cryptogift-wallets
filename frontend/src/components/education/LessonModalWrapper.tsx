@@ -212,14 +212,14 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const handleLessonComplete = async () => {
     console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
     
-    // En mode educational, first check if email verification is needed
+    // En mode educational, mostrar el overlay de éxito y conectar wallet
     if (mode === 'educational' && onComplete) {
-      // EDUCATIONAL MODE: Email verification will be handled by SalesMasterclass
-      // and when email verification completes, THEN show success overlay
-      console.log('🎓 Educational mode - waiting for email verification or direct completion');
+      console.log('🎓 Educational mode - showing success overlay and wallet connection');
       
-      // This will be called after email verification completes
-      return; // Let SalesMasterclass handle the email verification flow first
+      // FIX: Llamar directamente a handleEducationCompletionAfterEmail
+      // que muestra el overlay de éxito y pide conectar wallet
+      handleEducationCompletionAfterEmail();
+      return;
     } else if (mode === 'knowledge') {
       // En knowledge mode, simplemente mostrar celebración y cerrar
       triggerConfetti({
@@ -283,17 +283,17 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const handleCalendarBooked = () => {
     console.log('✅ Calendar booking completed');
     setShowCalendar(false);
-    // After calendar completes, trigger education completion
-    handleEducationCompletionAfterEmail();
+    // FIX: NO llamar handleEducationCompletionAfterEmail aquí
+    // Solo cerrar el modal, el usuario debe hacer clic en "CONTINUAR AL REGALO"
   };
 
-  // NEW: Handle completion AFTER email verification completes
+  // Handle completion showing success overlay and wallet connection
   const handleEducationCompletionAfterEmail = async () => {
-    console.log('📧 Email verification completed, now proceeding to success overlay');
+    console.log('🎆 Showing success overlay: ¡Ya eres parte de CryptoGift!');
     
     setShowSuccess(true);
     
-    // Trigger celebration - PRESERVAR EXACTAMENTE como está
+    // Trigger celebration
     triggerConfetti({
       particleCount: 100,
       spread: 70,
@@ -301,18 +301,11 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
       colors: ['#FFD700', '#FFA500', '#FF6347']
     });
 
-    // FASE 4: Use connectWallet() abstraction instead of manual state management
-    try {
-      console.log('🔗 Using connectWallet() abstraction for wallet connection');
-      const walletAddress = await connectWallet();
-      console.log('✅ Wallet connected via abstraction:', walletAddress);
-      
-      // Proceed to EIP-712 generation after successful connection
-      await processEIP712Generation();
-    } catch (error) {
-      console.error('❌ Wallet connection failed:', error);
-      // Show error state or allow retry
-    }
+    // FIX: NO conectar wallet automáticamente
+    // Mostrar el botón ConnectButton y esperar a que el usuario conecte
+    setShowConnectWallet(true);
+    
+    // El useEffect detectará cuando se conecte la wallet y procederá con EIP-712
   };
 
   // Separate function for EIP-712 generation after wallet connection

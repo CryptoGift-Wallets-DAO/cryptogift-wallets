@@ -152,8 +152,12 @@ export default async function handler(
       ? 'CryptoGift Wallets - Verificación de Email (Masterclass)'
       : 'CryptoGift Wallets - Verificación de Email';
 
+    // FIX: Using a proper from address - Resend requires verified domain or their default
+    // If no custom domain is set up, use onboarding@resend.dev as fallback
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'CryptoGift Wallets <onboarding@resend.dev>';
+    
     await resend.emails.send({
-      from: 'CryptoGift Wallets <noreply@cryptogift-wallets.vercel.app>',
+      from: fromEmail,
       to: [email],
       subject: `${emailTemplate} - Código: ${otpCode}`,
       html: `

@@ -912,33 +912,12 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       console.log('🎓 EDUCATIONAL MODE - Showing validation page');
       setMetrics(prev => ({ ...prev, leadSubmitted: true }));
       
-      // Show validation page
-      setShowEducationalValidation(true);
+      // FIX: Proceder directamente al bloque de success
+      // El usuario ya completó los checkboxes, ahora debe ver "¡Ya eres parte de CryptoGift!"
+      console.log('🎆 Educational capture complete - moving to success block');
+      handleNextBlock();
       
-      // No confetti celebration for questions - only at final completion
-      setTimeout(() => {
-        console.log('✅ Validation completed, ready for next step');
-      }, 500);
-      
-      // After showing validation, trigger completion
-      setTimeout(() => {
-        // Trigger education completion
-        if (onEducationComplete) {
-          console.log('✅ Calling onEducationComplete callback to generate EIP-712 signature');
-          onEducationComplete();
-        }
-        
-        // Send completion event for iframe
-        if (window.parent !== window) {
-          window.parent.postMessage({ type: 'MASTERCLASS_COMPLETE' }, '*');
-        }
-        
-        // Move to success block after extended time
-        setTimeout(() => {
-          handleNextBlock();
-          setShowEducationalValidation(false);
-        }, 6000); // Extended duration for validation page (6 seconds)
-      }, 7000); // Show validation for 7 seconds before proceeding
+      // NO llamar onEducationComplete aquí - debe ser después del botón "IR AL CLAIM"
       
       return;
     }
@@ -2210,12 +2189,15 @@ const CaptureBlock: React.FC<{
     if (onShowEmailVerification) {
       try {
         await onShowEmailVerification();
+        // FIX: Solo marcar como verificado si realmente se verificó
+        // El modal debe retornar si fue exitoso o no
         setEmailVerified(true);
         setEmailChecked(true);
-        console.log('✅ Email verified successfully');
+        console.log('✅ Email marked as verified');
       } catch (error) {
         console.error('❌ Email verification error:', error);
         setEmailChecked(false);
+        setEmailVerified(false);
       }
     }
     setProcessingEmail(false);
