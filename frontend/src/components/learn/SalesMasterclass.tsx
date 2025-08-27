@@ -2192,81 +2192,100 @@ const CaptureBlock: React.FC<{
   });
   const [showValidation, setShowValidation] = useState(false);
   
-  // FASE 1.1: Guard idempotente para email verification
-  const emailShownRef = useRef(false);
+  // FASE 1: Estado para checkboxes inline
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [calendarChecked, setCalendarChecked] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [calendarScheduled, setCalendarScheduled] = useState(false);
+  const [processingEmail, setProcessingEmail] = useState(false);
+  const [processingCalendar, setProcessingCalendar] = useState(false);
 
-  // FASE 1.2: Callback explícito para email verification
-  const handleEmailVerified = async (email: string) => {
-    console.log('✅ Email verified:', email);
-    setEmailVerified(true);
+  // FASE 1: Manejadores para checkboxes inline
+  const handleEmailCheckbox = async () => {
+    if (emailVerified || processingEmail) return;
     
-    // Después de verificar email, mostrar calendario
+    setProcessingEmail(true);
+    console.log('📧 Email checkbox clicked - opening verification');
+    
+    if (onShowEmailVerification) {
+      try {
+        await onShowEmailVerification();
+        setEmailVerified(true);
+        setEmailChecked(true);
+        console.log('✅ Email verified successfully');
+      } catch (error) {
+        console.error('❌ Email verification error:', error);
+        setEmailChecked(false);
+      }
+    }
+    setProcessingEmail(false);
+  };
+  
+  const handleCalendarCheckbox = async () => {
+    if (calendarScheduled || processingCalendar) return;
+    
+    setProcessingCalendar(true);
+    console.log('📅 Calendar checkbox clicked - opening booking');
+    
     if (onShowCalendar) {
       try {
         await onShowCalendar();
         setCalendarScheduled(true);
-        console.log('✅ Calendar booking completed');
+        setCalendarChecked(true);
+        console.log('✅ Calendar booked successfully');
       } catch (error) {
         console.error('❌ Calendar booking error:', error);
+        setCalendarChecked(false);
       }
     }
+    setProcessingCalendar(false);
   };
+  
+  // Verificar si ambos checkboxes están completos
+  const canProceed = emailVerified && calendarScheduled;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // En modo educacional, mostrar validación después de seleccionar rol
-    if (educationalMode && selectedPath) {
+    // FASE 1: En modo educacional, verificar checkboxes
+    if (educationalMode) {
+      if (!canProceed) {
+        console.log('⚠️ Cannot proceed - checkboxes not completed');
+        return;
+      }
+      
+      console.log('✅ All requirements met, proceeding to success block');
       setShowValidation(true);
       
-      // FASE 1.1: Guard idempotente para evitar dobles invocaciones
-      if (emailShownRef.current) return;
-      emailShownRef.current = true;
+      // Wait a moment to show the validation message
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      try {
-        // Esperar un momento para mostrar la validación
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Ejecutar email verification y esperar a que termine
-        if (onShowEmailVerification) {
-          await onShowEmailVerification();
-        }
-        
-        // Solo continuar después de que el modal se haya cerrado
-        onSubmit({
-          path: selectedPath,
-          ...formData,
-          questionsScore,
-          educationalMode: true
-        });
-      } catch (error) {
-        console.error('❌ Error in educational flow:', error);
-        // Reset guard en caso de error
-        emailShownRef.current = false;
+      onSubmit({
+        path: selectedPath,
+        email: verifiedEmail,
+        calendarBooked: true,
+        questionsScore,
+        educationalMode: true
+      });
+      return;
+    }
+    
+    // Modo knowledge - proceder directamente
+    if (selectedPath) {
+      console.log('🎯 Knowledge mode - proceeding without checkboxes');
+      
+      // En modo knowledge, mostrar modal de email si está disponible
+      if (onShowEmailVerification) {
+        onShowEmailVerification();
+        return;
       }
-      return;
-    }
-    
-    // FIXED: Email verification debe ejecutarse TAMBIÉN en educational mode
-    if (selectedPath && onShowEmailVerification) {
-      console.log('🎯 MASTERCLASS COMPLETED - Starting email verification flow');
-      console.log('Selected path:', selectedPath);
-      console.log('Educational mode:', educationalMode);
-      console.log('Form data:', formData);
       
-      // Mostrar modal de verificación de email (tanto modo normal como educacional)
-      onShowEmailVerification();
-      return;
+      onSubmit({
+        path: selectedPath,
+        ...formData,
+        questionsScore
+      });
     }
-    
-    // Fallback para modo normal sin email verification
-    onSubmit({
-      path: selectedPath,
-      ...formData,
-      questionsScore
-    });
   };
 
   // 🚀 ARQUITECTURA UNIFICADA: Misma UI para ambos modos (Knowledge y Educational)
@@ -2359,7 +2378,7 @@ const CaptureBlock: React.FC<{
           onSubmit={handleSubmit}
           className="max-w-md mx-auto space-y-4"
         >
-          {/* En modo educacional, simplificar el formulario */}
+          {/* En modo educacional, mostrar checkboxes */}
           {educationalMode ? (
             <>
               <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6">
@@ -2371,29 +2390,113 @@ const CaptureBlock: React.FC<{
                 </p>
               </div>
               
-              {/* Campo opcional de contacto en modo educacional */}
-              <input
-                type="text"
-                placeholder="(Opcional) Tu email si quieres recibir actualizaciones"
-                value={formData.contact}
-                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
-              />
+              {/* FASE 1: CHECKBOXES INLINE */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl backdrop-saturate-150 rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-xl space-y-4">
+                <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  ✅ Requisitos para continuar:
+                </h3>
+                
+                {/* Email Verification Checkbox */}
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="email-checkbox"
+                    checked={emailChecked}
+                    onChange={handleEmailCheckbox}
+                    disabled={emailVerified || processingEmail}
+                    className="mt-1 mr-3 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
+                  />
+                  <label htmlFor="email-checkbox" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-800 dark:text-white">
+                        📧 Verificar tu email
+                      </span>
+                      {emailVerified && (
+                        <span className="text-green-500 text-sm">✓ Verificado</span>
+                      )}
+                      {processingEmail && (
+                        <span className="text-blue-500 text-sm">Procesando...</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Te enviaremos información exclusiva sobre el ecosistema cripto
+                    </p>
+                    {verifiedEmail && emailVerified && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        Email verificado: {verifiedEmail}
+                      </p>
+                    )}
+                  </label>
+                </div>
+                
+                {/* Calendar Booking Checkbox */}
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="calendar-checkbox"
+                    checked={calendarChecked}
+                    onChange={handleCalendarCheckbox}
+                    disabled={calendarScheduled || processingCalendar}
+                    className="mt-1 mr-3 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
+                  />
+                  <label htmlFor="calendar-checkbox" className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-800 dark:text-white">
+                        📅 Agendar una sesión gratuita
+                      </span>
+                      {calendarScheduled && (
+                        <span className="text-green-500 text-sm">✓ Agendado</span>
+                      )}
+                      {processingCalendar && (
+                        <span className="text-blue-500 text-sm">Procesando...</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Descubre cómo CryptoGift puede transformar tu negocio (opcional pero recomendado)
+                    </p>
+                  </label>
+                </div>
+                
+                {/* Progress indicator */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {canProceed ? (
+                        <span className="text-green-600 dark:text-green-400 font-semibold">
+                          ✅ Todo listo para continuar
+                        </span>
+                      ) : (
+                        <span>
+                          Completa ambos requisitos para continuar
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {(emailVerified ? 1 : 0) + (calendarScheduled ? 1 : 0)} / 2 completados
+                    </span>
+                  </div>
+                </div>
+              </div>
               
               {/* REMOVED: Wallet connection check - now handled in LessonModalWrapper after completion */}
               {/* Connect wallet flow moved to "¡Felicidades!" screen as requested */}
               <motion.button
                 type="submit"
-                className="w-full py-5 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-black text-2xl rounded-xl hover:scale-105 transition-all shadow-2xl"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
+                disabled={!canProceed}
+                className={`w-full py-5 font-black text-2xl rounded-xl transition-all shadow-2xl ${
+                  canProceed 
+                    ? 'bg-gradient-to-r from-yellow-500 to-green-500 text-black hover:scale-105' 
+                    : 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                }`}
+                whileHover={canProceed ? { scale: 1.05 } : {}}
+                whileTap={canProceed ? { scale: 0.98 } : {}}
+                style={canProceed ? {
                   animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                }}
+                } : {}}
               >
                 <div className="flex items-center justify-center gap-3">
                   <Trophy className="w-8 h-8" />
-                  CONTINUAR AL REGALO
+                  {canProceed ? 'CONTINUAR AL REGALO' : '⏳ COMPLETA LOS REQUISITOS'}
                   <Gift className="w-8 h-8" />
                 </div>
               </motion.button>
