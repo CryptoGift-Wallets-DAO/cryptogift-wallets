@@ -68,6 +68,8 @@ import {
 } from 'lucide-react';
 import { EmailVerificationModal } from '../email/EmailVerificationModal';
 import { CalendarBookingModal } from '../calendar/CalendarBookingModal';
+import IntroVideoGate from '../video/IntroVideoGate';
+import { VIDEO_CONFIG } from '../../config/videoConfig';
 // Enhanced confetti function matching KnowledgeLessonModal implementation
 function triggerConfetti(options?: ConfettiOptions) {
   // Visual confetti effect using CSS animation
@@ -653,6 +655,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const account = useActiveAccount();
   
   // State
+  const [showIntroVideo, setShowIntroVideo] = useState(true);
   const [currentBlock, setCurrentBlock] = useState(0);
   const [timeLeft, setTimeLeft] = useState(SALES_BLOCKS[0].duration);
   const [isPaused, setIsPaused] = useState(false);
@@ -1313,23 +1316,47 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       </div>
     )}
 
-      {/* Main Content */}
-      <div className={educationalMode ? "h-full flex flex-col px-3" : "pt-20 pb-10 px-3"}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentBlock}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.5 }}
-            className={`max-w-4xl mx-auto ${educationalMode ? 'flex-1 flex flex-col' : ''}`}
-          >
-            <div className={educationalMode ? 'h-full flex flex-col educational-mode-wrapper' : ''}>
-              {renderBlockContent()}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      {/* Intro Video Gate - Shows before main content in both modes */}
+      {showIntroVideo && VIDEO_CONFIG.salesMasterclass && (
+        <div className={educationalMode ? "h-full flex items-center justify-center px-3" : "pt-20 flex items-center justify-center min-h-screen px-3"}>
+          <IntroVideoGate
+            lessonId={VIDEO_CONFIG.salesMasterclass.lessonId}
+            muxPlaybackId={VIDEO_CONFIG.salesMasterclass.muxPlaybackId}
+            title={VIDEO_CONFIG.salesMasterclass.title}
+            description={VIDEO_CONFIG.salesMasterclass.description}
+            poster={VIDEO_CONFIG.salesMasterclass.poster}
+            captionsVtt={VIDEO_CONFIG.salesMasterclass.captionsVtt}
+            onFinish={() => {
+              console.log('📹 Intro video completed');
+              setShowIntroVideo(false);
+              // Start the masterclass timer when video finishes
+              setTimeLeft(SALES_BLOCKS[0].duration);
+            }}
+            autoSkip={true} // Will skip if already seen
+            forceShow={false} // Set to true to force show even if already seen (useful for testing)
+          />
+        </div>
+      )}
+
+      {/* Main Content - Only shows after video */}
+      {!showIntroVideo && (
+        <div className={educationalMode ? "h-full flex flex-col px-3" : "pt-20 pb-10 px-3"}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentBlock}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.5 }}
+              className={`max-w-4xl mx-auto ${educationalMode ? 'flex-1 flex flex-col' : ''}`}
+            >
+              <div className={educationalMode ? 'h-full flex flex-col educational-mode-wrapper' : ''}>
+                {renderBlockContent()}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Metrics Overlay (Debug/Admin) */}
       {process.env.NODE_ENV === 'development' && (
