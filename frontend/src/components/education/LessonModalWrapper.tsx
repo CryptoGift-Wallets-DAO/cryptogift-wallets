@@ -9,12 +9,11 @@
  * Co-Author: Godez22
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
-import { useEffect } from 'react';
 import { client } from '../../app/client';
 import { baseSepolia } from 'thirdweb/chains';
 

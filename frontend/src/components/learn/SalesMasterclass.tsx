@@ -1244,6 +1244,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           leadData={leadData}
           metrics={metrics}
           educationalMode={educationalMode}
+          onEducationComplete={onEducationComplete}
         />;
       default:
         return null;
@@ -2449,7 +2450,8 @@ const SuccessBlock: React.FC<{
   leadData: any;
   metrics: any;
   educationalMode?: boolean;
-}> = ({ content, leadData, metrics, educationalMode = false }) => {
+  onEducationComplete?: () => void;
+}> = ({ content, leadData, metrics, educationalMode = false, onEducationComplete }) => {
   // Removed router dependency to avoid App Router/Pages Router conflicts
   
   return (
