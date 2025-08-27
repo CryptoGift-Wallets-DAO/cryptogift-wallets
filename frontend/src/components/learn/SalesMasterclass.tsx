@@ -2363,98 +2363,157 @@ const CaptureBlock: React.FC<{
           {/* En modo educacional, mostrar checkboxes */}
           {educationalMode ? (
             <>
-              <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6">
-                <p className="text-lg text-gray-300 mb-4">
-                  Has seleccionado: <span className="font-bold text-blue-500 dark:text-blue-400">{selectedPath}</span>
+              <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 
+                backdrop-blur-xl backdrop-saturate-150 
+                border border-purple-500/30 rounded-2xl p-6
+                shadow-xl shadow-purple-500/10">
+                <p className="text-lg text-gray-200 mb-4">
+                  Has seleccionado: <span className="font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{selectedPath}</span>
                 </p>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-300/80">
                   Esta información nos ayuda a personalizar tu experiencia en CryptoGift
                 </p>
               </div>
               
-              {/* FASE 1: CHECKBOXES INLINE */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl backdrop-saturate-150 rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-xl space-y-4">
-                <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                  ✅ Requisitos para continuar:
+              {/* FASE 1: CHECKBOXES INLINE - GLASS MORPHISM PREMIUM */}
+              <div className="bg-white/60 dark:bg-gray-800/60 
+                backdrop-blur-xl backdrop-saturate-150 
+                rounded-2xl p-6 
+                border border-white/20 dark:border-gray-700/50 
+                shadow-2xl shadow-blue-500/10 
+                space-y-4">
+                <h3 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent flex items-center gap-3">
+                  <span className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center backdrop-blur-xl border border-blue-500/30">
+                    ✨
+                  </span>
+                  Requisitos para continuar
                 </h3>
                 
-                {/* Email Verification Checkbox */}
-                <div className="flex items-start">
+                {/* Email Verification Checkbox - GLASS STYLE */}
+                <div className="group flex items-start p-4 rounded-xl 
+                  bg-gradient-to-r from-blue-500/5 to-indigo-500/5
+                  hover:from-blue-500/10 hover:to-indigo-500/10
+                  border border-transparent hover:border-blue-500/20
+                  transition-all duration-300">
                   <input
                     type="checkbox"
                     id="email-checkbox"
                     checked={emailChecked}
                     onChange={handleEmailCheckbox}
                     disabled={emailVerified || processingEmail}
-                    className="mt-1 mr-3 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
+                    className="mt-1 mr-3 w-5 h-5 rounded border-2 border-blue-400/50 text-blue-600 
+                      focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 cursor-pointer
+                      checked:bg-gradient-to-r checked:from-blue-500 checked:to-indigo-500"
                   />
                   <label htmlFor="email-checkbox" className="flex-1 cursor-pointer">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 
+                        rounded-lg flex items-center justify-center backdrop-blur-xl 
+                        border border-blue-500/30 group-hover:scale-110 transition-transform">
+                        <span className="text-lg">📧</span>
+                      </div>
                       <span className="font-semibold text-gray-800 dark:text-white">
-                        📧 Verificar tu email
+                        Verificar tu email
                       </span>
                       {emailVerified && (
-                        <span className="text-green-500 text-sm">✓ Verificado</span>
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full 
+                          border border-green-500/30 backdrop-blur-xl">
+                          ✓ Verificado
+                        </span>
                       )}
                       {processingEmail && (
-                        <span className="text-blue-500 text-sm">Procesando...</span>
+                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full 
+                          border border-blue-500/30 backdrop-blur-xl animate-pulse">
+                          Procesando...
+                        </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 ml-11">
                       Te enviaremos información exclusiva sobre el ecosistema cripto
                     </p>
                     {verifiedEmail && emailVerified && (
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                        Email verificado: {verifiedEmail}
+                      <p className="text-xs text-green-400 mt-1 ml-11 font-mono">
+                        ✉️ {verifiedEmail}
                       </p>
                     )}
                   </label>
                 </div>
                 
-                {/* Calendar Booking Checkbox */}
-                <div className="flex items-start">
+                {/* Calendar Booking Checkbox - GLASS STYLE */}
+                <div className="group flex items-start p-4 rounded-xl 
+                  bg-gradient-to-r from-purple-500/5 to-pink-500/5
+                  hover:from-purple-500/10 hover:to-pink-500/10
+                  border border-transparent hover:border-purple-500/20
+                  transition-all duration-300">
                   <input
                     type="checkbox"
                     id="calendar-checkbox"
                     checked={calendarChecked}
                     onChange={handleCalendarCheckbox}
                     disabled={calendarScheduled || processingCalendar}
-                    className="mt-1 mr-3 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
+                    className="mt-1 mr-3 w-5 h-5 rounded border-2 border-purple-400/50 text-purple-600 
+                      focus:ring-2 focus:ring-purple-500/50 disabled:opacity-50 cursor-pointer
+                      checked:bg-gradient-to-r checked:from-purple-500 checked:to-pink-500"
                   />
                   <label htmlFor="calendar-checkbox" className="flex-1 cursor-pointer">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500/20 to-pink-500/20 
+                        rounded-lg flex items-center justify-center backdrop-blur-xl 
+                        border border-purple-500/30 group-hover:scale-110 transition-transform">
+                        <span className="text-lg">📅</span>
+                      </div>
                       <span className="font-semibold text-gray-800 dark:text-white">
-                        📅 Agendar una sesión gratuita
+                        Agendar una sesión gratuita
                       </span>
                       {calendarScheduled && (
-                        <span className="text-green-500 text-sm">✓ Agendado</span>
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full 
+                          border border-green-500/30 backdrop-blur-xl">
+                          ✓ Agendado
+                        </span>
                       )}
                       {processingCalendar && (
-                        <span className="text-blue-500 text-sm">Procesando...</span>
+                        <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full 
+                          border border-purple-500/30 backdrop-blur-xl animate-pulse">
+                          Procesando...
+                        </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 ml-11">
                       Descubre cómo CryptoGift puede transformar tu negocio (opcional pero recomendado)
                     </p>
                   </label>
                 </div>
                 
-                {/* Progress indicator */}
-                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                {/* Progress indicator - GLASS STYLE */}
+                <div className="mt-6 pt-4 border-t border-white/10 dark:border-gray-700/30">
+                  <div className="flex items-center justify-between p-3 rounded-xl
+                    bg-gradient-to-r from-green-500/5 to-emerald-500/5
+                    backdrop-blur-xl">
+                    <span className="text-sm flex items-center gap-2">
                       {canProceed ? (
-                        <span className="text-green-600 dark:text-green-400 font-semibold">
-                          ✅ Todo listo para continuar
-                        </span>
+                        <>
+                          <span className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
+                            ✅
+                          </span>
+                          <span className="text-green-400 font-semibold">
+                            Todo listo para continuar
+                          </span>
+                        </>
                       ) : (
-                        <span>
-                          Completa ambos requisitos para continuar
-                        </span>
+                        <>
+                          <span className="w-6 h-6 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                            ⏳
+                          </span>
+                          <span className="text-gray-300">
+                            Completa ambos requisitos para continuar
+                          </span>
+                        </>
                       )}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {(emailVerified ? 1 : 0) + (calendarScheduled ? 1 : 0)} / 2 completados
+                    <span className="px-3 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 
+                      rounded-full text-xs text-blue-400 font-mono
+                      border border-blue-500/20 backdrop-blur-xl">
+                      {(emailVerified ? 1 : 0) + (calendarScheduled ? 1 : 0)} / 2
                     </span>
                   </div>
                 </div>
@@ -2465,10 +2524,11 @@ const CaptureBlock: React.FC<{
               <motion.button
                 type="submit"
                 disabled={!canProceed}
-                className={`w-full py-5 font-black text-2xl rounded-xl transition-all shadow-2xl ${
+                className={`w-full py-5 font-black text-xl rounded-2xl transition-all 
+                  backdrop-blur-xl backdrop-saturate-150 ${
                   canProceed 
-                    ? 'bg-gradient-to-r from-yellow-500 to-green-500 text-black hover:scale-105' 
-                    : 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                    ? 'bg-gradient-to-r from-yellow-500/80 to-green-500/80 text-white hover:from-yellow-500 hover:to-green-500 shadow-2xl shadow-green-500/30 border border-yellow-500/30' 
+                    : 'bg-gray-700/50 text-gray-400 cursor-not-allowed opacity-50 border border-gray-600/30'
                 }`}
                 whileHover={canProceed ? { scale: 1.05 } : {}}
                 whileTap={canProceed ? { scale: 0.98 } : {}}
@@ -2477,9 +2537,15 @@ const CaptureBlock: React.FC<{
                 } : {}}
               >
                 <div className="flex items-center justify-center gap-3">
-                  <Trophy className="w-8 h-8" />
-                  {canProceed ? 'CONTINUAR AL REGALO' : '⏳ COMPLETA LOS REQUISITOS'}
-                  <Gift className="w-8 h-8" />
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-xl">
+                    <Trophy className="w-6 h-6 text-yellow-300" />
+                  </div>
+                  <span className="bg-gradient-to-r from-yellow-200 to-green-200 bg-clip-text text-transparent font-black">
+                    {canProceed ? 'CONTINUAR AL REGALO' : 'COMPLETA LOS REQUISITOS'}
+                  </span>
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-xl">
+                    <Gift className="w-6 h-6 text-green-300" />
+                  </div>
                 </div>
               </motion.button>
             </>

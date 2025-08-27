@@ -424,24 +424,38 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
             )}
           </div>
 
-          {/* Success Overlay para Educational Mode */}
+          {/* Success Overlay para Educational Mode - GLASS MORPHISM PREMIUM */}
           {showSuccess && mode === 'educational' && (
             <motion.div
-              className="absolute inset-0 z-[10001] bg-gradient-to-br from-green-900 via-black to-purple-900 flex items-center justify-center"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="absolute inset-0 z-[10001] bg-gradient-to-br from-green-900/90 via-black/95 to-purple-900/90 backdrop-blur-xl flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
             >
-              <div className="text-center text-white max-w-2xl mx-auto p-8">
+              <motion.div 
+                className="text-center text-white max-w-2xl mx-auto p-8 
+                  bg-white/10 dark:bg-gray-900/30 
+                  backdrop-blur-xl backdrop-saturate-150 
+                  border border-white/20 dark:border-gray-700/50 
+                  rounded-3xl shadow-2xl shadow-green-500/20"
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ type: "spring", damping: 20 }}
+              >
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", delay: 0.2 }}
+                  className="mb-6"
                 >
-                  <div className="text-8xl mb-6">🎓</div>
+                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-yellow-400/20 to-green-400/20 
+                    backdrop-blur-xl rounded-full flex items-center justify-center
+                    border border-yellow-400/30 shadow-xl shadow-yellow-400/20">
+                    <span className="text-7xl">🎓</span>
+                  </div>
                 </motion.div>
                 
                 <motion.h1
-                  className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-400 to-green-400 bg-clip-text text-transparent"
+                  className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-green-400 to-blue-400 bg-clip-text text-transparent"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -450,7 +464,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                 </motion.h1>
                 
                 <motion.p
-                  className="text-2xl mb-8 text-gray-300"
+                  className="text-2xl mb-8 text-gray-200/90"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6 }}
@@ -464,26 +478,34 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.8 }}
                 >
-                  <div className="bg-green-900/30 border border-green-500/50 rounded-xl p-4">
-                    <p className="text-green-400 font-bold text-xl">
-                      ✅ {lessonId === 'sales-masterclass' ? 'Sales Masterclass' : 
+                  <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 
+                    backdrop-blur-xl backdrop-saturate-150
+                    border border-green-500/30 rounded-2xl p-6
+                    shadow-xl shadow-green-500/10 hover:shadow-green-500/20 transition-all">
+                    <p className="text-green-400 font-bold text-xl flex items-center justify-center gap-2">
+                      <span className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">✅</span>
+                      {lessonId === 'sales-masterclass' ? 'Sales Masterclass' : 
                          lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo' : 
                          'Módulo'} - COMPLETADO
                     </p>
-                    <p className="text-green-300 text-sm mt-2">
+                    <p className="text-green-300/80 text-sm mt-3">
                       Has completado exitosamente el módulo educativo
                     </p>
                   </div>
                   
-                  {/* CONNECT WALLET USING THIRDWEB MODAL - NO OVERLAY PANEL */}
+                  {/* CONNECT WALLET SECTION - GLASS MORPHISM STYLE */}
                   {showConnectWallet ? (
                     <>
                       {console.log('🎯 Rendering ConnectButton section, showConnectWallet:', showConnectWallet)}
-                      <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4 mb-4">
-                        <p className="text-blue-400 font-bold text-lg mb-2">
-                          🔗 Ahora conecta tu wallet para reclamar el regalo
+                      <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 
+                        backdrop-blur-xl backdrop-saturate-150
+                        border border-blue-500/30 rounded-2xl p-6 mb-4
+                        shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all">
+                        <p className="text-blue-400 font-bold text-lg mb-3 flex items-center justify-center gap-2">
+                          <span className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">🔗</span>
+                          Ahora conecta tu wallet para reclamar el regalo
                         </p>
-                        <p className="text-blue-300 text-sm">
+                        <p className="text-blue-300/80 text-sm">
                           Para generar tu certificación EIP-712 necesitamos verificar tu identidad con la wallet
                         </p>
                       </div>
@@ -504,26 +526,35 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                   ) : (
                     <>
                       <motion.div
-                        className="px-12 py-4 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-bold text-xl rounded-xl"
+                        className="px-12 py-6 bg-gradient-to-r from-yellow-500/20 to-green-500/20 
+                          backdrop-blur-xl backdrop-saturate-150
+                          border border-yellow-500/30 
+                          text-white font-bold text-xl rounded-2xl
+                          shadow-2xl"
                         animate={{ 
                           boxShadow: [
-                            '0 0 20px rgba(255, 215, 0, 0.5)',
-                            '0 0 40px rgba(255, 215, 0, 0.8)',
-                            '0 0 20px rgba(255, 215, 0, 0.5)'
+                            '0 0 30px rgba(255, 215, 0, 0.3)',
+                            '0 0 50px rgba(255, 215, 0, 0.5)',
+                            '0 0 30px rgba(255, 215, 0, 0.3)'
                           ]
                         }}
                         transition={{ duration: 2, repeat: Infinity }}
                       >
-                        Generando tu certificación EIP-712...
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="w-8 h-8 border-3 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="bg-gradient-to-r from-yellow-300 to-green-300 bg-clip-text text-transparent">
+                            Generando tu certificación EIP-712...
+                          </span>
+                        </div>
                       </motion.div>
                       
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-gray-300/70 text-sm mt-2">
                         Procesando tu credencial educativa...
                       </p>
                     </>
                   )}
                 </motion.div>
-              </div>
+              </motion.div>
             </motion.div>
           )}
 
