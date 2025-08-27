@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useActiveAccount } from 'thirdweb/react';
+import { useEffect } from 'react';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
 const SalesMasterclass = dynamic(
@@ -121,7 +122,17 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   onComplete
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showConnectWallet, setShowConnectWallet] = useState(false);
   const account = useActiveAccount();
+
+  // Watch for wallet connection when in connect wallet state
+  useEffect(() => {
+    if (showConnectWallet && account?.address) {
+      console.log('🔗 Wallet connected, proceeding to EIP-712 generation');
+      setShowConnectWallet(false);
+      processEIP712Generation();
+    }
+  }, [account?.address, showConnectWallet]);
 
   const handleLessonComplete = async () => {
     console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
@@ -138,9 +149,36 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         colors: ['#FFD700', '#FFA500', '#FF6347']
       });
 
-      try {
-        // CRITICAL FIX: Verificar que todos los campos requeridos estén presentes
-        if (sessionToken && tokenId && account?.address) {
+      // CRITICAL UX FIX: Show connect wallet step BEFORE EIP-712 generation
+      // User should connect wallet in the same "¡Felicidades!" screen
+      if (!account?.address) {
+        console.log('🔗 Education completed but wallet not connected - showing connect step');
+        setShowConnectWallet(true);
+        return;
+      }
+
+      // If wallet is already connected, proceed directly to EIP-712
+      await processEIP712Generation();
+    } else if (mode === 'knowledge') {
+      // En knowledge mode, simplemente mostrar celebración y cerrar
+      triggerConfetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#FFA500', '#FF6347']
+      });
+      
+      setTimeout(() => {
+        onClose();
+      }, 3000);
+    }
+  };
+
+  // Separate function for EIP-712 generation after wallet connection
+  const processEIP712Generation = async () => {
+    try {
+      // CRITICAL FIX: Verificar que todos los campos requeridos estén presentes
+      if (sessionToken && tokenId && account?.address) {
           console.log('🎓 Submitting education completion with all required fields:', {
             sessionToken: sessionToken.substring(0, 10) + '...',
             tokenId,
@@ -188,35 +226,18 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
           } else {
             throw new Error(approvalData.error || 'Approval failed');
           }
-        } else {
-          // CRITICAL FIX: Si falta wallet, mostrar error específico
-          const missingFields = [];
-          if (!sessionToken) missingFields.push('sessionToken');
-          if (!tokenId) missingFields.push('tokenId');
-          if (!account?.address) missingFields.push('wallet connection');
-          
-          console.error('❌ Missing required fields for education completion:', missingFields);
-          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-        }
-      } catch (error) {
-        console.error('Education completion error:', error);
-        // CRITICAL FIX: NO hacer fallback silencioso a '0x' - esto causa el error final
-        // En su lugar, mostrar el error al usuario y mantener modal abierto
-        alert(`Error completing education: ${error.message}. Please ensure your wallet is connected and try again.`);
-        setShowSuccess(false); // Volver al estado normal para permitir reintentos
+      } else {
+        // Should not happen since we check wallet connection before calling this
+        console.error('❌ Missing required fields for EIP-712 generation');
+        throw new Error('Missing wallet connection for signature generation');
       }
-    } else if (mode === 'knowledge') {
-      // En knowledge mode, simplemente mostrar celebración y cerrar
-      triggerConfetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FFD700', '#FFA500', '#FF6347']
-      });
-      
-      setTimeout(() => {
-        onClose();
-      }, 3000);
+    } catch (error) {
+      console.error('Education completion error:', error);
+      // CRITICAL FIX: NO hacer fallback silencioso a '0x' - esto causa el error final  
+      // En su lugar, mostrar el error al usuario y mantener modal abierto
+      alert(`Error completing education: ${error.message}. Please ensure your wallet is connected and try again.`);
+      setShowSuccess(false); // Volver al estado normal para permitir reintentos
+      setShowConnectWallet(false); // Reset connect state
     }
   };
 
@@ -317,23 +338,58 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                     </p>
                   </div>
                   
-                  <motion.div
-                    className="px-12 py-4 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-bold text-xl rounded-xl"
-                    animate={{ 
-                      boxShadow: [
-                        '0 0 20px rgba(255, 215, 0, 0.5)',
-                        '0 0 40px rgba(255, 215, 0, 0.8)',
-                        '0 0 20px rgba(255, 215, 0, 0.5)'
-                      ]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    🎁 RECLAMAR MI REGALO AHORA
-                  </motion.div>
-                  
-                  <p className="text-gray-400 text-sm">
-                    Redirigiendo al claim en 3 segundos...
-                  </p>
+                  {/* CRITICAL UX FIX: Show Connect Wallet OR EIP-712 Generation */}
+                  {showConnectWallet ? (
+                    <>
+                      <div className="bg-blue-900/30 border border-blue-500/50 rounded-xl p-4 mb-4">
+                        <p className="text-blue-400 font-bold text-lg mb-2">
+                          🔗 Ahora conecta tu wallet para reclamar el regalo
+                        </p>
+                        <p className="text-blue-300 text-sm">
+                          Para generar tu certificación EIP-712 necesitamos verificar tu identidad con la wallet
+                        </p>
+                      </div>
+                      
+                      <motion.button
+                        onClick={() => {
+                          // Wait for account connection to be detected
+                          // The account hook will trigger re-render when connected
+                          console.log('🔗 Waiting for wallet connection...');
+                        }}
+                        className="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-xl rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
+                        animate={{ 
+                          boxShadow: [
+                            '0 0 20px rgba(59, 130, 246, 0.5)',
+                            '0 0 40px rgba(59, 130, 246, 0.8)',
+                            '0 0 20px rgba(59, 130, 246, 0.5)'
+                          ]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        🔗 CONECTAR WALLET PARA CONTINUAR
+                      </motion.button>
+                    </>
+                  ) : (
+                    <>
+                      <motion.div
+                        className="px-12 py-4 bg-gradient-to-r from-yellow-500 to-green-500 text-black font-bold text-xl rounded-xl"
+                        animate={{ 
+                          boxShadow: [
+                            '0 0 20px rgba(255, 215, 0, 0.5)',
+                            '0 0 40px rgba(255, 215, 0, 0.8)',
+                            '0 0 20px rgba(255, 215, 0, 0.5)'
+                          ]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        Generando tu certificación EIP-712...
+                      </motion.div>
+                      
+                      <p className="text-gray-400 text-sm">
+                        Procesando tu credencial educativa...
+                      </p>
+                    </>
+                  )}
                 </motion.div>
               </div>
             </motion.div>

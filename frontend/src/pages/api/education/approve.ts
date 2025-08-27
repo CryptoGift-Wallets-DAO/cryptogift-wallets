@@ -194,10 +194,15 @@ export default async function handler(
       });
     }
     
-    // SECURITY: Verify claimer matches authenticated address from session
-    // NOTE: Session might have 'pending' if wallet wasn't connected during validation
-    // We update the session claimer to the real address for bypass
-    if (sessionData.claimer === 'pending' || sessionData.claimer === null) {
+    // CRITICAL FIX: Handle session with placeholder claimer from password validation
+    // Session was created with placeholder during password validation (wallet not connected)
+    // Now we update it with the real wallet address for EIP-712 generation
+    
+    if (sessionData.claimer === 'pending_wallet_connection' || 
+        sessionData.claimer === 'pending' || 
+        sessionData.claimer === null ||
+        sessionData.claimer === undefined) {
+      
       // Update session with real claimer address
       sessionData.claimer = claimer;
       
@@ -208,9 +213,10 @@ export default async function handler(
         JSON.stringify(sessionData)
       );
       
-      console.log(`✅ Session updated with real claimer: ${claimer.slice(0, 10)}...`);
+      console.log(`✅ Session updated with real claimer: ${claimer.slice(0, 10)}... (was placeholder)`);
     } else if (sessionData.claimer !== claimer) {
       // If session already has a different claimer, that's an error
+      console.log(`❌ Session claimer mismatch: session=${sessionData.claimer} vs provided=${claimer}`);
       return res.status(403).json({ 
         success: false,
         error: 'Identity mismatch - claimer address does not match session' 

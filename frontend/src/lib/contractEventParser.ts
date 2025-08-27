@@ -103,8 +103,8 @@ export async function fetchGiftDetails(giftId: bigint): Promise<EscrowGift | nul
       tokenId: giftData[2],
       expiresAt: BigInt(giftData[3]),
       status: giftData[4],
-      attempts: giftData[5],
-      cooldownUntil: giftData[6],
+      // attempts: giftData[5], // REMOVED: Not in EscrowGift interface
+      // cooldownUntil: giftData[6], // REMOVED: Not in EscrowGift interface
       gate: giftData[7],
       passwordHash: giftData[8],
       giftMessage: giftData[9]
