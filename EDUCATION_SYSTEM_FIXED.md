@@ -1,6 +1,29 @@
 # 🎉 EDUCATION REQUIREMENTS SYSTEM - DEFINITIVELY FIXED
 
-## ✅ PROBLEMA RESUELTO (Aug 19, 2025)
+## ✅ ÚLTIMOS FIXES CRÍTICOS (Aug 27, 2025)
+
+### Problemas Resueltos en Flujo Educacional
+1. **Email Verification Error 500**: 
+   - Causa: Upstash Redis auto-parses JSON
+   - Fix: Added type checking `typeof === 'string' ? JSON.parse() : object`
+   - File: `verify-code.ts` lines 72-73, 93-94
+
+2. **ConnectButton No Aparecía**:
+   - Causa: State management issues
+   - Fix: Added delay and proper state updates
+   - File: `LessonModalWrapper.tsx` lines 291-317
+
+3. **Infinite Re-renders**:
+   - Causa: Circular dependency en useEffect
+   - Fix: Removed currentBlock from dependencies
+   - File: `SalesMasterclass.tsx` lines 685-703
+
+4. **EIP-712 Generation Stuck**:
+   - Causa: processEIP712Generation not called after wallet connection
+   - Fix: Enhanced useEffect detection
+   - File: `LessonModalWrapper.tsx` lines 187-205
+
+## ✅ PROBLEMA ORIGINAL RESUELTO (Aug 19, 2025)
 
 ### Causa Raíz Identificada
 El contrato SimpleApprovalGate original (`0x3FEb03368cbF0970D4f29561dA200342D788eD6B`) fue desplegado con un approver inmutable (`0x1dBa3F54F9ef623b94398D96323B6a27F2A7b37B`) del cual no teníamos la clave privada. Esto causaba que TODAS las firmas EIP-712 fueran rechazadas con el error `GateCheckFailed`.

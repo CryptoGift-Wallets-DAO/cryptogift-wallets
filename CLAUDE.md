@@ -19,11 +19,11 @@
 - **📊 Estado**: PRODUCTION READY ✅ FUNCIONAL ✅ OPTIMIZADO ✅
 
 ### 🔒 ÚLTIMO COMMIT & CAMBIOS RECIENTES
-- **Commit**: `a37b5d9` - "feat: implement robust gas-paid fallback system with auto-detection for Biconomy"
-- **Fecha**: Agosto 24, 2025
-- **Problema**: Wallet dashboard UI funciona pero ninguna funcionalidad servía
-- **Solución**: Sistema robusto de fallback gas-paid con auto-detección Biconomy
-- **Files**: `biconomy.ts`, `biconomyV2.ts`, `mint-escrow.ts`, `claim-escrow.ts`, `gasless-status.ts`, `VERCEL_ENV_SETUP.md`
+- **Commit**: `d175c0e` - "fix: resolve critical educational flow issues - email verification, ConnectButton, and infinite renders"
+- **Fecha**: Agosto 27, 2025
+- **Problema**: Educational flow completamente roto - email 500 error, ConnectButton invisible, infinite re-renders
+- **Solución**: Fixes críticos en Redis parsing, state management, y dependencies circulares
+- **Files**: `verify-code.ts`, `LessonModalWrapper.tsx`, `SalesMasterclass.tsx`
 
 ---
 
@@ -221,6 +221,23 @@ export const LESSON_REGISTRY: Record<string, LessonDefinition> = {
   }
 };
 ```
+
+#### **🎓 ESTADO DEL SISTEMA EDUCACIONAL** (27 Agosto 2025)
+**STATUS**: FUNCIONAL ✅ después de fixes críticos
+
+**FLUJO EDUCACIONAL RESTAURADO**:
+1. ✅ Email verification con OTP - Resend API funcional
+2. ✅ Inline checkboxes en Sales Masterclass - Sin popups
+3. ✅ Success overlay "¡Ya eres parte de CryptoGift!"
+4. ✅ ConnectButton aparece correctamente
+5. ✅ EIP-712 generation después de wallet connection
+6. ✅ Claim habilitado con gateData válido
+
+**PROBLEMAS RESUELTOS HOY**:
+- **Redis JSON Parsing**: Upstash auto-parses, añadido type checking
+- **ConnectButton Hidden**: Fixed state management con delays
+- **Infinite Re-renders**: Eliminada dependencia circular
+- **EIP-712 Stuck**: Corregido flow de generación post-wallet
 
 #### **🔐 EIP-712 STATELESS APPROVAL ARCHITECTURE** ✅
 **SECURITY BREAKTHROUGH**: Zero on-chain writes para education approvals

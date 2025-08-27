@@ -2,7 +2,93 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎯 LATEST SESSION UPDATES (Agosto 24, 2025 - Part 2) - UI/UX IMPROVEMENTS & COPY WALLET ADDRESS ✅
+## 🎯 LATEST SESSION UPDATES (Agosto 27, 2025) - CRITICAL EDUCATIONAL FLOW FIXES ✅
+
+### 🔧 PROBLEMA CRÍTICO RESUELTO: Educational Flow Completamente Roto
+
+**CONTEXTO**: El flujo educacional estaba fallando en múltiples puntos críticos:
+- Email verification retornaba 500 Internal Server Error
+- ConnectButton no aparecía después de completar educación
+- Infinite re-renders causaban crash de navegador
+- EIP-712 generation se quedaba stuck sin proceder
+
+### 📝 FILES MODIFICADOS Y CORRECCIONES TÉCNICAS
+
+#### 1. **EMAIL VERIFICATION JSON PARSING FIX**
+**File**: `frontend/src/pages/api/email/verify-code.ts`
+- **Lines Modified**: 72-73, 93-94
+- **Root Cause**: Upstash Redis auto-parses JSON, retornando objetos en lugar de strings
+- **Fix Applied**:
+```typescript
+// OLD: JSON.parse(lockout.toString());
+// NEW: typeof lockout === 'string' ? JSON.parse(lockout) : lockout;
+```
+- **Impact**: Email verification ahora funciona correctamente sin errores 500
+
+#### 2. **CONNECTBUTTON VISIBILITY FIX**
+**File**: `frontend/src/components/education/LessonModalWrapper.tsx`
+- **Lines Modified**: 291-317, 187-205, 486
+- **Root Cause**: Estado no se actualizaba correctamente para mostrar ConnectButton
+- **Fixes Applied**:
+  - Añadido delay de 100ms en setShowConnectWallet para garantizar actualización
+  - Añadido logging extensivo para debugging
+  - Corregido useEffect para detectar conexión de wallet con flag showSuccess
+```typescript
+// Added setTimeout for proper state updates
+setTimeout(() => {
+  console.log('🔗 Setting showConnectWallet to true after delay');
+  setShowConnectWallet(true);
+}, 100);
+```
+- **Impact**: ConnectButton ahora aparece correctamente en success overlay
+
+#### 3. **INFINITE RE-RENDERS ELIMINATION**
+**File**: `frontend/src/components/learn/SalesMasterclass.tsx`
+- **Lines Modified**: 685-703
+- **Root Cause**: useEffect con dependencia circular en currentBlock
+- **Fix Applied**:
+```typescript
+// OLD: }, [educationalMode, currentBlock]);
+// NEW: }, [educationalMode]); // Removed currentBlock dependency
+```
+- **Impact**: No más loops infinitos, componente estable
+
+#### 4. **EIP-712 GENERATION FLOW FIX**
+**File**: `frontend/src/components/education/LessonModalWrapper.tsx`
+- **Lines Modified**: 187-205
+- **Root Cause**: processEIP712Generation no se ejecutaba después de wallet connection
+- **Fix Applied**:
+```typescript
+// Enhanced useEffect to properly detect wallet connection
+if (showConnectWallet && account?.address && showSuccess) {
+  setShowConnectWallet(false);
+  setTimeout(() => {
+    processEIP712Generation();
+  }, 500);
+}
+```
+- **Impact**: EIP-712 generation procede correctamente después de wallet connection
+
+### 📊 COMMITS REALIZADOS
+```bash
+commit d175c0e - fix: resolve critical educational flow issues - email verification, ConnectButton, and infinite renders
+```
+
+### 🎯 RESULTADO FINAL
+- ✅ Email verification funciona sin errores
+- ✅ ConnectButton aparece cuando debe
+- ✅ No más infinite re-renders
+- ✅ EIP-712 generation fluye correctamente
+- ✅ Flujo completo: checkboxes → success → wallet → EIP-712 → claim
+
+### 🔄 FLUJO EDUCACIONAL RESTAURADO
+1. Usuario completa checkboxes inline (email + calendar)
+2. Muestra "¡Ya eres parte de CryptoGift!" con confetti
+3. ConnectButton aparece para conexión de wallet
+4. Después de conectar, genera EIP-712 signature
+5. Usuario puede reclamar su regalo
+
+## 🎯 PREVIOUS SESSION UPDATES (Agosto 24, 2025 - Part 2) - UI/UX IMPROVEMENTS & COPY WALLET ADDRESS ✅
 
 ### 📋 ANÁLISIS COMPLETO DE RECOMENDACIONES UI/UX
 
