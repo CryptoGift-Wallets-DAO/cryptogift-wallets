@@ -52,12 +52,12 @@ const ClaimFirstGift = dynamic(
 
 // Import dinámico para Email Verification y Calendar Booking
 const EmailVerificationModal = dynamic(
-  () => import('../ui/EmailVerificationModal').then(mod => ({ default: mod.EmailVerificationModal })),
+  () => import('../email/EmailVerificationModal').then(mod => ({ default: mod.EmailVerificationModal })),
   { ssr: false }
 );
 
 const CalendarBookingModal = dynamic(
-  () => import('../ui/CalendarBookingModal').then(mod => ({ default: mod.CalendarBookingModal })),
+  () => import('../calendar/CalendarBookingModal').then(mod => ({ default: mod.CalendarBookingModal })),
   { ssr: false }
 );
 

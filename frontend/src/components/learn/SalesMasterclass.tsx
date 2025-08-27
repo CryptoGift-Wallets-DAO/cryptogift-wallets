@@ -616,11 +616,17 @@ const SALES_BLOCKS: SalesBlock[] = [
 interface SalesMasterclassProps {
   educationalMode?: boolean;
   onEducationComplete?: () => void;
+  onShowEmailVerification?: () => void;
+  onShowCalendar?: () => void;
+  verifiedEmail?: string;
 }
 
 const SalesMasterclass: React.FC<SalesMasterclassProps> = ({ 
   educationalMode = false,
-  onEducationComplete
+  onEducationComplete,
+  onShowEmailVerification,
+  onShowCalendar,
+  verifiedEmail
 }) => {
   console.log('🚀 SALES MASTERCLASS INIT:', { educationalMode, hasOnEducationComplete: !!onEducationComplete });
   
