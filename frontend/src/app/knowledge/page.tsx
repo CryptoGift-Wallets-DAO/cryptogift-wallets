@@ -89,10 +89,10 @@ export default function KnowledgePage() {
       {
         id: 'sales-masterclass',
         title: 'SALES MASTERCLASS',
-        description: 'De $0 a $100M en 15 minutos - La presentación definitiva para captar colaboradores, inversores y comunidad',
+        description: 'De $0 a $100M en 10 minutos - La presentación definitiva para captar colaboradores, inversores y comunidad',
         icon: '💎',
         level: 'Avanzado',
-        duration: '15 min',
+        duration: '10 min',
         topics: ['Psicología de Ventas', 'AIDA Framework', 'Demo Live', 'Captación de Leads', 'ROI $100M+']
       }
     ],

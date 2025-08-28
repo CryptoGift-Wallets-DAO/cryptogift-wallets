@@ -287,16 +287,18 @@ const GIFT_CLAIM_URL = process.env.NEXT_PUBLIC_SITE_URL
 const SALES_BLOCKS: SalesBlock[] = [
   {
     id: 'opening',
-    title: 'Regala el Futuro',
+    title: 'Proyecto CryptoGift',
     duration: 30,
     type: 'opening',
     content: {
-      headline: 'Imagina esto...',
-      story: `Tu amigo que mira la cripto con recelo abre tu mensaje y descubre un tesoro digital:
-              Una obra de arte única con la foto de su primer viaje, que además contiene 
-              el capital inicial de su propio portafolio en blockchain.`,
-      emphasis: 'Sin comisiones • Sin tecnicismos • Un NFT-wallet que guarda la moneda que elegiste',
-      hook: 'Así comienza su historia como holder... y así comienza la nuestra.'
+      headline: '🎬 Prepárate para una experiencia inmersiva',
+      story: `En un momento iniciarás con un breve video de 1:30 min con audio que te mostrará 
+              nuestra visión. Ponte cómodo y asegúrate de tener el audio activado para disfrutarlo correctamente.
+              
+              Después del video, descubrirás cómo CryptoGift está revolucionando la manera
+              de regalar cripto a través de arte y emociones.`,
+      emphasis: 'Tiempo total: 10 minutos • Video inicial: 1:30 min con audio',
+      hook: 'Conoce nuestra visión y únete como colaborador.'
     },
     question: {
       text: '¿Cuál es la barrera #1 para la adopción cripto?',

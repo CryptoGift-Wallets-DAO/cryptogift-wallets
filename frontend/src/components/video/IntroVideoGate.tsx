@@ -61,8 +61,8 @@ export default function IntroVideoGate({
   
   // Estados
   const [show, setShow] = useState(true);
-  const [muted, setMuted] = useState(true); // Inicia muted para autoplay
-  const [playing, setPlaying] = useState(true); // Autoplay
+  const [muted, setMuted] = useState(false); // Inicia con audio habilitado
+  const [playing, setPlaying] = useState(false); // Esperamos interacción del usuario
   const [fullscreen, setFullscreen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -95,9 +95,9 @@ export default function IntroVideoGate({
     // }
   }, [storageKey, onFinish, autoSkip, forceShow]);
 
-  // Auto-fullscreen en móvil cuando el video empiece
+  // Auto-fullscreen en móvil cuando el usuario inicie el video
   useEffect(() => {
-    if (isMobile && playing && !fullscreen && playerRef.current) {
+    if (isMobile && playing && !fullscreen) {
       // Pequeño delay para asegurar que el video está listo
       setTimeout(() => {
         toggleFullscreen();
@@ -144,23 +144,43 @@ export default function IntroVideoGate({
   }, []);
 
   const togglePlay = useCallback(() => {
-    setPlaying(prev => !prev);
     if (playerRef.current) {
       if (playing) {
         playerRef.current.pause();
+        setPlaying(false);
       } else {
         playerRef.current.play();
+        setPlaying(true);
       }
     }
   }, [playing]);
 
-  const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement && containerRef.current) {
-      containerRef.current.requestFullscreen();
-      setFullscreen(true);
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
-      setFullscreen(false);
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        // Intentar fullscreen en el contenedor del video
+        if (containerRef.current?.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+        } else if ((containerRef.current as any)?.webkitRequestFullscreen) {
+          // Safari iOS
+          await (containerRef.current as any).webkitRequestFullscreen();
+        } else if ((containerRef.current as any)?.mozRequestFullScreen) {
+          // Firefox
+          await (containerRef.current as any).mozRequestFullScreen();
+        }
+        setFullscreen(true);
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        }
+        setFullscreen(false);
+      }
+    } catch (error) {
+      console.error('Fullscreen error:', error);
     }
   }, []);
 
@@ -206,17 +226,16 @@ export default function IntroVideoGate({
             ref={playerRef}
             playbackId={muxPlaybackId}
             streamType="on-demand"
-            autoPlay
+            autoPlay={false}
             muted={muted}
             playsInline
             poster={poster}
             onEnded={handleFinish}
             onTimeUpdate={handleTimeUpdate}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
             onLoadedMetadata={() => {
               console.log('🎬 Video metadata loaded, ready to play');
-              if (playerRef.current && playerRef.current.play) {
-                playerRef.current.play();
-              }
             }}
             style={{ 
               width: "100%", 
@@ -241,6 +260,35 @@ export default function IntroVideoGate({
               />
             )}
           </MuxPlayer>
+
+          {/* Botón de inicio grande cuando el video no está reproduciendo */}
+          {!playing && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
+              <button
+                onClick={() => {
+                  if (playerRef.current) {
+                    playerRef.current.play();
+                    setPlaying(true);
+                  }
+                }}
+                className="group relative px-12 py-6 rounded-2xl 
+                  bg-gradient-to-r from-purple-600 to-pink-600 
+                  hover:from-purple-700 hover:to-pink-700
+                  text-white font-bold text-xl 
+                  backdrop-blur-xl border-2 border-white/30
+                  transition-all hover:scale-110 transform
+                  shadow-2xl shadow-purple-500/50
+                  flex items-center gap-4"
+                aria-label="Iniciar video con audio"
+              >
+                <Play className="w-10 h-10 group-hover:scale-125 transition-transform" />
+                <div className="text-left">
+                  <span className="block text-2xl">Iniciar Video</span>
+                  <span className="block text-sm opacity-90">1:30 min con audio</span>
+                </div>
+              </button>
+            </div>
+          )}
 
           {/* Gradient overlays for cinematic effect */}
           <div className="pointer-events-none absolute inset-0 z-10">

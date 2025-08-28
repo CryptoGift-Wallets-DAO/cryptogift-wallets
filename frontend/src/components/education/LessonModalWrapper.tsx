@@ -406,7 +406,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
                 {lessonId === 'sales-masterclass' ? 
                   (mode === 'educational' ? 
                     'Completa este módulo para desbloquear tu regalo cripto' : 
-                    'Sales Masterclass - De $0 a $100M en 15 minutos') : 
+                    'Sales Masterclass - De $0 a $100M en 10 minutos') : 
                  lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo Cripto - 7 minutos' : 
                  'Lección Interactive'}
               </p>
