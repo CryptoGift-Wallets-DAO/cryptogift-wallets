@@ -320,7 +320,7 @@ export const GiftEscrowConfig: React.FC<GiftEscrowConfigProps> = ({
                       { id: 2, name: 'Seguridad Básica', time: '8 min', recommended: true, description: 'Mejores prácticas para mantener tus activos seguros' },
                       { id: 3, name: 'Entender NFTs', time: '12 min', description: 'Qué son los NFTs y cómo funcionan' },
                       { id: 4, name: 'DeFi Básico', time: '15 min', description: 'Introducción a las finanzas descentralizadas' },
-                      { id: 5, name: 'Proyecto CryptoGift', time: '20 min', special: true, description: 'Conoce nuestra visión y únete como colaborador' }
+                      { id: 5, name: 'Proyecto CryptoGift', time: '10 min', special: true, description: 'Conoce nuestra visión. Inicia con video de 1:30 min con audio' }
                     ].map(module => (
                       <label 
                         key={module.id}

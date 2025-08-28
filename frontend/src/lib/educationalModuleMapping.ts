@@ -60,8 +60,8 @@ export const EDUCATIONAL_MODULE_MAPPING: Record<number, ModuleMapping> = {
     lessonId: 'sales-masterclass',
     component: 'SalesMasterclass',
     name: 'Proyecto CryptoGift',
-    estimatedTime: 20,
-    description: 'Conoce nuestra visión y únete como colaborador'
+    estimatedTime: 10,
+    description: 'Conoce nuestra visión. Inicia con video de 1:30 min con audio, ponte cómodo para disfrutarlo'
   }
 };
 

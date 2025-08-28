@@ -62,7 +62,7 @@ export default function IntroVideoGate({
   // Estados
   const [show, setShow] = useState(true);
   const [muted, setMuted] = useState(false); // Inicia con audio habilitado
-  const [playing, setPlaying] = useState(false); // Esperamos interacción del usuario
+  const [playing, setPlaying] = useState(true); // Auto-reproducir con audio
   const [fullscreen, setFullscreen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -273,7 +273,7 @@ export default function IntroVideoGate({
             }}
             playbackId={muxPlaybackId}
             streamType="on-demand"
-            autoPlay={false}
+            autoPlay={true}
             muted={muted}
             playsInline
             poster={poster}
@@ -363,61 +363,6 @@ export default function IntroVideoGate({
             )}
           </MuxPlayer>
 
-          {/* Botón de inicio grande cuando el video no está reproduciendo */}
-          {!playing && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
-              <button
-                onClick={async () => {
-                  if (mediaRef.current && typeof mediaRef.current.play === 'function') {
-                    try {
-                      await mediaRef.current.play();
-                      setPlaying(true);
-                    } catch (error) {
-                      console.error('Error starting video:', error);
-                      // Try using the MuxPlayer's internal media element as fallback
-                      if (playerRef.current && playerRef.current.media) {
-                        try {
-                          const nativeEl = playerRef.current.media.nativeEl || playerRef.current.media;
-                          if (nativeEl && typeof nativeEl.play === 'function') {
-                            await nativeEl.play();
-                            setPlaying(true);
-                          }
-                        } catch (fallbackError) {
-                          console.error('Fallback also failed:', fallbackError);
-                        }
-                      }
-                    }
-                  } else {
-                    console.warn('Media ref not ready, trying playerRef...');
-                    // Try to get media element from playerRef
-                    if (playerRef.current && playerRef.current.media) {
-                      const media = playerRef.current.media.nativeEl || playerRef.current.media;
-                      if (media && typeof media.play === 'function') {
-                        mediaRef.current = media;
-                        await media.play();
-                        setPlaying(true);
-                      }
-                    }
-                  }
-                }}
-                className="group relative px-12 py-6 rounded-2xl 
-                  bg-gradient-to-r from-purple-600 to-pink-600 
-                  hover:from-purple-700 hover:to-pink-700
-                  text-white font-bold text-xl 
-                  backdrop-blur-xl border-2 border-white/30
-                  transition-all hover:scale-110 transform
-                  shadow-2xl shadow-purple-500/50
-                  flex items-center gap-4"
-                aria-label="Iniciar video con audio"
-              >
-                <Play className="w-10 h-10 group-hover:scale-125 transition-transform" />
-                <div className="text-left">
-                  <span className="block text-2xl">Iniciar Video</span>
-                  <span className="block text-sm opacity-90">1:30 min con audio</span>
-                </div>
-              </button>
-            </div>
-          )}
 
           {/* Gradient overlays for cinematic effect */}
           <div className="pointer-events-none absolute inset-0 z-10">
