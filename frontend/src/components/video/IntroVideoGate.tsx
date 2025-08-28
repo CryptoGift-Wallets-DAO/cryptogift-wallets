@@ -239,15 +239,35 @@ export default function IntroVideoGate({
               if (muxPlayerEl) {
                 // MuxPlayer exposes the media element differently depending on version
                 // Try multiple approaches to get the video element
-                const media = muxPlayerEl.media?.nativeEl || 
-                             muxPlayerEl.media || 
-                             muxPlayerEl.querySelector('video') ||
-                             muxPlayerEl.shadowRoot?.querySelector('video');
-                if (media) {
-                  mediaRef.current = media;
-                  console.log('✅ Media element captured successfully');
-                } else {
+                try {
+                  // First try: direct media property access
+                  if (muxPlayerEl.media) {
+                    const media = muxPlayerEl.media.nativeEl || muxPlayerEl.media;
+                    if (media && typeof media.play === 'function') {
+                      mediaRef.current = media;
+                      console.log('✅ Media element captured via .media property');
+                      return;
+                    }
+                  }
+                  
+                  // Second try: look for video element in children (if it's not a shadow DOM)
+                  const videoEl = muxPlayerEl.getElementsByTagName?.('video')?.[0];
+                  if (videoEl) {
+                    mediaRef.current = videoEl;
+                    console.log('✅ Media element captured via getElementsByTagName');
+                    return;
+                  }
+                  
+                  // Third try: if muxPlayerEl itself is the media element
+                  if (typeof muxPlayerEl.play === 'function') {
+                    mediaRef.current = muxPlayerEl;
+                    console.log('✅ MuxPlayer element is the media element');
+                    return;
+                  }
+                  
                   console.warn('⚠️ Could not capture media element immediately');
+                } catch (error) {
+                  console.warn('⚠️ Error accessing media element:', error);
                 }
               }
             }}
@@ -265,13 +285,32 @@ export default function IntroVideoGate({
               console.log('🎬 Video metadata loaded, ready to play');
               // Try again to get media element if we don't have it yet
               if (playerRef.current && !mediaRef.current) {
-                const media = playerRef.current.media?.nativeEl || 
-                             playerRef.current.media || 
-                             playerRef.current.querySelector('video') ||
-                             playerRef.current.shadowRoot?.querySelector('video');
-                if (media) {
-                  mediaRef.current = media;
-                  console.log('✅ Media element captured on metadata load');
+                try {
+                  // Try to get media element again
+                  if (playerRef.current.media) {
+                    const media = playerRef.current.media.nativeEl || playerRef.current.media;
+                    if (media && typeof media.play === 'function') {
+                      mediaRef.current = media;
+                      console.log('✅ Media element captured on metadata load');
+                      return;
+                    }
+                  }
+                  
+                  // Try getElementsByTagName
+                  const videoEl = playerRef.current.getElementsByTagName?.('video')?.[0];
+                  if (videoEl) {
+                    mediaRef.current = videoEl;
+                    console.log('✅ Media element captured via getElementsByTagName on metadata load');
+                    return;
+                  }
+                  
+                  // Check if playerRef itself is playable
+                  if (typeof playerRef.current.play === 'function') {
+                    mediaRef.current = playerRef.current;
+                    console.log('✅ Player ref is the media element on metadata load');
+                  }
+                } catch (error) {
+                  console.warn('⚠️ Error accessing media on metadata load:', error);
                 }
               }
             }}
@@ -279,13 +318,24 @@ export default function IntroVideoGate({
               console.log('✅ Video can play - player is fully ready');
               // Final attempt to get media element
               if (playerRef.current && !mediaRef.current) {
-                const media = playerRef.current.media?.nativeEl || 
-                             playerRef.current.media || 
-                             playerRef.current.querySelector('video') ||
-                             playerRef.current.shadowRoot?.querySelector('video');
-                if (media) {
-                  mediaRef.current = media;
-                  console.log('✅ Media element captured on canPlay');
+                try {
+                  // Last attempt to get media element
+                  if (playerRef.current.media) {
+                    const media = playerRef.current.media.nativeEl || playerRef.current.media;
+                    if (media && typeof media.play === 'function') {
+                      mediaRef.current = media;
+                      console.log('✅ Media element captured on canPlay');
+                      return;
+                    }
+                  }
+                  
+                  // Try direct access to the element if it has play method
+                  if (typeof playerRef.current.play === 'function') {
+                    mediaRef.current = playerRef.current;
+                    console.log('✅ Player is media element on canPlay');
+                  }
+                } catch (error) {
+                  console.warn('⚠️ Error accessing media on canPlay:', error);
                 }
               }
             }}
