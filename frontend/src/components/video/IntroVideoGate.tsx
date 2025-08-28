@@ -69,7 +69,8 @@ export default function IntroVideoGate({
   const [showControls, setShowControls] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const playerRef = React.useRef<any>(null);
-  const mediaRef = React.useRef<HTMLVideoElement | null>(null);
+  // Use 'any' type for mediaRef to handle both HTMLVideoElement and MuxVideoElementExt
+  const mediaRef = React.useRef<any>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout>();
 
@@ -145,7 +146,7 @@ export default function IntroVideoGate({
   }, []);
 
   const togglePlay = useCallback(async () => {
-    if (mediaRef.current) {
+    if (mediaRef.current && typeof mediaRef.current.play === 'function') {
       try {
         if (playing) {
           mediaRef.current.pause();
@@ -160,7 +161,7 @@ export default function IntroVideoGate({
         setPlaying(!playing);
       }
     } else {
-      console.warn('Media ref not ready yet');
+      console.warn('Media ref not ready yet or play method not available');
     }
   }, [playing]);
 
@@ -317,7 +318,7 @@ export default function IntroVideoGate({
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
               <button
                 onClick={async () => {
-                  if (mediaRef.current) {
+                  if (mediaRef.current && typeof mediaRef.current.play === 'function') {
                     try {
                       await mediaRef.current.play();
                       setPlaying(true);
@@ -327,7 +328,7 @@ export default function IntroVideoGate({
                       if (playerRef.current && playerRef.current.media) {
                         try {
                           const nativeEl = playerRef.current.media.nativeEl || playerRef.current.media;
-                          if (nativeEl && nativeEl.play) {
+                          if (nativeEl && typeof nativeEl.play === 'function') {
                             await nativeEl.play();
                             setPlaying(true);
                           }
@@ -341,7 +342,7 @@ export default function IntroVideoGate({
                     // Try to get media element from playerRef
                     if (playerRef.current && playerRef.current.media) {
                       const media = playerRef.current.media.nativeEl || playerRef.current.media;
-                      if (media) {
+                      if (media && typeof media.play === 'function') {
                         mediaRef.current = media;
                         await media.play();
                         setPlaying(true);
