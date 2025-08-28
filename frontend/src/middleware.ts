@@ -51,6 +51,9 @@ function generateCSP(): string {
       'https://*.nftstorage.link',
       'https://arweave.net',
       'https://*.arweave.net',
+      // Mux video thumbnails
+      'https://image.mux.com',
+      'https://*.mux.com',
     ],
     'connect-src': [
       "'self'",
@@ -99,6 +102,10 @@ function generateCSP(): string {
       // Base Sepolia Explorer
       'https://base-sepolia.blockscout.com',
       'https://sepolia.basescan.org',
+      // Mux video streaming
+      'https://stream.mux.com',
+      'https://*.mux.com',
+      'https://*.edgemv.mux.com',
     ],
     'frame-src': [
       "'self'",
@@ -115,7 +122,14 @@ function generateCSP(): string {
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
-    'media-src': ["'self'"],
+    'media-src': [
+      "'self'",
+      // Mux video streaming
+      'https://stream.mux.com',
+      'https://*.mux.com',
+      'https://*.edgemv.mux.com',
+      'blob:',
+    ],
     'worker-src': ["'self'", 'blob:'],
     'manifest-src': ["'self'"],
   };

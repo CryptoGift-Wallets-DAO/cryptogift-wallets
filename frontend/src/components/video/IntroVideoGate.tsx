@@ -143,14 +143,20 @@ export default function IntroVideoGate({
     setMuted(prev => !prev);
   }, []);
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback(async () => {
     if (playerRef.current) {
-      if (playing) {
-        playerRef.current.pause();
-        setPlaying(false);
-      } else {
-        playerRef.current.play();
-        setPlaying(true);
+      try {
+        if (playing) {
+          playerRef.current.pause();
+          setPlaying(false);
+        } else {
+          await playerRef.current.play();
+          setPlaying(true);
+        }
+      } catch (error) {
+        console.error('Error toggling play:', error);
+        // Try to set playing state anyway in case the player handles it internally
+        setPlaying(!playing);
       }
     }
   }, [playing]);
@@ -236,6 +242,13 @@ export default function IntroVideoGate({
             onPause={() => setPlaying(false)}
             onLoadedMetadata={() => {
               console.log('🎬 Video metadata loaded, ready to play');
+              // Ensure the player ref is properly set
+              if (playerRef.current) {
+                console.log('✅ Player ref is ready');
+              }
+            }}
+            onCanPlay={() => {
+              console.log('✅ Video can play - player is fully ready');
             }}
             style={{ 
               width: "100%", 
@@ -265,10 +278,20 @@ export default function IntroVideoGate({
           {!playing && (
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (playerRef.current) {
-                    playerRef.current.play();
-                    setPlaying(true);
+                    try {
+                      await playerRef.current.play();
+                      setPlaying(true);
+                    } catch (error) {
+                      console.error('Error starting video:', error);
+                      // Try clicking the Mux player's play button directly as fallback
+                      const muxPlayButton = playerRef.current.querySelector('button[aria-label="Play"], mux-play-button');
+                      if (muxPlayButton) {
+                        (muxPlayButton as HTMLButtonElement).click();
+                        setPlaying(true);
+                      }
+                    }
                   }
                 }}
                 className="group relative px-12 py-6 rounded-2xl 
