@@ -69,6 +69,7 @@ export default function IntroVideoGate({
   const [showControls, setShowControls] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const playerRef = React.useRef<any>(null);
+  const mediaRef = React.useRef<HTMLVideoElement | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = React.useRef<NodeJS.Timeout>();
 
@@ -144,13 +145,13 @@ export default function IntroVideoGate({
   }, []);
 
   const togglePlay = useCallback(async () => {
-    if (playerRef.current) {
+    if (mediaRef.current) {
       try {
         if (playing) {
-          playerRef.current.pause();
+          mediaRef.current.pause();
           setPlaying(false);
         } else {
-          await playerRef.current.play();
+          await mediaRef.current.play();
           setPlaying(true);
         }
       } catch (error) {
@@ -158,6 +159,8 @@ export default function IntroVideoGate({
         // Try to set playing state anyway in case the player handles it internally
         setPlaying(!playing);
       }
+    } else {
+      console.warn('Media ref not ready yet');
     }
   }, [playing]);
 
@@ -229,7 +232,24 @@ export default function IntroVideoGate({
           
           {/* Mux Player */}
           <MuxPlayer
-            ref={playerRef}
+            ref={(muxPlayerEl) => {
+              playerRef.current = muxPlayerEl;
+              // Get the native media element from MuxPlayer
+              if (muxPlayerEl) {
+                // MuxPlayer exposes the media element differently depending on version
+                // Try multiple approaches to get the video element
+                const media = muxPlayerEl.media?.nativeEl || 
+                             muxPlayerEl.media || 
+                             muxPlayerEl.querySelector('video') ||
+                             muxPlayerEl.shadowRoot?.querySelector('video');
+                if (media) {
+                  mediaRef.current = media;
+                  console.log('✅ Media element captured successfully');
+                } else {
+                  console.warn('⚠️ Could not capture media element immediately');
+                }
+              }
+            }}
             playbackId={muxPlaybackId}
             streamType="on-demand"
             autoPlay={false}
@@ -242,13 +262,31 @@ export default function IntroVideoGate({
             onPause={() => setPlaying(false)}
             onLoadedMetadata={() => {
               console.log('🎬 Video metadata loaded, ready to play');
-              // Ensure the player ref is properly set
-              if (playerRef.current) {
-                console.log('✅ Player ref is ready');
+              // Try again to get media element if we don't have it yet
+              if (playerRef.current && !mediaRef.current) {
+                const media = playerRef.current.media?.nativeEl || 
+                             playerRef.current.media || 
+                             playerRef.current.querySelector('video') ||
+                             playerRef.current.shadowRoot?.querySelector('video');
+                if (media) {
+                  mediaRef.current = media;
+                  console.log('✅ Media element captured on metadata load');
+                }
               }
             }}
             onCanPlay={() => {
               console.log('✅ Video can play - player is fully ready');
+              // Final attempt to get media element
+              if (playerRef.current && !mediaRef.current) {
+                const media = playerRef.current.media?.nativeEl || 
+                             playerRef.current.media || 
+                             playerRef.current.querySelector('video') ||
+                             playerRef.current.shadowRoot?.querySelector('video');
+                if (media) {
+                  mediaRef.current = media;
+                  console.log('✅ Media element captured on canPlay');
+                }
+              }
             }}
             style={{ 
               width: "100%", 
@@ -279,16 +317,33 @@ export default function IntroVideoGate({
             <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50">
               <button
                 onClick={async () => {
-                  if (playerRef.current) {
+                  if (mediaRef.current) {
                     try {
-                      await playerRef.current.play();
+                      await mediaRef.current.play();
                       setPlaying(true);
                     } catch (error) {
                       console.error('Error starting video:', error);
-                      // Try clicking the Mux player's play button directly as fallback
-                      const muxPlayButton = playerRef.current.querySelector('button[aria-label="Play"], mux-play-button');
-                      if (muxPlayButton) {
-                        (muxPlayButton as HTMLButtonElement).click();
+                      // Try using the MuxPlayer's internal media element as fallback
+                      if (playerRef.current && playerRef.current.media) {
+                        try {
+                          const nativeEl = playerRef.current.media.nativeEl || playerRef.current.media;
+                          if (nativeEl && nativeEl.play) {
+                            await nativeEl.play();
+                            setPlaying(true);
+                          }
+                        } catch (fallbackError) {
+                          console.error('Fallback also failed:', fallbackError);
+                        }
+                      }
+                    }
+                  } else {
+                    console.warn('Media ref not ready, trying playerRef...');
+                    // Try to get media element from playerRef
+                    if (playerRef.current && playerRef.current.media) {
+                      const media = playerRef.current.media.nativeEl || playerRef.current.media;
+                      if (media) {
+                        mediaRef.current = media;
+                        await media.play();
                         setPlaying(true);
                       }
                     }
