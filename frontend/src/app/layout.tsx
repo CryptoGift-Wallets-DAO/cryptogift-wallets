@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClientLayout } from "../components/ClientLayout";
+import { IntlProvider } from "./IntlProvider";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -82,9 +83,11 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <IntlProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </IntlProvider>
       </body>
     </html>
   );

@@ -5,10 +5,18 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 
 // Environment check
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Intl middleware
+const intlMiddleware = createIntlMiddleware({
+  locales: ['es', 'en'],
+  defaultLocale: 'es',
+  localePrefix: 'as-needed'
+});
 
 // CSP Report endpoint
 const CSP_REPORT_URI = '/api/security/csp-report';
@@ -209,6 +217,12 @@ export function middleware(request: NextRequest) {
       response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
     return response;
+  }
+  
+  // Handle internationalization first
+  const intlResponse = intlMiddleware(request);
+  if (intlResponse) {
+    return intlResponse;
   }
   
   // Create response

@@ -1,4 +1,8 @@
 import {withSentryConfig} from '@sentry/nextjs';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -131,10 +135,10 @@ const sentryConfig = {
 let finalConfig;
 if (!process.env.SENTRY_AUTH_TOKEN) {
   console.log('⚠️ SENTRY_AUTH_TOKEN not found, building without Sentry integration');
-  finalConfig = nextConfig;
+  finalConfig = withNextIntl(nextConfig);
 } else {
   // Con Sentry integration
-  finalConfig = withSentryConfig(nextConfig, sentryConfig);
+  finalConfig = withSentryConfig(withNextIntl(nextConfig), sentryConfig);
 }
 
 export default finalConfig;

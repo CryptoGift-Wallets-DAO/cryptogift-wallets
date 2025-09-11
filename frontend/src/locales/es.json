@@ -1,0 +1,18 @@
+{
+  "navigation": {
+    "home": "Inicio",
+    "referrals": "Referidos", 
+    "knowledge": "Knowledge",
+    "my-wallets": "Mis Wallets",
+    "nexuswallet": "NexusWallet"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "continue": "Continuar"
+  }
+}

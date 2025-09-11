@@ -7,6 +7,7 @@ import { useActiveAccount } from 'thirdweb/react';
 import { WalletSwitcher } from './WalletSwitcher';
 import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 import { ThemeToggle } from './ui/ThemeToggle';
+import { LanguageToggle } from './ui/LanguageToggle';
 import { SmartIcon } from './ui/SmartIcon';
 
 export const Navbar: React.FC = () => {
@@ -59,6 +60,9 @@ export const Navbar: React.FC = () => {
             
             {/* THEME TOGGLE SEPARADO - NO REDIRIGE */}
             <ThemeToggle />
+            
+            {/* LANGUAGE TOGGLE */}
+            <LanguageToggle />
           </div>
 
           {/* Desktop Navigation */}
