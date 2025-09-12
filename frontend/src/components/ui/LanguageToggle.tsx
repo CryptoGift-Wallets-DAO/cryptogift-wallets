@@ -1,7 +1,6 @@
 'use client';
 
 import { useTransition } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
@@ -13,23 +12,25 @@ const locales = [
 
 export function LanguageToggle() {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const pathname = usePathname();
   const locale = useLocale();
 
   const handleLocaleChange = (newLocale: string) => {
     if (newLocale === locale) return;
     
+    console.log('🔥 LanguageToggle clicked:', newLocale);
+    console.log('🌍 Language change requested:', { from: locale, to: newLocale });
+    
     startTransition(() => {
-      // Remove current locale from pathname if present
-      const pathWithoutLocale = pathname.replace(/^\/(es|en)/, '') || '/';
-      
-      // Add new locale prefix only if not default
-      const newPath = newLocale === 'es' 
-        ? pathWithoutLocale 
-        : `/${newLocale}${pathWithoutLocale}`;
-      
-      router.replace(newPath);
+      try {
+        // Set locale cookie and reload page (invisible URL switching)
+        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+        console.log('✅ Cookie set, reloading page');
+        
+        // Reload the page to apply new locale
+        window.location.reload();
+      } catch (error) {
+        console.error('❌ Language change failed:', error);
+      }
     });
   };
 
