@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '../i18n/routing';
 import Image from 'next/image';
 import { SmartIcon } from './ui/SmartIcon';
 
@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-gray-400">
               <li><Link href="/" className="hover:text-white transition-colors">Crear Regalo</Link></li>
               <li><Link href="/referrals" className="hover:text-white transition-colors">Programa de Referidos</Link></li>
-              <li><Link href="/explore" className="hover:text-white transition-colors">Explorar NFTs</Link></li>
+              <li><Link href="/knowledge" className="hover:text-white transition-colors">Academia</Link></li>
               <li><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Verificar en Blockchain</a></li>
             </ul>
           </div>
@@ -69,10 +69,10 @@ export const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Empresa</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><Link href="/about" className="hover:text-white transition-colors">Acerca de</Link></li>
-              <li><Link href="/careers" className="hover:text-white transition-colors">Carreras</Link></li>
-              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacidad</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors">Términos</Link></li>
+              <li><a href="mailto:support@mbxarts.com" className="hover:text-white transition-colors">Contacto</a></li>
+              <li><a href="https://github.com/cryptogift-wallets" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Código Abierto</a></li>
+              <li><a href="https://docs.cryptogift-wallets.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Documentación</a></li>
+              <li><a href="https://twitter.com/cryptogiftwallet" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Comunidad</a></li>
             </ul>
           </div>
         </div>
