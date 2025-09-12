@@ -1,10 +1,9 @@
 'use client';
 import { useState, useEffect, useTransition } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Check, ChevronDown } from 'lucide-react';
-import { Link, useRouter as useIntlRouter } from '../../i18n/routing';
+import { useRouter, usePathname } from '../../i18n/routing';
 
 const locales = [
   { code: 'es', name: 'Español', flag: '🇪🇸' },
@@ -18,24 +17,29 @@ export function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
-  const t = useTranslations('common');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const intlRouter = useIntlRouter();
-
-  const handleLanguageChange = async (newLocale: string) => {
+  const handleLanguageChange = (newLocale: string) => {
     if (newLocale === locale) {
       setIsOpen(false);
       return;
     }
 
+    console.log('🌍 Language change requested:', { from: locale, to: newLocale, pathname });
+
     startTransition(() => {
-      // Use next-intl router to change locale
-      intlRouter.replace(pathname, { locale: newLocale });
-      setIsOpen(false);
+      try {
+        // Use the current pathname and just change the locale
+        router.replace(pathname, { locale: newLocale });
+        setIsOpen(false);
+        console.log('✅ Language change completed');
+      } catch (error) {
+        console.error('❌ Language change failed:', error);
+        setIsOpen(false);
+      }
     });
   };
 
@@ -101,7 +105,10 @@ export function LanguageSelector() {
                 {locales.map((localeOption) => (
                   <motion.button
                     key={localeOption.code}
-                    onClick={() => handleLanguageChange(localeOption.code)}
+                    onClick={() => {
+                      console.log('🔥 Button clicked:', localeOption.code);
+                      handleLanguageChange(localeOption.code);
+                    }}
                     className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg 
                                transition-all duration-200 text-left
                                ${locale === localeOption.code 
