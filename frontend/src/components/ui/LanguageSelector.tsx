@@ -32,10 +32,14 @@ export function LanguageSelector() {
 
     startTransition(() => {
       try {
-        // Use the current pathname and just change the locale
-        router.replace(pathname, { locale: newLocale });
+        // Set locale cookie and reload page
+        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+        console.log('✅ Cookie set, reloading page');
+        
+        // Reload the page to apply new locale
+        window.location.reload();
+        
         setIsOpen(false);
-        console.log('✅ Language change completed');
       } catch (error) {
         console.error('❌ Language change failed:', error);
         setIsOpen(false);
