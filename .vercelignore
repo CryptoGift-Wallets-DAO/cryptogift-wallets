@@ -1,10 +1,17 @@
+# Ignore specific directories
 deprecated/
 deprecated/**/*
 indexer/
+indexer/**/*
 contracts/
-*.md
-!frontend/
-!frontend/**/*
-!package.json
-!pnpm-lock.yaml
-!pnpm-workspace.yaml
+contracts/**/*
+# Ignore all markdown files except specific ones
+ADDITIONAL_ENV_VARS.md
+AESTHETIC_ACTION_PLAN.md
+AESTHETIC_ROADMAP.md
+AI_ASSISTANT_DESIGN.md
+APPROVAL_GATE_SETUP.md
+ATTRIBUTION_INSTRUCTIONS.md
+AUDIT_REPORT_FINAL.md
+AUDIT_REQUEST_CRITICAL.md
+# Keep everything else including frontend/, package.json, pnpm files
