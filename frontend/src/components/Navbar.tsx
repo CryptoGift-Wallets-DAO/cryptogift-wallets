@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { useActiveAccount } from 'thirdweb/react';
+import { useTranslations } from 'next-intl';
+import { Link } from '../i18n/routing';
 import { WalletSwitcher } from './WalletSwitcher';
 import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 import { ThemeToggle } from './ui/ThemeToggle';
@@ -14,6 +15,7 @@ export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const account = useActiveAccount();
+  const t = useTranslations('navigation');
   
   useEffect(() => {
     setMounted(true);
@@ -68,28 +70,28 @@ export const Navbar: React.FC = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <Link href="/" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
-              Inicio
+              {t('home')}
             </Link>
             
             {/* Separator */}
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
             
             <Link href="/referrals" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
-              Referidos
+              {t('referrals')}
             </Link>
             
             {/* Separator */}
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
             
             <Link href="/knowledge" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
-              Knowledge
+              {t('knowledge')}
             </Link>
             
             {/* Separator */}
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
             
             <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
-              NexusWallet
+              {t('nexuswallet')}
             </Link>
             
             {mounted && (
@@ -132,7 +134,7 @@ export const Navbar: React.FC = () => {
                 className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Inicio
+                {t('home')}
               </Link>
               
               {/* Mobile Separator */}
@@ -143,7 +145,7 @@ export const Navbar: React.FC = () => {
                 className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Referidos
+                {t('referrals')}
               </Link>
               
               {/* Mobile Separator */}
@@ -154,7 +156,7 @@ export const Navbar: React.FC = () => {
                 className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Knowledge
+                {t('knowledge')}
               </Link>
               
               {/* Mobile Separator */}
@@ -165,7 +167,7 @@ export const Navbar: React.FC = () => {
                 className="block text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
                 onClick={() => setIsMenuOpen(false)}
               >
-                NexusWallet
+                {t('nexuswallet')}
               </Link>
               
               <div className="pt-4">

@@ -6,13 +6,13 @@ export async function IntlProvider({
   locale
 }: {
   children: React.ReactNode;
-  locale?: string;
+  locale: string;
 }) {
   // Get messages for the current locale
   const messages = await getMessages();
   
   return (
-    <NextIntlClientProvider messages={messages} locale={locale || 'es'}>
+    <NextIntlClientProvider messages={messages} locale={locale}>
       {children}
     </NextIntlClientProvider>
   );

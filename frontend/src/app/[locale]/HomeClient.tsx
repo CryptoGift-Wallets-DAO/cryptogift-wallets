@@ -167,18 +167,18 @@ export default function HomeClient() {
               <div className="w-16 h-16 bg-purple-500 dark:bg-accent-silver rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
                 <span className="text-white dark:text-bg-primary font-bold text-xl">2</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">Deposita Cripto</h3>
+              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">{t('features.step2.title')}</h3>
               <p className="text-text-secondary transition-colors duration-300">
-                Añade USDC que se guardará automáticamente en la wallet del NFT
+                {t('features.step2.description')}
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-500 dark:bg-accent-gold rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
                 <span className="text-white dark:text-bg-primary font-bold text-xl">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">Comparte el Regalo</h3>
+              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">{t('features.step3.title')}</h3>
               <p className="text-text-secondary transition-colors duration-300">
-                Envía el link o QR a tu amigo para que reclame su NFT-wallet
+                {t('features.step3.description')}
               </p>
             </div>
           </div>
@@ -190,10 +190,10 @@ export default function HomeClient() {
                          dark:from-bg-primary dark:to-bg-secondary transition-all duration-500">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white dark:text-text-primary mb-6 transition-colors duration-300">
-            Regala el futuro hoy
+            {t('hero.cta.title')}
           </h2>
           <p className="text-xl text-blue-100 dark:text-text-secondary mb-8 max-w-2xl mx-auto transition-colors duration-300">
-            Cada regalo es una invitación al ecosistema cripto. Empieza ahora y gana comisiones por cada amigo que invites.
+            {t('hero.cta.description')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -202,7 +202,7 @@ export default function HomeClient() {
                        font-semibold hover:bg-gray-100 dark:hover:bg-bg-secondary border dark:border-border-primary
                        transition-all duration-300"
             >
-              Crear mi Primer Regalo
+              {t('hero.createGift')}
             </button>
             {mounted && (
               <ConnectButton

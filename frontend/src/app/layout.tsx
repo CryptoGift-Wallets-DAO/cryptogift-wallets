@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClientLayout } from "../components/ClientLayout";
 import { IntlProvider } from "./IntlProvider";
+import { getLocale } from 'next-intl/server';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -44,8 +45,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Detect current locale from cookie/header  
+  const locale = await getLocale();
+  
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Favicons with cache busting */}
         <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
@@ -83,7 +87,7 @@ export default async function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
       </head>
       <body className={`${inter.className} font-sans antialiased`}>
-        <IntlProvider>
+        <IntlProvider locale={locale}>
           <ClientLayout>
             {children}
           </ClientLayout>
