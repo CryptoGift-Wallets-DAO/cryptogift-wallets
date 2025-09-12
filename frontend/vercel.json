@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "pnpm --filter ./frontend... build",
+  "buildCommand": "cd frontend && pnpm run build",
   "installCommand": "pnpm install --frozen-lockfile",
   "devCommand": "pnpm run dev",
   "outputDirectory": ".next",
