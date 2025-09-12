@@ -13,12 +13,19 @@
     "cancel": "Cancelar",
     "confirm": "Confirmar",
     "back": "Atrás",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "wallet": "Wallet"
   },
   "hero": {
     "title": "Regala el futuro hoy",
     "subtitle": "Regala el futuro. Crea NFT-wallets únicos con arte IA y criptomonedas reales.",
-    "createGift": "Crear mi Primer Regalo"
+    "createGift": "Crear mi Primer Regalo",
+    "cta": {
+      "title": "Regala el futuro hoy",
+      "description": "Cada regalo es una invitación al ecosistema cripto. Empieza ahora y gana comisiones por cada amigo que invites."
+    }
   },
   "features": {
     "title": "¿Cómo funciona?",
@@ -33,6 +40,64 @@
     "step3": {
       "title": "Comparte el Regalo",
       "description": "Envía el link o QR a tu amigo para que reclame su NFT-wallet"
+    },
+    "gasSponsored": {
+      "title": "Gas Patrocinado",
+      "description": "Transacciones sin costo para el usuario final"
+    },
+    "personalizedArt": {
+      "title": "Arte IA Personalizado",
+      "description": "Crea NFTs únicos con inteligencia artificial"
+    },
+    "socialRecovery": {
+      "title": "Recuperación Social",
+      "description": "Sistema de recuperación de wallets seguro"
+    },
+    "integratedSwap": {
+      "title": "Swap Integrado", 
+      "description": "Intercambia tokens directamente en la wallet"
+    },
+    "totalTransparency": {
+      "title": "Transparencia Total",
+      "description": "Todas las transacciones verificables en blockchain"
+    }
+  },
+  "footer": {
+    "brand": {
+      "name": "CryptoGift",
+      "tagline": "Wallets",
+      "description": "Regala el futuro. Crea NFT-wallets únicos con arte IA y criptomonedas reales."
+    },
+    "product": {
+      "title": "Producto",
+      "createGift": "Crear Regalo",
+      "referralProgram": "Programa de Referidos",
+      "academy": "Academia",
+      "verifyBlockchain": "Verificar en Blockchain"
+    },
+    "resources": {
+      "title": "Recursos",
+      "documentation": "Documentación",
+      "blog": "Blog",
+      "helpCenter": "Centro de Ayuda",
+      "support": "Soporte"
+    },
+    "company": {
+      "title": "Empresa",
+      "contact": "Contacto",
+      "openSource": "Código Abierto",
+      "community": "Comunidad"
+    },
+    "stats": {
+      "totalGifted": "Total Regalado",
+      "nftWallets": "NFT-Wallets", 
+      "satisfaction": "Satisfacción",
+      "gasSaved": "Ahorrado en Gas"
+    },
+    "bottom": {
+      "copyright": "Hecho con ❤️ para el futuro.",
+      "builtOn": "Construido en",
+      "chain": "Base"
     }
   }
 }

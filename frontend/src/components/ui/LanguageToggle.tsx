@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
@@ -12,22 +13,33 @@ const locales = [
 
 export function LanguageToggle() {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const locale = useLocale();
 
-  const handleLocaleChange = (newLocale: string) => {
+  const handleLocaleChange = async (newLocale: string) => {
     if (newLocale === locale) return;
     
     console.log('🔥 LanguageToggle clicked:', newLocale);
-    console.log('🌍 Language change requested:', { from: locale, to: newLocale });
+    console.log('🌍 Language change via server action:', { from: locale, to: newLocale });
     
-    startTransition(() => {
+    startTransition(async () => {
       try {
-        // Set locale cookie and reload page (invisible URL switching)
-        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
-        console.log('✅ Cookie set, reloading page');
-        
-        // Reload the page to apply new locale
-        window.location.reload();
+        // Call server action to set cookie
+        const response = await fetch('/api/locale', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ locale: newLocale }),
+        });
+
+        if (response.ok) {
+          console.log('✅ Server locale cookie set, refreshing...');
+          // Refresh to apply new locale from server
+          router.refresh();
+        } else {
+          console.error('❌ Failed to set locale on server:', response.statusText);
+        }
       } catch (error) {
         console.error('❌ Language change failed:', error);
       }
