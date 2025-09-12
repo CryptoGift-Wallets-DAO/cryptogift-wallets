@@ -14,5 +14,25 @@
     "confirm": "Confirm",
     "back": "Back",
     "continue": "Continue"
+  },
+  "hero": {
+    "title": "Gift the future today",
+    "subtitle": "Gift the future. Create unique NFT-wallets with AI art and real cryptocurrencies.",
+    "createGift": "Create my First Gift"
+  },
+  "features": {
+    "title": "How does it work?",
+    "step1": {
+      "title": "Upload your Art",
+      "description": "Upload a personal photo and apply AI filters to create a unique NFT"
+    },
+    "step2": {
+      "title": "Deposit Crypto",
+      "description": "Add USDC that will be automatically stored in the NFT's wallet"
+    },
+    "step3": {
+      "title": "Share the Gift", 
+      "description": "Send the link or QR to your friend so they can claim their NFT-wallet"
+    }
   }
 }

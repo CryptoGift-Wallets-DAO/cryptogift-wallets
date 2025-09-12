@@ -14,5 +14,25 @@
     "confirm": "Confirmar",
     "back": "Atrás",
     "continue": "Continuar"
+  },
+  "hero": {
+    "title": "Regala el futuro hoy",
+    "subtitle": "Regala el futuro. Crea NFT-wallets únicos con arte IA y criptomonedas reales.",
+    "createGift": "Crear mi Primer Regalo"
+  },
+  "features": {
+    "title": "¿Cómo funciona?",
+    "step1": {
+      "title": "Sube tu Arte",
+      "description": "Carga una foto personal y aplica filtros IA para crear un NFT único"
+    },
+    "step2": {
+      "title": "Deposita Cripto", 
+      "description": "Añade USDC que se guardará automáticamente en la wallet del NFT"
+    },
+    "step3": {
+      "title": "Comparte el Regalo",
+      "description": "Envía el link o QR a tu amigo para que reclame su NFT-wallet"
+    }
   }
 }

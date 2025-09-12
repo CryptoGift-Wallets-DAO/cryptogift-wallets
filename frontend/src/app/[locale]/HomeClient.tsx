@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client } from "../client";
 import { GiftWizard } from "../../components/GiftWizard";
@@ -17,6 +18,7 @@ export default function HomeClient() {
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   const searchParams = useSearchParams();
   const account = useActiveAccount();
+  const t = useTranslations();
 
   useEffect(() => {
     setMounted(true);
@@ -149,16 +151,16 @@ export default function HomeClient() {
       <section className="py-20 bg-bg-secondary dark:bg-bg-primary transition-colors duration-500">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-text-primary transition-colors duration-300">
-            ¿Cómo funciona?
+            {t('features.title')}
           </h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-500 dark:bg-accent-gold rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300">
                 <span className="text-white dark:text-bg-primary font-bold text-xl">1</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">Sube tu Arte</h3>
+              <h3 className="text-xl font-semibold mb-2 text-text-primary transition-colors duration-300">{t('features.step1.title')}</h3>
               <p className="text-text-secondary transition-colors duration-300">
-                Carga una foto personal y aplica filtros IA para crear un NFT único
+                {t('features.step1.description')}
               </p>
             </div>
             <div className="text-center">
