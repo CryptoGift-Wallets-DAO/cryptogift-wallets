@@ -2,6 +2,11 @@
   "name": "cryptogift-wallets",
   "version": "1.0.0",
   "main": "index.js",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": "9.15.9"
+  },
   "scripts": {
     "test": "cd frontend && pnpm test",
     "test:coverage": "cd frontend && pnpm run test:coverage", 

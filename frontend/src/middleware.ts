@@ -6,17 +6,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
 // Environment check
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Intl middleware
-const intlMiddleware = createIntlMiddleware({
-  locales: ['es', 'en'],
-  defaultLocale: 'es',
-  localePrefix: 'as-needed'
-});
+// Intl middleware using centralized routing config
+const intlMiddleware = createIntlMiddleware(routing);
 
 // CSP Report endpoint
 const CSP_REPORT_URI = '/api/security/csp-report';

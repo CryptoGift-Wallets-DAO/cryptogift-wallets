@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
-  "buildCommand": "pnpm install --network-timeout 300000 --no-frozen-lockfile && pnpm run build",
-  "installCommand": "pnpm install --network-timeout 300000 --no-frozen-lockfile",
+  "buildCommand": "pnpm install --frozen-lockfile && pnpm run build",
+  "installCommand": "pnpm install --frozen-lockfile",
   "devCommand": "pnpm run dev",
   "outputDirectory": ".next",
   "functions": {
