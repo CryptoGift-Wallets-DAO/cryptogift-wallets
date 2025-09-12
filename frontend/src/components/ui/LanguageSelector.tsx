@@ -1,12 +1,10 @@
 'use client';
 import { useState, useEffect, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-// import { useLocale, useTranslations } from 'next-intl';
-import { useLocale, useTranslations } from '../../lib/mock-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Check, ChevronDown } from 'lucide-react';
-// import { setLocaleCookie } from '@/app/actions/set-locale';
-// import { createLocalizedPath } from '@/i18n/routing';
+import { Link, useRouter as useIntlRouter } from '../../i18n/routing';
 
 const locales = [
   { code: 'es', name: 'Español', flag: '🇪🇸' },
@@ -26,10 +24,19 @@ export function LanguageSelector() {
     setMounted(true);
   }, []);
 
+  const intlRouter = useIntlRouter();
+
   const handleLanguageChange = async (newLocale: string) => {
-    console.log('Language change to:', newLocale);
-    // Temporarily disabled until next-intl is installed
-    setIsOpen(false);
+    if (newLocale === locale) {
+      setIsOpen(false);
+      return;
+    }
+
+    startTransition(() => {
+      // Use next-intl router to change locale
+      intlRouter.replace(pathname, { locale: newLocale });
+      setIsOpen(false);
+    });
   };
 
   if (!mounted) {
