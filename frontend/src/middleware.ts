@@ -249,6 +249,6 @@ export const config = {
   matcher: [
     // Enable internationalization for all routes except API, _next, and static files
     '/',
-    '/((?!api|_next|.*\\..*)(.*))' 
+    '/((?!api|_next|.*\\..*).+)'
   ],
 };
