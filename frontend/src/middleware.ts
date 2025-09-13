@@ -199,11 +199,14 @@ function getSecurityHeaders(): HeadersInit {
 }
 
 export function middleware(request: NextRequest) {
-  // Skip middleware for API routes and static files
+  // Skip middleware for API routes, static files, and specific Pages Router routes
   if (
     request.nextUrl.pathname.startsWith('/api/') ||
     request.nextUrl.pathname.startsWith('/_next/') ||
     request.nextUrl.pathname.startsWith('/static/') ||
+    request.nextUrl.pathname.startsWith('/gift/') ||
+    request.nextUrl.pathname === '/admin/migration' ||
+    request.nextUrl.pathname === '/404' ||
     request.nextUrl.pathname.includes('.')
   ) {
     // For API routes, add CORS headers
@@ -248,6 +251,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Enable internationalization for all routes except API, _next, and static files
+    // Specific Pages Router exclusions are handled in the middleware function
     '/',
     '/((?!api|_next|.*\\..*).+)'
   ],

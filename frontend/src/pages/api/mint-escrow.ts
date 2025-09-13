@@ -558,7 +558,7 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     // Step 1: Validate metadata JSON accessibility with ENHANCED IPFS propagation retry
     let metadataValidation;
     let attempts = 0;
-    const maxAttempts = 6; // INCREASED: More attempts for better propagation handling
+    const maxAttempts = 8; // INCREASED: More attempts for better propagation handling
     
     while (attempts < maxAttempts) {
       // 🚨 CRITICAL FIX: Use metadata-specific validation with /metadata.json handling
@@ -571,10 +571,11 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
       
       attempts++;
       if (attempts < maxAttempts) {
-        // ENHANCED: Exponential backoff for better IPFS propagation
-        const delaySeconds = Math.min(4 + (attempts * 2), 12); // 4s, 6s, 8s, 10s, 12s
+        // ENHANCED: Progressive backoff for better IPFS propagation
+        const delaySeconds = attempts <= 2 ? 2 : Math.min(3 + (attempts * 2), 15); // 2s, 2s, 5s, 7s, 9s, 11s, 13s, 15s
         console.log(`⏳ Metadata validation failed (attempt ${attempts}), retrying in ${delaySeconds}s for IPFS propagation...`);
         console.log(`🌐 IPFS Propagation: Allowing more time for metadata to propagate across gateways`);
+        console.log(`💡 Tip: IPFS content typically propagates within 5-10 seconds to major gateways`);
         await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
       }
     }
@@ -935,7 +936,8 @@ async function mintNFTEscrowGasless(
       // FAIL-FAST: No bypasses - if image is not accessible, mint should fail
       return {
         success: false,
-        error: `IPFS_VALIDATION_FAILED: Image not accessible via any IPFS gateway. ${ipfsValidation.error}. Solution: Ensure image is properly uploaded and propagated to IPFS gateways.`
+        error: `IPFS_VALIDATION_FAILED: Imagen aún propagándose en red IPFS. ${ipfsValidation.error}. Reintenta en unos segundos.`,
+        retryable: true
       };
     } else {
       console.log('✅ IPFS validation passed - image accessible via gateways');
@@ -1630,7 +1632,8 @@ async function mintNFTEscrowGasPaid(
       // FAIL-FAST: No bypasses - if image is not accessible, mint should fail
       return {
         success: false,
-        error: `IPFS_VALIDATION_FAILED: Image not accessible via any IPFS gateway. ${ipfsValidation.error}. Solution: Ensure image is properly uploaded and propagated to IPFS gateways.`
+        error: `IPFS_VALIDATION_FAILED: Imagen aún propagándose en red IPFS. ${ipfsValidation.error}. Reintenta en unos segundos.`,
+        retryable: true
       };
     } else {
       console.log('✅ IPFS validation passed - image accessible via gateways');

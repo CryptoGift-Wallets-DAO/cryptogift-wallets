@@ -87,6 +87,47 @@ enum WizardStep {
   SUCCESS = 'success'
 }
 
+// IPFS Validation Retry Logic
+const retryWithBackoff = async <T>(
+  operation: () => Promise<T>,
+  options: {
+    maxRetries?: number;
+    baseDelay?: number;
+    shouldRetry?: (error: any) => boolean;
+    onRetry?: (attempt: number, error: any) => void;
+  } = {}
+): Promise<T> => {
+  const {
+    maxRetries = 3,
+    baseDelay = 2000, // 2 seconds
+    shouldRetry = (error) => error.message?.includes('IPFS_VALIDATION_FAILED'),
+    onRetry = () => {}
+  } = options;
+
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      if (attempt === maxRetries + 1 || !shouldRetry(error)) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(1.5, attempt - 1); // Progressive backoff: 2s, 3s, 4.5s
+      
+      onRetry(attempt, error);
+      
+      console.log(`🔄 IPFS validation failed, retrying in ${delay}ms... (attempt ${attempt}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+};
+
 export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referrer }) => {
   const [mounted, setMounted] = useState(false);
   const account = useActiveAccount();
@@ -521,28 +562,50 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       gasless: false // DISABLED: Focus on gas-paid robustness per specialist analysis
     };
 
-    const mintResponse = await makeAuthenticatedRequest(apiEndpoint, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
+    // ✨ ENHANCED: Wrap API call with IPFS validation retry logic
+    const mintResponse = await retryWithBackoff(
+      async () => {
+        const response = await makeAuthenticatedRequest(apiEndpoint, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody),
+        });
+        
+        // Check for IPFS validation errors in API response
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          if (errorData.error?.includes('IPFS_VALIDATION_FAILED') && errorData.retryable) {
+            throw new Error(errorData.error);
+          }
+          // For non-IPFS errors, throw immediately without retry
+          throw new Error(errorData.message || errorData.error || 'API call failed');
+        }
+        
+        return response;
       },
-      body: JSON.stringify(requestBody),
-    });
+      {
+        maxRetries: 2, // 2 retries = 3 total attempts  
+        baseDelay: 4000, // 4 seconds initial delay (matches server retry timing)
+        shouldRetry: (error) => error.message?.includes('IPFS_VALIDATION_FAILED'),
+        onRetry: (attempt, error) => {
+          addStep('GIFT_WIZARD', 'IPFS_RETRY_ATTEMPT', {
+            attempt,
+            totalRetries: 2,
+            errorMessage: error.message?.substring(0, 100) + '...',
+            nextRetryIn: `${4000 * Math.pow(1.5, attempt - 1)}ms`,
+            reason: 'IPFS propagation delay detected'
+          }, 'pending');
+        }
+      }
+    );
 
     addStep('GIFT_WIZARD', 'GASLESS_API_RESPONSE_RECEIVED', {
       status: mintResponse.status,
       statusText: mintResponse.statusText,
       ok: mintResponse.ok
-    }, mintResponse.ok ? 'success' : 'error');
-
-    if (!mintResponse.ok) {
-      const errorData = await mintResponse.json().catch(() => ({}));
-      addError('GIFT_WIZARD', 'GASLESS_API_ERROR', errorData.message || 'API call failed', {
-        status: mintResponse.status,
-        errorData
-      });
-      throw new Error(errorData.message || 'Gasless mint failed');
-    }
+    }, 'success'); // Already validated as ok by retry wrapper
 
     const mintResult = await mintResponse.json();
     
@@ -847,28 +910,50 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         requestBodyKeys: Object.keys(requestBody)
       });
 
-      const mintResponse = await makeAuthenticatedRequest(apiEndpoint, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
+      // ✨ ENHANCED: Wrap gas-paid API call with IPFS validation retry logic
+      const mintResponse = await retryWithBackoff(
+        async () => {
+          const response = await makeAuthenticatedRequest(apiEndpoint, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody),
+          });
+          
+          // Check for IPFS validation errors in API response
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            if (errorData.error?.includes('IPFS_VALIDATION_FAILED') && errorData.retryable) {
+              throw new Error(errorData.error);
+            }
+            // For non-IPFS errors, throw immediately without retry
+            throw new Error(errorData.message || errorData.error || 'Gas-paid API call failed');
+          }
+          
+          return response;
         },
-        body: JSON.stringify(requestBody),
-      });
+        {
+          maxRetries: 2, // 2 retries = 3 total attempts
+          baseDelay: 4000, // 4 seconds initial delay (matches server retry timing)
+          shouldRetry: (error) => error.message?.includes('IPFS_VALIDATION_FAILED'),
+          onRetry: (attempt, error) => {
+            addStep('GIFT_WIZARD', 'GAS_PAID_IPFS_RETRY_ATTEMPT', {
+              attempt,
+              totalRetries: 2,
+              errorMessage: error.message?.substring(0, 100) + '...',
+              nextRetryIn: `${4000 * Math.pow(1.5, attempt - 1)}ms`,
+              reason: 'IPFS propagation delay detected (gas-paid flow)'
+            }, 'pending');
+          }
+        }
+      );
 
       addStep('GIFT_WIZARD', 'GAS_PAID_API_RESPONSE_RECEIVED', {
         status: mintResponse.status,
         statusText: mintResponse.statusText,
         ok: mintResponse.ok
-      }, mintResponse.ok ? 'success' : 'error');
-
-      if (!mintResponse.ok) {
-        const errorData = await mintResponse.json().catch(() => ({}));
-        addError('GIFT_WIZARD', 'GAS_PAID_API_ERROR', errorData.message || 'Gas-paid API call failed', {
-          status: mintResponse.status,
-          errorData
-        });
-        throw new Error(errorData.message || `Gas-paid mint failed with status ${mintResponse.status}`);
-      }
+      }, 'success'); // Already validated as ok by retry wrapper
 
       const mintResult = await mintResponse.json();
       
