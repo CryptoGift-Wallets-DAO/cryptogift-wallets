@@ -199,6 +199,11 @@ function getSecurityHeaders(): HeadersInit {
 }
 
 export function middleware(request: NextRequest) {
+  // DEBUG: Log middleware execution for troubleshooting
+  if (request.nextUrl.pathname === '/my-wallets') {
+    console.log('🔍 MIDDLEWARE DEBUG: /my-wallets request detected - should be excluded');
+  }
+  
   // Skip middleware for API routes, static files, Pages Router routes, and App Router routes without i18n
   if (
     request.nextUrl.pathname.startsWith('/api/') ||
