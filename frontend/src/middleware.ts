@@ -199,14 +199,31 @@ function getSecurityHeaders(): HeadersInit {
 }
 
 export function middleware(request: NextRequest) {
-  // Skip middleware for API routes, static files, and specific Pages Router routes
+  // Skip middleware for API routes, static files, Pages Router routes, and App Router routes without i18n
   if (
     request.nextUrl.pathname.startsWith('/api/') ||
     request.nextUrl.pathname.startsWith('/_next/') ||
     request.nextUrl.pathname.startsWith('/static/') ||
+    // Pages Router routes
     request.nextUrl.pathname.startsWith('/gift/') ||
     request.nextUrl.pathname === '/admin/migration' ||
     request.nextUrl.pathname === '/404' ||
+    // App Router routes that don't need i18n
+    request.nextUrl.pathname === '/my-wallets' ||
+    request.nextUrl.pathname === '/authenticated' ||
+    request.nextUrl.pathname === '/debug' ||
+    request.nextUrl.pathname === '/sentry-example-page' ||
+    request.nextUrl.pathname.startsWith('/admin/cache') ||
+    request.nextUrl.pathname.startsWith('/token/') ||
+    request.nextUrl.pathname.startsWith('/wallet/') ||
+    // Marketing pages (should have their own handling or be moved to [locale])
+    request.nextUrl.pathname === '/about' ||
+    request.nextUrl.pathname === '/careers' ||
+    request.nextUrl.pathname === '/explore' ||
+    request.nextUrl.pathname === '/gallery' ||
+    request.nextUrl.pathname === '/privacy' ||
+    request.nextUrl.pathname === '/terms' ||
+    // Static files
     request.nextUrl.pathname.includes('.')
   ) {
     // For API routes, add CORS headers
