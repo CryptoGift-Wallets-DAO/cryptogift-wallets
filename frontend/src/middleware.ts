@@ -272,9 +272,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Enable internationalization for all routes except API, _next, and static files
-    // Specific Pages Router exclusions are handled in the middleware function
-    '/',
-    '/((?!api|_next|.*\\..*).+)'
+    // Minimal matcher - all stubs now exist in [locale] structure
+    '/((?!api|_next|_vercel|.*\\..*).*)' 
   ],
 };
