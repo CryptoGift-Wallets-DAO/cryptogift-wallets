@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
-import { client } from "../client";
+import { client } from "../../client";
 import { GiftWizard } from "../../components/GiftWizard";
 import { HeroSection } from "../../components/HeroSection";
 import { FeatureSection } from "../../components/FeatureSection";

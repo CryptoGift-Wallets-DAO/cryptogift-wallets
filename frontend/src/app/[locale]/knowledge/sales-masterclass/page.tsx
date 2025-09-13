@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
 const SalesMasterclass = dynamic(
-  () => import('../../../components/learn/SalesMasterclass'),
+  () => import('../../../../components/learn/SalesMasterclass'),
   { 
     ssr: false,
     loading: () => (

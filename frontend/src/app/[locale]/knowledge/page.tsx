@@ -27,9 +27,9 @@ interface KnowledgeModule {
 }
 
 // Importar componentes del Creator Studio
-import CreatorWizard from '../../components/creator-studio/CreatorWizard';
-import RuleBuilder from '../../components/creator-studio/RuleBuilder';
-import { getPopularTemplates } from '../../lib/creator-studio/templates';
+import CreatorWizard from '../../../components/creator-studio/CreatorWizard';
+import RuleBuilder from '../../../components/creator-studio/RuleBuilder';
+import { getPopularTemplates } from '../../../lib/creator-studio/templates';
 
 type TabType = 'learn' | 'create' | 'my-content' | 'analytics';
 
