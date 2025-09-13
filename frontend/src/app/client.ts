@@ -27,12 +27,11 @@ export function getClient() {
   return _client;
 }
 
-// SAFE CLIENT EXPORT: Only create client on client-side
-export const client = (() => {
-  if (typeof window === 'undefined') {
-    // Server-side: return null during SSR
-    return null;
-  }
-  // Client-side: initialize immediately
+// SAFE CLIENT EXPORT: Create client dynamically to handle SSR
+export const client = typeof window !== 'undefined' ? getClient() : null;
+
+// Export a getter function for components that need to ensure client is available
+export const getClientSafe = () => {
+  if (typeof window === 'undefined') return null;
   return getClient();
-})();
+};

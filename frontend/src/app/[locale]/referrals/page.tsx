@@ -164,12 +164,12 @@ export default function ReferralsPage() {
           <p className="text-text-secondary mb-8 transition-colors duration-300">
             Conecta tu wallet para ver tus comisiones y generar tu link de referido
           </p>
-          {mounted && (
+          {mounted && client && (
             <ConnectButton
               client={client}
               appMetadata={{
                 name: "CryptoGift Wallets",
-                url: typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL is required for wallet connections'); })(),
+                url: typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || 'https://cryptogift-wallets.vercel.app'),
               }}
             />
           )}
