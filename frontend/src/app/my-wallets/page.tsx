@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
-import { client } from '../client';
 import { RightSlideWallet } from '../../components/TBAWallet/RightSlideWallet';
 import { ExtensionInstaller } from '../../components/BrowserExtension/ExtensionInstaller';
 import { AdvancedSecurity } from '../../components/Security/AdvancedSecurity';
