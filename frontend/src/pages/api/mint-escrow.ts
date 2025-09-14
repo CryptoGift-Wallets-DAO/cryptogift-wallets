@@ -897,6 +897,7 @@ async function mintNFTEscrowGasless(
   nonce?: string;
   error?: string;
   details?: string;
+  retryable?: boolean;
 }> {
   let transactionNonce = '';
   let passwordHash: string | undefined;
@@ -1587,6 +1588,7 @@ async function mintNFTEscrowGasPaid(
   passwordHash?: string;
   error?: string;
   details?: string;
+  retryable?: boolean;
 }> {
   let transactionNonce = '';
   let passwordHash: string | undefined;
