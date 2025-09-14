@@ -168,10 +168,18 @@ function CopyAddressButton({ address, size = 'normal' }: { address: string; size
 }
 
 export default function MyWalletsPage() {
+  console.log('🔍 MyWalletsPage: Component initializing...');
+  
   const account = useActiveAccount();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  
+  console.log('🔍 MyWalletsPage: State values', { 
+    accountAddress: account?.address, 
+    mounted,
+    searchParams: searchParams?.toString()
+  });
   const [wallets, setWallets] = useState<UserWallet[]>([]);
   const [activeWallet, setActiveWallet] = useState<string | null>(null);
   const [selectedWallet, setSelectedWallet] = useState<UserWallet | null>(null);
@@ -193,6 +201,7 @@ export default function MyWalletsPage() {
   const isDashboardEnabled = process.env.NEXT_PUBLIC_FEATURE_WALLET_DASHBOARD === 'on';
 
   useEffect(() => {
+    console.log('🔍 MyWalletsPage: Setting mounted to true');
     setMounted(true);
   }, []);
 
@@ -351,11 +360,15 @@ export default function MyWalletsPage() {
   };
 
   if (!mounted) {
+    console.log('🔍 MyWalletsPage: Not mounted yet, showing loading...');
     return <div>Loading...</div>;
   }
 
+  console.log('🔍 MyWalletsPage: Mounted! Checking auth...', { account: !!account, isAuthenticated });
+
   // CRITICAL FIX: Handle authentication flow properly
   if (!account || !isAuthenticated) {
+    console.log('🔍 MyWalletsPage: Showing auth flow...', { account: !!account, isAuthenticated });
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 
                      dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
@@ -390,6 +403,8 @@ export default function MyWalletsPage() {
     );
   }
 
+  console.log('🔍 MyWalletsPage: Rendering main content!');
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 
                    dark:from-bg-primary dark:via-bg-secondary dark:to-bg-primary transition-all duration-500">
