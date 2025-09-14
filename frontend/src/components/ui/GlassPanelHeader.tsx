@@ -104,7 +104,20 @@ export function GlassPanelHeader({
   }, []);
   
   if (!mounted) {
-    return null;
+    // Temporary fix: show placeholder instead of null to prevent blank page
+    return (
+      <div className="relative bg-white/60 dark:bg-gray-800/60 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-6 mb-6">
+        <div className="animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+            <div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   const positionClasses = {
