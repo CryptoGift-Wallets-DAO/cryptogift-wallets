@@ -139,7 +139,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   }, []);
 
   useEffect(() => {
-    if (mounted && auth.isConnected) {
+    if (mounted && auth.isConnected && account?.address) {
       // CRITICAL: Check device wallet limits when user connects
       const deviceInfo = getDeviceWalletInfo();
       console.log('DEVICE_CHECK: Device wallet check:', deviceInfo);
@@ -242,7 +242,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   };
 
   const handleMintGift = async () => {
-    if (!account) {
+    if (!account?.address) {
       addError('GIFT_WIZARD', 'HANDLE_MINT_GIFT', 'No account connected');
       return;
     }
@@ -790,7 +790,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         body: JSON.stringify({
           level: 'INFO',
           step: 'GIFT_WIZARD_START',
-          data: { walletAddress: account.address, timestamp: new Date().toISOString() }
+          data: { walletAddress: account?.address, timestamp: new Date().toISOString() }
         })
       });
     } catch (debugError) {
