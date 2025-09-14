@@ -371,19 +371,24 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
                   imageUrl: imageHttpsUrl?.substring(0, 50) + '...'
                 });
                 
-                await window.ethereum.request({
-                  method: 'wallet_watchAsset',
-                  params: [{
-                    type: 'ERC721',
-                    options: {
-                      address: contractAddress,
-                      tokenId: gaslessVerification.tokenId,
-                      image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
-                      symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
-                      decimals: 0,          // 🔥 NFTs have 0 decimals
-                    }
-                  }]
-                });
+                // 🔥 CRITICAL FIX: Only call wallet_watchAsset if we have valid parameters
+                if (imageHttpsUrl) {
+                  await window.ethereum.request({
+                    method: 'wallet_watchAsset',
+                    params: [{
+                      type: 'ERC721',
+                      options: {
+                        address: contractAddress,
+                        tokenId: gaslessVerification.tokenId,
+                        image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
+                        symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
+                        decimals: 0,          // 🔥 NFTs have 0 decimals
+                      }
+                    }]
+                  });
+                } else {
+                  console.warn('⚠️ Skipping wallet_watchAsset - no valid image URL available');
+                }
                 
                 console.log('✅ Enhanced wallet_watchAsset completed with image and metadata');
               }
@@ -740,19 +745,24 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
             imageUrl: imageHttpsUrl?.substring(0, 50) + '...'
           });
           
-          await window.ethereum.request({
-            method: 'wallet_watchAsset',
-            params: [{
-              type: 'ERC721',
-              options: {
-                address: contractAddress,
-                tokenId: tokenId,
-                image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
-                symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
-                decimals: 0,          // 🔥 NFTs have 0 decimals
-              }
-            }]
-          });
+          // 🔥 CRITICAL FIX: Only call wallet_watchAsset if we have valid parameters
+          if (imageHttpsUrl) {
+            await window.ethereum.request({
+              method: 'wallet_watchAsset',
+              params: [{
+                type: 'ERC721',
+                options: {
+                  address: contractAddress,
+                  tokenId: tokenId,
+                  image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
+                  symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
+                  decimals: 0,          // 🔥 NFTs have 0 decimals
+                }
+              }]
+            });
+          } else {
+            console.warn('⚠️ Skipping wallet_watchAsset - no valid image URL available');
+          }
           
           console.log('✅ Enhanced wallet_watchAsset completed for gasless NFT');
         }
@@ -863,6 +873,9 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       
       // Determine correct image CID to use (prioritize actual image over metadata)
       const actualImageCid = imageIpfsCid || ipfsCid;
+      
+      // 🔥 CRITICAL FIX: Store image CID in wizard data for wallet_watchAsset (same as gasless flow)
+      setWizardData(prev => ({ ...prev, imageCid: actualImageCid }));
 
       // Step 2: Mint NFT with GAS PAYMENT (user confirmed to pay gas)
       // CRITICAL FIX: Use same logic as attemptGaslessMint but with gasless: false
@@ -1077,19 +1090,24 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
               imageUrl: imageHttpsUrl?.substring(0, 50) + '...'
             });
             
-            await window.ethereum.request({
-              method: 'wallet_watchAsset',
-              params: [{
-                type: 'ERC721',
-                options: {
-                  address: contractAddress,
-                  tokenId: tokenId,
-                  image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
-                  symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
-                  decimals: 0,          // 🔥 NFTs have 0 decimals
-                }
-              }]
-            });
+            // 🔥 CRITICAL FIX: Only call wallet_watchAsset if we have valid parameters
+            if (imageHttpsUrl) {
+              await window.ethereum.request({
+                method: 'wallet_watchAsset',
+                params: [{
+                  type: 'ERC721',
+                  options: {
+                    address: contractAddress,
+                    tokenId: tokenId,
+                    image: imageHttpsUrl, // 🔥 HTTPS image for wallet display
+                    symbol: 'CGIFT',      // 🔥 Symbol for the NFT collection
+                    decimals: 0,          // 🔥 NFTs have 0 decimals
+                  }
+                }]
+              });
+            } else {
+              console.warn('⚠️ Skipping wallet_watchAsset - no valid image URL available');
+            }
             
             console.log('✅ Enhanced wallet_watchAsset completed for gas-paid NFT');
           }
