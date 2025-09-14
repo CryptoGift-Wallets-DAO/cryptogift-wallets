@@ -135,10 +135,13 @@ const sentryConfig = {
 let finalConfig;
 if (!process.env.SENTRY_AUTH_TOKEN) {
   console.log('⚠️ SENTRY_AUTH_TOKEN not found, building without Sentry integration');
-  finalConfig = withNextIntl(nextConfig);
+  // CRITICAL TEST: Disable withNextIntl temporarily to test if it's causing 404s
+  console.log('🚨 TESTING: i18n disabled temporarily to debug /my-wallets 404');
+  finalConfig = nextConfig; // BYPASS withNextIntl
 } else {
-  // Con Sentry integration
-  finalConfig = withSentryConfig(withNextIntl(nextConfig), sentryConfig);
+  // Con Sentry integration - also bypass i18n for testing
+  console.log('🚨 TESTING: i18n disabled temporarily to debug /my-wallets 404');
+  finalConfig = withSentryConfig(nextConfig, sentryConfig); // BYPASS withNextIntl
 }
 
 export default finalConfig;

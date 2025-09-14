@@ -241,11 +241,12 @@ export function middleware(request: NextRequest) {
     return response;
   }
   
-  // Handle internationalization first
-  const intlResponse = intlMiddleware(request);
-  if (intlResponse) {
-    return intlResponse;
-  }
+  // CRITICAL TEST: Disable intl middleware temporarily to debug /my-wallets 404
+  console.log('🚨 TESTING: intl middleware disabled temporarily');
+  // const intlResponse = intlMiddleware(request);
+  // if (intlResponse) {
+  //   return intlResponse;
+  // }
   
   // Create response
   const response = NextResponse.next();
