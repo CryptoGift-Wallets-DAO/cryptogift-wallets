@@ -176,6 +176,19 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
 
   // If no wallet connected, show connect button
   if (!account?.address) {
+    // Handle case where ThirdWeb client is not available
+    if (!client) {
+      return (
+        <div className={className}>
+          <div className="px-6 py-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">
+              🔧 Configuración de wallet pendiente. Por favor, contacta al administrador.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className={className}>
         <ConnectButton
@@ -299,8 +312,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           
           {/* Connect button for changing wallet */}
           <div className="text-xs">
-            <ConnectButton
-              client={client}
+            {client ? (
+              <ConnectButton
+                client={client}
               chain={baseSepolia}
               chains={[baseSepolia]}
               walletConnect={{ 
@@ -311,6 +325,11 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
                 url: typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL is required for wallet connections'); })(),
               }}
             />
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-gray-600">
+                Wallet no disponible
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -390,8 +409,9 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         
         {/* Connect button for changing wallet */}
         <div className="text-xs">
-          <ConnectButton
-            client={client}
+          {client ? (
+            <ConnectButton
+              client={client}
             chain={baseSepolia}
             chains={[baseSepolia]}
             walletConnect={{ 
@@ -402,6 +422,11 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
               url: typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || (() => { throw new Error('NEXT_PUBLIC_SITE_URL is required for wallet connections'); })(),
             }}
           />
+          ) : (
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-gray-600">
+              Wallet no disponible
+            </div>
+          )}
         </div>
         
         {/* Re-authenticate button if needed */}

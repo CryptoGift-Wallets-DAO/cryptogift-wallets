@@ -13,7 +13,8 @@ export function getClient() {
       // During build time, return null gracefully
       return null;
     }
-    throw new Error("ThirdWeb client ID not found. Please set NEXT_PUBLIC_TW_CLIENT_ID in your environment variables.");
+    console.error("ThirdWeb client ID not found. Please set NEXT_PUBLIC_TW_CLIENT_ID"); 
+    return null;
   }
   
   console.log('✅ THIRDWEB CLIENT: Initializing with clientId:', clientId.slice(0, 8) + '...');
