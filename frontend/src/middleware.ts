@@ -199,10 +199,6 @@ function getSecurityHeaders(): HeadersInit {
 }
 
 export function middleware(request: NextRequest) {
-  // DEBUG: Log middleware execution for troubleshooting
-  if (request.nextUrl.pathname === '/my-wallets') {
-    console.log('🔍 MIDDLEWARE DEBUG: /my-wallets request detected - should be excluded');
-  }
   
   // Skip middleware for API routes, static files, Pages Router routes, and App Router routes without i18n
   if (
@@ -214,7 +210,6 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname === '/admin/migration' ||
     request.nextUrl.pathname === '/404' ||
     // App Router routes that don't need i18n
-    request.nextUrl.pathname === '/my-wallets' ||
     request.nextUrl.pathname === '/authenticated' ||
     request.nextUrl.pathname === '/debug' ||
     request.nextUrl.pathname === '/sentry-example-page' ||
@@ -241,11 +236,6 @@ export function middleware(request: NextRequest) {
     return response;
   }
   
-  // CRITICAL FIX: Handle /my-wallets before intl middleware
-  if (request.nextUrl.pathname === '/my-wallets') {
-    console.log('🔍 MIDDLEWARE: /my-wallets detected - bypassing intl, returning next()');
-    return NextResponse.next();
-  }
   
   // Handle internationalization for other routes
   const intlResponse = intlMiddleware(request);
