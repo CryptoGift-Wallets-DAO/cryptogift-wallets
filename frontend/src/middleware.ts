@@ -241,12 +241,17 @@ export function middleware(request: NextRequest) {
     return response;
   }
   
-  // CRITICAL TEST: Disable intl middleware temporarily to debug /my-wallets 404
-  console.log('🚨 TESTING: intl middleware disabled temporarily');
-  // const intlResponse = intlMiddleware(request);
-  // if (intlResponse) {
-  //   return intlResponse;
-  // }
+  // CRITICAL FIX: Handle /my-wallets before intl middleware
+  if (request.nextUrl.pathname === '/my-wallets') {
+    console.log('🔍 MIDDLEWARE: /my-wallets detected - bypassing intl, returning next()');
+    return NextResponse.next();
+  }
+  
+  // Handle internationalization for other routes
+  const intlResponse = intlMiddleware(request);
+  if (intlResponse) {
+    return intlResponse;
+  }
   
   // Create response
   const response = NextResponse.next();
