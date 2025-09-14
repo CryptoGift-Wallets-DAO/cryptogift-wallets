@@ -88,7 +88,7 @@ enum WizardStep {
 }
 
 // IPFS Validation Retry Logic
-const retryWithBackoff = async <T>(
+const retryWithBackoff = async <T,>(
   operation: () => Promise<T>,
   options: {
     maxRetries?: number;
