@@ -11,26 +11,8 @@ const StaticBackground = dynamic(() => import("./ui/StaticBackground").then(mod 
   loading: () => null
 });
 
-const ThirdwebWrapper = dynamic(() => import("./ThirdwebWrapper").then(mod => {
-  console.log('🔍 ClientLayout: ThirdwebWrapper loaded successfully');
-  return { default: mod.ThirdwebWrapper };
-}).catch(err => {
-  console.error('🚨 ClientLayout: ThirdwebWrapper failed to load:', err);
-  throw err;
-}), {
-  ssr: false,
-  loading: () => {
-    console.log('🔍 ClientLayout: ThirdwebWrapper loading fallback showing...');
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Web3 components...</p>
-        </div>
-      </div>
-    );
-  }
-});
+// CRITICAL FIX: Remove dynamic import that's causing infinite loading
+import { ThirdwebWrapper } from "./ThirdwebWrapper";
 
 const Navbar = dynamic(() => import("./Navbar").then(mod => ({ default: mod.Navbar })), {
   ssr: false,
@@ -53,6 +35,7 @@ interface ClientLayoutProps {
 
 export function ClientLayout({ children }: ClientLayoutProps) {
   console.log('🔍 ClientLayout: Rendering with children:', !!children);
+  console.log('🔍 ClientLayout: About to render ThirdwebWrapper (now static import)');
   
   return (
     <ThemeProvider>
