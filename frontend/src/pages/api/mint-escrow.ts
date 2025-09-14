@@ -771,6 +771,7 @@ interface MintEscrowResponse {
   };
   error?: string;
   gasless?: boolean;
+  retryable?: boolean;
 }
 
 // Initialize ThirdWeb client
