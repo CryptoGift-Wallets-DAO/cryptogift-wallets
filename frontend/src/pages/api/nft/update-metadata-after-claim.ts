@@ -162,11 +162,16 @@ export default async function handler(
         external_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://cryptogift-wallets.vercel.app'}/gift/claim/${tokenId}`
       }),
       
-      // Update with claim information
-      image: imageUrl || existingMetadata?.image || `ipfs://placeholder-${tokenId}`,
-      image_url: imageUrl ? (imageUrl.startsWith('ipfs://') ? 
-        `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}` : 
-        imageUrl) : existingMetadata?.image_url,
+      // Update with claim information - CRITICAL: Only update image if we have valid data
+      ...(imageUrl && imageUrl !== '' && !imageUrl.includes('placeholder') ? {
+        image: imageUrl,
+        image_url: imageUrl.startsWith('ipfs://') ? 
+          `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}` : 
+          imageUrl
+      } : existingMetadata?.image ? {
+        image: existingMetadata.image,
+        image_url: existingMetadata.image_url
+      } : {}),
       
       // Add or update attributes
       attributes: [
