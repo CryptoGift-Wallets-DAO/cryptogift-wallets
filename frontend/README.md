@@ -2,7 +2,40 @@
 
 Este frontend está construido con Next.js y thirdweb SDK. Consulta la documentación y variables de entorno necesarias en el README original.
 
-## 🚨 CRITICAL UPDATE (Agosto 24, 2025) - WALLET DASHBOARD AUDIT & GAS-PAID FALLBACK ✅
+## 🚨 CRITICAL UPDATE (Septiembre 14, 2025) - MY-WALLETS I18N INTEGRATION FIX ✅
+
+### 🔧 ARCHITECTURAL FIX: My-Wallets Page Compilation Issue
+- ✅ **ROOT CAUSE RESOLVED**: Next.js with i18n active does NOT compile pages outside `[locale]/` structure  
+- ✅ **COMPLETE MIGRATION**: Moved `app/my-wallets/page.tsx` to `app/[locale]/my-wallets/page.tsx`
+- ✅ **IMPORT PATH FIXES**: All imports adjusted from `../../` to `../../../` patterns
+- ✅ **MIDDLEWARE CLEANUP**: Removed all hardcoded `/my-wallets` exclusions and bypasses
+- ✅ **FUNCTIONALITY PRESERVED**: Authentication, TBA wallets, dashboard modals all working
+
+### 📝 TECHNICAL CHANGES APPLIED
+1. **Page Structure** (`src/app/[locale]/my-wallets/page.tsx`):
+   - Complete 706-line functionality migration with zero feature loss
+   - All 20+ component imports verified and corrected
+   - Dynamic imports for WalletDashboard properly adjusted
+
+2. **Middleware Fixes** (`src/middleware.ts`):
+   - Removed hardcoded exclusions that bypassed non-existent compiled pages
+   - Standard i18n routing flow now handles /my-wallets naturally
+   - No special cases needed with proper [locale] structure
+
+**COMMIT**: `a8265e1` - "fix: move my-wallets to [locale] directory and fix i18n routing"
+
+### 📋 CRITICAL i18n LESSON
+```typescript
+// ❌ PAGES OUTSIDE [locale] ARE NOT COMPILED:
+/app/my-page/page.tsx              // Silently ignored by Next.js
+
+// ✅ ALL PAGES MUST BE IN [locale] STRUCTURE:
+/app/[locale]/my-page/page.tsx     // Properly compiled and routed
+```
+
+---
+
+## 📊 PREVIOUS UPDATE (Agosto 24, 2025) - WALLET DASHBOARD AUDIT & GAS-PAID FALLBACK ✅
 
 ### 🔍 DEEP SYSTEM AUDIT - WALLET DASHBOARD FUNCTIONALITY
 - ✅ **CSP BLOCKING FIXED**: 30+ domains added to middleware.ts for analytics, IPFS, monitoring

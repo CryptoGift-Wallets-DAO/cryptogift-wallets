@@ -37,7 +37,7 @@ export default function TokenPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/nft-metadata/${contractAddress}/${tokenId}`);
+      const response = await fetch(`/api/nft/${contractAddress}/${tokenId}`);
       
       if (!response.ok) {
         throw new Error('NFT not found');
