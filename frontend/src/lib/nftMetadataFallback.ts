@@ -390,60 +390,27 @@ export const getNFTMetadataWithFallback = async (config: FallbackConfig): Promis
   
   console.log(`🔍 Starting fallback chain for ${contractAddress}:${tokenId}`);
   
-  // Step 1: Try Redis first (if available) - COMPATIBLE with both STRING and HASH formats
+  // Step 1: Try Redis first (if available)
   try {
     const redis = getRedisClient();
     if (!redis) {
       console.log('⚠️ Redis not available, skipping cache lookup');
     } else {
-      // 🔥 COMPATIBILITY FIX: Try STRING format first (used by update-metadata-after-claim.ts)
-      let metadata: any = null;
-      
-      try {
-        const stringData = await redis.get(cacheKey);
-        if (stringData) {
-          // Parse JSON string data (format used by update-metadata-after-claim.ts)
-          const parsedData = typeof stringData === 'string' ? JSON.parse(stringData) : stringData;
-          console.log(`✅ Found STRING format data in Redis for ${contractAddress}:${tokenId}`);
-          
-          metadata = {
-            contractAddress: parsedData.contractAddress || contractAddress,
-            tokenId: parsedData.tokenId || tokenId,
-            name: parsedData.name,
-            description: parsedData.description,
-            image: parsedData.image,
-            attributes: parsedData.attributes || [],
-            imageIpfsCid: parsedData.imageIpfsCid,
-            external_url: parsedData.external_url
-          };
-        }
-      } catch (stringError) {
-        console.log(`ℹ️ No STRING format data, trying HASH format`);
-      }
-      
-      // Fallback to HASH format if STRING format not found
-      if (!metadata) {
-        const cachedData = await redis.hgetall(cacheKey);
-        if (cachedData && Object.keys(cachedData).length > 0) {
-          console.log(`✅ Found HASH format data in Redis for ${contractAddress}:${tokenId}`);
-          
-          // Parse Redis hash data similar to nftMetadataStore.ts
-          metadata = {
-            contractAddress: cachedData.contractAddress,
-            tokenId: cachedData.tokenId,
-            name: cachedData.name,
-            description: cachedData.description,
-            image: cachedData.image,
-            attributes: cachedData.attributes ? 
-              (typeof cachedData.attributes === 'string' ? 
-                JSON.parse(cachedData.attributes) : cachedData.attributes) : [],
-            imageIpfsCid: cachedData.imageIpfsCid,
-            external_url: cachedData.external_url
-          };
-        }
-      }
-      
-      if (metadata) {
+      const cachedData = await redis.hgetall(cacheKey);
+      if (cachedData && Object.keys(cachedData).length > 0) {
+        // Parse Redis hash data similar to nftMetadataStore.ts
+        const metadata = {
+          contractAddress: cachedData.contractAddress,
+          tokenId: cachedData.tokenId,
+          name: cachedData.name,
+          description: cachedData.description,
+          image: cachedData.image,
+          attributes: cachedData.attributes ? 
+            (typeof cachedData.attributes === 'string' ? 
+              JSON.parse(cachedData.attributes) : cachedData.attributes) : [],
+          imageIpfsCid: cachedData.imageIpfsCid,
+          external_url: cachedData.external_url
+        };
         
         // 🔥 CRITICAL FIX: Prioritize real data over strict validation with proper type casting
         const typedMetadata = metadata as ERC721Metadata;
