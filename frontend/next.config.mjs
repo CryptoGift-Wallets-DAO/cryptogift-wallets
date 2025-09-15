@@ -17,6 +17,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'dweb.link' },
       { protocol: 'https', hostname: 'ipfs.infura.io' },
       { protocol: 'https', hostname: 'ipfs.fleek.co' },
+      { protocol: 'https', hostname: 'gateway.thirdweb.com' },
     ],
     // Keep unoptimized for IPFS compatibility in mobile WebViews
     unoptimized: true

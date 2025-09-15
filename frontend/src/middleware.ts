@@ -56,6 +56,8 @@ function generateCSP(): string {
       'https://*.nftstorage.link',
       'https://arweave.net',
       'https://*.arweave.net',
+      'https://cloudflare-ipfs.com',
+      'https://dweb.link',
       // Mux video thumbnails
       'https://image.mux.com',
       'https://*.mux.com',
@@ -84,6 +86,8 @@ function generateCSP(): string {
       'https://*.ipfs.dweb.link',
       'https://gateway.pinata.cloud',
       'https://nftstorage.link',
+      'https://cloudflare-ipfs.com',
+      'https://dweb.link',
       // Push Protocol
       'https://backend.epns.io',
       'https://backend-staging.epns.io',

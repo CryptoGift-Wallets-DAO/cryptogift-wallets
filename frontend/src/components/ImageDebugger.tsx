@@ -43,7 +43,7 @@ export const ImageDebugger: React.FC<ImageDebuggerProps> = ({
       
       // Step 1: Test our NFT API FIRST (not client cache)
       debug.steps.push('1️⃣ Testing NFT API (PRIORITY)...');
-      const apiResponse = await fetch(`/api/nft/${nftContract}/${tokenId}`);
+      const apiResponse = await fetch(`/api/nft-metadata/${nftContract}/${tokenId}`);
       debug.apiStatus = apiResponse.status;
       debug.apiOk = apiResponse.ok;
       
