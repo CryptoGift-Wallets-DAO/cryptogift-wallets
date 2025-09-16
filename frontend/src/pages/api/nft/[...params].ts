@@ -375,40 +375,66 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tokenIdLength: tokenId?.toString().length
       });
       console.log("🚨 ROOT CAUSE: Metadata was never stored during mint OR lookup is failing");
-      console.log("🔍 Next steps: Check /api/debug/image-trace or mint logs");
+      console.log("🔍 SURGICAL FIX: Using comprehensive fallback system instead of placeholder");
       
-      // Fallback with enhanced debugging info
-      nft = {
-        id: tokenId,
-        name: `CryptoGift NFT-Wallet #${tokenId}`,
-        description: "Un regalo cripto único con wallet integrada ERC-6551. NOTA: Metadata no encontrada en almacenamiento, usando valores por defecto.",
-        image: "/images/cg-wallet-placeholder.png", // This is the FALLBACK placeholder
-        attributes: [
-          {
-            trait_type: "Initial Balance",
-            value: "0 USDC"
-          },
-          {
-            trait_type: "Filter",
-            value: "Original"
-          },
-          {
-            trait_type: "Wallet Type",
-            value: "ERC-6551 Token Bound Account"
-          },
-          {
-            trait_type: "Network",
-            value: "Base Sepolia"
-          },
-          {
-            trait_type: "Debug Info",
-            value: "Metadata not found in storage - check mint process"
-          }
-        ]
-      };
-      
-      console.log("🚨 DEBUG: Using placeholder because no metadata was stored during mint");
-      console.log("🔍 This suggests the problem is in the mint process, not display");
+      // 🔥 SURGICAL FIX: Instead of placeholder, use comprehensive fallback system
+      try {
+        const { getNFTMetadataWithFallback } = await import('../../../lib/nftMetadataFallback');
+        const publicBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cryptogift-wallets.vercel.app';
+        
+        console.log("🔄 Attempting comprehensive fallback chain: Redis → on-chain → IPFS → placeholder");
+        const fallbackResult = await getNFTMetadataWithFallback({
+          contractAddress,
+          tokenId,
+          publicBaseUrl,
+          timeout: 8000
+        });
+        
+        if (fallbackResult.metadata && !fallbackResult.metadata.image.includes('placeholder')) {
+          console.log(`✅ FALLBACK SUCCESS: Retrieved real metadata via ${fallbackResult.source} (${fallbackResult.latency}ms)`);
+          nft = {
+            id: tokenId,
+            name: fallbackResult.metadata.name,
+            description: fallbackResult.metadata.description,
+            image: fallbackResult.metadata.image,
+            attributes: fallbackResult.metadata.attributes || [],
+            tbaAddress: owner, // Keep TBA integration
+            success: true,
+            source: `fallback_${fallbackResult.source}`,
+            latency: fallbackResult.latency
+          };
+        } else {
+          throw new Error('Fallback also returned placeholder');
+        }
+      } catch (fallbackError) {
+        console.warn("⚠️ Comprehensive fallback failed:", fallbackError.message);
+        // Only now use placeholder as final resort
+        nft = {
+          id: tokenId,
+          name: `CryptoGift NFT-Wallet #${tokenId}`,
+          description: "Un regalo cripto único con wallet integrada ERC-6551. NOTA: Metadata no encontrada en almacenamiento, usando valores por defecto.",
+          image: "/images/cg-wallet-placeholder.png",
+          attributes: [
+            {
+              trait_type: "Initial Balance",
+              value: "0 USDC"
+            },
+            {
+              trait_type: "Wallet Type",
+              value: "ERC-6551 Token Bound Account"
+            },
+            {
+              trait_type: "Network",
+              value: "Base Sepolia"
+            },
+            {
+              trait_type: "Debug Info",
+              value: "All fallback methods exhausted - using final placeholder"
+            }
+          ]
+        };
+        console.log("🚨 FINAL RESORT: Using placeholder after all fallback methods failed");
+      }
     }
 
     // If we have a tokenURI, try to fetch metadata
