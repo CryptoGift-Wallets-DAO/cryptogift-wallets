@@ -9,7 +9,7 @@
  * Co-Author: Godez22
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -139,6 +139,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const [showCalendar, setShowCalendar] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
   const account = useActiveAccount();
+  const contentScrollRef = useRef<HTMLDivElement>(null);
 
   // FASE 4: connectWallet() abstraction with Promise-based API
   const connectWallet = useCallback((): Promise<string> => {
@@ -184,13 +185,36 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     return !!account?.address;
   }, [mode, account?.address]);
 
-  // Ensure scrolling is reset when modal opens
+  // Ensure scrolling is reset when modal opens or content changes
   useEffect(() => {
     if (isOpen) {
-      // Reset body scroll position
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      // Force immediate scroll reset
+      const resetScroll = () => {
+        // Temporarily disable smooth scrolling
+        const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior = 'auto';
+
+        // Reset all possible scroll containers
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+
+        // Reset the modal content container
+        if (contentScrollRef.current) {
+          contentScrollRef.current.scrollTop = 0;
+        }
+
+        // Restore original scroll behavior
+        setTimeout(() => {
+          document.documentElement.style.scrollBehavior = originalScrollBehavior;
+        }, 100);
+      };
+
+      // Immediate reset
+      resetScroll();
+
+      // Delayed reset to ensure DOM is ready
+      setTimeout(resetScroll, 50);
     }
   }, [isOpen]);
 
@@ -570,11 +594,11 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
           {/* Lesson Content */}
           {!showSuccess && (
-            <div className="flex-1 overflow-y-auto min-h-0" ref={(el) => {
-              if (el) {
-                el.scrollTop = 0;
-              }
-            }}>
+            <div
+              className="flex-1 overflow-y-auto min-h-0"
+              ref={contentScrollRef}
+              id="lesson-content-scroll-container"
+            >
               {lessonId === 'sales-masterclass' ? (
                 <div className="h-full">
                   <SalesMasterclass

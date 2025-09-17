@@ -729,6 +729,11 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   useEffect(() => {
     // Enhanced scroll handling for outro video and any state changes
     const scrollToTop = () => {
+      // Temporarily disable smooth scrolling
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+
+      // Reset all scroll positions
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
@@ -737,11 +742,22 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       document.body.style.transform = '';
       document.body.style.position = '';
 
+      // Find and reset the lesson modal content container
+      const lessonContainer = document.getElementById('lesson-content-scroll-container');
+      if (lessonContainer) {
+        lessonContainer.scrollTop = 0;
+      }
+
       // Ensure we're not stuck in a fixed position
       const wrapper = document.querySelector('.sales-masterclass-wrapper');
       if (wrapper) {
         wrapper.scrollTop = 0;
       }
+
+      // Restore scroll behavior
+      setTimeout(() => {
+        document.documentElement.style.scrollBehavior = originalScrollBehavior;
+      }, 50);
     };
 
     // Immediate scroll
@@ -869,14 +885,31 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
       // Force scroll to top when changing blocks
       setTimeout(() => {
+        // Temporarily disable smooth scrolling
+        const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior = 'auto';
+
+        // Reset all possible scroll containers
         window.scrollTo(0, 0);
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
-        // Also try scrolling the main container if in educational mode
+
+        // Try to find and reset the lesson modal content container
+        const lessonContainer = document.getElementById('lesson-content-scroll-container');
+        if (lessonContainer) {
+          lessonContainer.scrollTop = 0;
+        }
+
+        // Also try educational mode wrapper
         const mainContainer = document.querySelector('.educational-mode-wrapper');
         if (mainContainer) {
           mainContainer.scrollTop = 0;
         }
+
+        // Restore scroll behavior
+        setTimeout(() => {
+          document.documentElement.style.scrollBehavior = originalScrollBehavior;
+        }, 50);
       }, 100);
 
       // Set appropriate duration for educational vs normal mode
@@ -1396,9 +1429,21 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
               setShowIntroVideo(false);
               // Force scroll to top when video finishes
               setTimeout(() => {
+                const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+                document.documentElement.style.scrollBehavior = 'auto';
+
                 window.scrollTo(0, 0);
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
+
+                const lessonContainer = document.getElementById('lesson-content-scroll-container');
+                if (lessonContainer) {
+                  lessonContainer.scrollTop = 0;
+                }
+
+                setTimeout(() => {
+                  document.documentElement.style.scrollBehavior = originalScrollBehavior;
+                }, 50);
               }, 100);
               // Start the masterclass timer when video finishes
               setTimeLeft(SALES_BLOCKS[0].duration);
@@ -1425,9 +1470,21 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
               // Force scroll to top after outro video
               setTimeout(() => {
+                const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+                document.documentElement.style.scrollBehavior = 'auto';
+
                 window.scrollTo(0, 0);
                 document.documentElement.scrollTop = 0;
                 document.body.scrollTop = 0;
+
+                const lessonContainer = document.getElementById('lesson-content-scroll-container');
+                if (lessonContainer) {
+                  lessonContainer.scrollTop = 0;
+                }
+
+                setTimeout(() => {
+                  document.documentElement.style.scrollBehavior = originalScrollBehavior;
+                }, 50);
               }, 100);
 
               // Now complete the education flow after the video
