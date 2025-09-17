@@ -23,9 +23,9 @@ export interface VideoConfig {
 export const VIDEO_CONFIG: Record<string, VideoConfig> = {
   // Sales Masterclass intro video
   salesMasterclass: {
-    lessonId: "sales-masterclass-v2", // Updated to v2 for new CryptoGift__Regala_el_futuro video
-    muxPlaybackId: "GYUeyDShOKhtDCy1qqoCetF01hhabYfp7dldcV3HKZ5U", // CryptoGift__Regala_el_futuro video
-    title: "CryptoGift: Regala el Futuro",
+    lessonId: "sales-masterclass-v3", // Updated to v3 for new Presentación Completa video
+    muxPlaybackId: "3W6iaGGBJN2AyMh37o5Qg3kdNDEFi2JP4UIBRK00QJhE", // Presentación Completa video
+    title: "Presentación Completa",
     description: "Descubre cómo regalar activos digitales de valor real con CryptoGift",
     // poster: "/images/videos/sales-masterclass-poster.jpg", // Uncomment when you have a poster
     // captionsVtt: "/captions/sales-masterclass-es.vtt", // Uncomment when you have captions
