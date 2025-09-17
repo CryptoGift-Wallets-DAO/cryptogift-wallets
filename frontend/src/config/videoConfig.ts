@@ -23,12 +23,20 @@ export interface VideoConfig {
 export const VIDEO_CONFIG: Record<string, VideoConfig> = {
   // Sales Masterclass intro video
   salesMasterclass: {
-    lessonId: "sales-masterclass-v1", // Change to v2, v3, etc when updating video
-    muxPlaybackId: "xpjwDb3X53sBnidEYUKeGZf8vhBDPO3IuLnJbH7D8g00", // BETA VIDEO - Replace this ID to update
-    title: "CryptoGift Sales Masterclass",
-    description: "Descubre cómo transformamos el mundo cripto en 15 minutos",
+    lessonId: "sales-masterclass-v2", // Updated to v2 for new CryptoGift__Regala_el_futuro video
+    muxPlaybackId: "GYUeyDShOKhtDCy1qqoCetF01hhabYfp7dldcV3HKZ5U", // CryptoGift__Regala_el_futuro video
+    title: "CryptoGift: Regala el Futuro",
+    description: "Descubre cómo regalar activos digitales de valor real con CryptoGift",
     // poster: "/images/videos/sales-masterclass-poster.jpg", // Uncomment when you have a poster
     // captionsVtt: "/captions/sales-masterclass-es.vtt", // Uncomment when you have captions
+  },
+
+  // Presentation CGC - Video final después del EIP-712 y antes del claim
+  presentationCGC: {
+    lessonId: "presentation-cgc-v1",
+    muxPlaybackId: "dsEZYVMpcrkuNvn0200p8C7nz9qEqY3dr7Mx9OiauZSro", // Presentation CGC video
+    title: "Presentación CryptoGift Club",
+    description: "Descubre las oportunidades exclusivas que te esperan como miembro del CryptoGift Club",
   },
 
   // Example for future lessons

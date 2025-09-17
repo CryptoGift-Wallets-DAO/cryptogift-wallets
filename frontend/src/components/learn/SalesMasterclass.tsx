@@ -681,7 +681,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [showEducationalValidation, setShowEducationalValidation] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState<boolean>(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  
+  const [showOutroVideo, setShowOutroVideo] = useState(false); // Video final después del EIP-712
+
   // Removed router dependency to avoid App Router/Pages Router conflicts
   const timerRef = useRef<NodeJS.Timeout>();
 
@@ -2619,6 +2620,36 @@ const CaptureBlock: React.FC<{
       
       {/* Calendar Booking Modal - Temporarily disabled for TypeScript compilation */}
       {/* TODO: Re-enable when modal scope issue is resolved */}
+
+      {/* Outro Video Gate - Shows after EIP-712 completion and before final claim */}
+      {showOutroVideo && VIDEO_CONFIG.presentationCGC && (
+        <div className={educationalMode ? "fixed inset-0 z-50 bg-black/95 flex items-center justify-center" : "pt-20 flex items-center justify-center min-h-screen px-3"}>
+          <IntroVideoGate
+            lessonId={VIDEO_CONFIG.presentationCGC.lessonId}
+            muxPlaybackId={VIDEO_CONFIG.presentationCGC.muxPlaybackId}
+            title={VIDEO_CONFIG.presentationCGC.title}
+            description={VIDEO_CONFIG.presentationCGC.description}
+            poster={VIDEO_CONFIG.presentationCGC.poster}
+            captionsVtt={VIDEO_CONFIG.presentationCGC.captionsVtt}
+            onFinish={() => {
+              console.log('📹 Outro video completed - completing education');
+              setShowOutroVideo(false);
+
+              // Now complete the education flow after the video
+              if (onEducationComplete) {
+                onEducationComplete();
+              } else {
+                // Fallback to postMessage if no callback provided
+                if (window.parent !== window) {
+                  window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
+                }
+              }
+            }}
+            autoSkip={false} // Don't auto-skip this important video
+            forceShow={true} // Always show even if seen before
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -2918,17 +2949,10 @@ const SuccessBlock: React.FC<{
             <div className="flex justify-center">
               <button
                 onClick={() => {
-                  console.log('🎯 IR AL CLAIM clicked - completing education and advancing');
-                  
-                  // Call the education complete callback instead of just postMessage
-                  if (onEducationComplete) {
-                    onEducationComplete();
-                  } else {
-                    // Fallback to postMessage if no callback provided
-                    if (window.parent !== window) {
-                      window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
-                    }
-                  }
+                  console.log('🎯 IR AL CLAIM clicked - showing outro video first');
+
+                  // Show the outro video before completing education
+                  setShowOutroVideo(true);
                 }}
                 className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
                 data-testid="ir-al-claim-button"
