@@ -1228,6 +1228,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           metrics={metrics}
           educationalMode={educationalMode}
           onEducationComplete={onEducationComplete}
+          onShowOutroVideo={() => setShowOutroVideo(true)}
         />;
       default:
         return null;
@@ -2660,7 +2661,8 @@ const SuccessBlock: React.FC<{
   metrics: any;
   educationalMode?: boolean;
   onEducationComplete?: () => void;
-}> = ({ content, leadData, metrics, educationalMode = false, onEducationComplete }) => {
+  onShowOutroVideo?: () => void;
+}> = ({ content, leadData, metrics, educationalMode = false, onEducationComplete, onShowOutroVideo }) => {
   // Removed router dependency to avoid App Router/Pages Router conflicts
   
   return (
@@ -2952,7 +2954,9 @@ const SuccessBlock: React.FC<{
                   console.log('🎯 IR AL CLAIM clicked - showing outro video first');
 
                   // Show the outro video before completing education
-                  setShowOutroVideo(true);
+                  if (onShowOutroVideo) {
+                    onShowOutroVideo();
+                  }
                 }}
                 className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-xl hover:shadow-2xl border border-white/20 text-lg"
                 data-testid="ir-al-claim-button"
