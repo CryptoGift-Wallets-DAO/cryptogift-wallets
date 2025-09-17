@@ -1339,8 +1339,38 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         </div>
       )}
 
+      {/* Outro Video Gate - Shows after EIP-712 completion and before final claim */}
+      {showOutroVideo && VIDEO_CONFIG.presentationCGC && (
+        <div className={educationalMode ? "fixed inset-0 z-50 bg-black/95 flex items-center justify-center" : "pt-20 flex items-center justify-center min-h-screen px-3"}>
+          <IntroVideoGate
+            lessonId={VIDEO_CONFIG.presentationCGC.lessonId}
+            muxPlaybackId={VIDEO_CONFIG.presentationCGC.muxPlaybackId}
+            title={VIDEO_CONFIG.presentationCGC.title}
+            description={VIDEO_CONFIG.presentationCGC.description}
+            poster={VIDEO_CONFIG.presentationCGC.poster}
+            captionsVtt={VIDEO_CONFIG.presentationCGC.captionsVtt}
+            onFinish={() => {
+              console.log('📹 Outro video completed - completing education');
+              setShowOutroVideo(false);
+
+              // Now complete the education flow after the video
+              if (onEducationComplete) {
+                onEducationComplete();
+              } else {
+                // Fallback to postMessage if no callback provided
+                if (window.parent !== window) {
+                  window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
+                }
+              }
+            }}
+            autoSkip={false} // Don't auto-skip this important video
+            forceShow={true} // Always show even if seen before
+          />
+        </div>
+      )}
+
       {/* Main Content - Only shows after video */}
-      {!showIntroVideo && (
+      {!showIntroVideo && !showOutroVideo && (
         <div className={educationalMode ? "h-full flex flex-col px-3" : "pt-20 pb-10 px-3"}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -2620,36 +2650,6 @@ const CaptureBlock: React.FC<{
       
       {/* Calendar Booking Modal - Temporarily disabled for TypeScript compilation */}
       {/* TODO: Re-enable when modal scope issue is resolved */}
-
-      {/* Outro Video Gate - Shows after EIP-712 completion and before final claim */}
-      {showOutroVideo && VIDEO_CONFIG.presentationCGC && (
-        <div className={educationalMode ? "fixed inset-0 z-50 bg-black/95 flex items-center justify-center" : "pt-20 flex items-center justify-center min-h-screen px-3"}>
-          <IntroVideoGate
-            lessonId={VIDEO_CONFIG.presentationCGC.lessonId}
-            muxPlaybackId={VIDEO_CONFIG.presentationCGC.muxPlaybackId}
-            title={VIDEO_CONFIG.presentationCGC.title}
-            description={VIDEO_CONFIG.presentationCGC.description}
-            poster={VIDEO_CONFIG.presentationCGC.poster}
-            captionsVtt={VIDEO_CONFIG.presentationCGC.captionsVtt}
-            onFinish={() => {
-              console.log('📹 Outro video completed - completing education');
-              setShowOutroVideo(false);
-
-              // Now complete the education flow after the video
-              if (onEducationComplete) {
-                onEducationComplete();
-              } else {
-                // Fallback to postMessage if no callback provided
-                if (window.parent !== window) {
-                  window.parent.postMessage({ type: 'EDUCATION_COMPLETE' }, '*');
-                }
-              }
-            }}
-            autoSkip={false} // Don't auto-skip this important video
-            forceShow={true} // Always show even if seen before
-          />
-        </div>
-      )}
     </div>
   );
 };
