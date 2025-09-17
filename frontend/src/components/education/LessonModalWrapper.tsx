@@ -176,13 +176,23 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     });
   }, [account?.address]);
 
-  // canProceed logic abstraction  
+  // canProceed logic abstraction
   const canProceedToNextStep = useCallback((): boolean => {
     if (mode !== 'educational') return true;
-    
+
     // Educational mode requires wallet connection
     return !!account?.address;
   }, [mode, account?.address]);
+
+  // Ensure scrolling is reset when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Reset body scroll position
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [isOpen]);
 
   // Watch for wallet connection when in connect wallet state
   useEffect(() => {
@@ -390,7 +400,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         style={{ transform: 'scale(0.92)', transformOrigin: 'center' }}
       >
         <motion.div
-          className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl max-w-6xl w-full h-screen overflow-hidden flex flex-col shadow-2xl transition-colors duration-300"
+          className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl max-w-6xl w-full h-screen overflow-y-auto overflow-x-hidden flex flex-col shadow-2xl transition-colors duration-300"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -560,7 +570,11 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
           {/* Lesson Content */}
           {!showSuccess && (
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0" ref={(el) => {
+              if (el) {
+                el.scrollTop = 0;
+              }
+            }}>
               {lessonId === 'sales-masterclass' ? (
                 <div className="h-full">
                   <SalesMasterclass

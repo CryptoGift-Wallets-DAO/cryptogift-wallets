@@ -649,8 +649,25 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   useEffect(() => {
     setIsComponentInitialized(true);
     console.log('✅ SalesMasterclass component fully initialized');
-    // Scroll to top when component mounts
-    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // Enhanced scroll to top logic
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      // Remove any transform or translate styles that might affect positioning
+      document.body.style.transform = '';
+      document.body.style.position = '';
+    };
+
+    // Immediate scroll
+    scrollToTop();
+
+    // Delayed scroll to ensure DOM is ready
+    const timer = setTimeout(scrollToTop, 100);
+
+    return () => clearTimeout(timer);
   }, []);
   
   // Hooks
@@ -710,11 +727,31 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
   // Scroll to top when outro video shows/hides
   useEffect(() => {
-    if (showOutroVideo) {
-      // Scroll to top immediately when outro video appears
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [showOutroVideo]);
+    // Enhanced scroll handling for outro video and any state changes
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      // Remove any transform or translate styles
+      document.body.style.transform = '';
+      document.body.style.position = '';
+
+      // Ensure we're not stuck in a fixed position
+      const wrapper = document.querySelector('.sales-masterclass-wrapper');
+      if (wrapper) {
+        wrapper.scrollTop = 0;
+      }
+    };
+
+    // Immediate scroll
+    scrollToTop();
+
+    // Delayed scroll for safety
+    const timer = setTimeout(scrollToTop, 100);
+
+    return () => clearTimeout(timer);
+  }, [showOutroVideo, showIntroVideo, currentBlock]); // Re-run on key state changes
 
   // QR Generation
   const generateDemoGiftUrl = useCallback(() => {
@@ -830,8 +867,17 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     if (nextBlockIndex !== null) {
       setCurrentBlock(nextBlockIndex);
 
-      // Scroll to top when changing blocks
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Force scroll to top when changing blocks
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        // Also try scrolling the main container if in educational mode
+        const mainContainer = document.querySelector('.educational-mode-wrapper');
+        if (mainContainer) {
+          mainContainer.scrollTop = 0;
+        }
+      }, 100);
 
       // Set appropriate duration for educational vs normal mode
       const blockDuration = educationalMode 
@@ -1348,8 +1394,12 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             onFinish={() => {
               console.log('📹 Intro video completed');
               setShowIntroVideo(false);
-              // Scroll to top when video finishes
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              // Force scroll to top when video finishes
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 100);
               // Start the masterclass timer when video finishes
               setTimeLeft(SALES_BLOCKS[0].duration);
             }}
@@ -1361,7 +1411,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
       {/* Outro Video Gate - Shows after EIP-712 completion and before final claim */}
       {showOutroVideo && VIDEO_CONFIG.presentationCGC && (
-        <div className={educationalMode ? "fixed inset-0 z-50 bg-black/95 flex items-center justify-center" : "pt-20 flex items-center justify-center min-h-screen px-3"}>
+        <div className={educationalMode ? "min-h-screen bg-black/95 flex items-center justify-center p-4" : "pt-20 flex items-center justify-center min-h-screen px-3"}>
           <IntroVideoGate
             lessonId={VIDEO_CONFIG.presentationCGC.lessonId}
             muxPlaybackId={VIDEO_CONFIG.presentationCGC.muxPlaybackId}
@@ -1372,6 +1422,13 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             onFinish={() => {
               console.log('📹 Outro video completed - completing education');
               setShowOutroVideo(false);
+
+              // Force scroll to top after outro video
+              setTimeout(() => {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 100);
 
               // Now complete the education flow after the video
               if (onEducationComplete) {
