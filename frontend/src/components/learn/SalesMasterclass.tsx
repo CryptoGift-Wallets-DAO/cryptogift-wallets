@@ -649,6 +649,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   useEffect(() => {
     setIsComponentInitialized(true);
     console.log('✅ SalesMasterclass component fully initialized');
+    // Scroll to top when component mounts
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
   
   // Hooks
@@ -705,6 +707,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
       });
     }
   }, [educationalMode]); // Remove currentBlock dependency to avoid loops
+
+  // Scroll to top when outro video shows/hides
+  useEffect(() => {
+    if (showOutroVideo) {
+      // Scroll to top immediately when outro video appears
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [showOutroVideo]);
 
   // QR Generation
   const generateDemoGiftUrl = useCallback(() => {
@@ -819,7 +829,10 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
     
     if (nextBlockIndex !== null) {
       setCurrentBlock(nextBlockIndex);
-      
+
+      // Scroll to top when changing blocks
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
       // Set appropriate duration for educational vs normal mode
       const blockDuration = educationalMode 
         ? Math.min(SALES_BLOCKS[nextBlockIndex].duration, 15) // Max 15s in educational mode
@@ -1228,7 +1241,11 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
           metrics={metrics}
           educationalMode={educationalMode}
           onEducationComplete={onEducationComplete}
-          onShowOutroVideo={() => setShowOutroVideo(true)}
+          onShowOutroVideo={() => {
+            setShowOutroVideo(true);
+            // Scroll to top when showing outro video
+            window.scrollTo({ top: 0, behavior: 'instant' });
+          }}
         />;
       default:
         return null;
@@ -1331,6 +1348,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             onFinish={() => {
               console.log('📹 Intro video completed');
               setShowIntroVideo(false);
+              // Scroll to top when video finishes
+              window.scrollTo({ top: 0, behavior: 'smooth' });
               // Start the masterclass timer when video finishes
               setTimeLeft(SALES_BLOCKS[0].duration);
             }}
