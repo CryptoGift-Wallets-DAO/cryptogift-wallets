@@ -5,11 +5,11 @@ import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
-import { client } from '../../../client';
-import { WalletInterface } from '../../../../components/WalletInterface';
-import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
-import { RightSlideWallet } from '../../../../components/TBAWallet/RightSlideWallet';
-import { ImageDebugger } from '../../../../components/ImageDebugger';
+import { client } from '../../../../client';
+import { WalletInterface } from '../../../../../components/WalletInterface';
+import { ClaimEscrowInterface } from '../../../../../components/escrow/ClaimEscrowInterface';
+import { RightSlideWallet } from '../../../../../components/TBAWallet/RightSlideWallet';
+import { ImageDebugger } from '../../../../../components/ImageDebugger';
 
 export default function TokenPage() {
   const params = useParams();

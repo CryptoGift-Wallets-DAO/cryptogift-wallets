@@ -4,20 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
-import { ClaimEscrowInterface } from '../../../../../components/escrow/ClaimEscrowInterface';
-import { EscrowGiftStatus } from '../../../../../components/escrow/EscrowGiftStatus';
-import { PreClaimFlow } from '../../../../../components/education/PreClaimFlow';
-import { EducationModule } from '../../../../../components/education/EducationModule';
-import { LessonModalWrapperForEducation } from '../../../../../components/education/LessonModalWrapperForEducation';
+import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
+import { EscrowGiftStatus } from '../../../../components/escrow/EscrowGiftStatus';
+import { PreClaimFlow } from '../../../../components/education/PreClaimFlow';
+import { EducationModule } from '../../../../components/education/EducationModule';
+import { LessonModalWrapperForEducation } from '../../../../components/education/LessonModalWrapperForEducation';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
-import { client } from '../../../../../app/client';
-import { resolveIPFSUrlClient } from '../../../../../lib/clientMetadataStore';
-import { NotificationProvider, useNotifications } from '../../../../../components/ui/NotificationSystem';
+import { client } from '../../../../app/client';
+import { resolveIPFSUrlClient } from '../../../../lib/clientMetadataStore';
+import { NotificationProvider, useNotifications } from '../../../../components/ui/NotificationSystem';
 import {
   loadClaimSession,
   updateClaimSession,
   cleanupExpiredSessions
-} from '../../../../../lib/claimSessionStorage';
+} from '../../../../lib/claimSessionStorage';
 
 interface GiftInfo {
   creator: string;
@@ -400,7 +400,7 @@ export default function ClaimGiftPage() {
 
     // Clear session storage since claim is complete
     if (typeof tokenId === 'string') {
-      const { clearClaimSession } = require('../../../../../lib/claimSessionStorage');
+      const { clearClaimSession } = require('../../../../lib/claimSessionStorage');
       clearClaimSession(tokenId);
 
       // Refresh gift info to show claimed status
