@@ -6,7 +6,7 @@ import Head from 'next/head';
 import { useTheme } from 'next-themes';
 import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
 import { EscrowGiftStatus } from '../../../../components/escrow/EscrowGiftStatus';
-import { PreClaimFlow } from '../../../../components/education/PreClaimFlow';
+import { PreClaimFlowEN } from '../../../../app/en/gift/claim/[id]/components/PreClaimFlowEN';
 import { EducationModule } from '../../../../components/education/EducationModule';
 import { LessonModalWrapperForEducation } from '../../../../components/education/LessonModalWrapperForEducation';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
@@ -554,7 +554,7 @@ export default function ClaimGiftPage() {
 
           {/* Pre-Validation State */}
           {flowState === ClaimFlowState.PRE_VALIDATION && tokenId && (
-            <PreClaimFlow
+            <PreClaimFlowEN
               tokenId={tokenId as string}
               onValidationSuccess={handlePreClaimValidation}
               giftInfo={giftInfo}
