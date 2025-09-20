@@ -13,7 +13,7 @@ import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../../app/client';
 import { resolveIPFSUrlClient } from '../../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../../components/ui/NotificationSystem';
-import { LanguageToggle } from '../../../../components/ui/LanguageToggle';
+// import { LanguageToggle } from '../../../../components/ui/LanguageToggle';
 import {
   loadClaimSession,
   updateClaimSession,
@@ -525,8 +525,8 @@ export default function ClaimGiftPage() {
                   </button>
                 )}
 
-                {/* Language Selector */}
-                <LanguageToggle />
+                {/* Language Selector - temporarily disabled to debug */}
+                {/* <LanguageToggle /> */}
 
                 {!account && (
                   <ConnectButton
