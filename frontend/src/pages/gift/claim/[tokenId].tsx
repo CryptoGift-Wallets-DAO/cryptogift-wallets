@@ -564,16 +564,16 @@ export default function ClaimGiftPage() {
           )}
           
           {/* Education State - ACTUALIZADO PARA USAR LESSONMODALWRAPPER CON MAPEO CORRECTO */}
-          {flowState === ClaimFlowState.EDUCATION && educationSession && educationSession.requiredModules && (
+          {flowState === ClaimFlowState.EDUCATION && educationSession && educationSession.requiredModules && educationSession.requiredModules.length > 0 && (
             <div className="max-w-4xl mx-auto">
               {/* Mostrar el módulo actual usando LessonModalWrapper */}
               <LessonModalWrapperForEducation
                 moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
-                sessionToken={educationSession.sessionToken}
-                tokenId={tokenId as string}
+                sessionToken={educationSession.sessionToken || ''}
+                tokenId={tokenId || ''}
                 onComplete={(gateData) => handleModuleComplete(gateData)}
-                giftInfo={giftInfo}
-                nftMetadata={nftMetadata}
+                giftInfo={giftInfo || undefined}
+                nftMetadata={nftMetadata || undefined}
               />
             </div>
           )}
