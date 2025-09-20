@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useTheme } from 'next-themes';
-import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
+import { ClaimEscrowInterfaceEN } from '../../../../app/en/components/ClaimEscrowInterfaceEN';
 import { EscrowGiftStatusEN } from '../../../../app/en/components/EscrowGiftStatusEN';
 import { PreClaimFlowEN } from '../../../../app/en/gift/claim/[id]/components/PreClaimFlowEN';
 import { EducationModule } from '../../../../components/education/EducationModule';
@@ -13,7 +13,7 @@ import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../../app/client';
 import { resolveIPFSUrlClient } from '../../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../../components/ui/NotificationSystem';
-// import { LanguageToggle } from '../../../../components/ui/LanguageToggle';
+import { LanguageToggle } from '../../../../components/ui/LanguageToggle';
 import {
   loadClaimSession,
   updateClaimSession,
@@ -525,8 +525,8 @@ export default function ClaimGiftPage() {
                   </button>
                 )}
 
-                {/* Language Selector - temporarily disabled to debug */}
-                {/* <LanguageToggle /> */}
+                {/* Language Selector */}
+                <LanguageToggle />
 
                 {!account && (
                   <ConnectButton
@@ -639,7 +639,7 @@ export default function ClaimGiftPage() {
                   </button>
                 </div>
               ) : (
-                <ClaimEscrowInterface
+                <ClaimEscrowInterfaceEN
                   tokenId={tokenId as string}
                   giftInfo={giftInfo}
                   nftMetadata={nftMetadata}
