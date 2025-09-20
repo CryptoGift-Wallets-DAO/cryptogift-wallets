@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { AmplitudeProvider } from "./monitoring/AmplitudeProvider";
+import { NotificationProvider } from "./ui/NotificationSystem";
 
 // KILL-SWITCH: Dynamic import with SSR disabled for StaticBackground
 const StaticBackground = dynamic(() => import("./ui/StaticBackground").then(mod => ({ default: mod.StaticBackground })), {
@@ -41,7 +42,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     <ThemeProvider>
       <ThirdwebWrapper>
         <AmplitudeProvider>
-          <ErrorBoundary>
+          <NotificationProvider>
+            <ErrorBoundary>
             {/* FONDO ESTÁTICO - CON KILL-SWITCH */}
             {process.env.NEXT_PUBLIC_DISABLE_BG !== '1' && <StaticBackground />}
             
@@ -59,7 +61,8 @@ export function ClientLayout({ children }: ClientLayoutProps) {
               <Footer />
               <MintDebugger />
             </div>
-          </ErrorBoundary>
+            </ErrorBoundary>
+          </NotificationProvider>
         </AmplitudeProvider>
       </ThirdwebWrapper>
     </ThemeProvider>

@@ -243,7 +243,7 @@ export default function TokenPage() {
                   </div>
                   
                   {/* Regenerate Metadata Button - now auto-triggered by ImageDebugger */}
-                  {(nftData.image.includes('placeholder') || nftData.image.includes('cg-wallet-placeholder')) && (
+                  {nftData?.image && (nftData.image.includes('placeholder') || nftData.image.includes('cg-wallet-placeholder')) && (
                     <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                       <p className="text-sm text-yellow-800 mb-2">
                         🔄 Cargando imagen desde IPFS... Si persiste el problema, usa el botón de regeneración.
