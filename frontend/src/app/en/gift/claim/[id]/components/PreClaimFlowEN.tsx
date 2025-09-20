@@ -75,8 +75,7 @@ function triggerConfetti(options?: any) {
 import { EscrowGiftStatusEN } from '../../../../components/EscrowGiftStatusEN';
 
 // Import LessonModalWrapper - Unified Knowledge ↔ Educational System
-// TODO: Create English version
-// import { LessonModalWrapper } from '../../../../../../components/education/LessonModalWrapper';
+import { LessonModalWrapperEN } from '../../../components/LessonModalWrapperEN';
 
 interface PreClaimFlowProps {
   tokenId: string;
@@ -778,9 +777,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
       </div>
 
       {/* Educational Module Modal - Using Sales Masterclass with DAO Showcase */}
-      {/* Education component temporarily disabled - needs English version
       {showEducationalModule && validationState.sessionToken && (
-        <LessonModalWrapper
+        <LessonModalWrapperEN
           lessonId="sales-masterclass"
           mode="educational"
           isOpen={showEducationalModule}
@@ -801,7 +799,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
             }
           }}
         />
-      )} */}
+      )}
 
       {/* NFT Image Modal */}
       <NFTImageModal

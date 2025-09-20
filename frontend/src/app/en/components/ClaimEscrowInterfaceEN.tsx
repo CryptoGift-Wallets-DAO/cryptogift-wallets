@@ -12,21 +12,21 @@ import {
   isGiftExpired,
   parseEscrowError,
   prepareClaimGiftByIdCall
-} from '../../../../../lib/escrowUtils';
-import { type EscrowGift } from '../../../../../lib/escrowABI';
-import { useAuth } from '../../../../../hooks/useAuth';
-import { makeAuthenticatedRequest } from '../../../../../lib/siweClient';
-import { ConnectAndAuthButton } from '../../../../../components/ConnectAndAuthButton';
-import { NFTImageModal } from '../../../../../components/ui/NFTImageModal';
-import { useNotifications } from '../../../../../components/ui/NotificationSystem';
+} from '../../../lib/escrowUtils';
+import { type EscrowGift } from '../../../lib/escrowABI';
+import { useAuth } from '../../../hooks/useAuth';
+import { makeAuthenticatedRequest } from '../../../lib/siweClient';
+import { ConnectAndAuthButton } from '../../../components/ConnectAndAuthButton';
+import { NFTImageModal } from '../../../components/ui/NFTImageModal';
+import { useNotifications } from '../../../components/ui/NotificationSystem';
 // MobileWalletRedirect REMOVED - ConnectAndAuthButton handles all mobile popups
-import { NetworkOptimizationPrompt } from '../../../../../components/ui/NetworkOptimizationPrompt';
+import { NetworkOptimizationPrompt } from '../../../components/ui/NetworkOptimizationPrompt';
 import {
   isMobileDevice,
   isRpcError,
   sendTransactionMobile,
   waitForReceiptMobile
-} from '../../../../../lib/mobileRpcHandler';
+} from '../../../lib/mobileRpcHandler';
 
 interface ClaimEscrowInterfaceProps {
   tokenId: string;
