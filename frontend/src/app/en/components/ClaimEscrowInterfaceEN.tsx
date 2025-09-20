@@ -141,7 +141,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
     // Use connected wallet address if not specified
     const recipientAddress = formData.recipientAddress || account?.address;
 
-    if (!recipientAddress || !auth?.authenticated) {
+    if (!recipientAddress || !auth?.isAuthenticated) {
       setError('Please connect your wallet and authenticate first');
       return;
     }
@@ -217,7 +217,6 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
 
       // Add success notification
       addNotification({
-        id: `claim-success-${tokenId}`,
         type: 'success',
         title: 'Gift claimed!',
         message: `Successfully claimed NFT #${tokenId}`,
@@ -259,7 +258,6 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
 
       // Add error notification
       addNotification({
-        id: `claim-error-${tokenId}`,
         type: 'error',
         title: 'Claim failed',
         message: error.message || 'An unexpected error occurred',
@@ -469,7 +467,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
         )}
 
         {/* Claim Form */}
-        {account && auth?.authenticated && claimStep === 'password' && (
+        {account && auth?.isAuthenticated && claimStep === 'password' && (
           <>
             <div className="space-y-4">
               <div>
@@ -639,10 +637,6 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
         <NetworkOptimizationPrompt
           isOpen={showNetworkPrompt}
           onClose={() => setShowNetworkPrompt(false)}
-          onOptimized={() => {
-            setShowNetworkPrompt(false);
-            // Could trigger claim after optimization if desired
-          }}
         />
       )}
     </div>

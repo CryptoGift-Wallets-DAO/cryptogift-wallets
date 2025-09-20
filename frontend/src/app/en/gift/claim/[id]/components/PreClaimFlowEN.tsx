@@ -75,7 +75,7 @@ function triggerConfetti(options?: any) {
 import { EscrowGiftStatusEN } from '../../../../components/EscrowGiftStatusEN';
 
 // Import LessonModalWrapper - Unified Knowledge ↔ Educational System
-import { LessonModalWrapperEN } from '../../../components/LessonModalWrapperEN';
+import { LessonModalWrapperEN } from '../../../../components/LessonModalWrapperEN';
 
 interface PreClaimFlowProps {
   tokenId: string;
