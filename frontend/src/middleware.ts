@@ -203,12 +203,32 @@ function getSecurityHeaders(): HeadersInit {
 }
 
 export function middleware(request: NextRequest) {
-  
+
+  // Handle English version via cookie-based internal rewrite
+  const locale = request.cookies.get('NEXT_LOCALE')?.value;
+  const pathname = request.nextUrl.pathname;
+
+  // Routes that support English clone
+  const englishSupportedRoutes = [
+    /^\/token\/[^\/]+\/[^\/]+$/,  // /token/[address]/[id]
+    /^\/gift\/claim\/[^\/]+$/,    // /gift/claim/[tokenId]
+    // Add more routes here as we create English clones
+  ];
+
+  // Check if current path supports English and cookie is set
+  if (locale === 'en' && englishSupportedRoutes.some(regex => regex.test(pathname))) {
+    // Internal rewrite to /en/* without changing URL
+    const url = request.nextUrl.clone();
+    url.pathname = `/en${pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
   // Skip middleware for API routes, static files, Pages Router routes, and App Router routes without i18n
   if (
     request.nextUrl.pathname.startsWith('/api/') ||
     request.nextUrl.pathname.startsWith('/_next/') ||
     request.nextUrl.pathname.startsWith('/static/') ||
+    request.nextUrl.pathname.startsWith('/en/') ||  // Skip for internal English routes
     // Pages Router routes
     request.nextUrl.pathname.startsWith('/gift/') ||
     request.nextUrl.pathname === '/admin/migration' ||
