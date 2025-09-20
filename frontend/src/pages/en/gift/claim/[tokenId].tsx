@@ -6,7 +6,7 @@ import Head from 'next/head';
 import { useTheme } from 'next-themes';
 import { ClaimEscrowInterface } from '../../../../components/escrow/ClaimEscrowInterface';
 import { EscrowGiftStatus } from '../../../../components/escrow/EscrowGiftStatus';
-import { PreClaimFlow } from '../../../../components/en/education/PreClaimFlow';
+import { PreClaimFlow } from '../../../../components/education/PreClaimFlow';
 import { EducationModule } from '../../../../components/education/EducationModule';
 import { LessonModalWrapperForEducation } from '../../../../components/education/LessonModalWrapperForEducation';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
