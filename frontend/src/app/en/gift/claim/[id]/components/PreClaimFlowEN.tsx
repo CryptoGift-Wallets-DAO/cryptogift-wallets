@@ -77,6 +77,9 @@ import { EscrowGiftStatusEN } from '../../../../components/EscrowGiftStatusEN';
 // Import LessonModalWrapper - Unified Knowledge ↔ Educational System
 import { LessonModalWrapperEN } from '../../../../components/LessonModalWrapperEN';
 
+// Import LanguageToggle
+import { LanguageToggle } from '../../../../../../components/ui/LanguageToggle';
+
 interface PreClaimFlowProps {
   tokenId: string;
   onValidationSuccess: (sessionToken: string, requiresEducation: boolean, educationGateData?: string, educationModules?: number[]) => void;
@@ -479,6 +482,11 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         {/* Right Panel - Password Validation */}
         <div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            {/* Language Toggle at the top */}
+            <div className="flex justify-end mb-4">
+              <LanguageToggle />
+            </div>
+
             {/* Header with sales hooks */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-4">
