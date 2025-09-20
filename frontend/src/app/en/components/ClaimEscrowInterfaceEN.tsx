@@ -637,6 +637,9 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
         <NetworkOptimizationPrompt
           isOpen={showNetworkPrompt}
           onClose={() => setShowNetworkPrompt(false)}
+          currentChainId={84532} // Base Sepolia
+          requiredChainId={84532} // Base Sepolia
+          context="claim"
         />
       )}
     </div>
