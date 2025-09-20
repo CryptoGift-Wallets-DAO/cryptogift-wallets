@@ -570,7 +570,7 @@ export default function ClaimGiftPage() {
               <LessonModalWrapperForEducation
                 moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
                 sessionToken={educationSession.sessionToken || ''}
-                tokenId={tokenId || ''}
+                tokenId={typeof tokenId === 'string' ? tokenId : tokenId?.[0] || ''}
                 onComplete={(gateData) => handleModuleComplete(gateData)}
                 giftInfo={giftInfo || undefined}
                 nftMetadata={nftMetadata || undefined}
