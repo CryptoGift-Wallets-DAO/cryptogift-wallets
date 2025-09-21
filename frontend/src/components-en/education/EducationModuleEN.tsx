@@ -91,7 +91,7 @@ const MODULE_DATABASE: Record<number, ModuleContent> = {
         options: [
           'In a text file on my computer',
           'On paper stored in a safe place',
-          'In my email so I don't lose it',
+          'In my email so I don\'t lose it',
           'In a photo on my phone'
         ],
         correctAnswer: 1,
@@ -101,7 +101,7 @@ const MODULE_DATABASE: Record<number, ModuleContent> = {
         id: 'q2',
         question: 'What should you ALWAYS verify before installing MetaMask?',
         options: [
-          'That it's free',
+          'That it\'s free',
           'That the URL is metamask.io',
           'That it has good reviews',
           'That it works on my browser'
