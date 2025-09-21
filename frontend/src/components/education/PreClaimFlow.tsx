@@ -6,7 +6,6 @@ import { useNotifications } from '../ui/NotificationSystem';
 import { useAuth } from '../../hooks/useAuth';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
-import { LanguageToggle } from '../ui/LanguageToggle';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { 
@@ -478,10 +477,6 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         {/* Panel Derecho - Validación de Password */}
         <div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 relative">
-            {/* Language Toggle in top right corner */}
-            <div className="absolute top-4 right-4 z-10">
-              <LanguageToggle />
-            </div>
 
             {/* Header con ganchos de venta */}
             <div className="text-center mb-6">
