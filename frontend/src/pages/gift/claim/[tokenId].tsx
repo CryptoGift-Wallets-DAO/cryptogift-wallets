@@ -7,7 +7,8 @@ import { EscrowGiftStatus } from '../../../components/escrow/EscrowGiftStatus';
 import { PreClaimFlow } from '../../../components/education/PreClaimFlow';
 import { EducationModule } from '../../../components/education/EducationModule';
 import { LessonModalWrapperForEducation } from '../../../components/education/LessonModalWrapperForEducation';
-import { useActiveAccount } from 'thirdweb/react';
+import { ConnectButton, useActiveAccount } from 'thirdweb/react';
+import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../components/ui/NotificationSystem';
 import { 
