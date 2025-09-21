@@ -13,7 +13,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
-import { client } from '../../src/app/client';
+import { client } from '../../app/client';
 import { 
   CheckCircle, 
   Sparkles, 

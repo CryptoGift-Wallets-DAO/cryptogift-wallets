@@ -8,7 +8,7 @@ import { PreClaimFlowEN } from '../../../../components-en/education/PreClaimFlow
 import { EducationModuleEN } from '../../../../components-en/education/EducationModuleEN';
 import { LessonModalWrapperForEducationEN } from '../../../../components-en/education/LessonModalWrapperForEducationEN';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
-import { client } from '../../../../src/app/client';
+import { client } from '../../../../app/client';
 import { resolveIPFSUrlClient } from '../../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../../components/ui/NotificationSystem';
 import { LanguageToggle } from '../../../../components/ui/LanguageToggle';
