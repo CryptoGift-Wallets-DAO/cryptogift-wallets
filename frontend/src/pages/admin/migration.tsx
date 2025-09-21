@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import dynamic from 'next/dynamic';
