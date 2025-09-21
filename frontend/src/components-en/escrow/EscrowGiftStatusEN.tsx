@@ -1,9 +1,7 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
-import { NFTImage } from '../../../components/NFTImage';
-import { NFTImageModal } from '../../../components/ui/NFTImageModal';
-import {
+import { NFTImage } from '../../components/NFTImage';
+import { NFTImageModal } from '../../components/ui/NFTImageModal';
+import { 
   formatTimeRemaining,
   isGiftExpired,
   getGiftStatus,
@@ -11,7 +9,7 @@ import {
   getGiftStatusBadgeColor,
   generateGiftLink,
   generateGiftShareMessage
-} from '../../../lib/escrowUtils';
+} from '../../lib/escrowUtils';
 
 interface EscrowGiftStatusProps {
   tokenId: string;
@@ -59,7 +57,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
     const updateTimer = () => {
       const currentTime = Math.floor(Date.now() / 1000);
       const remainingSeconds = giftInfo.expirationTime - currentTime;
-
+      
       if (remainingSeconds <= 0) {
         setTimeRemaining('Expired');
         setIsExpired(true);
@@ -87,16 +85,16 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
 
   const getProgressPercentage = () => {
     if (!giftInfo) return 0;
-
+    
     const now = Math.floor(Date.now() / 1000);
     const totalTime = giftInfo.expirationTime;
     const elapsed = now;
     const remaining = Math.max(0, totalTime - now);
-
+    
     if (giftInfo.status === 'claimed') return 100;
     if (giftInfo.status === 'returned') return 100;
     if (remaining === 0) return 100;
-
+    
     // Calculate progress based on remaining time (reverse - less time = more progress)
     const progress = Math.min(100, Math.max(0, 100 - (remaining / (7 * 24 * 60 * 60)) * 100));
     return progress;
@@ -105,7 +103,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
   const handleShare = async () => {
     const giftLink = generateGiftLink(tokenId);
     const shareMessage = generateGiftShareMessage(tokenId, giftMessage);
-
+    
     if (navigator.share) {
       try {
         await navigator.share({
@@ -151,7 +149,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
       {/* YUGI-OH FUTURISTIC CARD HEADER */}
       <div className="relative overflow-hidden">
         {nftMetadata?.image ? (
-          <div
+          <div 
             className="nft-card-image-container"
             onClick={() => {
               console.log('🖼️ Opening full NFT image modal...');
@@ -160,8 +158,8 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
             style={{ cursor: 'pointer' }}
             title="Click to view full image"
           >
-            <img
-              src={nftMetadata.image}
+            <img 
+              src={nftMetadata.image} 
               alt={nftMetadata.name || 'Gift NFT'}
               className="nft-card-image"
               style={{
@@ -172,14 +170,14 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
                 borderRadius: '0.5rem 0.5rem 0 0' // Rounded top corners only
               }}
             />
-
+            
             {/* YUGI-OH STYLE BORDER OVERLAY */}
             <div className="absolute inset-0 border-2 border-gradient-to-r from-yellow-400 via-blue-500 to-purple-600 rounded-t-lg opacity-60" />
             <div className="absolute inset-0 border border-white/30 rounded-t-lg" />
-
+            
             {/* HOLOGRAPHIC EFFECT */}
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-40 pointer-events-none" />
-
+            
             {/* CLICK HINT */}
             <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
               🔍 Click to enlarge
@@ -195,7 +193,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
                 <div className="text-white font-bold text-lg">CryptoGift NFT</div>
                 <div className="text-white/80 text-sm">#{tokenId}</div>
               </div>
-
+              
               {/* GEOMETRIC PATTERNS */}
               <div className="absolute top-4 left-4 w-8 h-8 border-2 border-white/30 rotate-45" />
               <div className="absolute bottom-4 right-4 w-6 h-6 border-2 border-white/20 rotate-12" />
@@ -203,7 +201,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
             </div>
           </div>
         )}
-
+        
         {/* Status Badge */}
         <div className="absolute top-3 right-3">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getGiftStatusBadgeColor(giftInfo.status)}`}>
@@ -263,10 +261,10 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
               {giftInfo.status === 'active' ? timeRemaining : giftInfo.status.toUpperCase()}
             </span>
           </div>
-
+          
           {giftInfo.status === 'active' && (
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div
+              <div 
                 className={`h-2 rounded-full transition-all duration-300 ${
                   isExpired ? 'bg-red-500' : 'bg-blue-500'
                 }`}
@@ -284,14 +282,14 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
               {giftInfo.creator.slice(0, 8)}...{giftInfo.creator.slice(-6)}
             </span>
           </div>
-
+          
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">Contract:</span>
             <span className="text-gray-900 dark:text-white font-mono text-xs">
               {giftInfo.nftContract.slice(0, 8)}...{giftInfo.nftContract.slice(-6)}
             </span>
           </div>
-
+          
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">Expires:</span>
             <span className="text-gray-900 dark:text-white">
@@ -345,7 +343,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
         {giftInfo.status === 'claimed' && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
             <p className="text-green-800 dark:text-green-300 text-sm font-medium">
-              ✅ Gift successfully claimed
+              ✅ Gift reclamado exitosamente
             </p>
           </div>
         )}
@@ -353,7 +351,7 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
         {giftInfo.status === 'returned' && (
           <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
             <p className="text-gray-700 dark:text-gray-300 text-sm">
-              ↩️ Gift returned to creator
+              ↩️ Gift devuelto al creador
             </p>
           </div>
         )}
@@ -361,11 +359,11 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
         {isExpired && giftInfo.status === 'active' && (
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
             <p className="text-orange-800 dark:text-orange-300 text-sm font-medium">
-              ❌ Gift expired - Expires on {new Date(giftInfo.expirationTime * 1000).toLocaleDateString('en-US')}
+              ❌ Gift expirado - Vence el {new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}
             </p>
             {isCreator && (
               <p className="text-orange-700 dark:text-orange-400 text-sm mt-1">
-                You can return it to your wallet using the button above.
+                Puedes devolverlo a tu wallet usando el botón de arriba.
               </p>
             )}
           </div>
@@ -374,12 +372,12 @@ export const EscrowGiftStatusEN: React.FC<EscrowGiftStatusProps> = ({
         {giftInfo.status === 'active' && !isExpired && !giftInfo.canClaim && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <p className="text-blue-800 dark:text-blue-300 text-sm font-medium">
-              ⏳ Gift not yet claimed. Expires on {new Date(giftInfo.expirationTime * 1000).toLocaleDateString('en-US')}.
+              ⏳ Gift todavía no Reclamado. Vence el {new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')}.
             </p>
           </div>
         )}
       </div>
-
+      
       {/* NFT IMAGE MODAL */}
       {nftMetadata?.image && (
         <NFTImageModal

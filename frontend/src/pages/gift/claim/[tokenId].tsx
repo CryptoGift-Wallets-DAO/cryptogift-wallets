@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -11,11 +13,10 @@ import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../components/ui/NotificationSystem';
-import { LanguageToggle } from '../../../components/ui/LanguageToggle';
-import {
-  loadClaimSession,
+import { 
+  loadClaimSession, 
   updateClaimSession,
-  cleanupExpiredSessions
+  cleanupExpiredSessions 
 } from '../../../lib/claimSessionStorage';
 
 interface GiftInfo {
@@ -503,7 +504,7 @@ export default function ClaimGiftPage() {
                 </button>
               </div>
               
-              {/* Theme Selector, Language Selector and Connect Button */}
+              {/* Theme Selector and Connect Button */}
               <div className="flex items-center gap-3">
                 {mounted && (
                   <button
@@ -522,10 +523,7 @@ export default function ClaimGiftPage() {
                     )}
                   </button>
                 )}
-
-                {/* Language Selector */}
-                <LanguageToggle />
-
+                
                 {!account && (
                   <ConnectButton
                     client={client}
@@ -562,16 +560,16 @@ export default function ClaimGiftPage() {
           )}
           
           {/* Education State - ACTUALIZADO PARA USAR LESSONMODALWRAPPER CON MAPEO CORRECTO */}
-          {flowState === ClaimFlowState.EDUCATION && educationSession && educationSession.requiredModules && educationSession.requiredModules.length > 0 && (
+          {flowState === ClaimFlowState.EDUCATION && educationSession && educationSession.requiredModules && (
             <div className="max-w-4xl mx-auto">
               {/* Mostrar el módulo actual usando LessonModalWrapper */}
               <LessonModalWrapperForEducation
                 moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
-                sessionToken={educationSession.sessionToken || ''}
-                tokenId={typeof tokenId === 'string' ? tokenId : tokenId?.[0] || ''}
+                sessionToken={educationSession.sessionToken}
+                tokenId={tokenId as string}
                 onComplete={(gateData) => handleModuleComplete(gateData)}
-                giftInfo={giftInfo || undefined}
-                nftMetadata={nftMetadata || undefined}
+                giftInfo={giftInfo}
+                nftMetadata={nftMetadata}
               />
             </div>
           )}

@@ -1,23 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
-import { generateSalt } from '../../../../../../lib/escrowUtils';
-import { useNotifications } from '../../../../../../components/ui/NotificationSystem';
-import { useAuth } from '../../../../../../hooks/useAuth';
-import { ConnectAndAuthButton } from '../../../../../../components/ConnectAndAuthButton';
-import { NFTImageModal } from '../../../../../../components/ui/NFTImageModal';
+import { generateSalt } from '../../lib/escrowUtils';
+import { useNotifications } from '../../components/ui/NotificationSystem';
+import { useAuth } from '../../hooks/useAuth';
+import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
+import { NFTImageModal } from '../../components/ui/NFTImageModal';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import {
-  saveClaimSession,
-  loadClaimSession,
+import { 
+  saveClaimSession, 
+  loadClaimSession, 
   clearClaimSession,
   updateClaimSession,
   canSkipEducation,
   sessionNeedsRefresh
-} from '../../../../../../lib/claimSessionStorage';
+} from '../../lib/claimSessionStorage';
 
 // Confetti function - same as used in LessonModalWrapper
 function triggerConfetti(options?: any) {
+  // Only run on client side
+  if (typeof window === 'undefined') return;
+
   const duration = 3000;
   const animationEnd = Date.now() + duration;
 
@@ -33,7 +36,7 @@ function triggerConfetti(options?: any) {
     }
 
     const particleCount = 50 * (timeLeft / duration);
-
+    
     for (let i = 0; i < particleCount; i++) {
       const confettiEl = document.createElement('div');
       confettiEl.style.position = 'fixed';
@@ -46,15 +49,15 @@ function triggerConfetti(options?: any) {
       confettiEl.style.transform = `rotate(${Math.random() * 360}deg)`;
       confettiEl.style.zIndex = '10000';
       confettiEl.className = 'confetti-particle';
-
+      
       document.body.appendChild(confettiEl);
-
+      
       confettiEl.animate([
-        {
+        { 
           transform: `translateY(0) rotate(0deg)`,
-          opacity: 1
+          opacity: 1 
         },
-        {
+        { 
           transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`,
           opacity: 0
         }
@@ -64,16 +67,15 @@ function triggerConfetti(options?: any) {
       }).onfinish = () => confettiEl.remove();
     }
   }, 250);
-
+  
   console.log('🎉 CELEBRATION CONFETTI:', options);
 }
 
-// Import EscrowGiftStatus for left panel
-import { EscrowGiftStatusEN } from '../../../../components/EscrowGiftStatusEN';
+// Import EscrowGiftStatus for the left panel
+import { EscrowGiftStatusEN } from '../escrow/EscrowGiftStatusEN';
 
 // Import LessonModalWrapper - Unified Knowledge ↔ Educational System
-import { LessonModalWrapperEN } from '../../../../components/LessonModalWrapperEN';
-
+import { LessonModalWrapperEN } from './LessonModalWrapperEN';
 
 interface PreClaimFlowProps {
   tokenId: string;
@@ -154,7 +156,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
   useEffect(() => {
     // Try to recover existing session first
     const existingSession = loadClaimSession(tokenId);
-
+    
     if (existingSession && !sessionNeedsRefresh(tokenId)) {
       console.log('🔄 Recovering existing session:', {
         tokenId,
@@ -162,7 +164,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         educationCompleted: existingSession.educationCompleted,
         hasGateData: !!existingSession.educationGateData
       });
-
+      
       // Restore session state
       setSalt(existingSession.salt);
       setValidationState({
@@ -172,11 +174,11 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         educationModules: existingSession.educationModules,
         sessionToken: existingSession.sessionToken
       });
-
+      
       // If education was completed, show option to skip or restart
       if (existingSession.educationCompleted && existingSession.educationGateData) {
         setCanReinitialize(true);
-
+        
         // Automatically call onValidationSuccess with recovered data
         onValidationSuccess(
           existingSession.sessionToken,
@@ -189,7 +191,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
       // Generate new salt if no valid session
       const newSalt = generateSalt();
       setSalt(newSalt);
-
+      
       // AUDIT: Salt generation logging
       console.log('🧂 FRONTEND SALT GENERATION:', {
         salt: newSalt,
@@ -198,7 +200,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         saltStartsWith0x: newSalt.startsWith('0x'),
         timestamp: new Date().toISOString()
       });
-
+      
       // Save initial session
       saveClaimSession(tokenId, {
         salt: newSalt,
@@ -207,7 +209,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         educationCompleted: false
       });
     }
-
+    
     // Trigger confetti when component mounts (user lands on claim page)
     triggerConfetti({
       particleCount: 100,
@@ -223,7 +225,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
       try {
         const response = await fetch(`/api/gift-has-password?tokenId=${tokenId}`);
         const data = await response.json();
-
+        
         if (data.hasPassword && data.requiresEducation) {
           console.log('🎓 Gift requires education modules:', data.educationModules);
         }
@@ -231,7 +233,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         console.error('Error checking password requirement:', error);
       }
     };
-
+    
     if (tokenId) {
       checkPasswordRequirement();
     }
@@ -242,7 +244,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
     if (!password) {
       setValidationState(prev => ({
         ...prev,
-        error: 'Please enter the gift password'
+        error: 'Por favor, ingresa la contraseña del regalo'
       }));
       return;
     }
@@ -316,7 +318,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
           isValidating: false,
           isValid: false,
           requiresEducation: false,
-          error: data.message || 'Incorrect password',
+          error: data.message || 'Contraseña incorrecta',
           remainingAttempts: data.remainingAttempts
         });
       }
@@ -326,7 +328,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         isValidating: false,
         isValid: false,
         requiresEducation: false,
-        error: 'Error validating password. Please try again.'
+        error: 'Error al validar la contraseña. Por favor, intenta de nuevo.'
       });
     }
   };
@@ -342,8 +344,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
     if (!account?.address) {
       addNotification({
         type: 'warning',
-        title: 'Wallet Required',
-        message: 'You need to connect your wallet to obtain educational approval',
+        title: 'Wallet Requerida',
+        message: 'Necesitas conectar tu wallet para obtener la aprobación educativa',
         duration: 5000
       });
       return;
@@ -365,7 +367,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
 
       if (data.success && data.educationGateData) {
         console.log('✅ Educational bypass approved, proceeding to claim');
-
+        
         // Update session as education completed
         updateClaimSession(tokenId, {
           educationCompleted: true,
@@ -383,7 +385,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         addNotification({
           type: 'error',
           title: 'Error',
-          message: data.error || 'Could not obtain educational approval',
+          message: data.error || 'No se pudo obtener la aprobación educativa',
           duration: 5000
         });
       }
@@ -392,7 +394,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
       addNotification({
         type: 'error',
         title: 'Error',
-        message: 'Error processing request. Please try again.',
+        message: 'Error al procesar la solicitud. Por favor, intenta de nuevo.',
         duration: 5000
       });
     }
@@ -405,7 +407,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
   return (
     <>
       <div className={`grid grid-cols-1 lg:grid-cols-2 gap-8 ${className}`}>
-        {/* Left Panel - EXACTLY THE SAME AS FINAL CLAIM */}
+        {/* Panel Izquierdo - EXACTAMENTE IGUAL AL CLAIM FINAL */}
         <div>
           <EscrowGiftStatusEN
             tokenId={tokenId}
@@ -418,11 +420,11 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
             }}
             className="mb-6"
           />
-
+          
           {/* Help Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              🎁 Your Gift Is Waiting!
+              🎁 ¡Tu Regalo Te Está Esperando!
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
               <div className="flex items-start">
@@ -430,8 +432,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-white font-bold text-xs">💰</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Real Value on Blockchain</p>
-                  <p className="text-xs mt-1">This NFT has real monetary value that you can exchange, sell or keep as an investment.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Valor Real en Blockchain</p>
+                  <p className="text-xs mt-1">Este NFT tiene valor monetario real que podrás intercambiar, vender o conservar como inversión.</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -439,8 +441,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-white font-bold text-xs">🚀</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Future Technology</p>
-                  <p className="text-xs mt-1">Join millions already using Web3. This is your first step into the decentralized digital economy.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Tecnología del Futuro</p>
+                  <p className="text-xs mt-1">Únete a millones que ya usan Web3. Este es tu primer paso hacia la economía digital descentralizada.</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -448,12 +450,12 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-white font-bold text-xs">🎓</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Learning = Earnings</p>
-                  <p className="text-xs mt-1">In just 5 minutes you'll learn to manage digital assets worth billions globally.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Aprendizaje = Ganancias</p>
+                  <p className="text-xs mt-1">En solo 5 minutos aprenderás a manejar activos digitales valorados en miles de millones globalmente.</p>
                 </div>
               </div>
             </div>
-
+            
             {/* Urgency Banner */}
             {giftInfo?.timeRemaining && !isExpired && (
               <div className="mt-4 p-3 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 rounded-lg border border-orange-300 dark:border-orange-700">
@@ -461,10 +463,10 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-2xl mr-2 animate-pulse">⏰</span>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
-                      LIMITED TIME! {giftInfo.timeRemaining}
+                      ¡TIEMPO LIMITADO! {giftInfo.timeRemaining}
                     </p>
                     <p className="text-xs text-orange-700 dark:text-orange-400 mt-0.5">
-                      Don't miss this unique opportunity. The gift expires soon.
+                      No pierdas esta oportunidad única. El regalo expira pronto.
                     </p>
                   </div>
                 </div>
@@ -473,46 +475,46 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
           </div>
         </div>
 
-        {/* Right Panel - Password Validation */}
+        {/* Panel Derecho - Validación de Password */}
         <div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-            {/* Header with sales hooks */}
+            {/* Header con ganchos de venta */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className="w-20 h-20 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center animate-bounce shadow-lg">
-                  <Image
-                    src="/Apex.PNG"
-                    alt="Apex Logo"
-                    width={50}
+                  <Image 
+                    src="/Apex.PNG" 
+                    alt="Apex Logo" 
+                    width={50} 
                     height={50}
                     className="object-contain"
                   />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Congratulations! You've Received a Gift
+                    ¡Felicidades! Has Recibido un Regalo
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    A real value digital asset is waiting for you
+                    Un activo digital de valor real te está esperando
                   </p>
                 </div>
               </div>
-
+              
               {/* Trust Indicators */}
               <div className="flex justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  100% Secure
+                  100% Seguro
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-yellow-500">⭐</span>
-                  +50,000 users
+                  +50,000 usuarios
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-blue-500">🔒</span>
-                  Blockchain verified
+                  Blockchain verificado
                 </span>
               </div>
             </div>
@@ -521,22 +523,22 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
             <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
               <div className="flex items-start">
                 <div className="w-14 h-14 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-lg flex items-center justify-center mr-3 flex-shrink-0 shadow-md p-1">
-                  <Image
-                    src="/cg-wallet-logo.png"
-                    alt="CG Wallet Logo"
-                    width={48}
+                  <Image 
+                    src="/cg-wallet-logo.png" 
+                    alt="CG Wallet Logo" 
+                    width={48} 
                     height={48}
                     className="object-contain w-full h-full"
                   />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-purple-800 dark:text-purple-300 mb-1 pr-3">
-                    Your gift is an NFT Wallet with treasures inside!
+                    ¡Tu regalo es una NFT Wallet con tesoros dentro!
                   </h3>
                   <p className="text-sm text-purple-700 dark:text-purple-400">
-                    Not just a regular NFT - it's a smart digital wallet that can hold
-                    cryptocurrencies, tokens and other valuable assets that the creator has saved especially for you.
-                    Discover the treasures waiting inside!
+                    No es solo un NFT común - es una billetera digital inteligente que puede contener 
+                    criptomonedas, tokens y otros activos valiosos que el creador ha guardado especialmente para ti. 
+                    ¡Descubre los tesoros que te esperan dentro!
                   </p>
                 </div>
               </div>
@@ -547,7 +549,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    🔑 Gift Password
+                    🔑 Contraseña del Regalo
                   </label>
                   <div className="relative">
                     <input
@@ -560,7 +562,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                         }
                       }}
                       className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Enter the password shared with you"
+                      placeholder="Ingresa la contraseña que te compartieron"
                       disabled={validationState.isValidating}
                     />
                     <button
@@ -581,7 +583,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    The person who sent you this gift should have shared a password with you
+                    La persona que te envió este regalo te debe haber compartido una contraseña
                   </p>
                 </div>
 
@@ -594,7 +596,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                         <p className="text-sm text-red-800 dark:text-red-300">{validationState.error}</p>
                         {validationState.remainingAttempts !== undefined && (
                           <p className="text-xs text-red-700 dark:text-red-400 mt-1">
-                            Remaining attempts: {validationState.remainingAttempts}
+                            Intentos restantes: {validationState.remainingAttempts}
                           </p>
                         )}
                       </div>
@@ -609,10 +611,10 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                       <span className="text-green-500 text-xl mr-3">✅</span>
                       <div className="flex-1">
                         <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
-                          Education session recovered
+                          Sesión de educación recuperada
                         </h4>
                         <p className="text-sm text-green-700 dark:text-green-400 mb-3">
-                          You have already completed the educational requirements. You can continue with the claim or restart the process.
+                          Ya completaste los requisitos educativos anteriormente. Puedes continuar con el reclamo o reiniciar el proceso.
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -630,7 +632,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                             }}
                             className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                           >
-                            Continue with claim
+                            Continuar con el reclamo
                           </button>
                           <button
                             onClick={() => {
@@ -654,7 +656,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                             }}
                             className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
                           >
-                            Restart process
+                            Reiniciar proceso
                           </button>
                         </div>
                       </div>
@@ -674,12 +676,12 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Validating...
+                      Validando...
                     </div>
                   ) : (
                     <span className="flex items-center justify-center">
                       <span className="mr-2">🎯</span>
-                      Validate Password and Continue
+                      Validar Contraseña y Continuar
                     </span>
                   )}
                 </button>
@@ -691,10 +693,10 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                       <span className="text-blue-500 text-xl mr-3">🎓</span>
                       <div className="flex-1">
                         <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
-                          Educational Requirements Detected
+                          Requisitos Educativos Detectados
                         </h4>
                         <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
-                          This gift requires completing some short educational modules to ensure you can handle it safely.
+                          Este regalo requiere completar algunos módulos educativos cortos para asegurar que puedas manejarlo de forma segura.
                         </p>
                         <div className="space-y-1">
                           {validationState.educationRequirements.map((req) => (
@@ -708,7 +710,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                           onClick={handleEducationalBypass}
                           className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                         >
-                          Skip educational requirements (advanced user)
+                          Saltar requisitos educativos (usuario avanzado)
                         </button>
                       </div>
                     </div>
@@ -719,15 +721,15 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>No hidden costs - 100% free for you</span>
+                    <span>Sin costos ocultos - 100% gratis para ti</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>Secure process verified by blockchain</span>
+                    <span>Proceso seguro verificado por blockchain</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>You'll receive the NFT directly in your wallet</span>
+                    <span>Recibirás el NFT directamente en tu wallet</span>
                   </div>
                 </div>
               </div>
@@ -738,14 +740,14 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   {isClaimed ? '✅' : isExpired ? '⏰' : '↩️'}
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  {isClaimed ? 'Gift already claimed' :
-                   isExpired ? 'Gift expired' :
-                   'Gift not available'}
+                  {isClaimed ? 'Regalo ya reclamado' :
+                   isExpired ? 'Regalo expirado' :
+                   'Regalo no disponible'}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {isClaimed ? 'This gift has already been successfully claimed.' :
-                   isExpired ? 'The time limit to claim this gift has expired.' :
-                   'This gift is not available to claim.'}
+                  {isClaimed ? 'Este regalo ya fue reclamado exitosamente.' :
+                   isExpired ? 'El tiempo límite para reclamar este regalo ha expirado.' :
+                   'Este regalo no está disponible para reclamar.'}
                 </p>
               </div>
             )}
@@ -759,13 +761,13 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
               </svg>
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
-                  🏆 Why is CryptoGift different?
+                  🏆 ¿Por qué CryptoGift es diferente?
                 </h4>
                 <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-                  <li>• <strong>No complications:</strong> You don't need prior crypto experience</li>
-                  <li>• <strong>100% Free:</strong> The sender paid all costs for you</li>
-                  <li>• <strong>Real value:</strong> NFT with tradeable market value</li>
-                  <li>• <strong>24/7 Support:</strong> We help you every step of the way</li>
+                  <li>• <strong>Sin complicaciones:</strong> No necesitas experiencia previa en crypto</li>
+                  <li>• <strong>100% Gratis:</strong> El remitente pagó todos los costos por ti</li>
+                  <li>• <strong>Valor real:</strong> NFT con valor de mercado intercambiable</li>
+                  <li>• <strong>Soporte 24/7:</strong> Te ayudamos en cada paso del proceso</li>
                 </ul>
               </div>
             </div>
