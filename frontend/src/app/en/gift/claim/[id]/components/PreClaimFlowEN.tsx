@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useActiveAccount } from 'thirdweb/react';
 import { generateSalt } from '../../../../../../lib/escrowUtils';
 import { useNotifications } from '../../../../../../components/ui/NotificationSystem';
@@ -123,7 +122,6 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
   nftMetadata,
   className = ''
 }) => {
-  const router = useRouter();
   const account = useActiveAccount();
   const auth = useAuth();
   const { addNotification } = useNotifications();
