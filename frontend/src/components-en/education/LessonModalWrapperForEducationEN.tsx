@@ -129,7 +129,7 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
         )}
         
         {/* Modal con la lección */}
-        <LessonModalWrapper
+        <LessonModalWrapperEN
           lessonId={moduleMapping.lessonId}
           mode="educational"
           isOpen={isModalOpen}
@@ -150,7 +150,7 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
   } else {
     // Para otros módulos, usar EducationModule tradicional
     return (
-      <EducationModule
+      <EducationModuleEN
         moduleId={moduleId}
         sessionToken={sessionToken}
         tokenId={tokenId}
@@ -163,4 +163,4 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
   }
 };
 
-export default LessonModalWrapperForEducation;
+export default LessonModalWrapperForEducationEN;

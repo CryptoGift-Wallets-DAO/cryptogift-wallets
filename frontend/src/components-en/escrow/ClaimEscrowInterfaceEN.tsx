@@ -14,11 +14,11 @@ import {
 import { type EscrowGift } from '../../lib/escrowABI';
 import { useAuth } from '../../hooks/useAuth';
 import { makeAuthenticatedRequest } from '../../lib/siweClient';
-import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
-import { NFTImageModal } from '../ui/NFTImageModal';
-import { useNotifications } from '../ui/NotificationSystem';
+import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
+import { NFTImageModal } from '../../components/ui/NFTImageModal';
+import { useNotifications } from '../../components/ui/NotificationSystem';
 // MobileWalletRedirect REMOVED - ConnectAndAuthButton handles all mobile popups
-import { NetworkOptimizationPrompt } from '../ui/NetworkOptimizationPrompt';
+import { NetworkOptimizationPrompt } from '../../components/ui/NetworkOptimizationPrompt';
 import { 
   isMobileDevice, 
   isRpcError, 

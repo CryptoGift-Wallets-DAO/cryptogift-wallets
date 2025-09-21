@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useNotifications } from '../ui/NotificationSystem';
+// Removed: import { useRouter } from 'next/navigation'; - not needed in Pages Router
+import { useNotifications } from '../../components/ui/NotificationSystem';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../app/client';
 import { useAuth } from '../../hooks/useAuth';
@@ -191,7 +191,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
   giftInfo,
   nftMetadata
 }) => {
-  const router = useRouter();
+  // Removed: const router = useRouter(); - not needed in this component
   const { addNotification } = useNotifications();
   const account = useActiveAccount();
   const auth = useAuth();

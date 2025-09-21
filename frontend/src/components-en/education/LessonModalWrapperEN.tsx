@@ -19,8 +19,8 @@ import { baseSepolia } from 'thirdweb/chains';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
 const SalesMasterclass = dynamic(
-  () => import('../learn/SalesMasterclass'),
-  { 
+  () => import('../../components/learn/SalesMasterclass'),
+  {
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-20">
@@ -35,8 +35,8 @@ const SalesMasterclass = dynamic(
 
 // Import dinámico para ClaimFirstGift
 const ClaimFirstGift = dynamic(
-  () => import('../learn/ClaimFirstGift').then(mod => ({ default: mod.ClaimFirstGift })),
-  { 
+  () => import('../../components/learn/ClaimFirstGift').then(mod => ({ default: mod.ClaimFirstGift })),
+  {
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-20">
@@ -51,12 +51,12 @@ const ClaimFirstGift = dynamic(
 
 // Import dinámico para Email Verification y Calendar Booking
 const EmailVerificationModal = dynamic(
-  () => import('../email/EmailVerificationModal').then(mod => ({ default: mod.EmailVerificationModal })),
+  () => import('../../components/email/EmailVerificationModal').then(mod => ({ default: mod.EmailVerificationModal })),
   { ssr: false }
 );
 
 const CalendarBookingModal = dynamic(
-  () => import('../calendar/CalendarBookingModal').then(mod => ({ default: mod.CalendarBookingModal })),
+  () => import('../../components/calendar/CalendarBookingModal').then(mod => ({ default: mod.CalendarBookingModal })),
   { ssr: false }
 );
 
@@ -664,4 +664,4 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
   );
 };
 
-export default LessonModalWrapper;
+export default LessonModalWrapperEN;
