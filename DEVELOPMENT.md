@@ -2,7 +2,156 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎯 LATEST SESSION UPDATES (Agosto 27, 2025) - CRITICAL EDUCATIONAL FLOW FIXES ✅
+## 🎯 LATEST SESSION UPDATES (Diciembre 21, 2025) - METADATA WARMING SYSTEM IMPLEMENTATION 🔥
+
+### 🚨 CRITICAL METADATA VISIBILITY FIX - ROBUST SOLUTION
+
+**PROBLEMA CRÍTICO RESUELTO**: NFTs aparecían sin imagen en wallets, especialmente en mobile direct claiming.
+
+**ROOT CAUSE IDENTIFICADO**:
+- Metadata URLs no estaban siendo "warmed" antes de wallet_watchAsset
+- IPFS gateways necesitan tiempo para propagar metadata
+- Redis cache no siempre tenía metadata lista inmediatamente
+- Mobile claims tenían timing issues diferentes a desktop
+
+**SOLUCIÓN IMPLEMENTADA**: Sistema completo de metadata warming con múltiples estrategias
+
+#### 📁 NEW FILES CREATED:
+
+**`frontend/src/lib/metadataWarming.ts`** - Comprehensive metadata warming system:
+```typescript
+// Core functions implemented:
+export async function warmAllMetadataEndpoints() // Warms all metadata endpoints
+export async function warmMetadataPreClaim()    // Pre-claim warming
+export async function warmMetadataPostClaim()   // Post-claim enhanced warming
+export async function recoverMissingMetadata()   // Emergency recovery strategies
+```
+
+**Key Features**:
+- Multi-endpoint warming (BaseScan + MetaMask compatible)
+- IPFS gateway propagation across 4+ providers
+- Redis cache refresh with forceRefresh option
+- Exponential backoff and retry mechanisms
+- Emergency recovery with 3 fallback strategies
+
+#### 🔧 COMPONENTS UPDATED:
+
+**Both `ClaimEscrowInterface.tsx` and `ClaimEscrowInterfaceEN.tsx`**:
+- Added pre-claim warming before transaction
+- Enhanced post-claim warming with Redis sync
+- Emergency recovery for missing metadata
+- Better error handling and logging
+
+**Implementation Points**:
+1. **Pre-Claim** (Line ~216): Warms metadata before transaction starts
+2. **Post-Claim** (Line ~414): Enhanced warming with Redis update
+3. **Wallet Add** (Line ~545): Comprehensive warming before wallet_watchAsset
+4. **Recovery**: Automatic fallback if metadata still missing
+
+#### 🎯 EXPECTED OUTCOMES:
+
+✅ **PC Claim → Mobile Import**: Metadata appears immediately
+✅ **Mobile Direct Claim**: Metadata warmed and visible
+✅ **ES Version**: Full metadata warming support
+✅ **EN Version**: Identical warming implementation
+✅ **IPFS Images**: Pre-warmed across multiple gateways
+✅ **Redis Cache**: Updated with warmed metadata
+✅ **Emergency Recovery**: Fallback strategies if primary fails
+
+---
+
+## 🎯 PREVIOUS SESSION UPDATES (Diciembre 21, 2025) - COMPLETE i18n ENGLISH TRANSLATIONS ✅
+
+### 🌍 COMPREHENSIVE ENGLISH TRANSLATION IMPLEMENTATION
+
+**CONTEXTO**: Después de sesión desconectada, se retomó trabajo de traducción i18n con múltiples textos españoles persistiendo en componentes EN.
+
+### 📝 FILES MODIFICADOS Y TRADUCCIONES REALIZADAS
+
+#### 1. **EDUCATIONAL COMPONENTS - COMPLETE TRANSLATIONS**
+**Files**:
+- `frontend/src/components-en/education/PreClaimFlowEN.tsx`
+- `frontend/src/components-en/education/EducationModuleEN.tsx`
+- `frontend/src/components-en/escrow/ClaimEscrowInterfaceEN.tsx`
+
+**Traducciones Principales**:
+- Quiz questions and answers
+- Error messages and validations
+- Success notifications
+- Educational module descriptions
+- Security warnings
+
+#### 2. **SALES MASTERCLASS - FULL BUTTON AND HEADER TRANSLATIONS**
+**File**: `frontend/src/components-en/learn/SalesMasterclassEN.tsx`
+
+**Traducciones Específicas**:
+```
+"Las 3 Brechas del Mercado" → "The 3 Market Gaps"
+"VER DEMO EN VIVO" → "VIEW LIVE DEMO"
+"VER RESULTADOS" → "SEE RESULTS"
+"Resultados Reales 📊" → "Real Results 📊"
+"VER MODELO DE NEGOCIO" → "SEE BUSINESS MODEL"
+"VER ROADMAP" → "VIEW ROADMAP"
+"MOMENTO INSPIRACIONAL" → "INSPIRATIONAL MOMENT"
+"Tiempo restante" → "Time remaining"
+```
+
+#### 3. **VIDEO COMPONENTS - NEW EN FILES CREATED**
+**New Files Created**:
+- `frontend/src/config/videoConfigEN.ts`
+- `frontend/src/components-en/video/IntroVideoGateEN.tsx`
+
+**Key Translations**:
+```typescript
+// videoConfigEN.ts
+title: "CryptoGift Project" // was "Proyecto CryptoGift"
+description: "Learn about our vision. Starts with a brief video with audio..."
+// Removed "1:30 min" specific duration as requested
+
+// IntroVideoGateEN.tsx
+"Loading video..." // was "Cargando video..."
+```
+
+#### 4. **BUILD ERROR FIX - APOSTROPHE ESCAPING**
+**File**: `frontend/src/components-en/education/EducationModuleEN.tsx`
+- **Lines**: 94, 104
+- **Fix**: Escaped apostrophes in strings
+```typescript
+'In my email so I don\'t lose it'  // Line 94
+'That it\'s free'                   // Line 104
+```
+
+### 📊 COMMITS REALIZADOS (6 TOTAL)
+```bash
+0a5ac75 - feat(i18n): complete English translations for PreClaim/Claim educational system
+0f7fb01 - feat(i18n): complete remaining English translations in EN components
+899fc65 - feat(i18n): complete ALL remaining Spanish texts translation in EN components
+16bbc1c - fix: escape apostrophes in English translations to resolve build error
+b78df24 - fix: complete English translations for all action buttons and headers in SalesMasterclassEN
+204f2d7 - feat(i18n): complete final English translations for video components and remaining texts
+```
+
+### 🎯 RESULTADO FINAL
+- ✅ 100% English texts in EN components
+- ✅ Build error resolved (apostrophe escaping)
+- ✅ Video components properly translated
+- ✅ All action buttons in English
+- ✅ ES version remains untouched (as required)
+
+### 🔄 TRANSLATION COVERAGE ACHIEVED
+1. **Educational Flow**: Complete English from start to finish
+2. **Sales Masterclass**: All UI elements translated
+3. **Video System**: Dedicated EN config and components
+4. **Error Messages**: All user-facing errors in English
+5. **Navigation**: All buttons and links translated
+
+### ⚠️ PENDING ITEMS NOTED
+- Security signature texts ("🔐 Firma de Seguridad Requerida") not found in current EN files
+- May be using shared ES components or not yet implemented in EN version
+
+---
+
+## 🎯 PREVIOUS SESSION UPDATES (Agosto 27, 2025) - CRITICAL EDUCATIONAL FLOW FIXES ✅
 
 ### 🔧 PROBLEMA CRÍTICO RESUELTO: Educational Flow Completamente Roto
 
