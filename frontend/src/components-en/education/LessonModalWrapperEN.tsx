@@ -14,12 +14,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
-import { client } from '../../app/client';
+import { client } from '../../src/app/client';
 import { baseSepolia } from 'thirdweb/chains';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
 const SalesMasterclass = dynamic(
-  () => import('../../components/learn/SalesMasterclass'),
+  () => import('../learn/SalesMasterclassEN'),
   {
     ssr: false,
     loading: () => (

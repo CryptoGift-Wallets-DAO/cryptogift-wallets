@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 // Removed: import { useRouter } from 'next/navigation'; - not needed in Pages Router
 import { useNotifications } from '../../components/ui/NotificationSystem';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
-import { client } from '../../app/client';
+import { client } from '../../src/app/client';
 import { useAuth } from '../../hooks/useAuth';
 
 interface EducationModuleProps {

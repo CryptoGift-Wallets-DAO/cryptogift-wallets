@@ -5,6 +5,7 @@ import { useNotifications } from '../../components/ui/NotificationSystem';
 import { useAuth } from '../../hooks/useAuth';
 import { ConnectAndAuthButton } from '../../components/ConnectAndAuthButton';
 import { NFTImageModal } from '../../components/ui/NFTImageModal';
+import { LanguageToggle } from '../../components/ui/LanguageToggle';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { 
@@ -424,7 +425,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
           {/* Help Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              🎁 ¡Tu Regalo Te Está Esperando!
+              🎁 Your Gift Is Waiting!
             </h3>
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
               <div className="flex items-start">
@@ -432,8 +433,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-white font-bold text-xs">💰</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Valor Real en Blockchain</p>
-                  <p className="text-xs mt-1">Este NFT tiene valor monetario real que podrás intercambiar, vender o conservar como inversión.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Real Blockchain Value</p>
+                  <p className="text-xs mt-1">This NFT has real monetary value that you can exchange, sell, or keep as an investment.</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -441,8 +442,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-white font-bold text-xs">🚀</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Tecnología del Futuro</p>
-                  <p className="text-xs mt-1">Únete a millones que ya usan Web3. Este es tu primer paso hacia la economía digital descentralizada.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Future Technology</p>
+                  <p className="text-xs mt-1">Join millions already using Web3. This is your first step toward the decentralized digital economy.</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -450,8 +451,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-white font-bold text-xs">🎓</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">Aprendizaje = Ganancias</p>
-                  <p className="text-xs mt-1">En solo 5 minutos aprenderás a manejar activos digitales valorados en miles de millones globalmente.</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">Learning = Earnings</p>
+                  <p className="text-xs mt-1">In just 5 minutes you'll learn to manage digital assets valued at billions globally.</p>
                 </div>
               </div>
             </div>
@@ -463,10 +464,10 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <span className="text-2xl mr-2 animate-pulse">⏰</span>
                   <div className="flex-1">
                     <p className="text-sm font-bold text-orange-800 dark:text-orange-300">
-                      ¡TIEMPO LIMITADO! {giftInfo.timeRemaining}
+                      LIMITED TIME! {giftInfo.timeRemaining}
                     </p>
                     <p className="text-xs text-orange-700 dark:text-orange-400 mt-0.5">
-                      No pierdas esta oportunidad única. El regalo expira pronto.
+                      Don't miss this unique opportunity. The gift expires soon.
                     </p>
                   </div>
                 </div>
@@ -477,7 +478,12 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
 
         {/* Panel Derecho - Validación de Password */}
         <div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 relative">
+            {/* Language Toggle in top right corner */}
+            <div className="absolute top-4 right-4 z-10">
+              <LanguageToggle />
+            </div>
+
             {/* Header con ganchos de venta */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-4">
@@ -492,10 +498,10 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    ¡Felicidades! Has Recibido un Regalo
+                    Congratulations! You've Received a Gift
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Un activo digital de valor real te está esperando
+                    A digital asset of real value is waiting for you
                   </p>
                 </div>
               </div>
