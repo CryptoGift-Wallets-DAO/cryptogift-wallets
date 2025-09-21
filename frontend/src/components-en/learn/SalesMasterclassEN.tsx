@@ -68,8 +68,8 @@ import {
 } from 'lucide-react';
 import { EmailVerificationModal } from '../../components/email/EmailVerificationModal';
 import { CalendarBookingModal } from '../../components/calendar/CalendarBookingModal';
-import IntroVideoGate from '../../components/video/IntroVideoGate';
-import { VIDEO_CONFIG } from '../../config/videoConfig';
+import IntroVideoGate from '../../components-en/video/IntroVideoGateEN';
+import { VIDEO_CONFIG } from '../../config/videoConfigEN';
 // Enhanced confetti function matching KnowledgeLessonModal implementation
 function triggerConfetti(options?: ConfettiOptions) {
   // Visual confetti effect using CSS animation

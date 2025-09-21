@@ -46,7 +46,7 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
     console.log(`  Component: ${moduleMapping?.component || 'UNKNOWN'}`);
     
     if (moduleId === 5) {
-      console.log('✅ SPECIAL CASE: Proyecto CryptoGift → SalesMasterclass');
+      console.log('✅ SPECIAL CASE: CryptoGift Project → SalesMasterclass');
     }
     
     // Imprimir todo el mapeo para debug
