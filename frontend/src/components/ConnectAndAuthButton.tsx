@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { baseSepolia } from 'thirdweb/chains';

@@ -1,8 +1,5 @@
-'use client';
-
-import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 
@@ -12,42 +9,54 @@ const locales = [
 ];
 
 export function LanguageToggle() {
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
+  const [currentLocale, setCurrentLocale] = useState('es');
   const router = useRouter();
-  const locale = useLocale();
+
+  useEffect(() => {
+    // Read locale from cookie on mount
+    const cookies = document.cookie.split(';');
+    const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='));
+    if (localeCookie) {
+      const locale = localeCookie.split('=')[1];
+      setCurrentLocale(locale);
+    }
+  }, []);
 
   const handleLocaleChange = async (newLocale: string) => {
-    if (newLocale === locale) return;
-    
-    console.log('🔥 LanguageToggle clicked:', newLocale);
-    console.log('🌍 Language change via server action:', { from: locale, to: newLocale });
-    
-    startTransition(async () => {
-      try {
-        // Call server action to set cookie
-        const response = await fetch('/api/locale', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ locale: newLocale }),
-        });
+    if (newLocale === currentLocale) return;
 
-        if (response.ok) {
-          console.log('✅ Server locale cookie set, refreshing...');
-          // Refresh to apply new locale from server
-          router.refresh();
-        } else {
-          console.error('❌ Failed to set locale on server:', response.statusText);
-        }
-      } catch (error) {
-        console.error('❌ Language change failed:', error);
+    console.log('🔥 LanguageToggle clicked:', newLocale);
+    console.log('🌍 Language change via server action:', { from: currentLocale, to: newLocale });
+
+    setIsPending(true);
+    try {
+      // Call server action to set cookie
+      const response = await fetch('/api/locale', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ locale: newLocale }),
+      });
+
+      if (response.ok) {
+        console.log('✅ Server locale cookie set, refreshing...');
+        setCurrentLocale(newLocale);
+        // Reload the page to apply new locale
+        router.reload();
+      } else {
+        console.error('❌ Failed to set locale on server:', response.statusText);
       }
-    });
+    } catch (error) {
+      console.error('❌ Language change failed:', error);
+    } finally {
+      setIsPending(false);
+    }
   };
 
-  const currentLocale = locales.find(l => l.code === locale) || locales[0];
-  const otherLocale = locales.find(l => l.code !== locale) || locales[1];
+  const currentLocaleObj = locales.find(l => l.code === currentLocale) || locales[0];
+  const otherLocale = locales.find(l => l.code !== currentLocale) || locales[1];
 
   return (
     <div className="flex items-center space-x-1">
@@ -55,7 +64,7 @@ export function LanguageToggle() {
       <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
         {/* Current locale */}
         <motion.button
-          onClick={() => handleLocaleChange(currentLocale.code)}
+          onClick={() => handleLocaleChange(currentLocaleObj.code)}
           disabled={isPending}
           className="px-2 py-1 text-xs font-medium bg-white dark:bg-gray-700 
                      text-gray-900 dark:text-white rounded shadow-sm
@@ -63,7 +72,7 @@ export function LanguageToggle() {
           whileHover={{ scale: isPending ? 1 : 1.05 }}
           whileTap={{ scale: isPending ? 1 : 0.95 }}
         >
-          {currentLocale.name}
+          {currentLocaleObj.name}
         </motion.button>
         
         {/* Separator */}
