@@ -1700,7 +1700,7 @@ const NavigationArea: React.FC<{
           <span>Click to continue</span>
           <span className="text-gray-400 dark:text-gray-500">•</span>
           <Clock className="w-4 h-4" />
-          <span>Tiempo restante: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+          <span>Time remaining: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
         </div>
       </motion.div>
     ) : timeLeft === 0 ? (
@@ -1829,7 +1829,7 @@ const ProblemBlock: React.FC<{
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-12 flex items-center justify-center gap-3">
-      <span className="bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-300 dark:to-gray-100 bg-clip-text text-transparent">Las 3 Brechas del Mercado</span>
+      <span className="bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-300 dark:to-gray-100 bg-clip-text text-transparent">The 3 Market Gaps</span>
       <AlertCircle className="w-10 h-10 text-gray-600 dark:text-gray-400" />
     </h2>
     
@@ -1964,7 +1964,7 @@ const SolutionBlock: React.FC<{
           whileTap={{ scale: 0.95 }}
         >
           <Zap className="w-6 h-6" />
-          VER DEMO EN VIVO
+          VIEW LIVE DEMO
           <ArrowRight className="w-6 h-6" />
         </motion.button>
       </motion.div>
@@ -2102,7 +2102,7 @@ const ComparisonBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="VER RESULTADOS"
+      buttonText="SEE RESULTS"
       buttonIcon={<TrendingUp className="w-6 h-6" />}
       buttonColor="from-orange-500 to-red-500 text-white"
     />
@@ -2120,7 +2120,7 @@ const CasesBlock: React.FC<{
   timeLeft: number;
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
-    <h2 className="text-5xl font-bold text-center mb-12">Resultados Reales 📊</h2>
+    <h2 className="text-5xl font-bold text-center mb-12">Real Results 📊</h2>
     
     <div className="grid md:grid-cols-4 gap-4 mb-8">
       {content.metrics.map((metric: any, idx: number) => (
@@ -2154,7 +2154,7 @@ const CasesBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="VER MODELO DE NEGOCIO"
+      buttonText="SEE BUSINESS MODEL"
       buttonIcon={<Banknote className="w-6 h-6" />}
       buttonColor="from-purple-500 to-indigo-500 text-white"
     />
@@ -2218,7 +2218,7 @@ const BusinessBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="VER ROADMAP"
+      buttonText="VIEW ROADMAP"
       buttonIcon={<Globe className="w-6 h-6" />}
       buttonColor="from-blue-500 to-purple-500 text-white"
     />
@@ -2267,7 +2267,7 @@ const RoadmapBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="MOMENTO INSPIRACIONAL"
+      buttonText="INSPIRATIONAL MOMENT"
       buttonIcon={<Heart className="w-6 h-6" />}
       buttonColor="from-indigo-500 to-purple-500 text-white"
     />
