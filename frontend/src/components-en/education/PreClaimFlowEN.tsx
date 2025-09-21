@@ -245,7 +245,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
     if (!password) {
       setValidationState(prev => ({
         ...prev,
-        error: 'Por favor, ingresa la contraseña del regalo'
+        error: 'Please enter the gift password'
       }));
       return;
     }
@@ -319,7 +319,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
           isValidating: false,
           isValid: false,
           requiresEducation: false,
-          error: data.message || 'Contraseña incorrecta',
+          error: data.message || 'Incorrect password',
           remainingAttempts: data.remainingAttempts
         });
       }
@@ -329,7 +329,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         isValidating: false,
         isValid: false,
         requiresEducation: false,
-        error: 'Error al validar la contraseña. Por favor, intenta de nuevo.'
+        error: 'Error validating password. Please try again.'
       });
     }
   };
@@ -395,7 +395,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
       addNotification({
         type: 'error',
         title: 'Error',
-        message: 'Error al procesar la solicitud. Por favor, intenta de nuevo.',
+        message: 'Error processing request. Please try again.',
         duration: 5000
       });
     }
@@ -520,7 +520,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-blue-500">🔒</span>
-                  Blockchain verificado
+                  Blockchain verified
                 </span>
               </div>
             </div>
@@ -539,7 +539,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-purple-800 dark:text-purple-300 mb-1 pr-3">
-                    ¡Tu regalo es una NFT Wallet con tesoros dentro!
+                    Your gift is an NFT Wallet with treasures inside!
                   </h3>
                   <p className="text-sm text-purple-700 dark:text-purple-400">
                     No es solo un NFT común - es una billetera digital inteligente que puede contener 
@@ -555,7 +555,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    🔑 Contraseña del Regalo
+                    🔑 Gift Password
                   </label>
                   <div className="relative">
                     <input
@@ -568,7 +568,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                         }
                       }}
                       className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Ingresa la contraseña que te compartieron"
+                      placeholder="Enter the password that was shared with you"
                       disabled={validationState.isValidating}
                     />
                     <button
@@ -589,7 +589,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    La persona que te envió este regalo te debe haber compartido una contraseña
+                    The person who sent you this gift should have shared a password with you
                   </p>
                 </div>
 
@@ -617,7 +617,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                       <span className="text-green-500 text-xl mr-3">✅</span>
                       <div className="flex-1">
                         <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">
-                          Sesión de educación recuperada
+                          Education session recovered
                         </h4>
                         <p className="text-sm text-green-700 dark:text-green-400 mb-3">
                           Ya completaste los requisitos educativos anteriormente. Puedes continuar con el reclamo o reiniciar el proceso.
@@ -687,7 +687,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   ) : (
                     <span className="flex items-center justify-center">
                       <span className="mr-2">🎯</span>
-                      Validar Contraseña y Continuar
+                      Validate Password and Continue
                     </span>
                   )}
                 </button>
@@ -702,7 +702,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                           Requisitos Educativos Detectados
                         </h4>
                         <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
-                          Este regalo requiere completar algunos módulos educativos cortos para asegurar que puedas manejarlo de forma segura.
+                          This gift requires completing some short educational modules to ensure you can handle it safely.
                         </p>
                         <div className="space-y-1">
                           {validationState.educationRequirements.map((req) => (
@@ -731,7 +731,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>Proceso seguro verificado por blockchain</span>
+                    <span>Secure process verified by blockchain</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
@@ -746,14 +746,14 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   {isClaimed ? '✅' : isExpired ? '⏰' : '↩️'}
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  {isClaimed ? 'Regalo ya reclamado' :
-                   isExpired ? 'Regalo expirado' :
-                   'Regalo no disponible'}
+                  {isClaimed ? 'Gift already claimed' :
+                   isExpired ? 'Gift expired' :
+                   'Gift not available'}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {isClaimed ? 'Este regalo ya fue reclamado exitosamente.' :
-                   isExpired ? 'El tiempo límite para reclamar este regalo ha expirado.' :
-                   'Este regalo no está disponible para reclamar.'}
+                  {isClaimed ? 'This gift has already been successfully claimed.' :
+                   isExpired ? 'The time limit to claim this gift has expired.' :
+                   'This gift is not available to claim.'}
                 </p>
               </div>
             )}
@@ -773,7 +773,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <li>• <strong>Sin complicaciones:</strong> No necesitas experiencia previa en crypto</li>
                   <li>• <strong>100% Gratis:</strong> El remitente pagó todos los costos por ti</li>
                   <li>• <strong>Valor real:</strong> NFT con valor de mercado intercambiable</li>
-                  <li>• <strong>Soporte 24/7:</strong> Te ayudamos en cada paso del proceso</li>
+                  <li>• <strong>24/7 Support:</strong> We help you every step of the way</li>
                 </ul>
               </div>
             </div>

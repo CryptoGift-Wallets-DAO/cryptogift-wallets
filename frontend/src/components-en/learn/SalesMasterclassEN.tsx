@@ -1179,7 +1179,7 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <span>EDUCACIÓN COMPLETADA</span>
+            <span>EDUCATION COMPLETED</span>
             <CheckCircle className="w-8 h-8" />
           </motion.div>
         </div>
@@ -1714,7 +1714,7 @@ const NavigationArea: React.FC<{
           <span>Tiempo agotado - Esperando...</span>
         </div>
         <div className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-          El siguiente bloque está disponible cuando completes esta sección
+          The next block is available when you complete this section
         </div>
         
         <motion.button
@@ -2487,7 +2487,7 @@ const CaptureBlock: React.FC<{
             Has elegido: <span className="font-bold text-blue-500 dark:text-blue-400">{selectedPath}</span>
           </p>
           <p className="text-xl text-gray-400">
-            Preparando tu acceso al regalo...
+            Preparing your gift access...
           </p>
         </motion.div>
         
@@ -2563,7 +2563,7 @@ const CaptureBlock: React.FC<{
                   Has seleccionado: <span className="font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{selectedPath}</span>
                 </p>
                 <p className="text-sm text-gray-300/80">
-                  Esta información nos ayuda a personalizar tu experiencia en CryptoGift
+                  This information helps us personalize your CryptoGift experience
                 </p>
               </div>
               
@@ -2733,7 +2733,7 @@ const CaptureBlock: React.FC<{
                     <Trophy className="w-6 h-6 text-yellow-300" />
                   </div>
                   <span className="bg-gradient-to-r from-yellow-200 to-green-200 bg-clip-text text-transparent font-black">
-                    {canProceed ? 'CONTINUAR AL REGALO' : 'COMPLETA LOS REQUISITOS'}
+                    {canProceed ? 'CONTINUE TO GIFT' : 'COMPLETE REQUIREMENTS'}
                   </span>
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-xl">
                     <Gift className="w-6 h-6 text-green-300" />
@@ -2962,7 +2962,7 @@ const SuccessBlock: React.FC<{
                 />
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">CG Wallet</h3>
               </div>
-              <p className="text-gray-700 dark:text-gray-300 mb-3">Decenas de utilidades que transformarán tu experiencia crypto:</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-3">Dozens of utilities that will transform your crypto experience:</p>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <li>• 🔒 Seguridad multi-capa con backup automático</li>
                 <li>• 💸 Intercambios sin comisiones entre usuarios</li>
@@ -2987,7 +2987,7 @@ const SuccessBlock: React.FC<{
               <div className="flex items-center gap-3 mb-2">
                 <img 
                   src="/wallet-regalo.png" 
-                  alt="Wallet Regalo" 
+                  alt="Gift Wallet" 
                   className="w-8 h-8 rounded-lg shadow-sm"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
@@ -3026,7 +3026,7 @@ const SuccessBlock: React.FC<{
               </div>
               <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
                 <h4 className="font-bold text-green-600 dark:text-green-400 mb-2">🎮 Gamificación</h4>
-                <p>Sistema de logros, NFT badges y rewards por aprendizaje</p>
+                <p>Achievement system, NFT badges and learning rewards</p>
               </div>
               <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
                 <h4 className="font-bold text-blue-600 dark:text-blue-400 mb-2">🤝 DAO Community</h4>
@@ -3073,7 +3073,7 @@ const SuccessBlock: React.FC<{
                 >
                   <div className="flex items-center gap-2">
                     <Gift className="w-5 h-5" />
-                    <span>Crear mi Primer Regalo</span>
+                    <span>Create my First Gift</span>
                   </div>
                 </button>
               </div>

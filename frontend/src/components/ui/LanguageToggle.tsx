@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 
@@ -11,15 +10,20 @@ const locales = [
 export function LanguageToggle() {
   const [isPending, setIsPending] = useState(false);
   const [currentLocale, setCurrentLocale] = useState('es');
-  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // Mark as client-side to avoid SSR issues
+    setIsClient(true);
+
     // Read locale from cookie on mount
-    const cookies = document.cookie.split(';');
-    const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='));
-    if (localeCookie) {
-      const locale = localeCookie.split('=')[1];
-      setCurrentLocale(locale);
+    if (typeof document !== 'undefined') {
+      const cookies = document.cookie.split(';');
+      const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='));
+      if (localeCookie) {
+        const locale = localeCookie.split('=')[1];
+        setCurrentLocale(locale);
+      }
     }
   }, []);
 
@@ -44,7 +48,9 @@ export function LanguageToggle() {
         console.log('✅ Server locale cookie set, refreshing...');
         setCurrentLocale(newLocale);
         // Reload the page to apply new locale
-        router.reload();
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
       } else {
         console.error('❌ Failed to set locale on server:', response.statusText);
       }
@@ -57,6 +63,11 @@ export function LanguageToggle() {
 
   const currentLocaleObj = locales.find(l => l.code === currentLocale) || locales[0];
   const otherLocale = locales.find(l => l.code !== currentLocale) || locales[1];
+
+  // Don't render anything on server side to avoid hydration mismatch
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="flex items-center space-x-1">
