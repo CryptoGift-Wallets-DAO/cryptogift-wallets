@@ -1638,7 +1638,7 @@ const QuestionSection: React.FC<{
             <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-green-400 text-xl font-bold">
               <span>Correct!</span>
               <PartyPopper className="w-6 h-6" />
-              <span>Excelente respuesta</span>
+              <span>Excellent answer</span>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-yellow-400 text-xl">
@@ -1746,7 +1746,7 @@ const NavigationArea: React.FC<{
       >
         <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400 text-lg">
           <RefreshCw className="w-5 h-5 animate-spin" />
-          <span>Procesando respuesta...</span>
+          <span>Processing response...</span>
         </div>
       </motion.div>
     )}
@@ -2560,7 +2560,7 @@ const CaptureBlock: React.FC<{
                 border border-purple-500/30 rounded-2xl p-6
                 shadow-xl shadow-purple-500/10">
                 <p className="text-lg text-gray-200 mb-4">
-                  Has seleccionado: <span className="font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{selectedPath}</span>
+                  You have selected: <span className="font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{selectedPath}</span>
                 </p>
                 <p className="text-sm text-gray-300/80">
                   This information helps us personalize your CryptoGift experience
@@ -2922,7 +2922,7 @@ const SuccessBlock: React.FC<{
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">💎 Godez22</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Desarrollador pionero que dio vida a este maravilloso sistema</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Pioneer developer who brought this wonderful system to life</p>
               </motion.div>
 
               {/* RLGra95 */}
@@ -2939,7 +2939,7 @@ const SuccessBlock: React.FC<{
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">🚀 RLGra95</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Co-fundador visionario en los primeros pasos del proyecto</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Visionary co-founder in the project's early steps</p>
               </motion.div>
             </div>
           </motion.div>
@@ -3011,26 +3011,26 @@ const SuccessBlock: React.FC<{
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
               <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
-                🧠 Knowledge: Centro Neurálgico del Futuro
+                🧠 Knowledge: The Future's Nerve Center
               </h3>
               <p className="text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-                La sección Knowledge se convertirá en el epicentro donde confluyen creadores de contenido y consumidores, 
-                maestros y estudiantes, con integración de las academias crypto más prestigiosas del ecosistema.
+                The Knowledge section will become the epicenter where content creators and consumers converge,
+                teachers and students, with integration of the most prestigious crypto academies in the ecosystem.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4 text-center text-sm text-gray-600 dark:text-gray-400">
               <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
-                <h4 className="font-bold text-orange-600 dark:text-orange-400 mb-2">🏆 Academias Elite</h4>
-                <p>Integración con Binance Academy, Coin Bureau, DeFi Pulse y más</p>
+                <h4 className="font-bold text-orange-600 dark:text-orange-400 mb-2">🏆 Elite Academies</h4>
+                <p>Integration with Binance Academy, Coin Bureau, DeFi Pulse and more</p>
               </div>
               <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
-                <h4 className="font-bold text-green-600 dark:text-green-400 mb-2">🎮 Gamificación</h4>
+                <h4 className="font-bold text-green-600 dark:text-green-400 mb-2">🎮 Gamification</h4>
                 <p>Achievement system, NFT badges and learning rewards</p>
               </div>
               <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
                 <h4 className="font-bold text-blue-600 dark:text-blue-400 mb-2">🤝 DAO Community</h4>
-                <p>Governance participativa y decisiones comunitarias</p>
+                <p>Participative governance and community decisions</p>
               </div>
             </div>
           </motion.div>
@@ -3049,7 +3049,7 @@ const SuccessBlock: React.FC<{
             }}
           >
             <p className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent mb-6">
-              🎉 ¡El futuro de los pagos digitales comienza contigo! 🎉
+              🎉 The future of digital payments begins with you! 🎉
             </p>
             
             {/* FASE 3: Condicionar CTAs - ocultar en modo educacional */}

@@ -658,11 +658,11 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                               Tu puntuación: <span className="font-bold">{quizAnswers && Object.keys(quizAnswers).filter(qId => {
                                 const q = module.quiz.find(question => question.id === qId);
                                 return q && quizAnswers[qId] === q.correctAnswer;
-                              }).length}/{module.quiz.length}</span> respuestas correctas
+                              }).length}/{module.quiz.length}</span> correct answers
                             </p>
                             <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
-                              Has completado exitosamente los requisitos educativos. 
-                              Ahora puedes reclamar tu regalo.
+                              You have successfully completed the educational requirements.
+                              Now you can claim your gift.
                             </p>
                           </div>
                         </div>

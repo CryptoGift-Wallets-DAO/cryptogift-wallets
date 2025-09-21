@@ -494,7 +494,7 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 }}
                 >
-                  ¡EDUCACIÓN COMPLETADA!
+                  EDUCATION COMPLETE!
                 </motion.h1>
                 
                 <motion.p
@@ -503,7 +503,7 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.6 }}
                 >
-                  Ahora entiendes el poder de CryptoGift
+                  Now you understand the power of CryptoGift
                 </motion.p>
                 
                 <motion.div
@@ -519,11 +519,11 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                     <p className="text-green-400 font-bold text-xl flex items-center justify-center gap-2">
                       <span className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">✅</span>
                       {lessonId === 'sales-masterclass' ? 'Sales Masterclass' : 
-                         lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo' : 
-                         'Módulo'} - COMPLETADO
+                         lessonId === 'claim-first-gift' ? 'Claim Your First Gift' :
+                         'Module'} - COMPLETED
                     </p>
                     <p className="text-green-300/80 text-sm mt-3">
-                      Has completado exitosamente el módulo educativo
+                      You have successfully completed the educational module
                     </p>
                   </div>
                   
