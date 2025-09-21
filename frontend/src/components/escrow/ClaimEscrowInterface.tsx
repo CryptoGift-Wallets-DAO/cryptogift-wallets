@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import { sendTransaction, waitForReceipt, createThirdwebClient } from 'thirdweb';

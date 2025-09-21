@@ -1,4 +1,3 @@
-'use client';
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeCard } from './ThemeSystem';

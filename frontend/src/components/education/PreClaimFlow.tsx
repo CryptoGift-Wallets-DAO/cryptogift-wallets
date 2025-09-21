@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { useActiveAccount } from 'thirdweb/react';
 import { generateSalt } from '../../lib/escrowUtils';
 import { useNotifications } from '../ui/NotificationSystem';

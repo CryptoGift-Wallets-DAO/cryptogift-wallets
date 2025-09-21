@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { NFTImage } from '../NFTImage';
 import { NFTImageModal } from '../ui/NFTImageModal';
