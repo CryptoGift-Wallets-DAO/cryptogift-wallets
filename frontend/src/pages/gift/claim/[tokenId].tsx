@@ -11,6 +11,7 @@ import { ConnectButton, useActiveAccount } from 'thirdweb/react';
 import { client } from '../../../app/client';
 import { resolveIPFSUrlClient } from '../../../lib/clientMetadataStore';
 import { NotificationProvider, useNotifications } from '../../../components/ui/NotificationSystem';
+import { LanguageToggle } from '../../../components/ui/LanguageToggle';
 import { 
   loadClaimSession, 
   updateClaimSession,
@@ -502,7 +503,7 @@ export default function ClaimGiftPage() {
                 </button>
               </div>
               
-              {/* Theme Selector and Connect Button */}
+              {/* Theme Selector, Language Toggle and Connect Button */}
               <div className="flex items-center gap-3">
                 {mounted && (
                   <button
@@ -521,7 +522,10 @@ export default function ClaimGiftPage() {
                     )}
                   </button>
                 )}
-                
+
+                {/* Language Selector */}
+                <LanguageToggle />
+
                 {!account && (
                   <ConnectButton
                     client={client}
