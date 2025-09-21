@@ -18,7 +18,7 @@ import { client } from '../../app/client';
 import { baseSepolia } from 'thirdweb/chains';
 
 // Import dinámico para evitar SSR issues con animaciones y confetti
-const SalesMasterclass = dynamic(
+const SalesMasterclassEN = dynamic(
   () => import('../learn/SalesMasterclassEN'),
   {
     ssr: false,
@@ -601,7 +601,7 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
             >
               {lessonId === 'sales-masterclass' ? (
                 <div className="h-full">
-                  <SalesMasterclass
+                  <SalesMasterclassEN
                     educationalMode={mode === 'educational'}
                     onEducationComplete={handleLessonComplete}
                     onShowEmailVerification={handleShowEmailVerification}

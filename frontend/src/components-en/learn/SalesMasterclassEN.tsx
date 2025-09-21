@@ -635,7 +635,7 @@ interface SalesMasterclassProps {
   verifiedEmail?: string;
 }
 
-const SalesMasterclass: React.FC<SalesMasterclassProps> = ({ 
+const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({ 
   educationalMode = false,
   onEducationComplete,
   onShowEmailVerification,
@@ -3107,5 +3107,5 @@ const SuccessBlock: React.FC<{
   );
 };
 
-export { SalesMasterclass };
-export default SalesMasterclass;
+export { SalesMasterclassEN };
+export default SalesMasterclassEN;
