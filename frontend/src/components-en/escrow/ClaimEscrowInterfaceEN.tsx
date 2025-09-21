@@ -165,7 +165,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
       addNotification({
         type: 'error',
         title: '⚠️ Aprobación Requerida',
-        message: 'Necesitas completar la validación educativa antes de reclamar',
+        message: 'You need to complete the educational validation before claiming',
         duration: 5000
       });
       setError('Education validation required but not completed');
@@ -255,7 +255,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
             const currentChainId = parseInt(chainId, 16);
             if (currentChainId !== 84532) {
               console.warn('⚠️ Wrong chain detected:', currentChainId);
-              throw new Error('Por favor cambia a Base Sepolia en tu wallet');
+              throw new Error('Please switch to Base Sepolia in your wallet');
             }
           } catch (chainError) {
             console.error('Chain verification failed:', chainError);
@@ -270,7 +270,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
         
         // 30 second timeout for mobile (MetaMask Mobile can be slow)
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Transaction timeout - MetaMask no respondió')), 30000)
+          setTimeout(() => reject(new Error('Transaction timeout - MetaMask did not respond')), 30000)
         );
         
         try {
@@ -320,7 +320,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
               });
               
               const extendedTimeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Transaction timeout después de reintentar - puede estar pendiente en blockchain')), 45000)
+                setTimeout(() => reject(new Error('Transaction timeout after retry - may be pending on blockchain')), 45000)
               );
               
               txResult = await Promise.race([retryPromise, extendedTimeoutPromise]);
@@ -354,7 +354,7 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
         });
         
         const confirmationTimeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Confirmación timeout - la transacción puede estar pendiente')), 60000)
+          setTimeout(() => reject(new Error('Confirmation timeout - transaction may be pending')), 60000)
         );
         
         try {
@@ -366,8 +366,8 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
           // Provide helpful message and don't fail completely
           addNotification({
             type: 'warning',
-            title: '⏳ Transacción procesándose',
-            message: `Tu transacción (${txResult.transactionHash.slice(0, 10)}...) está siendo procesada. Puede tomar unos minutos en móvil.`,
+            title: '⏳ Transaction processing',
+            message: `Your transaction (${txResult.transactionHash.slice(0, 10)}...) is being processed. May take a few minutes on mobile.`,
             duration: 15000,
             action: {
               label: 'Ver en BaseScan',
@@ -379,8 +379,8 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
           
           // Don't completely fail - set a warning state instead
           console.log('📱 Setting transaction as pending due to confirmation timeout');
-          setError(`Transacción enviada (${txResult.transactionHash.slice(0, 10)}...) pero confirmación pendiente. 
-                   Verifica en tu wallet o en BaseScan en unos minutos.`);
+          setError(`Transaction sent (${txResult.transactionHash.slice(0, 10)}...) but confirmation pending.
+                   Check your wallet or BaseScan in a few minutes.`);
           setClaimStep('password'); // Return to password step but with pending message
           
           // Still call success callback with transaction hash for potential recovery
@@ -452,20 +452,20 @@ export const ClaimEscrowInterfaceEN: React.FC<ClaimEscrowInterfaceProps> = ({
       if (err?.message?.includes('Transaction timeout después de reintentar')) {
         console.error('📱 Mobile transaction timeout after retry detected');
         
-        errorMessage = `⏳ Tu transacción puede estar procesándose en segundo plano.
-        
-Por favor:
-1. Verifica tu wallet para confirmar si la transacción aparece
-2. Espera 2-3 minutos y recarga la página
-3. Si el regalo sigue disponible, intenta de nuevo
-4. Si ya no aparece, ¡fue exitoso!
+        errorMessage = `⏳ Your transaction may be processing in the background.
 
-La transacción puede tomar más tiempo en móvil.`;
+Please:
+1. Check your wallet to confirm if the transaction appears
+2. Wait 2-3 minutes and reload the page
+3. If the gift is still available, try again
+4. If it no longer appears, it was successful!
+
+The transaction may take longer on mobile.`;
 
         addNotification({
           type: 'info',
-          title: '⏳ Transacción puede estar pendiente',
-          message: 'Verifica tu wallet o espera unos minutos',
+          title: '⏳ Transaction may be pending',
+          message: 'Check your wallet or wait a few minutes',
           duration: 15000,
           action: {
             label: 'Ver en BaseScan',
@@ -489,19 +489,19 @@ La transacción puede tomar más tiempo en móvil.`;
         if (isMobile) {
           // More specific error messages based on error details
           if (err.message?.includes('User rejected') || err.message?.includes('User denied')) {
-            errorMessage = 'Transacción rechazada. Por favor acepta la transacción en MetaMask.';
+            errorMessage = 'Transaction rejected. Please accept the transaction in MetaMask.';
           } else if (err.message?.includes('insufficient funds')) {
-            errorMessage = 'Fondos insuficientes para pagar el gas. Necesitas ETH en Base Sepolia.';
+            errorMessage = 'Insufficient funds to pay for gas. You need ETH on Base Sepolia.';
           } else if (err.message?.includes('nonce')) {
-            errorMessage = 'Error de sincronización. Por favor:\n1. Abre MetaMask\n2. Ve a Configuración > Avanzado\n3. Presiona "Restablecer cuenta"\n4. Intenta de nuevo';
+            errorMessage = 'Synchronization error. Please:\n1. Open MetaMask\n2. Go to Settings > Advanced\n3. Press "Reset Account"\n4. Try again';
           } else {
-            errorMessage = 'Error de conexión. Por favor:\n1. Verifica estar en Base Sepolia\n2. Cierra y abre MetaMask completamente\n3. Espera 10 segundos\n4. Intenta de nuevo';
+            errorMessage = 'Connection error. Please:\n1. Verify you are on Base Sepolia\n2. Close and open MetaMask completely\n3. Wait 10 seconds\n4. Try again';
           
             // Try to add more context
             addNotification({
               type: 'warning',
-              title: '⚠️ Error de red detectado',
-              message: 'Cambia a Base Sepolia en tu wallet',
+              title: '⚠️ Network error detected',
+              message: 'Switch to Base Sepolia in your wallet',
               duration: 10000,
               action: {
                 label: 'Ver instrucciones',
@@ -512,11 +512,11 @@ La transacción puede tomar más tiempo en móvil.`;
             });
           }
         } else {
-          errorMessage = 'Error interno del wallet. Por favor recarga la página e intenta de nuevo.';
+          errorMessage = 'Internal wallet error. Please reload the page and try again.';
         }
       } else if (isMobile && isRpcError(err)) {
         console.error('📱 Mobile RPC error detected:', err.message);
-        errorMessage = `Error móvil: ${err.message}. Verifica tu conexión.`;
+        errorMessage = `Mobile error: ${err.message}. Check your connection.`;
       } else {
         errorMessage = parseEscrowError(err);
       }
@@ -583,7 +583,7 @@ La transacción puede tomar más tiempo en móvil.`;
               addNotification({
                 type: 'success',
                 title: '🎉 NFT añadido exitosamente',
-                message: 'Ve a tu wallet → Sección NFTs. Puede tomar 1-2 minutos aparecer.',
+                message: 'Go to your wallet → NFTs section. May take 1-2 minutes to appear.',
                 duration: 8000,
                 action: {
                   label: 'Abrir MetaMask',
@@ -619,8 +619,8 @@ La transacción puede tomar más tiempo en móvil.`;
               console.log('📱 MetaMask watchAsset bug detected, NFT claimed successfully');
               addNotification({
                 type: 'success',
-                title: '✅ NFT reclamado exitosamente',
-                message: 'El NFT está en tu wallet. Actualiza MetaMask si no aparece.',
+                title: '✅ NFT successfully claimed',
+                message: 'The NFT is in your wallet. Refresh MetaMask if it doesn\'t appear.',
                 duration: 8000,
                 action: {
                   label: 'Ver en BaseScan',
@@ -633,11 +633,11 @@ La transacción puede tomar más tiempo en móvil.`;
               // User denied - still show success since claim worked
               addNotification({
                 type: 'info',
-                title: '✅ NFT reclamado',
-                message: `NFT #${tokenId} transferido exitosamente a tu wallet`,
+                title: '✅ NFT claimed',
+                message: `NFT #${tokenId} successfully transferred to your wallet`,
                 duration: 8000,
                 action: {
-                  label: 'Ver transacción',
+                  label: 'View transaction',
                   onClick: () => {
                     if (txResult?.transactionHash) {
                       window.open(`https://sepolia.basescan.org/tx/${txResult.transactionHash}`, '_blank');
@@ -650,8 +650,8 @@ La transacción puede tomar más tiempo en móvil.`;
               if (isMobile) {
                 addNotification({
                   type: 'info',
-                  title: '🎁 NFT reclamado exitosamente',
-                  message: `Ve a tu wallet → NFTs → Buscar por ID: ${tokenId}`,
+                  title: '🎁 NFT successfully claimed',
+                  message: `Go to your wallet → NFTs → Search by ID: ${tokenId}`,
                   duration: 8000,
                   action: {
                     label: 'Copiar ID',
@@ -669,8 +669,8 @@ La transacción puede tomar más tiempo en móvil.`;
               } else {
                 addNotification({
                   type: 'info',
-                  title: '💡 NFT reclamado exitosamente',
-                  message: 'Puede tomar unos minutos aparecer en MetaMask',
+                  title: '💡 NFT successfully claimed',
+                  message: 'May take a few minutes to appear in MetaMask',
                   duration: 5000
                 });
               }
@@ -890,8 +890,8 @@ La transacción puede tomar más tiempo en móvil.`;
                         setShowNetworkPrompt(true);
                         addNotification({
                           type: 'info',
-                          title: '🦊 Wallet requerida',
-                          message: 'Para optimizar tu experiencia, conecta una wallet como MetaMask',
+                          title: '🦊 Wallet required',
+                          message: 'For the best experience, connect a wallet like MetaMask',
                           duration: 5000
                         });
                       }
@@ -909,7 +909,7 @@ La transacción puede tomar más tiempo en móvil.`;
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-blue-800 dark:text-blue-300">🌐 Optimización Opcional</p>
-                      <p className="text-sm text-blue-600 dark:text-blue-400">Configura tu wallet para mejor experiencia NFT (v2.0)</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Configure your wallet for better NFT experience (v2.0)</p>
                     </div>
                   </div>
                   <div className="text-blue-500 group-hover:text-blue-600 transition-colors">
@@ -1037,8 +1037,8 @@ La transacción puede tomar más tiempo en móvil.`;
                       
                       addNotification({
                         type: 'success',
-                        title: '🎉 ¡Regalo Reclamado!',
-                        message: 'Tu transacción fue exitosa. El NFT está en tu wallet.',
+                        title: '🎉 Gift Claimed!',
+                        message: 'Your transaction was successful. The NFT is in your wallet.',
                         duration: 8000
                       });
                       
@@ -1049,8 +1049,8 @@ La transacción puede tomar más tiempo en móvil.`;
                       // Still not claimed, user can try again
                       addNotification({
                         type: 'info',
-                        title: 'Aún no reclamado',
-                        message: 'El regalo sigue disponible. Puedes intentar de nuevo.',
+                        title: 'Not claimed yet',
+                        message: 'The gift is still available. You can try again.',
                         duration: 5000
                       });
                       setError('');
@@ -1059,8 +1059,8 @@ La transacción puede tomar más tiempo en móvil.`;
                     console.error('Error checking status:', checkError);
                     addNotification({
                       type: 'error',
-                      title: 'Error de verificación',
-                      message: 'No se pudo verificar el estado. Intenta recargar la página.',
+                      title: 'Verification error',
+                      message: 'Could not verify the status. Try reloading the page.',
                       duration: 5000
                     });
                   } finally {
@@ -1070,7 +1070,7 @@ La transacción puede tomar más tiempo en móvil.`;
                 disabled={isLoading}
                 className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors font-medium mt-2"
               >
-                {isLoading ? 'Verificando...' : '🔍 Verificar Estado del Regalo'}
+                {isLoading ? 'Checking...' : '🔍 Check Gift Status'}
               </button>
             )}
 
@@ -1090,24 +1090,24 @@ La transacción puede tomar más tiempo en móvil.`;
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳' : '⏰'}
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {giftInfo?.status === 'claimed' ? '✅ Gift reclamado' :
+              {giftInfo?.status === 'claimed' ? '✅ Gift claimed' :
                giftInfo?.status === 'returned' ? '↩️ Gift devuelto al creador' :
                giftInfo?.isExpired ? '⏰ Gift expirado' :
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? '⏳ Gift todavía disponible...' :
-               giftInfo?.status === 'active' ? '🎁 Gift disponible para reclamar' : 
+               giftInfo?.status === 'active' ? '🎁 Gift available to claim' : 
                '⏰ Gift expirado'}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {giftInfo?.status === 'claimed' ? 'Este gift ya ha sido reclamado exitosamente por otro usuario.' :
-               giftInfo?.status === 'returned' ? 'El tiempo de reclamación expiró y el gift fue devuelto automáticamente a su creador.' :
-               giftInfo?.isExpired ? 'El tiempo límite para reclamar este gift ha expirado. Ya no puede ser reclamado.' :
+              {giftInfo?.status === 'claimed' ? 'This gift has already been successfully claimed by another user.' :
+               giftInfo?.status === 'returned' ? 'The claim period expired and the gift was automatically returned to its creator.' :
+               giftInfo?.isExpired ? 'The deadline to claim this gift has expired. It can no longer be claimed.' :
                giftInfo?.status === 'active' && !giftInfo?.canClaim ? 
-                 `Este gift está activo y disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')} a las ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` :
-               !giftInfo ? 'No se pudo cargar la información del gift. Verifica el enlace o intenta más tarde.' :
-               giftInfo?.status === 'pending' ? 'Este gift está siendo procesado. Espera unos momentos e intenta nuevamente.' :
-               giftInfo?.status === 'cancelled' ? 'Este gift fue cancelado por su creador y ya no está disponible.' :
-               giftInfo?.status === 'active' ? `Este gift está disponible para reclamar. Vence el ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('es-ES')} a las ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` :
-               'Este gift ha expirado y ya no puede ser reclamado.'}
+                 `This gift is active and available to claim. Expires on ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('en-US')} at ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.` :
+               !giftInfo ? 'Could not load gift information. Please check the link or try again later.' :
+               giftInfo?.status === 'pending' ? 'This gift is being processed. Please wait a moment and try again.' :
+               giftInfo?.status === 'cancelled' ? 'This gift was cancelled by its creator and is no longer available.' :
+               giftInfo?.status === 'active' ? `This gift is available to claim. Expires on ${new Date(giftInfo.expirationTime * 1000).toLocaleDateString('en-US')} at ${new Date(giftInfo.expirationTime * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.` :
+               'This gift has expired and can no longer be claimed.'}
             </p>
           </div>
         )}

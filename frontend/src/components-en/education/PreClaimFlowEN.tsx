@@ -344,8 +344,8 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
     if (!account?.address) {
       addNotification({
         type: 'warning',
-        title: 'Wallet Requerida',
-        message: 'Necesitas conectar tu wallet para obtener la aprobación educativa',
+        title: 'Wallet Required',
+        message: 'You need to connect your wallet to get educational approval',
         duration: 5000
       });
       return;
@@ -385,7 +385,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
         addNotification({
           type: 'error',
           title: 'Error',
-          message: data.error || 'No se pudo obtener la aprobación educativa',
+          message: data.error || 'Could not obtain educational approval',
           duration: 5000
         });
       }
@@ -475,11 +475,11 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
           </div>
         </div>
 
-        {/* Panel Derecho - Validación de Password */}
+        {/* Right Panel - Password Validation */}
         <div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 relative">
 
-            {/* Header con ganchos de venta */}
+            {/* Header with sales hooks */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-3 mb-4">
                 <div className="w-20 h-20 bg-gray-200/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl flex items-center justify-center animate-bounce shadow-lg">
@@ -507,11 +507,11 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  100% Seguro
+                  100% Secure
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-yellow-500">⭐</span>
-                  +50,000 usuarios
+                  +50,000 users
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="text-blue-500">🔒</span>
@@ -537,9 +537,9 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                     Your gift is an NFT Wallet with treasures inside!
                   </h3>
                   <p className="text-sm text-purple-700 dark:text-purple-400">
-                    No es solo un NFT común - es una billetera digital inteligente que puede contener 
-                    criptomonedas, tokens y otros activos valiosos que el creador ha guardado especialmente para ti. 
-                    ¡Descubre los tesoros que te esperan dentro!
+                    It's not just a regular NFT - it's a smart digital wallet that can hold
+                    cryptocurrencies, tokens and other valuable assets that the creator has saved especially for you.
+                    Discover the treasures waiting for you inside!
                   </p>
                 </div>
               </div>
@@ -597,7 +597,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                         <p className="text-sm text-red-800 dark:text-red-300">{validationState.error}</p>
                         {validationState.remainingAttempts !== undefined && (
                           <p className="text-xs text-red-700 dark:text-red-400 mt-1">
-                            Intentos restantes: {validationState.remainingAttempts}
+                            Remaining attempts: {validationState.remainingAttempts}
                           </p>
                         )}
                       </div>
@@ -615,7 +615,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                           Education session recovered
                         </h4>
                         <p className="text-sm text-green-700 dark:text-green-400 mb-3">
-                          Ya completaste los requisitos educativos anteriormente. Puedes continuar con el reclamo o reiniciar el proceso.
+                          You have already completed the educational requirements. You can continue with the claim or restart the process.
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -633,7 +633,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                             }}
                             className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                           >
-                            Continuar con el reclamo
+                            Continue with claim
                           </button>
                           <button
                             onClick={() => {
@@ -657,7 +657,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                             }}
                             className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium"
                           >
-                            Reiniciar proceso
+                            Restart process
                           </button>
                         </div>
                       </div>
@@ -677,7 +677,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Validando...
+                      Validating...
                     </div>
                   ) : (
                     <span className="flex items-center justify-center">
@@ -694,7 +694,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                       <span className="text-blue-500 text-xl mr-3">🎓</span>
                       <div className="flex-1">
                         <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-1">
-                          Requisitos Educativos Detectados
+                          Educational Requirements Detected
                         </h4>
                         <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
                           This gift requires completing some short educational modules to ensure you can handle it safely.
@@ -711,7 +711,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                           onClick={handleEducationalBypass}
                           className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                         >
-                          Saltar requisitos educativos (usuario avanzado)
+                          Skip educational requirements (advanced user)
                         </button>
                       </div>
                     </div>
@@ -722,7 +722,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>Sin costos ocultos - 100% gratis para ti</span>
+                    <span>No hidden costs - 100% free for you</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
@@ -730,7 +730,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>Recibirás el NFT directamente en tu wallet</span>
+                    <span>You will receive the NFT directly to your wallet</span>
                   </div>
                 </div>
               </div>
@@ -762,12 +762,12 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
               </svg>
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">
-                  🏆 ¿Por qué CryptoGift es diferente?
+                  🏆 Why is CryptoGift different?
                 </h4>
                 <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-                  <li>• <strong>Sin complicaciones:</strong> No necesitas experiencia previa en crypto</li>
-                  <li>• <strong>100% Gratis:</strong> El remitente pagó todos los costos por ti</li>
-                  <li>• <strong>Valor real:</strong> NFT con valor de mercado intercambiable</li>
+                  <li>• <strong>No complications:</strong> You don't need prior crypto experience</li>
+                  <li>• <strong>100% Free:</strong> The sender paid all costs for you</li>
+                  <li>• <strong>Real value:</strong> NFT with tradeable market value</li>
                   <li>• <strong>24/7 Support:</strong> We help you every step of the way</li>
                 </ul>
               </div>

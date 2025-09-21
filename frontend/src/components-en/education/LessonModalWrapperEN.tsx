@@ -26,7 +26,7 @@ const SalesMasterclassEN = dynamic(
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-xl">Cargando Sales Masterclass...</p>
+          <p className="text-white text-xl">Loading Sales Masterclass...</p>
         </div>
       </div>
     )
@@ -42,7 +42,7 @@ const ClaimFirstGift = dynamic(
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-xl">Cargando Lección de Claim...</p>
+          <p className="text-white text-xl">Loading Claim Lesson...</p>
         </div>
       </div>
     )
@@ -241,16 +241,16 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
   const handleLessonComplete = async () => {
     console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
     
-    // En mode educational, mostrar el overlay de éxito y conectar wallet
+    // In educational mode, show success overlay and connect wallet
     if (mode === 'educational' && onComplete) {
       console.log('🎓 Educational mode - showing success overlay and wallet connection');
       
-      // FIX: Llamar directamente a handleEducationCompletionAfterEmail
-      // que muestra el overlay de éxito y pide conectar wallet
+      // FIX: Call handleEducationCompletionAfterEmail directly
+      // that shows the success overlay and asks to connect wallet
       handleEducationCompletionAfterEmail();
       return;
     } else if (mode === 'knowledge') {
-      // En knowledge mode, simplemente mostrar celebración y cerrar
+      // In knowledge mode, simply show celebration and close
       triggerConfetti({
         particleCount: 100,
         spread: 70,
@@ -318,7 +318,7 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
 
   // Handle completion showing success overlay and wallet connection
   const handleEducationCompletionAfterEmail = async () => {
-    console.log('🎆 Showing success overlay: ¡Ya eres parte de CryptoGift!');
+    console.log('🎆 Showing success overlay: You are now part of CryptoGift!');
     console.log('📊 Current states:', {
       showSuccess,
       showConnectWallet,
@@ -342,7 +342,7 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
       setShowConnectWallet(true);
     }, 100); // Small delay to ensure state updates properly
     
-    // El useEffect detectará cuando se conecte la wallet y procederá con EIP-712
+    // The useEffect will detect when the wallet is connected and proceed with EIP-712
   };
 
   // Separate function for EIP-712 generation after wallet connection
@@ -537,10 +537,10 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                         shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 transition-all">
                         <p className="text-blue-400 font-bold text-lg mb-3 flex items-center justify-center gap-2">
                           <span className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">🔗</span>
-                          Ahora conecta tu wallet para reclamar el regalo
+                          Now connect your wallet to claim the gift
                         </p>
                         <p className="text-blue-300/80 text-sm">
-                          Para generar tu certificación EIP-712 necesitamos verificar tu identidad con la wallet
+                          To generate your EIP-712 certification we need to verify your identity with the wallet
                         </p>
                       </div>
                       
@@ -577,13 +577,13 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                         <div className="flex items-center justify-center gap-3">
                           <div className="w-8 h-8 border-3 border-yellow-400 border-t-transparent rounded-full animate-spin" />
                           <span className="bg-gradient-to-r from-yellow-300 to-green-300 bg-clip-text text-transparent">
-                            Generando tu certificación EIP-712...
+                            Generating your EIP-712 certification...
                           </span>
                         </div>
                       </motion.div>
                       
                       <p className="text-gray-300/70 text-sm mt-2">
-                        Procesando tu credencial educativa...
+                        Processing your educational credential...
                       </p>
                     </>
                   )}
@@ -620,8 +620,8 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                 <div className="flex items-center justify-center h-full py-20">
                   <div className="text-center text-white">
                     <div className="text-6xl mb-4">📚</div>
-                    <h2 className="text-2xl font-bold mb-2">Lección no encontrada</h2>
-                    <p className="text-gray-400">La lección "{lessonId}" no está disponible.</p>
+                    <h2 className="text-2xl font-bold mb-2">Lesson not found</h2>
+                    <p className="text-gray-400">The lesson "{lessonId}" is not available.</p>
                   </div>
                 </div>
               )}
@@ -632,8 +632,8 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
           {mode === 'educational' && !showSuccess && (
             <div className="border-t border-gray-700 p-4 flex-shrink-0">
               <div className="flex items-center justify-between text-sm text-gray-400">
-                <span>Módulo Educativo Requerido</span>
-                <span>🎯 Completa para desbloquear tu regalo</span>
+                <span>Required Educational Module</span>
+                <span>🎯 Complete to unlock your gift</span>
               </div>
             </div>
           )}
@@ -647,8 +647,8 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
               onClose={() => setShowEmailVerification(false)}
               onVerified={handleEmailVerified}
               source="educational-masterclass"
-              title="📧 ¡Necesitamos tu Email!"
-              subtitle="Para enviarte información exclusiva sobre cripto"
+              title="📧 We Need Your Email!"
+              subtitle="To send you exclusive crypto information"
             />
 
             <CalendarBookingModal

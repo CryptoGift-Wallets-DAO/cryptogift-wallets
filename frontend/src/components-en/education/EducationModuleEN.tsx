@@ -47,17 +47,17 @@ interface QuizQuestion {
 const MODULE_DATABASE: Record<number, ModuleContent> = {
   1: {
     id: 1,
-    title: 'Crear Wallet Segura',
+    title: 'Create Secure Wallet',
     sections: [
       {
         id: 'intro',
-        title: '¿Qué es una Wallet de Criptomonedas?',
-        content: 'Una wallet (billetera) de criptomonedas es como tu cuenta bancaria digital, pero tú tienes el control total. A diferencia de un banco, nadie más puede acceder a tus fondos si proteges bien tus claves.',
+        title: 'What is a Cryptocurrency Wallet?',
+        content: 'A cryptocurrency wallet is like your digital bank account, but you have total control. Unlike a bank, no one else can access your funds if you protect your keys properly.',
         keyPoints: [
-          'Es tu identidad en blockchain',
-          'Almacena tus activos digitales',
-          'Tú eres el único responsable de su seguridad',
-          'No hay "recuperar contraseña" como en apps tradicionales'
+          'It is your identity on the blockchain',
+          'It stores your digital assets',
+          'You are solely responsible for its security',
+          'There is no "password recovery" like in traditional apps'
         ]
       },
       {
@@ -126,22 +126,22 @@ const MODULE_DATABASE: Record<number, ModuleContent> = {
   },
   2: {
     id: 2,
-    title: 'Seguridad Básica',
+    title: 'Basic Security',
     sections: [
       {
         id: 'threats',
-        title: 'Amenazas Comunes',
-        content: 'El mundo crypto es seguro si conoces los riesgos. La mayoría de pérdidas son por descuido del usuario, no por hackeos.',
+        title: 'Common Threats',
+        content: 'The crypto world is safe if you know the risks. Most losses are due to user carelessness, not hacks.',
         keyPoints: [
-          'Phishing: Sitios web falsos',
-          'Scam tokens: Tokens falsos enviados a tu wallet',
-          'Rug pulls: Proyectos que desaparecen con el dinero',
-          'Social engineering: Manipulación psicológica'
+          'Phishing: Fake websites',
+          'Scam tokens: Fake tokens sent to your wallet',
+          'Rug pulls: Projects that disappear with the money',
+          'Social engineering: Psychological manipulation'
         ]
       },
       {
         id: 'protection',
-        title: 'Cómo Protegerte',
+        title: 'How to Protect Yourself',
         content: 'Con estas prácticas básicas, estarás más seguro que el 99% de usuarios.',
         keyPoints: [
           'Verifica SIEMPRE las URLs',
@@ -504,7 +504,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                            dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed
                            transition-colors"
                 >
-                  ← Anterior
+                  ← Previous
                 </button>
 
                 {sectionProgress[currentSectionData.id] && (
@@ -518,7 +518,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
                            transition-colors font-medium"
                 >
-                  {canNavigateNext ? 'Siguiente →' : canStartQuiz ? 'Iniciar Quiz →' : 'Marcar como Leído'}
+                  {canNavigateNext ? 'Next →' : canStartQuiz ? 'Start Quiz →' : 'Mark as Read'}
                 </button>
               </div>
             </div>
@@ -679,7 +679,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                               url: typeof window !== 'undefined' ? window.location.origin : '',
                             }}
                             connectButton={{
-                              label: "🎁 Completar Educación y Reclamar Regalo",
+                              label: "🎁 Complete Education and Claim Gift",
                               className: "w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                             }}
                             walletConnect={{
@@ -713,7 +713,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                         >
                           <span className="flex items-center justify-center">
                             <span className="mr-2">🎁</span>
-                            Completar Educación y Reclamar Regalo
+                            Complete Education and Claim Gift
                           </span>
                         </button>
                       )}

@@ -155,7 +155,7 @@ interface FeatureItem {
 
 interface ComparisonItem {
   aspect?: string; // Opcional para permitir objetos simples
-  traditional?: string; // Usado en el código
+  traditional?: string; // Used in the code
   competitor?: string;
   cryptogift?: string; // Opcional para flexibilidad
   advantage?: string; // Opcional para flexibilidad
@@ -163,14 +163,14 @@ interface ComparisonItem {
 
 interface MetricItem {
   label?: string; // Opcional para flexibilidad
-  number?: string; // Usado en el código 
+  number?: string; // Used in the code 
   value?: string; // Opcional
   improvement?: string; // Opcional
 }
 
 interface StreamItem {
   name: string;
-  model?: string; // Usado en el código
+  model?: string; // Used in the code
   description?: string; // Opcional
   potential?: string; // Opcional
   icon?: React.ComponentType<{ className?: string }>; // Componente React para lucide-react
@@ -178,7 +178,7 @@ interface StreamItem {
 
 interface PhaseItem {
   phase?: string; // Opcional
-  name?: string; // Usado en el código
+  name?: string; // Used in the code
   timeline?: string; // Opcional
   description?: string; // Opcional
   milestones?: string[]; // Opcional
@@ -207,8 +207,8 @@ interface SalesBlockContent {
   title?: string;
   description?: string;
   urgency?: string;
-  headline?: string; // Usado en el código
-  instruction?: string; // Usado en el código
+  headline?: string; // Used in the code
+  instruction?: string; // Used in the code
   story?: string; // Usado para el contenido narrativo del opening
   stat?: string; // Usado para mostrar estadísticas importantes
   steps?: string[]; // Lista de pasos del proceso
@@ -1009,7 +1009,7 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
       setMetrics(prev => ({ ...prev, leadSubmitted: true }));
       
       // FIX: Proceder directamente al bloque de success
-      // El usuario ya completó los checkboxes, ahora debe ver "¡Ya eres parte de CryptoGift!"
+      // The user has already completed the checkboxes, now they should see "You are now part of CryptoGift!"
       console.log('🎆 Educational capture complete - moving to success block');
       handleNextBlock();
       
@@ -1058,11 +1058,11 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
         }, 3000);
       } else {
         console.error('Failed to submit lead');
-        alert('Error al enviar el formulario. Por favor intenta de nuevo.');
+        alert('Error submitting form. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting lead:', error);
-      alert('Error de conexión. Por favor verifica tu internet e intenta de nuevo.');
+      alert('Connection error. Please check your internet and try again.');
     }
   }, [leadData, metrics, celebrate, handleNextBlock, educationalMode, onEducationComplete]);
 
@@ -1168,7 +1168,7 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
             transition={{ delay: 0.6 }}
           >
             <p className="text-lg text-gray-400 mb-4">
-              Generando tu certificación EIP-712...
+              Generating your EIP-712 certification...
             </p>
             <div className="animate-spin w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full mx-auto" />
           </motion.div>
@@ -1545,8 +1545,8 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
           console.log('✅ Email verified for masterclass:', email);
         }}
         source="masterclass"
-        title="📧 ¡Necesitamos tu Email!"
-        subtitle="Para enviarte información exclusiva y próximos pasos"
+        title="📧 We Need Your Email!"
+        subtitle="To send you exclusive information and next steps"
       />
 
       {/* CALENDAR BOOKING MODAL */}
@@ -1586,7 +1586,7 @@ const QuestionSection: React.FC<{
       <h3 className="text-2xl font-bold mb-4 flex items-center gap-3 
         text-green-800 dark:text-green-200">
         <Lightbulb className="w-7 h-7 text-green-600 dark:text-green-400" />
-        <span>Pregunta Rápida:</span>
+        <span>Quick Question:</span>
       </h3>
       <p className="text-xl mb-6 text-green-800 dark:text-green-200">{question.text}</p>
       
@@ -1636,13 +1636,13 @@ const QuestionSection: React.FC<{
         >
           {question.options[selectedAnswer!].isCorrect ? (
             <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-green-400 text-xl font-bold">
-              <span>¡Correcto!</span>
+              <span>Correct!</span>
               <PartyPopper className="w-6 h-6" />
               <span>Excelente respuesta</span>
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-yellow-400 text-xl">
-              <span>Casi... pero la respuesta correcta te sorprenderá</span>
+              <span>Close... but the correct answer will surprise you</span>
               <AlertCircle className="w-6 h-6" />
             </div>
           )}
@@ -1664,7 +1664,7 @@ const NavigationArea: React.FC<{
   onNext, 
   canProceed, 
   timeLeft, 
-  buttonText = "CONTINUAR", 
+  buttonText = "CONTINUE", 
   buttonIcon = <Rocket className="w-6 h-6" />,
   buttonColor = "from-yellow-500 to-orange-500 text-black"
 }) => (
@@ -1697,7 +1697,7 @@ const NavigationArea: React.FC<{
         
         <div className="mt-4 text-gray-600 dark:text-gray-400 text-sm flex items-center justify-center gap-2">
           <ChevronRight className="w-4 h-4" />
-          <span>Haz clic para continuar</span>
+          <span>Click to continue</span>
           <span className="text-gray-400 dark:text-gray-500">•</span>
           <Clock className="w-4 h-4" />
           <span>Tiempo restante: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
@@ -1810,7 +1810,7 @@ const OpeningBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="CONTINUAR"
+      buttonText="CONTINUE"
       buttonIcon={<Rocket className="w-6 h-6" />}
       buttonColor="from-blue-500 to-purple-500 text-white"
     />
@@ -1878,7 +1878,7 @@ const ProblemBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="VER SOLUCIÓN"
+      buttonText="VIEW SOLUTION"
       buttonIcon={<Shield className="w-6 h-6" />}
       buttonColor="from-gray-600 to-gray-800 text-white"
     />
@@ -1897,7 +1897,7 @@ const SolutionBlock: React.FC<{
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
     <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-      <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">NFT-Wallets: La Revolución</span>
+      <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">NFT-Wallets: The Revolution</span>
       <Rocket className="w-10 h-10 text-blue-600 dark:text-blue-400" />
     </h2>
     
@@ -1998,7 +1998,7 @@ const DemoBlock: React.FC<{
             transition={{ type: "spring" }}
           >
             <QRCodeSVG value={giftUrl} size={200} level="H" />
-            <p className="text-gray-800 dark:text-gray-200 mt-4 font-semibold">Escanea con tu móvil</p>
+            <p className="text-gray-800 dark:text-gray-200 mt-4 font-semibold">Scan with your phone</p>
           </motion.div>
         )}
         
@@ -2016,7 +2016,7 @@ const DemoBlock: React.FC<{
             animate={{ scale: 1 }}
           >
             <CheckCircle className="w-32 h-32 text-green-400 mx-auto mb-8" />
-            <h3 className="text-4xl font-bold mb-4 text-gray-800 dark:text-white">¡LO TIENES! 🎉</h3>
+            <h3 className="text-4xl font-bold mb-4 text-gray-800 dark:text-white">YOU'VE GOT IT! 🎉</h3>
           </motion.div>
         )}
       </div>
@@ -2052,7 +2052,7 @@ const DemoBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="VER COMPARACIÓN"
+      buttonText="VIEW COMPARISON"
       buttonIcon={<BarChart3 className="w-6 h-6" />}
       buttonColor="from-blue-500 to-purple-500 text-white"
     />
@@ -2339,7 +2339,7 @@ const CloseBlock: React.FC<{
       onNext={onNext}
       canProceed={canProceed}
       timeLeft={timeLeft}
-      buttonText="¡QUIERO SER PARTE!"
+      buttonText="I WANT TO JOIN!"
       buttonIcon={<Rocket className="w-8 h-8" />}
       buttonColor="from-blue-600 to-purple-600 text-white"
     />
@@ -2474,7 +2474,7 @@ const CaptureBlock: React.FC<{
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          ¡Excelente Elección! 🎯
+          Excellent Choice! 🎯
         </motion.h2>
         
         <motion.div
@@ -2507,12 +2507,12 @@ const CaptureBlock: React.FC<{
       <div className="text-center mb-8">
         <div className="inline-block bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/50 px-8 py-4 rounded-full">
           <p className="text-2xl">
-            Tu puntuación: <span className="font-bold text-yellow-400">
+            Your score: <span className="font-bold text-yellow-400">
               {questionsScore.correct}/{questionsScore.total}
             </span> respuestas correctas
           </p>
           {questionsScore.correct === questionsScore.total && (
-            <p className="text-green-400 font-bold mt-2">¡PERFECTO! Eres un experto 🏆</p>
+            <p className="text-green-400 font-bold mt-2">PERFECT! You're an expert 🏆</p>
           )}
         </div>
       </div>
@@ -2578,7 +2578,7 @@ const CaptureBlock: React.FC<{
                   <span className="w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center backdrop-blur-xl border border-blue-500/30">
                     ✨
                   </span>
-                  Requisitos para continuar
+                  Requirements to continue
                 </h3>
                 
                 {/* Email Verification Checkbox - GLASS STYLE */}
@@ -2621,7 +2621,7 @@ const CaptureBlock: React.FC<{
                       )}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 ml-11">
-                      Te enviaremos información exclusiva sobre el ecosistema cripto
+                      We'll send you exclusive information about the crypto ecosystem
                     </p>
                     {verifiedEmail && emailVerified && (
                       <p className="text-xs text-green-400 mt-1 ml-11 font-mono">
@@ -2655,7 +2655,7 @@ const CaptureBlock: React.FC<{
                         <span className="text-lg">📅</span>
                       </div>
                       <span className="font-semibold text-gray-800 dark:text-white">
-                        Agendar una sesión gratuita
+                        Schedule a free session
                       </span>
                       {calendarScheduled && (
                         <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full 
@@ -2671,7 +2671,7 @@ const CaptureBlock: React.FC<{
                       )}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 ml-11">
-                      Descubre cómo CryptoGift puede transformar tu negocio (opcional pero recomendado)
+                      Discover how CryptoGift can transform your business (optional but recommended)
                     </p>
                   </label>
                 </div>
@@ -2688,7 +2688,7 @@ const CaptureBlock: React.FC<{
                             ✅
                           </span>
                           <span className="text-green-400 font-semibold">
-                            Todo listo para continuar
+                            Everything ready to continue
                           </span>
                         </>
                       ) : (
@@ -2697,7 +2697,7 @@ const CaptureBlock: React.FC<{
                             ⏳
                           </span>
                           <span className="text-gray-300">
-                            Completa ambos requisitos para continuar
+                            Complete both requirements to continue
                           </span>
                         </>
                       )}
@@ -2746,7 +2746,7 @@ const CaptureBlock: React.FC<{
             <>
               <input
                 type="text"
-                placeholder="¿Cuándo podemos hablar? (ej: Mañana 3pm)"
+                placeholder="When can we talk? (e.g.: Tomorrow 3pm)"
                 value={formData.availability}
                 onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:border-yellow-400 focus:outline-none text-white"
@@ -2882,7 +2882,7 @@ const SuccessBlock: React.FC<{
           >
             <div className="text-center mb-6">
               <h2 className="text-4xl font-black mb-4 bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
-                🌟 ¡Bienvenido a nuestra DAO Community! 🌟
+                🌟 Welcome to our DAO Community! 🌟
               </h2>
               <p className="text-xl text-gray-700 dark:text-gray-300">
                 Has completado tu entrenamiento y ahora formas parte de algo extraordinario
@@ -2905,7 +2905,7 @@ const SuccessBlock: React.FC<{
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">🤖 APEX</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Nuestro Asistente IA que te guiará en cada paso del ecosistema cripto</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Our AI Assistant that will guide you through every step of the crypto ecosystem</p>
               </motion.div>
 
               {/* Godez22 */}
