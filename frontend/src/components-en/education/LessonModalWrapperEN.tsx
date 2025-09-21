@@ -434,14 +434,14 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
           <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
-                {mode === 'educational' ? '🎓 Módulo Educativo Requerido' : '📚 Knowledge Academy'}
+                {mode === 'educational' ? '🎓 Required Educational Module' : '📚 Knowledge Academy'}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 {lessonId === 'sales-masterclass' ? 
                   (mode === 'educational' ? 
-                    'Completa este módulo para desbloquear tu regalo cripto' : 
+                    'Complete this module to unlock your crypto gift' : 
                     'Sales Masterclass - De $0 a $100M en 10 minutos') : 
-                 lessonId === 'claim-first-gift' ? 'Reclama tu Primer Regalo Cripto - 7 minutos' : 
+                 lessonId === 'claim-first-gift' ? 'Claim Your First Crypto Gift - 7 minutes' : 
                  'Lección Interactive'}
               </p>
             </div>

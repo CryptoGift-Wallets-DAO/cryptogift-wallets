@@ -62,64 +62,64 @@ const MODULE_DATABASE: Record<number, ModuleContent> = {
       },
       {
         id: 'metamask',
-        title: 'Instalando MetaMask',
-        content: 'MetaMask es la wallet más popular y fácil de usar. Es una extensión de navegador que te permite interactuar con aplicaciones blockchain.',
+        title: 'Installing MetaMask',
+        content: 'MetaMask is the most popular and easy-to-use wallet. It is a browser extension that allows you to interact with blockchain applications.',
         keyPoints: [
-          'Descarga solo desde metamask.io',
-          'Verifica siempre la URL oficial',
-          'Nunca instales desde enlaces en emails',
-          'Funciona en Chrome, Firefox, Brave y Edge'
+          'Download only from metamask.io',
+          'Always verify the official URL',
+          'Never install from email links',
+          'Works on Chrome, Firefox, Brave and Edge'
         ]
       },
       {
         id: 'seedphrase',
-        title: 'Tu Frase Semilla - ¡CRÍTICO!',
-        content: 'La frase semilla (12-24 palabras) es la ÚNICA forma de recuperar tu wallet. Es literalmente la llave maestra a todos tus fondos.',
+        title: 'Your Seed Phrase - CRITICAL!',
+        content: 'The seed phrase (12-24 words) is the ONLY way to recover your wallet. It is literally the master key to all your funds.',
         keyPoints: [
-          'NUNCA la compartas con NADIE',
-          'NUNCA la escribas en digital',
-          'Guárdala en papel en lugar seguro',
-          'Considera hacer 2 copias en lugares diferentes',
-          'NUNCA la ingreses en sitios web'
+          'NEVER share it with ANYONE',
+          'NEVER write it digitally',
+          'Store it on paper in a safe place',
+          'Consider making 2 copies in different locations',
+          'NEVER enter it on websites'
         ]
       }
     ],
     quiz: [
       {
         id: 'q1',
-        question: '¿Cuál es la forma más segura de guardar tu frase semilla?',
+        question: 'What is the safest way to store your seed phrase?',
         options: [
-          'En un archivo de texto en mi computadora',
-          'En un papel guardado en lugar seguro',
-          'En mi email para no perderla',
-          'En una foto en mi teléfono'
+          'In a text file on my computer',
+          'On paper stored in a safe place',
+          'In my email so I don't lose it',
+          'In a photo on my phone'
         ],
         correctAnswer: 1,
-        explanation: 'La frase semilla debe guardarse OFFLINE, preferiblemente escrita en papel y en un lugar seguro. Nunca en formato digital.'
+        explanation: 'The seed phrase should be stored OFFLINE, preferably written on paper and in a safe place. Never in digital format.'
       },
       {
         id: 'q2',
-        question: '¿Qué debes verificar SIEMPRE antes de instalar MetaMask?',
+        question: 'What should you ALWAYS verify before installing MetaMask?',
         options: [
-          'Que sea gratis',
-          'Que la URL sea metamask.io',
-          'Que tenga buenos reviews',
-          'Que funcione en mi navegador'
+          'That it's free',
+          'That the URL is metamask.io',
+          'That it has good reviews',
+          'That it works on my browser'
         ],
         correctAnswer: 1,
-        explanation: 'Siempre verifica que estés en el sitio oficial metamask.io. Hay muchos sitios falsos que roban tus fondos.'
+        explanation: 'Always verify that you are on the official site metamask.io. There are many fake sites that steal your funds.'
       },
       {
         id: 'q3',
-        question: 'Si alguien del "soporte de MetaMask" te pide tu frase semilla, ¿qué haces?',
+        question: 'If someone from "MetaMask support" asks for your seed phrase, what do you do?',
         options: [
-          'Se la doy para que me ayuden',
-          'Verifico primero su identidad',
+          'I give it to them so they can help me',
+          'I verify their identity first',
           'NUNCA la comparto, es una estafa',
           'Solo si es urgente'
         ],
         correctAnswer: 2,
-        explanation: 'MetaMask NUNCA te pedirá tu frase semilla. Cualquiera que la pida es un estafador, sin excepción.'
+        explanation: 'MetaMask will NEVER ask for your seed phrase. Anyone who asks for it is a scammer, without exception.'
       }
     ],
     passingScore: 100 // Must get all correct for security module
@@ -142,7 +142,7 @@ const MODULE_DATABASE: Record<number, ModuleContent> = {
       {
         id: 'protection',
         title: 'How to Protect Yourself',
-        content: 'Con estas prácticas básicas, estarás más seguro que el 99% de usuarios.',
+        content: 'With these basic practices, you will be safer than 99% of users.',
         keyPoints: [
           'Verifica SIEMPRE las URLs',
           'Nunca apruebes transacciones que no entiendas',
@@ -155,19 +155,19 @@ const MODULE_DATABASE: Record<number, ModuleContent> = {
     quiz: [
       {
         id: 'q1',
-        question: '¿Cuál es la estafa más común en crypto?',
+        question: 'What is the most common scam in crypto?',
         options: [
           'Hackeo de blockchain',
           'Phishing y sitios web falsos',
           'Virus en la computadora',
-          'Robo físico'
+          'Physical theft'
         ],
         correctAnswer: 1,
-        explanation: 'El phishing (sitios web falsos) es responsable de la mayoría de pérdidas en crypto.'
+        explanation: 'Phishing (fake websites) is responsible for most crypto losses.'
       },
       {
         id: 'q2',
-        question: 'Recibes 1000 tokens gratis en tu wallet. ¿Qué haces?',
+        question: 'You receive 1000 free tokens in your wallet. What do you do?',
         options: [
           'Los vendo inmediatamente',
           'Los transfiero a otra wallet',
@@ -274,7 +274,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
       
       addNotification({
         type: 'success',
-        title: '🎉 ¡Módulo Completado!',
+        title: '🎉 Module Complete!',
         message: `Has aprobado con ${score}% de respuestas correctas`,
         duration: 5000
       });
@@ -354,7 +354,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
       const approvalData = await approvalResponse.json();
 
       if (!approvalData.success || !approvalData.educationGateData) {
-        throw new Error(approvalData.error || 'No se pudo obtener la aprobación educativa');
+        throw new Error(approvalData.error || 'Could not obtain educational approval');
       }
 
       console.log('✅ PASO 1 COMPLETADO: EIP-712 signature obtenida:', approvalData.educationGateData);
@@ -386,7 +386,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
         console.log('✅ PASO 2 COMPLETADO: NFT reclamado exitosamente');
         addNotification({
           type: 'success',
-          title: '🎉 ¡Regalo Reclamado!',
+          title: '🎉 Gift Claimed!',
           message: 'El NFT ha sido transferido exitosamente a tu wallet',
           duration: 5000
         });
@@ -436,7 +436,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="flex justify-between text-sm mb-2">
-              <span>Progreso del Módulo</span>
+              <span>Module Progress</span>
               <span>{Math.round(progressPercentage)}%</span>
             </div>
             <div className="w-full bg-white/20 rounded-full h-2">
@@ -509,7 +509,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
 
                 {sectionProgress[currentSectionData.id] && (
                   <span className="text-green-600 dark:text-green-400 text-sm">
-                    ✓ Sección leída
+                    ✓ Section read
                   </span>
                 )}
 

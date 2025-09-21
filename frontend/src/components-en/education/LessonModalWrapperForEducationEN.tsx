@@ -114,14 +114,14 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
                        transition-all duration-200 shadow-lg hover:shadow-xl 
                        transform hover:-translate-y-0.5"
             >
-              Comenzar Módulo Educativo
+              Start Educational Module
             </button>
             
             {moduleId === 5 && (
               <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg">
                 <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                  🌟 Este módulo especial te mostrará la visión del Proyecto CryptoGift
-                  y cómo puedes ser parte de nuestra comunidad de colaboradores.
+                  🌟 This special module will show you the vision of the CryptoGift Project
+                  and how you can be part of our community of collaborators.
                 </p>
               </div>
             )}

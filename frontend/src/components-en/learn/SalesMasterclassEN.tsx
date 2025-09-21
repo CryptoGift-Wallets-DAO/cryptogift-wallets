@@ -1711,7 +1711,7 @@ const NavigationArea: React.FC<{
       >
         <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-yellow-400 text-lg font-medium mb-4">
           <Clock className="w-5 h-5" />
-          <span>Tiempo agotado - Esperando...</span>
+          <span>Time's up - Waiting...</span>
         </div>
         <div className="text-gray-600 dark:text-gray-400 text-sm mb-4">
           The next block is available when you complete this section
@@ -2236,7 +2236,7 @@ const RoadmapBlock: React.FC<{
   timeLeft: number;
 }> = ({ content, question, onAnswer, selectedAnswer, showFeedback, onNext, canProceed, timeLeft }) => (
   <div className="py-12">
-    <h2 className="text-5xl font-bold text-center mb-12">El Futuro es Exponencial 🚀</h2>
+    <h2 className="text-5xl font-bold text-center mb-12">The Future is Exponential 🚀</h2>
     
     <div className="space-y-6 max-w-4xl mx-auto mb-8">
       {content.phases.map((phase: any, idx: number) => (
@@ -2291,7 +2291,7 @@ const CloseBlock: React.FC<{
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
       >
-        La Puerta al Futuro
+        The Gateway to the Future
       </motion.h2>
       
       <motion.div
@@ -2983,7 +2983,7 @@ const SuccessBlock: React.FC<{
                 />
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">Arte IA</h3>
               </div>
-              <p className="text-gray-700 dark:text-gray-300 mb-3">Crear valor a través del arte personalizado:</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-3">Creating value through personalized art:</p>
               <div className="flex items-center gap-3 mb-2">
                 <img 
                   src="/wallet-regalo.png" 
@@ -2991,7 +2991,7 @@ const SuccessBlock: React.FC<{
                   className="w-8 h-8 rounded-lg shadow-sm"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
-                <p className="text-sm text-gray-600 dark:text-gray-400">Una imagen dice más que mil palabras - la integración de la wallet le da la posibilidad de ser portador de vida</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">A picture is worth a thousand words - the wallet integration gives it the ability to be a bearer of life</p>
               </div>
             </div>
           </motion.div>
