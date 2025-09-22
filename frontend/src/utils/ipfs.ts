@@ -17,22 +17,30 @@ import { encodeAllPathSegmentsSafe } from './encodePathSafe';
 /**
  * Normalizes IPFS CID path with proper segment encoding
  * Handles orphaned % characters and preserves query/fragments
+ * 🔧 FIX: Removes redundant ipfs/ prefixes from legacy formats
  */
 export function normalizeCidPath(cidPath: string): string {
-  const qh = cidPath.search(/[?#]/);
-  const path = qh === -1 ? cidPath : cidPath.slice(0, qh);
-  const tail = qh === -1 ? '' : cidPath.slice(qh);
-  
+  // 🔧 FIX: Remove ALL redundant ipfs/ prefixes from legacy formats like ipfs://ipfs/...
+  let cleanPath = cidPath;
+  while (cleanPath.startsWith('ipfs/')) {
+    cleanPath = cleanPath.slice(5);
+    console.log('🔧 Removed redundant ipfs/ prefix from IPFS URI');
+  }
+
+  const qh = cleanPath.search(/[?#]/);
+  const path = qh === -1 ? cleanPath : cleanPath.slice(0, qh);
+  const tail = qh === -1 ? '' : cleanPath.slice(qh);
+
   return path.split('/').map(seg => {
     if (!seg) return '';
-    
+
     // Handle orphaned % characters (not followed by 2 hex digits)
     let s = seg.replace(/%(?![0-9A-Fa-f]{2})/g, '%25');
-    
-    try { 
-      return encodeURIComponent(decodeURIComponent(s)); 
-    } catch { 
-      return encodeURIComponent(s); 
+
+    try {
+      return encodeURIComponent(decodeURIComponent(s));
+    } catch {
+      return encodeURIComponent(s);
     }
   }).join('/') + tail;
 }
@@ -142,13 +150,28 @@ export function convertIPFSToHTTPS(ipfsUrl: string): string {
 /**
  * Extracts CID and path from HTTPS IPFS gateway URLs
  * 🔧 FASE 5A FIX: Handle already-formed HTTPS URLs per audit findings
+ * 🔧 FIX: Handle double ipfs/ipfs/ in malformed URLs
  */
 function extractCidFromHttpsUrl(httpsUrl: string): string | null {
+  // 🔧 FIX: First clean up any double ipfs/ipfs/ patterns in the URL
+  let cleanUrl = httpsUrl;
+  while (cleanUrl.includes('/ipfs/ipfs/')) {
+    cleanUrl = cleanUrl.replace('/ipfs/ipfs/', '/ipfs/');
+    console.log('🔧 Fixed malformed HTTP IPFS URL with double ipfs/');
+  }
+
   // Match pattern: https://domain.com/ipfs/CID/optional/path
-  const match = httpsUrl.match(/\/ipfs\/([^\/\?#]+)(.*)$/);
+  const match = cleanUrl.match(/\/ipfs\/([^\/\?#]+)(.*)$/);
   if (match) {
-    const cid = match[1];
+    let cid = match[1];
     const path = match[2] || '';
+
+    // 🔧 Additional check: if CID itself starts with 'ipfs/', remove it
+    if (cid.startsWith('ipfs/')) {
+      cid = cid.slice(5);
+      console.log('🔧 Removed ipfs/ prefix from CID in HTTPS URL');
+    }
+
     return cid + path;
   }
   return null;
