@@ -10,7 +10,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyJWT, extractTokenFromHeaders } from '../../../lib/siweAuth';
 import { debugLogger } from '../../../lib/secureDebugLogger';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
 interface UpdateMetadataRequest {
   tokenId: string;
@@ -137,13 +137,42 @@ export default async function handler(
     // Generate Redis key for this NFT's metadata
     const metadataKey = `nft_metadata:${contractAddress.toLowerCase()}:${tokenId}`;
     
+    // Initialize Upstash Redis client (same as nftMetadataFallback.ts)
+    let redis: Redis | null = null;
+    try {
+      const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+      const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+      if (redisUrl && redisToken) {
+        redis = new Redis({
+          url: redisUrl,
+          token: redisToken,
+          enableAutoPipelining: false,
+          retry: false,
+        });
+        console.log('✅ Connected to Upstash Redis for metadata update');
+      } else {
+        console.warn('⚠️ Upstash Redis not configured, metadata update will be skipped');
+        return res.status(200).json({
+          success: true,
+          message: 'Redis not configured, metadata update skipped'
+        });
+      }
+    } catch (redisInitError) {
+      console.error('❌ Redis initialization failed:', redisInitError);
+      return res.status(200).json({
+        success: true,
+        message: 'Redis unavailable, metadata update skipped'
+      });
+    }
+
     // Get existing metadata from Redis (if any)
     let existingMetadata: any = null;
     try {
-      const storedData = await kv.get(metadataKey);
-      if (storedData) {
-        existingMetadata = typeof storedData === 'string' ? JSON.parse(storedData) : storedData;
-        console.log('📦 Found existing metadata in Redis:', {
+      const storedData = await redis.hgetall(metadataKey);
+      if (storedData && Object.keys(storedData).length > 0) {
+        existingMetadata = storedData;
+        console.log('📦 Found existing metadata in Upstash Redis:', {
           hasImage: !!existingMetadata?.image,
           hasImageUrl: !!existingMetadata?.image_url,
           name: existingMetadata?.name
@@ -196,11 +225,14 @@ export default async function handler(
       claimedAt: new Date().toISOString()
     };
     
-    // Store updated metadata in Redis with 30-day TTL
+    // Store updated metadata in Upstash Redis as hash (same as nftMetadataFallback.ts)
     const ttl = 30 * 24 * 60 * 60; // 30 days in seconds
-    await kv.setex(metadataKey, ttl, JSON.stringify(updatedMetadata));
-    
-    console.log('✅ Metadata updated in Redis successfully:', {
+
+    // Store as hash for compatibility with nftMetadataFallback.ts
+    await redis!.hset(metadataKey, updatedMetadata);
+    await redis!.expire(metadataKey, ttl);
+
+    console.log('✅ Metadata updated in Upstash Redis successfully:', {
       key: metadataKey,
       ttl: `${ttl} seconds (30 days)`,
       hasImage: !!updatedMetadata.image && !updatedMetadata.image.includes('placeholder'),
@@ -226,8 +258,10 @@ export default async function handler(
       imageUrl: imageUrl || null,
       metadataUpdated: true
     };
-    
-    await kv.setex(claimRecordKey, ttl, JSON.stringify(claimRecord));
+
+    // Store claim record as hash in Upstash Redis
+    await redis!.hset(claimRecordKey, claimRecord);
+    await redis!.expire(claimRecordKey, ttl);
     
     console.log('📝 Claim record stored:', {
       key: claimRecordKey,
