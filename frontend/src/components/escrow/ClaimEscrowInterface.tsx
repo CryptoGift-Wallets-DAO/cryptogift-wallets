@@ -17,12 +17,7 @@ import { makeAuthenticatedRequest } from '../../lib/siweClient';
 import { ConnectAndAuthButton } from '../ConnectAndAuthButton';
 import { NFTImageModal } from '../ui/NFTImageModal';
 import { useNotifications } from '../ui/NotificationSystem';
-import { getMetadataUrl } from '../../lib/clientSafeBaseUrl';
-import {
-  warmMetadataPreClaim,
-  warmMetadataPostClaim,
-  recoverMissingMetadata
-} from '../../lib/metadataWarming';
+// Removed complex warming imports - using existing fallback system
 // MobileWalletRedirect REMOVED - ConnectAndAuthButton handles all mobile popups
 import { NetworkOptimizationPrompt } from '../ui/NetworkOptimizationPrompt';
 import { 
@@ -223,23 +218,6 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         giftInfo: validationResult.giftInfo
       });
 
-      // 🔥 NEW: Pre-claim metadata warming for optimal NFT visibility
-      console.log('🔥 PRE-CLAIM: Warming metadata endpoints before transaction...');
-      try {
-        const contractAddress = giftInfo?.nftContract || validationResult.giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
-        if (contractAddress) {
-          const warmingResult = await warmMetadataPreClaim(contractAddress, tokenId);
-          console.log('✅ Pre-claim warming complete:', {
-            success: warmingResult.success,
-            endpointsWarmed: warmingResult.warmedEndpoints.length,
-            hasMetadata: !!warmingResult.metadata
-          });
-        }
-      } catch (warmError) {
-        console.warn('⚠️ Pre-claim warming failed (non-critical):', warmError);
-        // Continue with claim even if warming fails
-      }
-
       // Step 2: Prepare claim transaction using the validated giftId
       console.log('🔧 STEP 2: Preparing claim transaction...');
       console.log('🎓 EDUCATION GATE DATA:', educationGateData === '0x' ? 'EMPTY (no education required)' : `SIGNATURE PRESENT (${educationGateData.slice(0, 20)}...)`);
@@ -433,25 +411,10 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         gasUsed: receipt.gasUsed?.toString()
       });
       
-      // 🔥 ENHANCED: Post-claim metadata warming with Redis update
+      // 🔥 MOBILE FIX: Update metadata in Redis after successful frontend claim
+      // This was missing and causing placeholders to be served
       try {
-        console.log('🔥 POST-CLAIM: Enhanced metadata warming and Redis sync...');
-        const contractAddress = giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
-
-        // First: Warm all metadata endpoints for immediate availability
-        const warmingResult = await warmMetadataPostClaim(
-          contractAddress!,
-          tokenId,
-          txResult.transactionHash
-        );
-
-        console.log('✅ Post-claim warming complete:', {
-          success: warmingResult.success,
-          endpointsWarmed: warmingResult.warmedEndpoints.length,
-          hasMetadata: !!warmingResult.metadata
-        });
-
-        // Then: Update Redis with warmed metadata
+        console.log('📱 Updating metadata in Redis after frontend claim...');
         const updateResponse = await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
           method: 'POST',
           headers: {
@@ -459,45 +422,21 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
           },
           body: JSON.stringify({
             tokenId,
-            contractAddress,
+            contractAddress: giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
             claimerAddress: account.address,
             transactionHash: txResult.transactionHash,
             giftMessage: validationResult.giftInfo?.giftMessage || '',
-            imageUrl: warmingResult.metadata?.image || nftMetadata?.image || '',
-            metadata: warmingResult.metadata // Include full warmed metadata
+            imageUrl: nftMetadata?.image || ''
           })
         });
 
         if (updateResponse.ok) {
-          console.log('✅ Metadata updated in Redis with warmed data');
+          console.log('✅ Metadata updated in Redis successfully');
         } else {
           console.warn('⚠️ Failed to update metadata in Redis:', await updateResponse.text());
         }
-
-        // If metadata is still missing, try emergency recovery
-        if (!warmingResult.metadata?.image) {
-          console.log('🚨 Image still missing, attempting emergency recovery...');
-          const recoveryResult = await recoverMissingMetadata(contractAddress!, tokenId);
-          if (recoveryResult.success && recoveryResult.metadata?.image) {
-            console.log('✅ Emergency recovery successful!');
-            // Update Redis with recovered metadata
-            await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                tokenId,
-                contractAddress,
-                claimerAddress: account.address,
-                transactionHash: txResult.transactionHash,
-                giftMessage: validationResult.giftInfo?.giftMessage || '',
-                imageUrl: recoveryResult.metadata.image,
-                metadata: recoveryResult.metadata
-              })
-            });
-          }
-        }
       } catch (updateError) {
-        console.error('❌ Error in post-claim metadata warming:', updateError);
+        console.error('❌ Error updating metadata in Redis:', updateError);
         // Don't fail the claim, just log the error
       }
       
@@ -601,21 +540,16 @@ La transacción puede tomar más tiempo en móvil.`;
         
         if (contractAddress) {
           try {
-            // 🔥 ENHANCED: Use comprehensive metadata warming before wallet_watchAsset
-            console.log('📌 [POST-CLAIM] Warming metadata for wallet visibility...');
-            const warmingResult = await warmMetadataPostClaim(contractAddress, tokenId);
+            // Step 1: Pre-pin tokenURI metadata to IPFS for faster loading
+            console.log('📌 [POST-CLAIM] Pre-pinning tokenURI metadata...');
+            const metadataUrl = `${typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_BASE_URL || '')}/api/nft-metadata/${contractAddress}/${tokenId}`;
 
-            if (warmingResult.success && warmingResult.metadata) {
-              console.log('✅ [POST-CLAIM] Metadata warmed and ready:', {
-                hasImage: !!warmingResult.metadata.image,
-                endpoints: warmingResult.warmedEndpoints.length
-              });
-            } else {
-              console.warn('⚠️ [POST-CLAIM] Metadata warming incomplete, attempting recovery...');
-              const recoveryResult = await recoverMissingMetadata(contractAddress, tokenId);
-              if (recoveryResult.success) {
-                console.log('✅ [POST-CLAIM] Recovery successful!');
-              }
+            // R2 FIX: Fetch and cache metadata with response validation
+            const metadataResponse = await fetch(metadataUrl);
+
+            if (metadataResponse.ok) {
+              const metadata = await metadataResponse.json();
+              console.log('✅ [POST-CLAIM] Metadata pre-cached:', metadata);
             }
             
             // Step 2: Add delay for transaction to be fully processed
