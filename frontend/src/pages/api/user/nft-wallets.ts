@@ -171,24 +171,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 // Handle both ipfs://Qm... and ipfs://ipfs/Qm... formats
                 let cid = imageUrl.replace('ipfs://', '');
 
-                // FIX: Remove duplicate 'ipfs/' if present
-                if (cid.startsWith('ipfs/')) {
-                  cid = cid.replace('ipfs/', '');
-                  console.log(`🔧 Fixed malformed IPFS URL: ipfs://ipfs/... → ${cid}`);
+                // CRITICAL FIX: Remove ALL redundant 'ipfs/' prefixes (not just one)
+                // Handles cases like: ipfs/Qm..., ipfs/ipfs/Qm..., ipfs/ipfs/ipfs/Qm..., etc.
+                while (cid.startsWith('ipfs/')) {
+                  cid = cid.slice(5); // Remove 'ipfs/' (5 characters)
+                  console.log(`🔧 Removed redundant ipfs/ prefix from IPFS URL`);
                 }
 
                 nftImage = `https://nftstorage.link/ipfs/${cid}`;
                 console.log(`🔄 Converted IPFS URL for NFT ${tokenId}: ${nftImage}`);
 
               } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-                // FIX: Also check for malformed HTTP URLs with double ipfs/
-                if (imageUrl.includes('/ipfs/ipfs/')) {
-                  nftImage = imageUrl.replace('/ipfs/ipfs/', '/ipfs/');
-                  console.log(`🔧 Fixed malformed HTTP IPFS URL: ${imageUrl} → ${nftImage}`);
-                } else {
-                  nftImage = imageUrl;
+                // CRITICAL FIX: Remove ALL occurrences of /ipfs/ipfs/ patterns
+                let cleanedUrl = imageUrl;
+                while (cleanedUrl.includes('/ipfs/ipfs/')) {
+                  cleanedUrl = cleanedUrl.replace('/ipfs/ipfs/', '/ipfs/');
+                  console.log(`🔧 Removed redundant /ipfs/ipfs/ from HTTP URL`);
                 }
-                console.log(`✅ Using direct URL for NFT ${tokenId}`);
+                nftImage = cleanedUrl;
+                console.log(`✅ Using cleaned URL for NFT ${tokenId}: ${nftImage}`);
 
               } else if (imageUrl.startsWith('data:')) {
                 // Support data URIs (base64 encoded images)

@@ -234,10 +234,20 @@ export function createNFTMetadata(params: {
   owner?: string;
   creatorWallet?: string; // NEW: Track who created it
 }): NFTMetadata {
-  // DEFENSIVE: Clean imageIpfsCid to prevent double prefix
-  const cleanImageCid = params.imageIpfsCid.startsWith('ipfs://') 
-    ? params.imageIpfsCid.replace('ipfs://', '') 
-    : params.imageIpfsCid;
+  // DEFENSIVE: Clean imageIpfsCid to prevent double prefix AND remove redundant ipfs/ segments
+  let cleanImageCid = params.imageIpfsCid;
+
+  // First remove ipfs:// prefix if present
+  if (cleanImageCid.startsWith('ipfs://')) {
+    cleanImageCid = cleanImageCid.replace('ipfs://', '');
+  }
+
+  // CRITICAL FIX: Remove ALL redundant ipfs/ prefixes from legacy formats
+  // Handles cases like: ipfs/Qm..., ipfs/ipfs/Qm..., etc.
+  while (cleanImageCid.startsWith('ipfs/')) {
+    cleanImageCid = cleanImageCid.slice(5);
+    console.log('🔧 Removed redundant ipfs/ prefix from imageIpfsCid');
+  }
 
   return {
     contractAddress: params.contractAddress.toLowerCase(),
