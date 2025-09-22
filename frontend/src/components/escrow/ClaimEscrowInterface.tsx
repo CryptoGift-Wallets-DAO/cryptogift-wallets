@@ -411,33 +411,70 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         gasUsed: receipt.gasUsed?.toString()
       });
       
-      // 🔥 MOBILE FIX: Update metadata in Redis after successful frontend claim
-      // This was missing and causing placeholders to be served
-      try {
-        console.log('📱 Updating metadata in Redis after frontend claim...');
-        const updateResponse = await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            tokenId,
-            contractAddress: giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
-            claimerAddress: account.address,
-            transactionHash: txResult.transactionHash,
-            giftMessage: validationResult.giftInfo?.giftMessage || '',
-            imageUrl: nftMetadata?.image || ''
-          })
-        });
+      // 🔥 CRITICAL: Update metadata in Redis with retry logic
+      // This ensures metadata is synchronized after claim
+      let metadataUpdateSuccess = false;
+      let updateAttempts = 0;
+      const maxUpdateAttempts = 3;
 
-        if (updateResponse.ok) {
-          console.log('✅ Metadata updated in Redis successfully');
-        } else {
-          console.warn('⚠️ Failed to update metadata in Redis:', await updateResponse.text());
+      while (!metadataUpdateSuccess && updateAttempts < maxUpdateAttempts) {
+        updateAttempts++;
+        try {
+          console.log(`📱 [METADATA UPDATE] Attempt ${updateAttempts}/${maxUpdateAttempts} - Updating Redis...`);
+
+          const updateResponse = await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              tokenId,
+              contractAddress: giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS,
+              claimerAddress: account.address,
+              transactionHash: txResult.transactionHash,
+              giftMessage: validationResult.giftInfo?.giftMessage || '',
+              imageUrl: nftMetadata?.image || ''
+            })
+          });
+
+          if (updateResponse.ok) {
+            console.log('✅ [METADATA UPDATE] Redis updated successfully');
+            metadataUpdateSuccess = true;
+
+            // Verify the update by checking Redis key
+            const verifyResponse = await fetch(`/api/nft-metadata/${giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS}/${tokenId}`);
+            if (verifyResponse.ok) {
+              const verifiedMetadata = await verifyResponse.json();
+              console.log('✅ [METADATA UPDATE] Verified Redis key updated:', {
+                hasRealImage: verifiedMetadata.image && !verifiedMetadata.image.includes('placeholder'),
+                claimStatus: verifiedMetadata.attributes?.find(a => a.trait_type === 'Claim Status')?.value
+              });
+            }
+          } else {
+            const errorText = await updateResponse.text();
+            console.warn(`⚠️ [METADATA UPDATE] Attempt ${updateAttempts} failed:`, errorText);
+
+            // If 401, might need to refresh JWT
+            if (updateResponse.status === 401 && updateAttempts < maxUpdateAttempts) {
+              console.log('🔑 [METADATA UPDATE] JWT expired, attempting SIWE refresh...');
+              // Wait before retry with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, 300 * updateAttempts));
+            } else {
+              // Other errors, wait and retry
+              await new Promise(resolve => setTimeout(resolve, 500 * updateAttempts));
+            }
+          }
+        } catch (updateError) {
+          console.error(`❌ [METADATA UPDATE] Attempt ${updateAttempts} error:`, updateError);
+          if (updateAttempts < maxUpdateAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500 * updateAttempts));
+          }
         }
-      } catch (updateError) {
-        console.error('❌ Error updating metadata in Redis:', updateError);
-        // Don't fail the claim, just log the error
+      }
+
+      if (!metadataUpdateSuccess) {
+        console.error('❌ [METADATA UPDATE] Failed after all attempts - metadata may be stale');
+        // Don't fail the claim, but log for monitoring
       }
       
       // Mobile redirect popup disabled - no reset needed
@@ -540,27 +577,62 @@ La transacción puede tomar más tiempo en móvil.`;
         
         if (contractAddress) {
           try {
-            // Step 1: Pre-pin tokenURI metadata to IPFS for faster loading
-            console.log('📌 [POST-CLAIM] Pre-pinning tokenURI metadata...');
+            // Step 1: CRITICAL WARMING - Ensure metadata is ready before watchAsset
+            console.log('🔥 [POST-CLAIM] Starting metadata warming process...');
             const metadataUrl = `${typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_BASE_URL || '')}/api/nft-metadata/${contractAddress}/${tokenId}`;
 
-            // R2 FIX: Fetch and cache metadata with response validation
-            const metadataResponse = await fetch(metadataUrl);
+            // Warm metadata with retries until no placeholder
+            let metadataReady = false;
+            let warmAttempts = 0;
+            const maxWarmAttempts = 5;
 
-            if (metadataResponse.ok) {
-              const metadata = await metadataResponse.json();
-              console.log('✅ [POST-CLAIM] Metadata pre-cached:', metadata);
+            while (!metadataReady && warmAttempts < maxWarmAttempts) {
+              warmAttempts++;
+              console.log(`🔄 [WARMING] Attempt ${warmAttempts}/${maxWarmAttempts} - Fetching metadata...`);
+
+              try {
+                const metadataResponse = await fetch(metadataUrl);
+
+                if (metadataResponse.ok) {
+                  const metadata = await metadataResponse.json();
+                  const isPlaceholder = metadataResponse.headers.get('X-Served-Placeholder') === 'true';
+
+                  if (!isPlaceholder && metadata.image && !metadata.image.includes('placeholder')) {
+                    console.log('✅ [WARMING] Metadata ready with real image:', metadata.image);
+                    metadataReady = true;
+
+                    // Pre-warm the image URL at gateway
+                    if (metadata.image.startsWith('http')) {
+                      console.log('🖼️ [WARMING] Pre-loading image at gateway...');
+                      fetch(metadata.image, { method: 'HEAD' }).catch(() => {
+                        console.log('⚠️ [WARMING] Image pre-load failed, but continuing');
+                      });
+                    }
+                  } else {
+                    console.log(`⏳ [WARMING] Metadata still has placeholder, waiting...`);
+                    // Exponential backoff: 500ms, 1000ms, 1500ms, 2000ms, 2500ms
+                    await new Promise(resolve => setTimeout(resolve, 500 * warmAttempts));
+                  }
+                } else {
+                  console.log(`⚠️ [WARMING] Metadata fetch failed with status ${metadataResponse.status}`);
+                  await new Promise(resolve => setTimeout(resolve, 500 * warmAttempts));
+                }
+              } catch (warmError) {
+                console.log(`⚠️ [WARMING] Attempt ${warmAttempts} error:`, warmError);
+                await new Promise(resolve => setTimeout(resolve, 500 * warmAttempts));
+              }
             }
-            
-            // Step 2: Add delay for transaction to be fully processed
-            // REMOVED wallet_requestPermissions - was causing duplicate connection prompt
+
+            if (!metadataReady) {
+              console.warn('⚠️ [WARMING] Metadata warming incomplete after max attempts, proceeding anyway');
+            }
+
+            // Step 2: Additional delay for mobile
             if (isMobile) {
-              console.log('📱 [POST-CLAIM] Mobile detected - waiting for transaction to settle...');
-              // Mobile wallets need more time to process the transaction
-              await new Promise(resolve => setTimeout(resolve, 3000));
+              console.log('📱 [POST-CLAIM] Mobile detected - additional settling time...');
+              await new Promise(resolve => setTimeout(resolve, 2000));
             } else {
-              // Desktop also benefits from a small delay
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise(resolve => setTimeout(resolve, 500));
             }
             
             // Step 3: Add NFT to wallet - Enhanced for mobile

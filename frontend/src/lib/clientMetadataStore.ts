@@ -841,6 +841,17 @@ export function clearWalletCache(walletAddress: string): boolean {
   }
 }
 
+// Helper function to normalize CID paths (client version)
+function normalizeCidPathClient(cidPath: string): string {
+  // Remove ALL redundant ipfs/ prefixes from legacy formats
+  let cleanPath = cidPath;
+  while (cleanPath.startsWith('ipfs/')) {
+    cleanPath = cleanPath.slice(5);
+    console.log('🔧 Removed redundant ipfs/ prefix from IPFS URI');
+  }
+  return cleanPath;
+}
+
 // Enhanced IPFS URL resolution with multiple gateways and caching
 export function resolveIPFSUrlClient(ipfsUrl: string): string {
   if (ipfsUrl.startsWith('ipfs://')) {
@@ -850,9 +861,10 @@ export function resolveIPFSUrlClient(ipfsUrl: string): string {
       cleanUrl = cleanUrl.replace('ipfs://ipfs://', 'ipfs://');
       console.log('🔧 Fixed malformed double IPFS prefix:', ipfsUrl, '→', cleanUrl);
     }
-    
-    const cid = cleanUrl.replace('ipfs://', '');
-    
+
+    // CRITICAL FIX: Use normalizeCidPathClient to handle ALL redundant ipfs/ segments
+    const cid = normalizeCidPathClient(cleanUrl.replace('ipfs://', ''));
+
     // Additional validation: ensure CID doesn't still contain protocol
     const finalCid = cid.startsWith('ipfs://') ? cid.replace('ipfs://', '') : cid;
     
@@ -877,8 +889,9 @@ export async function resolveIPFSUrlClientVerified(ipfsUrl: string): Promise<str
   if (!ipfsUrl.startsWith('ipfs://')) {
     return ipfsUrl;
   }
-  
-  const cid = ipfsUrl.replace('ipfs://', '');
+
+  // CRITICAL FIX: Use normalizeCidPathClient for proper CID extraction
+  const cid = normalizeCidPathClient(ipfsUrl.replace('ipfs://', ''));
   const gateways = [
     `https://nftstorage.link/ipfs/${cid}`,
     `https://ipfs.io/ipfs/${cid}`,

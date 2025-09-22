@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { createThirdwebClient, getContract, readContract } from "thirdweb";
 import { baseSepolia } from "thirdweb/chains";
 import { getNFTMetadata, resolveIPFSUrl } from "../../../lib/nftMetadataStore";
-import { getBestGatewayForCid } from "../../../utils/ipfs";
+import { getBestGatewayForCid, normalizeCidPath } from "../../../utils/ipfs";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log("🔍 NFT API LOOKUP STARTED ===========================================");
@@ -96,7 +96,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           } else {
             // FALLBACK: Use default gateways when getBestGatewayForCid fails
             console.log('⚠️ CANONICAL: No working gateway found, using fallback gateways');
-            const cid = tokenURI.replace('ipfs://', '');
+            // CRITICAL FIX: Use normalizeCidPath to handle legacy formats like ipfs://ipfs/...
+            const cid = normalizeCidPath(tokenURI.replace('ipfs://', ''));
             gatewaysToTry = [
               `https://ipfs.io/ipfs/${cid}`,
               `https://cloudflare-ipfs.com/ipfs/${cid}`,

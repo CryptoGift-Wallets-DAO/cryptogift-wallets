@@ -5,6 +5,7 @@
 
 import { NFTMetadata } from './clientMetadataStore';
 import { validateRedisForCriticalOps, isRedisConfigured, getRedisStatus } from './redisConfig';
+import { normalizeCidPath } from '../utils/ipfs';
 
 // Helper function to safely parse NFTMetadata from Redis
 function parseNFTMetadataFromRedis(redisData: Record<string, unknown>): NFTMetadata | null {
@@ -270,7 +271,8 @@ export function createNFTMetadata(params: {
 // 🔥 CANONICAL FIX: Use priority order matching canonical system
 export function resolveIPFSUrl(ipfsUrl: string): string {
   if (ipfsUrl.startsWith('ipfs://')) {
-    const cid = ipfsUrl.replace('ipfs://', '');
+    // CRITICAL FIX: Use normalizeCidPath to handle legacy formats
+    const cid = normalizeCidPath(ipfsUrl.replace('ipfs://', ''));
     // Use canonical priority order: dweb.link first (most reliable)
     const gateways = [
       `https://dweb.link/ipfs/${cid}`,
@@ -291,8 +293,9 @@ export async function resolveIPFSUrlWithFallback(ipfsUrl: string): Promise<strin
   if (!ipfsUrl.startsWith('ipfs://')) {
     return ipfsUrl;
   }
-  
-  const cid = ipfsUrl.replace('ipfs://', '');
+
+  // CRITICAL FIX: Use normalizeCidPath for legacy formats
+  const cid = normalizeCidPath(ipfsUrl.replace('ipfs://', ''));
   // 🔥 CANONICAL FIX: Use priority order matching canonical system
   const gateways = [
     `https://dweb.link/ipfs/${cid}`,
