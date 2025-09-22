@@ -38,10 +38,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("  📏 Contract length:", contractAddress?.length);
     console.log("  📊 Token ID type:", typeof tokenId);
 
-    // Initialize ThirdWeb Client
+    // Initialize ThirdWeb Client with proper validation
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    const secretKey = process.env.TW_SECRET_KEY;
+
+    if (!clientId) {
+      console.error('❌ TW_CLIENT_ID not configured');
+      return res.status(503).json({
+        success: false,
+        error: 'Service temporarily unavailable - ThirdWeb client not configured'
+      });
+    }
+
+    // Create client - secretKey is optional for read-only operations
     const client = createThirdwebClient({
-      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-      secretKey: process.env.TW_SECRET_KEY!,
+      clientId: clientId,
+      ...(secretKey && { secretKey }) // Only include if available
     });
 
     // Get NFT contract
@@ -70,20 +82,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (tokenURI) {
         let ipfsUrl = tokenURI;
         
-        // 🔥 CANONICAL FIX: Use getBestGatewayForCid instead of hardcoded gateways
+        // 🔥 CANONICAL FIX: Use getBestGatewayForCid with fallback gateways
         if (tokenURI.startsWith("ipfs://")) {
           console.log('🎯 CANONICAL: Using getBestGatewayForCid for tokenURI');
           const bestGateway = await getBestGatewayForCid(tokenURI, 8000);
-          
+
+          // CRITICAL FIX: Always try gateways, even if getBestGatewayForCid fails
+          let gatewaysToTry: string[] = [];
+
           if (bestGateway) {
-            const gateways = [bestGateway.url]; // Use the best gateway found
+            gatewaysToTry = [bestGateway.url];
             console.log(`✅ CANONICAL: Using best gateway ${bestGateway.gateway}: ${bestGateway.url}`);
           } else {
-            console.log('⚠️ CANONICAL: No working gateway found, skipping tokenURI metadata');
-            const gateways = []; // Empty array will skip the loop
+            // FALLBACK: Use default gateways when getBestGatewayForCid fails
+            console.log('⚠️ CANONICAL: No working gateway found, using fallback gateways');
+            const cid = tokenURI.replace('ipfs://', '');
+            gatewaysToTry = [
+              `https://ipfs.io/ipfs/${cid}`,
+              `https://cloudflare-ipfs.com/ipfs/${cid}`,
+              `https://gateway.pinata.cloud/ipfs/${cid}`,
+              `https://nftstorage.link/ipfs/${cid}`
+            ];
           }
-          
-          for (const gateway of (bestGateway ? [bestGateway.url] : [])) {
+
+          for (const gateway of gatewaysToTry) {
             try {
               console.log(`🔍 CACHE BYPASS: Trying IPFS gateway: ${gateway}`);
               const controller = new AbortController();
@@ -174,17 +196,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   console.log("✅ DIRECT IPFS: Retrieved JSON metadata:", metadata);
                   console.log("🖼️ DIRECT IPFS: Image field:", metadata.image);
                   
-                  // 🔥 CANONICAL FIX: Use getBestGatewayForCid for image URL processing  
+                  // 🔥 CANONICAL FIX: Use getBestGatewayForCid with fallback for image URL
                   let processedImageUrl = metadata.image;
                   if (processedImageUrl && processedImageUrl.startsWith("ipfs://")) {
-                    console.log('🎯 CANONICAL: Using getBestGatewayForCid for image processing');
+                    console.log('🎯 CANONICAL: Processing image URL from IPFS');
                     const bestImageGateway = await getBestGatewayForCid(processedImageUrl, 6000);
                     if (bestImageGateway) {
                       processedImageUrl = bestImageGateway.url;
-                      console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for image: ${processedImageUrl}`);
+                      console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for image`);
                     } else {
-                      console.log('⚠️ CANONICAL: No working gateway found for image, keeping original');
+                      // FALLBACK: Use default gateway for image
+                      console.log('⚠️ CANONICAL: No working gateway, using ipfs.io fallback');
+                      const imageCid = processedImageUrl.replace('ipfs://', '');
+                      processedImageUrl = `https://ipfs.io/ipfs/${imageCid}`;
                     }
+                  } else if (processedImageUrl && processedImageUrl.includes('ipfs/ipfs/')) {
+                    // FIX: Handle malformed ipfs://ipfs/... URLs
+                    console.log('🔧 Fixing malformed IPFS URL:', processedImageUrl);
+                    processedImageUrl = processedImageUrl.replace(/ipfs\/ipfs\//g, 'ipfs/');
                   }
                   
                   // Calculate TBA address for completeness

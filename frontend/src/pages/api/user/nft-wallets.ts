@@ -25,13 +25,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log("👤 User Address:", userAddress);
 
   try {
-    // Initialize ThirdWeb Client
-    const client = createThirdwebClient({
-      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!,
-      secretKey: process.env.TW_SECRET_KEY!,
-    });
+    // Initialize ThirdWeb Client with proper validation
+    const clientId = process.env.NEXT_PUBLIC_TW_CLIENT_ID;
+    const secretKey = process.env.TW_SECRET_KEY;
+    const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
 
-    const contractAddress = process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS!;
+    if (!clientId || !contractAddress) {
+      console.error('❌ Required environment variables not configured');
+      return res.status(503).json({
+        success: false,
+        wallets: [],
+        error: 'Service temporarily unavailable - Configuration incomplete'
+      });
+    }
+
+    // Create client - secretKey is optional for read-only operations
+    const client = createThirdwebClient({
+      clientId: clientId,
+      ...(secretKey && { secretKey }) // Only include if available
+    });
     
     // Get NFT contract
     const nftContract = getContract({
@@ -152,16 +164,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
             
             if (nftMetadata.image) {
-              // CRITICAL FIX: Resolve IPFS URLs properly
-              if (nftMetadata.image.startsWith('ipfs://')) {
-                const cid = nftMetadata.image.replace('ipfs://', '');
+              // CRITICAL FIX: Resolve IPFS URLs properly handling all formats
+              const imageUrl = nftMetadata.image;
+
+              if (imageUrl.startsWith('ipfs://')) {
+                // Handle both ipfs://Qm... and ipfs://ipfs/Qm... formats
+                let cid = imageUrl.replace('ipfs://', '');
+
+                // FIX: Remove duplicate 'ipfs/' if present
+                if (cid.startsWith('ipfs/')) {
+                  cid = cid.replace('ipfs/', '');
+                  console.log(`🔧 Fixed malformed IPFS URL: ipfs://ipfs/... → ${cid}`);
+                }
+
                 nftImage = `https://nftstorage.link/ipfs/${cid}`;
                 console.log(`🔄 Converted IPFS URL for NFT ${tokenId}: ${nftImage}`);
-              } else if (nftMetadata.image.startsWith('http://') || nftMetadata.image.startsWith('https://')) {
-                nftImage = nftMetadata.image;
-                console.log(`✅ Using direct URL for NFT ${tokenId}: ${nftImage}`);
+
+              } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+                // FIX: Also check for malformed HTTP URLs with double ipfs/
+                if (imageUrl.includes('/ipfs/ipfs/')) {
+                  nftImage = imageUrl.replace('/ipfs/ipfs/', '/ipfs/');
+                  console.log(`🔧 Fixed malformed HTTP IPFS URL: ${imageUrl} → ${nftImage}`);
+                } else {
+                  nftImage = imageUrl;
+                }
+                console.log(`✅ Using direct URL for NFT ${tokenId}`);
+
+              } else if (imageUrl.startsWith('data:')) {
+                // Support data URIs (base64 encoded images)
+                nftImage = imageUrl;
+                console.log(`🎨 Using data URI for NFT ${tokenId}`);
+
               } else {
-                console.log(`⚠️ Unknown image format for NFT ${tokenId}:`, nftMetadata.image);
+                console.log(`⚠️ Unknown image format for NFT ${tokenId}:`, imageUrl);
+                // Try to use it as-is, might be a relative URL
+                nftImage = imageUrl;
               }
             } else {
               console.log(`📸 No image found for NFT ${tokenId}, using placeholder`);
