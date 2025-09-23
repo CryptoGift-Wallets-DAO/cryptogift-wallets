@@ -6,7 +6,7 @@
 
 import { uploadMetadata } from './ipfs';
 import { getPublicBaseUrl } from './publicBaseUrl';
-import { convertIPFSToHTTPS, validateMultiGatewayAccess, getBestGatewayForCid } from '../utils/ipfs';
+import { convertIPFSToHTTPS, validateMultiGatewayAccess, getBestGatewayForCid, normalizeCidPath } from '../utils/ipfs';
 
 export interface NFTMetadataTemplate {
   name?: string;
@@ -37,15 +37,22 @@ export async function createFinalMetadata(
   try {
     console.log('📝 Creating final metadata with real tokenId:', tokenId);
     
-    // 🚨 CRITICAL FIX: Handle imageIpfsCid that may have ipfs:// prefix
-    const cleanImageCid = imageIpfsCid.startsWith('ipfs://') 
-      ? imageIpfsCid.replace('ipfs://', '') 
-      : imageIpfsCid;
-    
-    console.log('🔧 Image CID processing:', {
-      original: imageIpfsCid.substring(0, 30) + '...',
-      cleaned: cleanImageCid.substring(0, 30) + '...',
-      hadPrefix: imageIpfsCid.startsWith('ipfs://')
+    // 🚨 CRITICAL FIX: Use normalizeCidPath to handle ALL legacy formats including ipfs://ipfs/
+    // This handles: ipfs://ipfs/Qm..., ipfs://Qm..., ipfs/Qm..., and raw Qm...
+    let rawCid = imageIpfsCid;
+    if (imageIpfsCid.startsWith('ipfs://')) {
+      rawCid = imageIpfsCid.replace('ipfs://', '');
+    }
+
+    // Now normalize the path to remove any redundant ipfs/ prefixes
+    const cleanImageCid = normalizeCidPath(rawCid);
+
+    console.log('🔧 Image CID processing with normalizeCidPath:', {
+      original: imageIpfsCid.substring(0, 50) + '...',
+      afterRemovingProtocol: rawCid.substring(0, 50) + '...',
+      normalized: cleanImageCid.substring(0, 50) + '...',
+      hadProtocol: imageIpfsCid.startsWith('ipfs://'),
+      hadRedundantPath: rawCid.startsWith('ipfs/')
     });
     
     // Create comprehensive metadata with real tokenId

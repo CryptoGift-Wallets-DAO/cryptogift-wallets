@@ -5,7 +5,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
-import { pickGatewayUrl } from '../../../../utils/ipfs';
+import { pickGatewayUrl, normalizeCidPath } from '../../../../utils/ipfs';
 import { getNFTMetadataWithFallback } from '../../../../lib/nftMetadataFallback';
 
 interface ERC721Metadata {
@@ -71,9 +71,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Always use ipfs.io HTTPS for image field (mainnet explorer convention)
     let mainnetImageHttps = originalImageUrl; // fallback
     if (originalImageUrl && originalImageUrl.startsWith('ipfs://')) {
-      const imageCid = originalImageUrl.replace('ipfs://', '');
+      // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
+      const rawCid = originalImageUrl.replace('ipfs://', '');
+      const imageCid = normalizeCidPath(rawCid);
       mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
-      console.log('🔥 MAINNET FORMAT: Using ipfs.io for image field:', mainnetImageHttps.substring(0, 60) + '...');
+      console.log('🔥 MAINNET FORMAT: Using ipfs.io for image field with normalized CID:', mainnetImageHttps.substring(0, 60) + '...');
     } else if (originalImageUrl && originalImageUrl.startsWith('data:image/')) {
       // Keep data URIs as-is for legacy tokens
       mainnetImageHttps = originalImageUrl;

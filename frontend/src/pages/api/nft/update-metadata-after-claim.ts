@@ -11,6 +11,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyJWT, extractTokenFromHeaders } from '../../../lib/siweAuth';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { Redis } from '@upstash/redis';
+import { normalizeCidPath } from '../../../utils/ipfs';
 
 interface UpdateMetadataRequest {
   tokenId: string;
@@ -193,8 +194,9 @@ export default async function handler(
       
       // Update with claim information
       image: imageUrl || existingMetadata?.image || `ipfs://placeholder-${tokenId}`,
-      image_url: imageUrl ? (imageUrl.startsWith('ipfs://') ? 
-        `https://ipfs.io/ipfs/${imageUrl.replace('ipfs://', '')}` : 
+      // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
+      image_url: imageUrl ? (imageUrl.startsWith('ipfs://') ?
+        `https://ipfs.io/ipfs/${normalizeCidPath(imageUrl.replace('ipfs://', ''))}` :
         imageUrl) : existingMetadata?.image_url,
       
       // Add or update attributes

@@ -5,7 +5,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getNFTMetadata } from '../../../../lib/nftMetadataStore';
 import { getPublicBaseUrl } from '../../../../lib/publicBaseUrl';
-import { pickGatewayUrl, getBestGatewayForCid } from '../../../../utils/ipfs';
+import { pickGatewayUrl, getBestGatewayForCid, normalizeCidPath } from '../../../../utils/ipfs';
 import { getNFTMetadataWithFallback } from '../../../../lib/nftMetadataFallback';
 import { convertIPFSToHTTPS } from '../../../../utils/ipfs';
 
@@ -100,9 +100,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ipfsMatch = httpsUrl.match(/\/ipfs\/([^\/\?#]+)/);
       
       if (ipfsMatch) {
-        const cidPath = httpsUrl.split('/ipfs/')[1];
+        // CRITICAL FIX: Normalize CID path to handle double ipfs/ patterns
+        const rawCidPath = httpsUrl.split('/ipfs/')[1];
+        const cidPath = normalizeCidPath(rawCidPath);
         canonicalImageIpfs = `ipfs://${cidPath}`;
-        console.log(`✅ CANONICAL: Extracted CID: ${canonicalImageIpfs}`);
+        console.log(`✅ CANONICAL: Extracted and normalized CID: ${canonicalImageIpfs}`);
         
         // Verify and get best gateway
         const bestGateway = await getBestGatewayForCid(canonicalImageIpfs, 4000);
@@ -140,7 +142,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Extract CID from canonicalImageIpfs and always use ipfs.io
     let mainnetImageHttps = dynamicImageHttps; // fallback
     if (canonicalImageIpfs && canonicalImageIpfs.startsWith('ipfs://')) {
-      const imageCid = canonicalImageIpfs.replace('ipfs://', '');
+      // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
+      const rawCid = canonicalImageIpfs.replace('ipfs://', '');
+      const imageCid = normalizeCidPath(rawCid);
       mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
     } else if (canonicalImageIpfs && canonicalImageIpfs.startsWith('data:image/')) {
       // Keep data URIs as-is for legacy tokens
