@@ -1828,11 +1828,12 @@ async function mintNFTEscrowGasPaid(
               actualImageCid = existingMetadata.image.replace('ipfs://', '');
               console.log('✅ Extracted image CID from metadata:', actualImageCid.substring(0, 30) + '...');
             } else if (existingMetadata.image.includes('/ipfs/')) {
-              // Extract CID from HTTPS gateway URL
-              const match = existingMetadata.image.match(/\/ipfs\/([^\/\?]+)/);
+              // Extract CID WITH FULL PATH from HTTPS gateway URL
+              // CRITICAL FIX: Capture everything after /ipfs/ including the file path
+              const match = existingMetadata.image.match(/\/ipfs\/(.+?)(?:\?|#|$)/);
               if (match) {
                 actualImageCid = match[1];
-                console.log('✅ Extracted image CID from HTTPS gateway URL:', actualImageCid.substring(0, 30) + '...');
+                console.log('✅ Extracted image CID WITH FULL PATH from HTTPS gateway URL:', actualImageCid.substring(0, 50) + '...');
               }
             }
           }
@@ -3129,6 +3130,7 @@ async function storeMetadataInRedisEarly(
     if (finalMetadataUrl && finalMetadataUrl.startsWith('ipfs://')) {
       finalMetadataIpfsCid = finalMetadataUrl.replace('ipfs://', '');
     } else if (finalMetadataUrl && finalMetadataUrl.includes('/ipfs/')) {
+      // CRITICAL FIX: Preserve full path after /ipfs/
       const match = finalMetadataUrl.match(/\/ipfs\/(.+)$/);
       if (match) {
         finalMetadataIpfsCid = match[1];

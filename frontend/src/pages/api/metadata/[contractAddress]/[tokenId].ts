@@ -68,19 +68,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Keep original image URL (should be ipfs://)
     const originalImageUrl = fallbackResult.metadata.image;
     
-    // Always use ipfs.io HTTPS for image field (mainnet explorer convention)
+    // CRITICAL FIX: Prefer already-working HTTPS URLs over forcing ipfs.io
     let mainnetImageHttps = originalImageUrl; // fallback
-    if (originalImageUrl && originalImageUrl.startsWith('ipfs://')) {
-      // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
+
+    // If it's already HTTPS and working, keep it!
+    if (originalImageUrl && originalImageUrl.startsWith('https://')) {
+      mainnetImageHttps = originalImageUrl;
+      console.log('✅ Using existing HTTPS URL:', mainnetImageHttps.substring(0, 60) + '...');
+    } else if (originalImageUrl && originalImageUrl.startsWith('ipfs://')) {
+      // Only convert to ipfs.io if we have an IPFS protocol URL
       const rawCid = originalImageUrl.replace('ipfs://', '');
       const imageCid = normalizeCidPath(rawCid);
       mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
-      console.log('🔥 MAINNET FORMAT: Using ipfs.io for image field with normalized CID:', mainnetImageHttps.substring(0, 60) + '...');
+      console.log('🔄 Converting IPFS to HTTPS with normalized CID:', mainnetImageHttps.substring(0, 60) + '...');
     } else if (originalImageUrl && originalImageUrl.startsWith('data:image/')) {
       // Keep data URIs as-is for legacy tokens
-      mainnetImageHttps = originalImageUrl;
-    } else if (originalImageUrl && originalImageUrl.startsWith('https://')) {
-      // Already HTTPS, use as-is
       mainnetImageHttps = originalImageUrl;
     }
     

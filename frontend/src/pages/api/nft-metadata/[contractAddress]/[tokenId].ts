@@ -138,16 +138,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('📦 Using placeholder for invalid image format');
     }
     
-    // 🔥 MAINNET-READY: Always use HTTPS ipfs.io for image field (Etherscan convention)
-    // Extract CID from canonicalImageIpfs and always use ipfs.io
-    let mainnetImageHttps = dynamicImageHttps; // fallback
-    if (canonicalImageIpfs && canonicalImageIpfs.startsWith('ipfs://')) {
-      // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
-      const rawCid = canonicalImageIpfs.replace('ipfs://', '');
-      const imageCid = normalizeCidPath(rawCid);
-      mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
-    } else if (canonicalImageIpfs && canonicalImageIpfs.startsWith('data:image/')) {
-      // Keep data URIs as-is for legacy tokens
+    // 🔥 CRITICAL FIX: Use the working gateway (dynamicImageHttps) instead of forcing ipfs.io
+    // Only use ipfs.io as a fallback if no working gateway was found
+    let mainnetImageHttps = dynamicImageHttps; // Use the gateway that getBestGatewayForCid found!
+
+    // Only construct ipfs.io URL if we don't have a working gateway
+    if (!dynamicImageHttps || dynamicImageHttps.includes('placeholder')) {
+      if (canonicalImageIpfs && canonicalImageIpfs.startsWith('ipfs://')) {
+        // Fallback to ipfs.io if no better gateway found
+        const rawCid = canonicalImageIpfs.replace('ipfs://', '');
+        const imageCid = normalizeCidPath(rawCid);
+        mainnetImageHttps = `https://ipfs.io/ipfs/${imageCid}`;
+        console.log('⚠️ Using ipfs.io as fallback - no working gateway found');
+      }
+    } else {
+      console.log('✅ Using working gateway from getBestGatewayForCid:', dynamicImageHttps.substring(0, 60) + '...');
+    }
+
+    // Handle data URIs for legacy tokens
+    if (canonicalImageIpfs && canonicalImageIpfs.startsWith('data:image/')) {
       mainnetImageHttps = canonicalImageIpfs;
     }
     

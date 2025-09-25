@@ -183,6 +183,18 @@ export default async function handler(
       console.warn('⚠️ Could not retrieve existing metadata:', redisError);
     }
     
+    // CRITICAL FIX: Parse attributes if they come as string from Redis
+    const existingAttributes = existingMetadata?.attributes
+      ? (typeof existingMetadata.attributes === 'string'
+          ? JSON.parse(existingMetadata.attributes)
+          : existingMetadata.attributes)
+      : [];
+
+    console.log('📦 Existing attributes parsed:', {
+      type: typeof existingMetadata?.attributes,
+      count: Array.isArray(existingAttributes) ? existingAttributes.length : 0
+    });
+
     // Prepare updated metadata
     const updatedMetadata = {
       // Use existing metadata as base, or create new structure
@@ -191,17 +203,17 @@ export default async function handler(
         description: giftMessage || 'Un regalo cripto único creado con amor',
         external_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://cryptogift-wallets.vercel.app'}/gift/claim/${tokenId}`
       }),
-      
+
       // Update with claim information
       image: imageUrl || existingMetadata?.image || `ipfs://placeholder-${tokenId}`,
       // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
       image_url: imageUrl ? (imageUrl.startsWith('ipfs://') ?
         `https://ipfs.io/ipfs/${normalizeCidPath(imageUrl.replace('ipfs://', ''))}` :
         imageUrl) : existingMetadata?.image_url,
-      
+
       // Add or update attributes
       attributes: [
-        ...(existingMetadata?.attributes || []).filter((attr: any) => 
+        ...existingAttributes.filter((attr: any) =>
           !['Claim Status', 'Claimed By', 'Claim Transaction', 'Claim Date'].includes(attr.trait_type)
         ),
         {
@@ -230,8 +242,24 @@ export default async function handler(
     // Store updated metadata in Upstash Redis as hash (same as nftMetadataFallback.ts)
     const ttl = 30 * 24 * 60 * 60; // 30 days in seconds
 
+    // CRITICAL FIX: Serialize objects/arrays before storing in Redis
+    const serializedMetadata: Record<string, string> = {};
+    Object.entries(updatedMetadata).forEach(([key, value]) => {
+      if (typeof value === 'object' && value !== null) {
+        serializedMetadata[key] = JSON.stringify(value);
+      } else {
+        serializedMetadata[key] = String(value);
+      }
+    });
+
+    console.log('🔍 Serialized metadata for Redis:', {
+      keys: Object.keys(serializedMetadata),
+      attributesType: typeof serializedMetadata.attributes,
+      attributesLength: serializedMetadata.attributes?.length
+    });
+
     // Store as hash for compatibility with nftMetadataFallback.ts
-    await redis!.hset(metadataKey, updatedMetadata);
+    await redis!.hset(metadataKey, serializedMetadata);
     await redis!.expire(metadataKey, ttl);
 
     console.log('✅ Metadata updated in Upstash Redis successfully:', {

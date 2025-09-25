@@ -634,10 +634,52 @@ The transaction may take longer on mobile.`;
             } else {
               await new Promise(resolve => setTimeout(resolve, 500));
             }
-            
+
+            // Step 2.5: CRITICAL METADATA WARMING - Wait for real metadata to be available
+            console.log('🔥 [WARMING] Starting metadata warming before wallet_watchAsset...');
+            let warmingSuccess = false;
+            for (let attempt = 0; attempt < 5; attempt++) {
+              try {
+                console.log(`📡 [WARMING] Attempt ${attempt + 1}/5 - Fetching metadata...`);
+                const metadataRes = await fetch(`/api/nft-metadata/${contractAddress}/${tokenId}`);
+                const metadata = await metadataRes.json();
+
+                // Check if we have real image (not placeholder)
+                if (metadata.image && !metadata.image.startsWith('data:')) {
+                  console.log('✅ [WARMING] Real metadata found, warming image...');
+
+                  // Warm the actual image URL
+                  try {
+                    await fetch(metadata.image, {
+                      method: 'HEAD',
+                      signal: AbortSignal.timeout(3000)
+                    });
+                    console.log('✅ [WARMING] Image warmed successfully');
+                  } catch (imgError) {
+                    console.warn('⚠️ [WARMING] Image warming failed but continuing:', imgError.message);
+                  }
+
+                  warmingSuccess = true;
+                  break;
+                } else {
+                  console.log(`⏳ [WARMING] Placeholder detected, waiting ${2 * (attempt + 1)}s for propagation...`);
+                  await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+                }
+              } catch (error) {
+                console.error(`❌ [WARMING] Attempt ${attempt + 1} failed:`, error);
+                if (attempt < 4) {
+                  await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+                }
+              }
+            }
+
+            if (!warmingSuccess) {
+              console.warn('⚠️ [WARMING] Could not get real metadata after 5 attempts, proceeding anyway...');
+            }
+
             // Step 3: Add NFT to wallet - Enhanced for mobile
             console.log('🎯 [POST-CLAIM] Adding NFT to wallet...', { contractAddress, tokenId, isMobile });
-            
+
             const watchResult = await window.ethereum.request({
               method: 'wallet_watchAsset',
               params: [{

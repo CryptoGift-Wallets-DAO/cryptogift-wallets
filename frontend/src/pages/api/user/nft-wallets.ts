@@ -168,15 +168,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               const imageUrl = nftMetadata.image;
 
               if (imageUrl.startsWith('ipfs://')) {
-                // Handle both ipfs://Qm... and ipfs://ipfs/Qm... formats
-                let cid = imageUrl.replace('ipfs://', '');
-
-                // CRITICAL FIX: Remove ALL redundant 'ipfs/' prefixes (not just one)
-                // Handles cases like: ipfs/Qm..., ipfs/ipfs/Qm..., ipfs/ipfs/ipfs/Qm..., etc.
-                while (cid.startsWith('ipfs/')) {
-                  cid = cid.slice(5); // Remove 'ipfs/' (5 characters)
-                  console.log(`🔧 Removed redundant ipfs/ prefix from IPFS URL`);
-                }
+                // Handle both ipfs://Qm... and ipfs://ipfs/Qm... formats using normalizeCidPath
+                const { normalizeCidPath } = await import('../../../utils/ipfs');
+                const cid = normalizeCidPath(imageUrl.replace('ipfs://', ''));
 
                 nftImage = `https://nftstorage.link/ipfs/${cid}`;
                 console.log(`🔄 Converted IPFS URL for NFT ${tokenId}: ${nftImage}`);
