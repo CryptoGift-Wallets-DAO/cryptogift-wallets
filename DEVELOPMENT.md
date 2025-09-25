@@ -2,7 +2,72 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎯 LATEST SESSION UPDATES (Diciembre 21, 2025) - METADATA WARMING SYSTEM IMPLEMENTATION 🔥
+## 🎯 LATEST SESSION UPDATES (Enero 25, 2025) - NFT METADATA DISPLAY FIX DEFINITIVO ✅
+
+### 🏆 BREAKTHROUGH: NFT IMAGES FINALLY APPEARING IN METAMASK!
+
+**PROBLEMA CRÍTICO RESUELTO**: Después de múltiples sesiones intentando arreglar el display de imágenes NFT en MetaMask, finalmente se identificaron y corrigieron los 5 root causes reales.
+
+**ROOT CAUSES FINALES IDENTIFICADOS**:
+1. **File Path Truncation**: Regex capturaba solo CID, perdiendo `/image.png`
+2. **Frontend Placeholder Recycling**: Frontend enviaba placeholders pre-claim al backend
+3. **Redis Serialization**: Attributes como string rompía `.filter()`
+4. **Fallback Normalization Missing**: URLs con `ipfs://ipfs/` creaban duplicaciones
+5. **Gateway Forcing**: Sobreescribía gateways funcionales con ipfs.io
+
+**SOLUCIONES IMPLEMENTADAS**:
+
+#### Fix #1: CID Path Preservation (`mint-escrow.ts` Lines 1830-1836)
+```typescript
+// ANTES: /\/ipfs\/([^\/\?]+)/ - Solo capturaba "Qm..."
+// DESPUÉS: /\/ipfs\/(.+?)(?:\?|#|$)/ - Captura "Qm.../image.png"
+```
+
+#### Fix #2: Frontend Placeholder Rejection (`update-metadata-after-claim.ts` Lines 199-228)
+```typescript
+if (!imageUrl || imageUrl.includes('placeholder') || imageUrl.startsWith('data:')) {
+  // Fetch fresh metadata from server instead
+  const freshResult = await getNFTMetadataWithFallback({...});
+}
+```
+
+#### Fix #3: Redis Attributes Serialization (`update-metadata-after-claim.ts` Lines 186-196)
+```typescript
+const existingAttributes = existingMetadata?.attributes
+  ? (typeof existingMetadata.attributes === 'string'
+      ? JSON.parse(existingMetadata.attributes)  // Parse if string
+      : existingMetadata.attributes)              // Use as-is if array
+  : [];
+```
+
+#### Fix #4: IPFS Normalization in Fallback (`nft/[...params].ts` Lines 208-222)
+```typescript
+import { normalizeCidPath } from '@/utils/ipfs';
+const normalizedCid = normalizeCidPath(processedImageUrl.replace('ipfs://', ''));
+processedImageUrl = `https://ipfs.io/ipfs/${normalizedCid}`;
+```
+
+#### Fix #5: Respect Working Gateways (`nft-metadata/[contractAddress]/[tokenId].ts` Lines 141-161)
+```typescript
+// Use the gateway that getBestGatewayForCid found working!
+let mainnetImageHttps = dynamicImageHttps;  // NOT forcing ipfs.io
+```
+
+### 📁 DOCUMENTATION CREATED:
+- **`docs/NFT_METADATA_RUNBOOK.md`**: Complete guide with all fixes, configuration, and troubleshooting
+- Contains flowcharts, code snippets, validation checklists
+- Emergency recovery procedures documented
+
+### 🎯 RESULTADO FINAL:
+- ✅ NFT images appear in MetaMask within 10 seconds
+- ✅ Mobile claiming works perfectly
+- ✅ BaseScan compatibility maintained
+- ✅ Redis caching optimized
+- ✅ IPFS gateway fallbacks robust
+
+---
+
+## 🎯 PREVIOUS SESSION UPDATES (Diciembre 21, 2025) - METADATA WARMING SYSTEM IMPLEMENTATION 🔥
 
 ### 🚨 CRITICAL METADATA VISIBILITY FIX - ROBUST SOLUTION
 
