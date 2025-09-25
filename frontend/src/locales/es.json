@@ -99,5 +99,80 @@
       "builtOn": "Construido en",
       "chain": "Base"
     }
+  },
+  "analytics": {
+    "title": "Panel de Analytics de Regalos",
+    "subtitle": "Tracking completo de campañas y regalos",
+    "nav": {
+      "live": "En vivo",
+      "manual": "Manual",
+      "filters": "Filtros",
+      "refresh": "Actualizar",
+      "export": "Exportar CSV"
+    },
+    "kpis": {
+      "totalGifts": "Total Regalos",
+      "claimed": "Reclamados",
+      "totalValue": "Valor Total",
+      "avgTime": "Tiempo Promedio",
+      "conversion": "conversión",
+      "vs": "vs periodo anterior"
+    },
+    "charts": {
+      "conversionFunnel": "Embudo de Conversión",
+      "statusDistribution": "Distribución por Estado",
+      "timeEvolution": "Evolución Temporal",
+      "campaignDetails": "Detalle por Campaña"
+    },
+    "stages": {
+      "created": "Creados",
+      "viewed": "Vistos",
+      "preClaim": "Pre-Claim",
+      "education": "Educación",
+      "claimed": "Reclamados",
+      "expired": "Expirados",
+      "returned": "Devueltos",
+      "pending": "Pendientes",
+      "inProgress": "En proceso"
+    },
+    "filters": {
+      "title": "Filtros Avanzados",
+      "campaigns": "Campañas",
+      "allCampaigns": "Todas las campañas",
+      "status": "Estado",
+      "allStatus": "Todos los estados",
+      "groupBy": "Agrupar por",
+      "day": "Día",
+      "week": "Semana",
+      "month": "Mes",
+      "chartType": "Tipo de gráfico",
+      "area": "Área",
+      "bar": "Barras",
+      "line": "Líneas",
+      "pie": "Pastel"
+    },
+    "table": {
+      "campaign": "Campaña",
+      "total": "Total",
+      "claimed": "Reclamados",
+      "conversion": "Conversión",
+      "value": "Valor",
+      "topReferrer": "Top Referrer",
+      "actions": "Acciones",
+      "viewDetails": "Ver detalles",
+      "refs": "refs"
+    },
+    "notifications": {
+      "dataUpdated": "Datos actualizados",
+      "dataUpdatedMessage": "Las estadísticas se han actualizado correctamente",
+      "exportComplete": "Exportación completada",
+      "exportCompleteMessage": "Los datos se han exportado correctamente",
+      "errorLoading": "Error al cargar datos",
+      "errorLoadingMessage": "No se pudieron cargar las estadísticas"
+    },
+    "auth": {
+      "connectWallet": "Conecta tu wallet",
+      "connectMessage": "Necesitas conectar tu wallet para ver las analíticas"
+    }
   }
 }

@@ -99,5 +99,80 @@
       "builtOn": "Built on",
       "chain": "Base"
     }
+  },
+  "analytics": {
+    "title": "Gift Analytics Dashboard",
+    "subtitle": "Complete tracking of campaigns and gifts",
+    "nav": {
+      "live": "Live",
+      "manual": "Manual",
+      "filters": "Filters",
+      "refresh": "Refresh",
+      "export": "Export CSV"
+    },
+    "kpis": {
+      "totalGifts": "Total Gifts",
+      "claimed": "Claimed",
+      "totalValue": "Total Value",
+      "avgTime": "Average Time",
+      "conversion": "conversion",
+      "vs": "vs previous period"
+    },
+    "charts": {
+      "conversionFunnel": "Conversion Funnel",
+      "statusDistribution": "Status Distribution",
+      "timeEvolution": "Time Evolution",
+      "campaignDetails": "Campaign Details"
+    },
+    "stages": {
+      "created": "Created",
+      "viewed": "Viewed",
+      "preClaim": "Pre-Claim",
+      "education": "Education",
+      "claimed": "Claimed",
+      "expired": "Expired",
+      "returned": "Returned",
+      "pending": "Pending",
+      "inProgress": "In Progress"
+    },
+    "filters": {
+      "title": "Advanced Filters",
+      "campaigns": "Campaigns",
+      "allCampaigns": "All campaigns",
+      "status": "Status",
+      "allStatus": "All statuses",
+      "groupBy": "Group by",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "chartType": "Chart type",
+      "area": "Area",
+      "bar": "Bar",
+      "line": "Line",
+      "pie": "Pie"
+    },
+    "table": {
+      "campaign": "Campaign",
+      "total": "Total",
+      "claimed": "Claimed",
+      "conversion": "Conversion",
+      "value": "Value",
+      "topReferrer": "Top Referrer",
+      "actions": "Actions",
+      "viewDetails": "View details",
+      "refs": "refs"
+    },
+    "notifications": {
+      "dataUpdated": "Data updated",
+      "dataUpdatedMessage": "Statistics have been updated successfully",
+      "exportComplete": "Export complete",
+      "exportCompleteMessage": "Data has been exported successfully",
+      "errorLoading": "Error loading data",
+      "errorLoadingMessage": "Could not load statistics"
+    },
+    "auth": {
+      "connectWallet": "Connect your wallet",
+      "connectMessage": "You need to connect your wallet to view analytics"
+    }
   }
 }
