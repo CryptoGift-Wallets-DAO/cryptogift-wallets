@@ -195,6 +195,38 @@ export default async function handler(
       count: Array.isArray(existingAttributes) ? existingAttributes.length : 0
     });
 
+    // CRITICAL FIX #2: Don't accept placeholder images from frontend
+    let finalImageUrl = imageUrl;
+    if (!imageUrl || imageUrl.includes('placeholder') || imageUrl.startsWith('data:')) {
+      console.log('⚠️ Frontend sent placeholder or no image, fetching fresh metadata from server...');
+
+      // Get fresh metadata from server
+      try {
+        const { getNFTMetadataWithFallback } = await import('../../../lib/nftMetadataFallback');
+        const { getPublicBaseUrl } = await import('../../../lib/publicBaseUrl');
+
+        const freshResult = await getNFTMetadataWithFallback({
+          contractAddress: contractAddress as string,
+          tokenId: tokenId as string,
+          publicBaseUrl: getPublicBaseUrl(req),
+          timeout: 5000
+        });
+
+        if (freshResult.metadata?.image &&
+            !freshResult.metadata.image.includes('placeholder') &&
+            !freshResult.metadata.image.startsWith('data:')) {
+          finalImageUrl = freshResult.metadata.image;
+          console.log('✅ Got fresh image from server:', finalImageUrl.substring(0, 60) + '...');
+        } else {
+          console.log('⚠️ Server also has placeholder, keeping existing or using fallback');
+          finalImageUrl = existingMetadata?.image || `ipfs://placeholder-${tokenId}`;
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch fresh metadata:', error);
+        finalImageUrl = existingMetadata?.image || `ipfs://placeholder-${tokenId}`;
+      }
+    }
+
     // Prepare updated metadata
     const updatedMetadata = {
       // Use existing metadata as base, or create new structure
@@ -205,11 +237,11 @@ export default async function handler(
       }),
 
       // Update with claim information
-      image: imageUrl || existingMetadata?.image || `ipfs://placeholder-${tokenId}`,
+      image: finalImageUrl,
       // CRITICAL FIX: Use normalizeCidPath to handle ipfs://ipfs/... formats
-      image_url: imageUrl ? (imageUrl.startsWith('ipfs://') ?
-        `https://ipfs.io/ipfs/${normalizeCidPath(imageUrl.replace('ipfs://', ''))}` :
-        imageUrl) : existingMetadata?.image_url,
+      image_url: finalImageUrl ? (finalImageUrl.startsWith('ipfs://') ?
+        `https://ipfs.io/ipfs/${normalizeCidPath(finalImageUrl.replace('ipfs://', ''))}` :
+        finalImageUrl) : existingMetadata?.image_url,
 
       // Add or update attributes
       attributes: [

@@ -206,14 +206,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                       processedImageUrl = bestImageGateway.url;
                       console.log(`✅ CANONICAL: Using best gateway ${bestImageGateway.gateway} for image`);
                     } else {
-                      // FALLBACK: Use default gateway for image
-                      console.log('⚠️ CANONICAL: No working gateway, using ipfs.io fallback');
-                      const imageCid = processedImageUrl.replace('ipfs://', '');
-                      processedImageUrl = `https://ipfs.io/ipfs/${imageCid}`;
+                      // FALLBACK: Use default gateway for image WITH NORMALIZATION
+                      console.log('⚠️ CANONICAL: No working gateway, using ipfs.io fallback with normalization');
+                      // CRITICAL FIX: Normalize the CID path to handle ipfs://ipfs/... formats
+                      const normalizedCid = normalizeCidPath(processedImageUrl.replace('ipfs://', ''));
+                      processedImageUrl = `https://ipfs.io/ipfs/${normalizedCid}`;
+                      console.log('🔧 Normalized fallback URL:', processedImageUrl.substring(0, 80) + '...');
                     }
-                  } else if (processedImageUrl && processedImageUrl.includes('ipfs/ipfs/')) {
-                    // FIX: Handle malformed ipfs://ipfs/... URLs
-                    console.log('🔧 Fixing malformed IPFS URL:', processedImageUrl);
+                  }
+
+                  // ALWAYS clean up malformed URLs regardless of previous conditions
+                  if (processedImageUrl && processedImageUrl.includes('ipfs/ipfs/')) {
+                    console.log('🔧 Additional cleanup for malformed IPFS URL:', processedImageUrl);
                     processedImageUrl = processedImageUrl.replace(/ipfs\/ipfs\//g, 'ipfs/');
                   }
                   

@@ -422,6 +422,26 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
         try {
           console.log(`📱 [METADATA UPDATE] Attempt ${updateAttempts}/${maxUpdateAttempts} - Updating Redis...`);
 
+          // CRITICAL FIX: Fetch FRESH metadata post-claim instead of using pre-claim placeholder
+          let freshImageUrl;
+          try {
+            const contractAddr = giftInfo?.nftContract || process.env.NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS;
+            console.log('🔄 [METADATA UPDATE] Fetching fresh metadata post-claim...');
+            const freshResponse = await fetch(`/api/nft/${contractAddr}/${tokenId}`);
+            if (freshResponse.ok) {
+              const freshData = await freshResponse.json();
+              // Only use if it's not a placeholder
+              if (freshData.image && !freshData.image.includes('placeholder') && !freshData.image.startsWith('data:')) {
+                freshImageUrl = freshData.image;
+                console.log('✅ [METADATA UPDATE] Got fresh image URL:', freshImageUrl.substring(0, 60) + '...');
+              } else {
+                console.log('⚠️ [METADATA UPDATE] Fresh fetch still has placeholder, will let backend resolve');
+              }
+            }
+          } catch (err) {
+            console.warn('⚠️ [METADATA UPDATE] Could not fetch fresh metadata:', err);
+          }
+
           const updateResponse = await makeAuthenticatedRequest('/api/nft/update-metadata-after-claim', {
             method: 'POST',
             headers: {
@@ -433,7 +453,7 @@ export const ClaimEscrowInterface: React.FC<ClaimEscrowInterfaceProps> = ({
               claimerAddress: account.address,
               transactionHash: txResult.transactionHash,
               giftMessage: validationResult.giftInfo?.giftMessage || '',
-              imageUrl: nftMetadata?.image || ''
+              imageUrl: freshImageUrl // Use fresh image or undefined (let backend resolve)
             })
           });
 
