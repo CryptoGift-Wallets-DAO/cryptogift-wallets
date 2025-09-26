@@ -8,12 +8,12 @@ import { Redis } from '@upstash/redis';
 
 /**
  * POST /api/referrals/_internal/reconcile
- * 
+ *
  * Reconciliation cron job that syncs blockchain events with analytics
  * Designed to be called by QStash on a schedule (every 15-60 minutes)
- * 
+ *
  * Headers for QStash:
- * - Upstash-Cron: "*/15 * * * *" (every 15 minutes)
+ * - Upstash-Cron: every 15 minutes
  * - Upstash-Forward-X-Internal-Secret: {INTERNAL_API_SECRET}
  */
 
