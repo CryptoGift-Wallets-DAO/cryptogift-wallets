@@ -22,6 +22,8 @@
     "@multiformats/multiaddr": "^12.1.14",
     "@multiformats/multiaddr-to-uri": "^10.0.1",
     "@mux/mux-player-react": "^2.9.1",
+    "@react-three/drei": "^9.88.0",
+    "@react-three/fiber": "^8.15.0",
     "@sentry/nextjs": "^10.5.0",
     "@tailwindcss/typography": "^0.5.16",
     "@upstash/redis": "^1.35.1",
@@ -48,14 +50,12 @@
     "recharts": "^2.12.7",
     "resend": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.160.0",
     "thirdweb": "^5.105.10",
     "viem": "^2.21.0",
     "web-push": "^3.6.7",
     "web-vitals": "^4.2.4",
-    "zod": "^3.24.1",
-    "three": "^0.160.0",
-    "@react-three/fiber": "^8.15.0",
-    "@react-three/drei": "^9.88.0"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",
