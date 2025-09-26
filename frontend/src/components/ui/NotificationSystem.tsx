@@ -23,9 +23,10 @@ interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   addNotification: (notification: Omit<Notification, 'id'>) => string;
+  showNotification: (notification: Omit<Notification, 'id'>) => string; // Alias for addNotification
   removeNotification: (id: string) => void;
   clearAll: () => void;
-  
+
   // Wallet-specific helpers
   notifyTransaction: (txHash: string, type: 'pending' | 'success' | 'failed', details?: Partial<Notification>) => string;
   notifyWalletAction: (action: string, status: 'pending' | 'success' | 'failed', details?: Partial<Notification>) => string;
@@ -171,6 +172,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const value: NotificationContextType = {
     notifications,
     addNotification,
+    showNotification: addNotification, // Alias for compatibility
     removeNotification,
     clearAll,
     notifyTransaction,

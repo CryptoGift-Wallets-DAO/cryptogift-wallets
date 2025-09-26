@@ -12,43 +12,19 @@ const ChartLoadingState = () => (
   </div>
 );
 
-const AreaChart = dynamic(
-  () => import('recharts').then(mod => mod.AreaChart),
+// Import all Recharts components as a single dynamic import
+const RechartsComponents = dynamic(
+  () => import('recharts'),
   { ssr: false, loading: ChartLoadingState }
 );
 
-const Area = dynamic(() => import('recharts').then(mod => mod.Area), { ssr: false });
-const BarChart = dynamic(
-  () => import('recharts').then(mod => mod.BarChart),
-  { ssr: false, loading: ChartLoadingState }
-);
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
-const LineChart = dynamic(
-  () => import('recharts').then(mod => mod.LineChart),
-  { ssr: false, loading: ChartLoadingState }
-);
-const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false });
-const PieChart = dynamic(
-  () => import('recharts').then(mod => mod.PieChart),
-  { ssr: false, loading: ChartLoadingState }
-);
-const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false });
-const RadialBarChart = dynamic(
-  () => import('recharts').then(mod => mod.RadialBarChart),
-  { ssr: false, loading: ChartLoadingState }
-);
-const RadialBar = dynamic(() => import('recharts').then(mod => mod.RadialBar), { ssr: false });
-const Treemap = dynamic(
-  () => import('recharts').then(mod => mod.Treemap),
-  { ssr: false, loading: ChartLoadingState }
-);
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
-const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: false });
-const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
+// For now, import directly until we can fix the dynamic import types
+import {
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  PieChart, Pie, Cell, RadialBarChart, RadialBar,
+  Treemap, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer
+} from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, Gift, Users, DollarSign, Clock, 

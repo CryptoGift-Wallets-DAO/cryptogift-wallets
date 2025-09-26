@@ -104,28 +104,31 @@ function sanitizeLogContext(context?: LogContext): LogContext | undefined {
  * Specific helpers for common debug scenarios
  */
 export const debugLogger = {
-  operation: (operation: string, details?: LogContext) => 
+  log: (message: string, details?: LogContext) =>
+    secureDebugLog('info', message, details),
+
+  operation: (operation: string, details?: LogContext) =>
     secureDebugLog('info', `Operation: ${operation}`, details),
-    
+
   tokenCheck: (tokenId: string | number, contractAddress: string, result: any) =>
     secureDebugLog('info', `Token check result`, {
       tokenId: tokenId.toString(),
       contractAddress,
       exists: !!result
     }),
-    
+
   giftMapping: (tokenId: string | number, giftId: string | number | null) =>
     secureDebugLog('info', `Gift mapping`, {
       tokenId: tokenId.toString(),
       giftId: giftId?.toString() || 'not_found'
     }),
-    
+
   contractCall: (method: string, success: boolean, error?: string) =>
     secureDebugLog(success ? 'info' : 'error', `Contract call: ${method}`, {
       success,
       error: error ? 'Call failed' : undefined
     }),
-    
+
   error: (operation: string, error: Error) =>
     secureDebugLog('error', `Error in ${operation}`, {
       errorType: error.name,
