@@ -135,7 +135,8 @@ export async function trackEducationProgress(params: {
 }
 
 /**
- * Track education completed
+ * Track education completed - COMPREHENSIVE VERSION
+ * Tracks ALL details requested by user: questions, scores, time, email
  */
 export async function trackEducationCompleted(params: {
   tokenId: string;
@@ -147,6 +148,25 @@ export async function trackEducationCompleted(params: {
   completedModules?: number[];
   totalScore?: number;
   completedAt?: string;
+
+  // COMPREHENSIVE EDUCATION DATA
+  moduleId?: number;
+  moduleName?: string;
+  totalQuestions?: number;
+  correctAnswers?: number;
+  incorrectAnswers?: number;
+  requiredScore?: number;
+  attempts?: number;
+  timeSpentSeconds?: number;
+  emailProvided?: string;
+  questions?: Array<{
+    id: number;
+    question: string;
+    userAnswer: string;
+    correctAnswer: string;
+    isCorrect: boolean;
+    timeSpent: number;
+  }>;
 }): Promise<void> {
   try {
     const event: GiftEvent = {
@@ -158,19 +178,52 @@ export async function trackEducationCompleted(params: {
       claimer: params.claimerAddress,
       timestamp: Date.now(),
       metadata: {
-        modules: params.educationModules
+        // Legacy fields
+        modules: params.educationModules,
+        completedModules: params.completedModules,
+        totalScore: params.totalScore,
+        completedAt: params.completedAt,
+
+        // COMPREHENSIVE NEW FIELDS REQUESTED BY USER
+        moduleId: params.moduleId,
+        moduleName: params.moduleName,
+        totalQuestions: params.totalQuestions,
+        correctAnswers: params.correctAnswers,
+        incorrectAnswers: params.incorrectAnswers,
+        score: params.totalScore,
+        requiredScore: params.requiredScore,
+        attempts: params.attempts,
+        timeSpentSeconds: params.timeSpentSeconds,
+        emailProvided: params.emailProvided,
+
+        // QUESTION-BY-QUESTION BREAKDOWN
+        questions: params.questions,
+
+        // ANALYTICS SUMMARY
+        passedEducation: (params.totalScore || 0) >= (params.requiredScore || 70),
+        accuracyPercent: params.totalQuestions ?
+          Math.round(((params.correctAnswers || 0) / params.totalQuestions) * 100) : 0,
+        timePerQuestionAvg: params.totalQuestions && params.timeSpentSeconds ?
+          Math.round(params.timeSpentSeconds / params.totalQuestions) : 0
       }
     };
-    
+
     await recordGiftEvent(event);
-    debugLogger.operation('Education completion tracked', { tokenId: params.tokenId });
+    debugLogger.operation('Education completion tracked (COMPREHENSIVE)', {
+      tokenId: params.tokenId,
+      score: params.totalScore,
+      questions: params.totalQuestions,
+      correct: params.correctAnswers,
+      email: params.emailProvided ? 'provided' : 'not provided'
+    });
   } catch (error) {
     console.error('Failed to track education completion:', error);
   }
 }
 
 /**
- * Track gift claimed
+ * Track gift claimed - COMPREHENSIVE VERSION
+ * Tracks ALL claim details including education data, timestamps, wallet info
  */
 export async function trackGiftClaimed(params: {
   tokenId: string;
@@ -181,8 +234,22 @@ export async function trackGiftClaimed(params: {
   txHash?: string;
   value?: number;
   metadata?: any;
+
+  // COMPREHENSIVE CLAIM DATA
+  claimedAt?: string;           // Exact timestamp
+  educationCompleted?: boolean;
+  educationScore?: number;
+  emailProvided?: string;
+  totalTimeToClaimMinutes?: number;
+  modulesCompleted?: string[];
+  gasUsed?: number;
+  networkUsed?: string;
+  tbaAddress?: string;
+  currency?: string;
 }): Promise<void> {
   try {
+    const claimTimestamp = params.claimedAt ? new Date(params.claimedAt).getTime() : Date.now();
+
     const event: GiftEvent = {
       eventId: params.txHash ? `${params.txHash}-0` : `claim-${params.tokenId}-${Date.now()}`,
       type: 'claimed',
@@ -191,12 +258,42 @@ export async function trackGiftClaimed(params: {
       tokenId: params.tokenId,
       claimer: params.claimerAddress,
       value: params.value,
-      timestamp: Date.now(),
-      txHash: params.txHash
+      timestamp: claimTimestamp,
+      txHash: params.txHash,
+      metadata: {
+        // Legacy metadata
+        ...params.metadata,
+
+        // COMPREHENSIVE CLAIM DATA REQUESTED BY USER
+        claimerAddress: params.claimerAddress,        // Wallet que hizo el reclamo
+        previousOwner: params.previousOwner,          // Wallet anterior
+        claimedAt: params.claimedAt || new Date().toISOString(), // Hora exacta del reclamo
+        educationCompleted: params.educationCompleted,
+        educationScore: params.educationScore,
+        emailProvided: params.emailProvided,
+        totalTimeToClaimMinutes: params.totalTimeToClaimMinutes,
+        modulesCompleted: params.modulesCompleted,
+        gasUsed: params.gasUsed || 0,
+        networkUsed: params.networkUsed || 'Base Sepolia',
+        tbaAddress: params.tbaAddress,
+        value: params.value,
+        currency: params.currency || 'USD',
+
+        // TECHNICAL DETAILS
+        txHash: params.txHash,
+        claimMethod: params.gasUsed === 0 ? 'gasless' : 'gas-paid',
+        blockTimestamp: claimTimestamp
+      }
     };
-    
+
     await recordGiftEvent(event);
-    debugLogger.operation('Gift claim tracked', { tokenId: params.tokenId });
+    debugLogger.operation('Gift claim tracked (COMPREHENSIVE)', {
+      tokenId: params.tokenId,
+      claimer: params.claimerAddress.slice(0, 10) + '...',
+      claimedAt: params.claimedAt,
+      educationScore: params.educationScore,
+      totalTime: params.totalTimeToClaimMinutes + ' minutes'
+    });
   } catch (error) {
     console.error('Failed to track gift claim:', error);
   }
