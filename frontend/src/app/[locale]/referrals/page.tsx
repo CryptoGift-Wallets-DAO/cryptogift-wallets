@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useActiveAccount, ConnectButton, TransactionButton } from 'thirdweb/react';
 import { prepareContractCall, getContract } from 'thirdweb';
 import { baseSepolia, base } from 'thirdweb/chains';
@@ -11,6 +12,7 @@ import { EarningsHistoryPanel } from '../../../components/referrals/EarningsHist
 import { FriendsTrackingPanel } from '../../../components/referrals/FriendsTrackingPanel';
 import { PendingRewardsPanel } from '../../../components/referrals/PendingRewardsPanel';
 import { useRealTimeReferrals } from '../../../hooks/useRealTimeReferrals';
+import { BarChart2, TrendingUp } from 'lucide-react';
 
 export default function ReferralsPage() {
   const [mounted, setMounted] = useState(false);
@@ -185,9 +187,9 @@ export default function ReferralsPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-4 mb-2">
-            <div className="w-20 h-20 flex items-center justify-center 
-                          bg-gray-50 dark:bg-gray-800/50 
-                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30 
+            <div className="w-20 h-20 flex items-center justify-center
+                          bg-gray-50 dark:bg-gray-800/50
+                          rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/30
                           backdrop-blur-sm transition-all duration-300">
               <Image
                 src="/referrals-logo.png"
@@ -204,6 +206,23 @@ export default function ReferralsPage() {
           <p className="text-text-secondary transition-colors duration-300">
             Gana dinero invitando amigos a CryptoGift Wallets
           </p>
+
+          {/* Analytics Dashboard Button */}
+          <div className="mt-6 flex justify-center">
+            <Link
+              href="/referrals/analytics"
+              className="inline-flex items-center gap-3 px-6 py-3
+                       bg-gradient-to-r from-blue-600 to-purple-600
+                       hover:from-blue-700 hover:to-purple-700
+                       text-white font-semibold rounded-xl
+                       shadow-lg hover:shadow-xl transform hover:scale-105
+                       transition-all duration-200"
+            >
+              <BarChart2 className="w-5 h-5" />
+              <span>Ver Analytics Dashboard</span>
+              <TrendingUp className="w-4 h-4" />
+            </Link>
+          </div>
           
           {/* Real-time connection status */}
           {mounted && account && (
