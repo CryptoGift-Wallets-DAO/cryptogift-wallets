@@ -75,15 +75,47 @@ export default async function handler(
 
     // Fetch campaign statistics from Redis
     console.log('📊 Fetching campaign stats with filter:', filter);
+
+    // Add debugging to check Redis connection
+    try {
+      const { validateRedisForCriticalOps } = require('../../../lib/redisConfig');
+      const redis = validateRedisForCriticalOps('Stats API');
+
+      if (!redis) {
+        console.log('❌ Redis not configured in stats API');
+        return res.status(200).json({
+          success: false,
+          stats: [],
+          message: 'Redis not configured - please check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN',
+          debug: {
+            redisConfigured: false
+          }
+        });
+      }
+
+      // Check if any keys exist
+      const allKeys = await redis.keys('gift:*');
+      console.log(`📊 Found ${allKeys.length} total Redis keys`);
+
+      if (allKeys.length > 0) {
+        console.log('📊 Sample keys:', allKeys.slice(0, 5));
+      }
+    } catch (debugError) {
+      console.error('❌ Debug error:', debugError);
+    }
+
     const stats = await getCampaignStats(filter);
 
-    // If no campaigns found, return empty response
+    // If no campaigns found, return empty response with debug info
     if (!stats || stats.length === 0) {
-      console.log('📊 No campaign data found');
+      console.log('📊 No campaign data found by getCampaignStats');
       return res.status(200).json({
         success: true,
         stats: [],
-        message: 'No campaign data available yet'
+        message: 'No campaign data available yet. Try POST /api/analytics/populate-test-data first',
+        debug: {
+          hint: 'Run: curl -X POST https://cryptogift-wallets.vercel.app/api/analytics/populate-test-data'
+        }
       });
     }
 
