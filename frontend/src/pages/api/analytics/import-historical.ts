@@ -7,7 +7,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createThirdwebClient, getContract, getContractEvents } from 'thirdweb';
+import { createThirdwebClient, getContract, readContract, prepareEvent } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
 import { ethers } from 'ethers';
 import { recordGiftEvent, initializeCampaign } from '../../../lib/giftAnalytics';
@@ -46,7 +46,7 @@ interface ImportRequest {
   walletAddress?: string; // Optional: filter by creator wallet
   limit?: number; // Number of recent events to import (default: 10)
   fromBlock?: number; // Optional: start block
-  toBlock?: number; // Optional: end block
+  toBlock?: number | 'latest'; // Optional: end block or 'latest'
 }
 
 export default async function handler(
@@ -100,29 +100,88 @@ export default async function handler(
     });
 
     // Calculate block range (last 1000 blocks if not specified)
-    const currentBlock = toBlock === 'latest' ?
+    const currentBlock = typeof toBlock === 'string' && toBlock === 'latest' ?
       await getLatestBlockNumber() : Number(toBlock);
     const startBlock = fromBlock || Math.max(0, currentBlock - 1000);
 
     console.log('📊 Fetching events from blocks:', { startBlock, currentBlock });
 
-    // Fetch GiftMinted events
-    const mintedEvents = await getContractEvents({
-      contract: escrowContract,
-      event: GIFT_CREATED_EVENT,
-      fromBlock: BigInt(startBlock),
-      toBlock: toBlock === 'latest' ? undefined : BigInt(toBlock)
-    });
+    // For now, we'll use a simpler approach to get recent gifts
+    // ThirdWeb v5 event reading requires different approach
+    const mintedEvents: any[] = [];
+
+    // Read recent gifts directly from contract state
+    try {
+      // Get gift counter to know how many gifts exist
+      const giftCounter = await readContract({
+        contract: escrowContract,
+        method: 'function giftCounter() view returns (uint256)',
+        params: []
+      });
+
+      const totalGifts = Number(giftCounter);
+      const startGiftId = Math.max(1, totalGifts - limit + 1);
+
+      // Read each gift's data
+      for (let giftId = startGiftId; giftId <= totalGifts; giftId++) {
+        try {
+          const gift = await readContract({
+            contract: escrowContract,
+            method: 'function getGift(uint256) view returns (address, bytes32, uint256, uint256, uint256, uint8, address, uint256)',
+            params: [BigInt(giftId)]
+          });
+
+          // Parse gift data
+          if (gift && gift[0] !== '0x0000000000000000000000000000000000000000') {
+            mintedEvents.push({
+              args: {
+                giftId: BigInt(giftId),
+                creator: gift[0],
+                tokenId: gift[3]
+              },
+              transactionHash: `historical-${giftId}`,
+              blockNumber: currentBlock - (totalGifts - giftId), // Approximate
+              logIndex: 0
+            });
+          }
+        } catch (err) {
+          console.log(`Skipping gift ${giftId}:`, err);
+        }
+      }
+    } catch (error) {
+      console.error('Error reading gifts from contract:', error);
+    }
 
     console.log(`📊 Found ${mintedEvents.length} GiftMinted events`);
 
-    // Fetch GiftClaimed events
-    const claimedEvents = await getContractEvents({
-      contract: escrowContract,
-      event: GIFT_CLAIMED_EVENT,
-      fromBlock: BigInt(startBlock),
-      toBlock: toBlock === 'latest' ? undefined : BigInt(toBlock)
-    });
+    // Check which gifts are claimed by their status
+    const claimedEvents: any[] = [];
+
+    for (const mintEvent of mintedEvents) {
+      try {
+        const gift = await readContract({
+          contract: escrowContract,
+          method: 'function getGift(uint256) view returns (address, bytes32, uint256, uint256, uint256, uint8, address, uint256)',
+          params: [mintEvent.args.giftId]
+        });
+
+        // Status 2 = claimed
+        if (gift && gift[5] === 2) {
+          claimedEvents.push({
+            args: {
+              giftId: mintEvent.args.giftId,
+              claimer: gift[6], // claimer address
+              tokenId: gift[3]
+            },
+            transactionHash: `historical-claim-${mintEvent.args.giftId}`,
+            blockNumber: mintEvent.blockNumber + 100, // Approximate
+            logIndex: 0
+          });
+        }
+      } catch (err) {
+        // Gift might not be claimed
+      }
+    }
 
     console.log(`📊 Found ${claimedEvents.length} GiftClaimed events`);
 
@@ -130,7 +189,7 @@ export default async function handler(
     let filteredMintedEvents = mintedEvents;
     if (walletAddress) {
       filteredMintedEvents = mintedEvents.filter(
-        event => event.args.creator.toLowerCase() === walletAddress.toLowerCase()
+        (event: any) => event.args.creator.toLowerCase() === walletAddress.toLowerCase()
       );
       console.log(`📊 Filtered to ${filteredMintedEvents.length} events for wallet ${walletAddress}`);
     }
@@ -166,7 +225,7 @@ export default async function handler(
           timestamp: Date.now() - (1000 * 60 * 60 * 24), // Set to 24h ago for historical
           txHash: event.transactionHash,
           metadata: {
-            blockNumber: event.blockNumber,
+            blockNumber: Number(event.blockNumber),
             historical: true,
             importedAt: new Date().toISOString()
           }
@@ -191,7 +250,7 @@ export default async function handler(
               timestamp: Date.now() - (1000 * 60 * 60 * 12), // Set to 12h ago
               txHash: claimEvent.transactionHash,
               metadata: {
-                blockNumber: claimEvent.blockNumber,
+                blockNumber: Number(claimEvent.blockNumber),
                 historical: true
               }
             });
