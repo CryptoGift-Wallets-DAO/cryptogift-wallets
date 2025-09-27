@@ -4,7 +4,7 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { recordGiftEvent } from '../../../lib/giftAnalytics';
+import { recordGiftEvent, initializeCampaign } from '../../../lib/giftAnalytics';
 import { trackGiftCreated, trackGiftViewed, trackGiftClaimed, trackEducationCompleted } from '../../../lib/analyticsIntegration';
 
 export default async function handler(
@@ -22,6 +22,13 @@ export default async function handler(
 
     switch (action) {
       case 'track-claim-305':
+        // Initialize campaign if it doesn't exist
+        await initializeCampaign(
+          'campaign_0xc655BF',
+          'Test Campaign Gift 305',
+          '0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6'
+        );
+
         // Registrar el claim del regalo 305
         await trackGiftClaimed({
           giftId: '332',
@@ -73,6 +80,28 @@ export default async function handler(
           success: true,
           message: 'Custom event tracked',
           event: data
+        });
+
+      case 'init-campaign':
+        // Initialize campaign metadata retroactively
+        const { campaignId, name, owner } = req.body;
+
+        if (!campaignId) {
+          return res.status(400).json({ error: 'Missing campaignId' });
+        }
+
+        await initializeCampaign(
+          campaignId,
+          name || `Campaign ${campaignId.slice(0, 10)}...`,
+          owner || 'Unknown'
+        );
+
+        return res.status(200).json({
+          success: true,
+          message: 'Campaign initialized',
+          campaignId,
+          name: name || `Campaign ${campaignId.slice(0, 10)}...`,
+          owner: owner || 'Unknown'
         });
 
       default:
