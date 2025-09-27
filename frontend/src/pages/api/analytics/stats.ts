@@ -131,7 +131,7 @@ export default async function handler(
           stats: [],
           message: 'No campaign data available yet. Try importing real gifts first!',
           debug: {
-            redisKeys: allKeys?.length || 0,
+            redisKeys: 0,
             memoryStatus,
             hint: 'Go to /referrals/analytics/debug and click "🔥 IMPORT REAL GIFTS FROM BLOCKCHAIN"'
           }

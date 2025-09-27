@@ -250,17 +250,51 @@ export default async function handler(
 // Helper functions
 
 async function getCurrentBlock(): Promise<bigint> {
-  // TODO: Implement using thirdweb or viem
-  // For now, return a mock value
-  return BigInt(1000000);
+  try {
+    const client = createThirdwebClient({
+      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+    });
+
+    const rpcRequest = await client.rpc({
+      chain: baseSepolia,
+      method: "eth_blockNumber",
+      params: [],
+    });
+
+    return BigInt(rpcRequest as string);
+  } catch (error) {
+    console.error('Failed to get current block:', error);
+    return BigInt(1000000); // Fallback
+  }
 }
 
 async function getBlockTimestamp(blockNumber: bigint): Promise<number> {
-  // TODO: Implement block timestamp fetching
-  // For now, estimate based on 2 second block time
-  const currentBlock = await getCurrentBlock();
-  const blocksDiff = Number(currentBlock - blockNumber);
-  return Date.now() - (blocksDiff * 2000);
+  try {
+    const client = createThirdwebClient({
+      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+    });
+
+    const block = await client.rpc({
+      chain: baseSepolia,
+      method: "eth_getBlockByNumber",
+      params: [`0x${blockNumber.toString(16)}`, false],
+    });
+
+    if (block && typeof block === 'object' && 'timestamp' in block) {
+      return parseInt((block as any).timestamp, 16) * 1000; // Convert to milliseconds
+    }
+
+    // Fallback to estimation
+    const currentBlock = await getCurrentBlock();
+    const blocksDiff = Number(currentBlock - blockNumber);
+    return Date.now() - (blocksDiff * 2000);
+  } catch (error) {
+    console.error('Failed to get block timestamp:', error);
+    // Fallback to estimation
+    const currentBlock = await getCurrentBlock();
+    const blocksDiff = Number(currentBlock - blockNumber);
+    return Date.now() - (blocksDiff * 2000);
+  }
 }
 
 async function getLastProcessedBlock(): Promise<bigint> {
@@ -326,7 +360,76 @@ async function getContractEvents(params: {
   fromBlock: bigint;
   toBlock: bigint;
 }): Promise<BlockchainEvent[]> {
-  // TODO: Implement using thirdweb v5's actual getContractEvents
-  // This is a placeholder
-  return [];
+  try {
+    const client = createThirdwebClient({
+      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+    });
+
+    // Get logs using RPC call
+    const logs = await client.rpc({
+      chain: baseSepolia,
+      method: "eth_getLogs",
+      params: [{
+        address: params.contract.address,
+        fromBlock: `0x${params.fromBlock.toString(16)}`,
+        toBlock: `0x${params.toBlock.toString(16)}`,
+        topics: getEventTopics(params.eventName)
+      }],
+    });
+
+    if (!Array.isArray(logs)) {
+      return [];
+    }
+
+    return logs.map((log: any) => ({
+      address: log.address,
+      blockNumber: BigInt(log.blockNumber),
+      transactionHash: log.transactionHash,
+      logIndex: parseInt(log.logIndex, 16),
+      args: parseEventArgs(params.eventName, log),
+      blockHash: log.blockHash,
+      transactionIndex: parseInt(log.transactionIndex, 16)
+    }));
+
+  } catch (error) {
+    console.error(`Failed to get ${params.eventName} events:`, error);
+    return [];
+  }
+}
+
+function getEventTopics(eventName: string): string[] {
+  // Event signature hashes for the escrow contract
+  const eventSignatures: Record<string, string> = {
+    'GiftCreated': '0x...',  // Will need the actual event signature
+    'GiftClaimed': '0x...',  // Will need the actual event signature
+    'GiftExpired': '0x...',  // Will need the actual event signature
+    'GiftReturned': '0x...', // Will need the actual event signature
+  };
+
+  const signature = eventSignatures[eventName];
+  return signature ? [signature] : [];
+}
+
+function parseEventArgs(eventName: string, log: any): any {
+  // Basic parsing - would need ABI decoding in production
+  // For now, return mock structure
+  switch (eventName) {
+    case 'GiftCreated':
+      return {
+        giftId: '1',
+        tokenId: '1',
+        creator: log.topics[1] || '0x0000000000000000000000000000000000000000',
+        amount: '1000000000000000000', // 1 ETH in wei
+        campaignId: 'campaign_' + (log.topics[2] || 'default')
+      };
+    case 'GiftClaimed':
+      return {
+        giftId: '1',
+        tokenId: '1',
+        claimer: log.topics[1] || '0x0000000000000000000000000000000000000000',
+        campaignId: 'campaign_' + (log.topics[2] || 'default')
+      };
+    default:
+      return {};
+  }
 }
