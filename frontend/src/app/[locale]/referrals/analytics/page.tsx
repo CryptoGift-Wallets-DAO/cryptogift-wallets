@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
 import { useActiveAccount } from 'thirdweb/react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 // Import Recharts components directly (no dynamic import due to TypeScript issues)
 import {
@@ -641,9 +642,12 @@ export default function GiftAnalyticsPage() {
                         )}
                       </td>
                       <td className="text-center py-3 px-4">
-                        <button className="text-blue-600 hover:text-blue-800">
+                        <Link
+                          href={`/referrals/analytics/gift/${campaign.campaignId.replace('campaign_', '')}`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
                           {t('table.viewDetails')}
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))}
