@@ -9,6 +9,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getCampaignStats, getTimeSeries, exportToCSV } from '../../../lib/giftAnalytics';
 import { verifyJWT, extractTokenFromHeaders } from '../../../lib/siweAuth';
+import { getMemoryStats, getMemoryStatus } from '../../../lib/memoryAnalytics';
 
 interface StatsRequest {
   campaignIds?: string[];
@@ -104,19 +105,38 @@ export default async function handler(
       console.error('❌ Debug error:', debugError);
     }
 
-    const stats = await getCampaignStats(filter);
+    let stats;
 
-    // If no campaigns found, return empty response with debug info
+    // Try Redis first, fallback to memory
+    try {
+      stats = await getCampaignStats(filter);
+    } catch (redisError) {
+      console.log('📊 Redis error, trying memory fallback');
+      stats = [];
+    }
+
+    // If no Redis data, try memory data
     if (!stats || stats.length === 0) {
-      console.log('📊 No campaign data found by getCampaignStats');
-      return res.status(200).json({
-        success: true,
-        stats: [],
-        message: 'No campaign data available yet. Try POST /api/analytics/populate-test-data first',
-        debug: {
-          hint: 'Run: curl -X POST https://cryptogift-wallets.vercel.app/api/analytics/populate-test-data'
-        }
-      });
+      console.log('📊 No Redis data, checking memory...');
+      const memoryStats = getMemoryStats();
+      const memoryStatus = getMemoryStatus();
+
+      if (memoryStats.length > 0) {
+        console.log(`📊 Found ${memoryStats.length} campaigns in memory`);
+        stats = memoryStats;
+      } else {
+        console.log('📊 No data in memory either');
+        return res.status(200).json({
+          success: true,
+          stats: [],
+          message: 'No campaign data available yet. Try importing real gifts first!',
+          debug: {
+            redisKeys: allKeys?.length || 0,
+            memoryStatus,
+            hint: 'Go to /referrals/analytics/debug and click "🔥 IMPORT REAL GIFTS FROM BLOCKCHAIN"'
+          }
+        });
+      }
     }
 
     // Format response based on requested format
