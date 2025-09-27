@@ -5,7 +5,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Redis } from '@upstash/redis';
-import { validateRedisConfig } from '../../../../lib/redisConfig';
+import { validateRedisForCriticalOps } from '../../../../lib/redisConfig';
 
 interface GiftDetails {
   giftId: string;
@@ -76,9 +76,9 @@ export default async function handler(
 
   try {
     // Get Redis instance
-    const redisConfig = validateRedisConfig('Gift details');
+    const redis = validateRedisForCriticalOps('Gift details');
 
-    if (!redisConfig.url || !redisConfig.token) {
+    if (!redis) {
       // Return mock data if Redis not configured
       const mockGift: GiftDetails = {
         giftId: giftId,
@@ -138,11 +138,6 @@ export default async function handler(
         source: 'mock'
       });
     }
-
-    const redis = new Redis({
-      url: redisConfig.url,
-      token: redisConfig.token
-    });
 
     // Get gift details from Redis
     const giftKey = `gift:detail:${giftId}`;
