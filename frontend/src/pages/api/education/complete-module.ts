@@ -9,6 +9,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { debugLogger } from '../../../lib/secureDebugLogger';
+import { trackEducationProgress, trackEducationCompleted } from '../../../lib/analyticsIntegration';
 
 interface CompleteModuleRequest {
   sessionToken: string;
@@ -166,7 +167,26 @@ export default async function handler(
       completedModules.push(moduleId);
       await redis.setex(progressKey, 90 * 24 * 60 * 60, JSON.stringify(completedModules));
     }
-    
+
+    // Track individual module completion
+    try {
+      await trackEducationProgress({
+        giftId: sessionData.giftId.toString(),
+        tokenId: sessionData.tokenId,
+        claimer: sessionData.claimer,
+        moduleId,
+        moduleName: getModuleName(moduleId),
+        score,
+        requiredScore,
+        passed: score >= requiredScore,
+        completedModules: completedModules.length,
+        totalModules: sessionData.modules.length
+      });
+      console.log('📊 Analytics: Education module progress tracked');
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+    }
+
     // Check if all modules completed
     const remainingModules = sessionData.modules.filter(m => !completedModules.includes(m));
     const allCompleted = remainingModules.length === 0;
@@ -190,7 +210,22 @@ export default async function handler(
       // Mark overall education as completed for this gift
       const completionFlagKey = `education:${sessionData.claimer}:${sessionData.giftId}`;
       await redis.setex(completionFlagKey, 90 * 24 * 60 * 60, 'true');
-      
+
+      // Track complete education completion
+      try {
+        await trackEducationCompleted({
+          giftId: sessionData.giftId.toString(),
+          tokenId: sessionData.tokenId,
+          claimer: sessionData.claimer,
+          completedModules,
+          totalScore: await calculateTotalScore(sessionData.claimer, sessionData.giftId, completedModules, redis),
+          completedAt: new Date().toISOString()
+        });
+        console.log('📊 Analytics: Education completion tracked successfully');
+      } catch (analyticsError) {
+        console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+      }
+
       // Request EIP-712 signature for stateless approval
       try {
         const approvalResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/education/approve`, {
@@ -255,5 +290,52 @@ export default async function handler(
       success: false,
       error: error.message || 'Internal server error'
     });
+  }
+}
+
+// Helper function to get module name
+function getModuleName(moduleId: number): string {
+  const moduleNames: Record<number, string> = {
+    1: 'Crear Wallet Segura',
+    2: 'Seguridad Básica',
+    3: 'Entender NFTs',
+    4: 'DeFi Básico',
+    5: 'Proyecto CryptoGift'
+  };
+  return moduleNames[moduleId] || `Module ${moduleId}`;
+}
+
+// Helper function to calculate total score
+async function calculateTotalScore(
+  claimer: string,
+  giftId: number,
+  modules: number[],
+  redis: any
+): Promise<number> {
+  try {
+    let totalScore = 0;
+    let count = 0;
+
+    for (const moduleId of modules) {
+      const completionKey = `education:${claimer}:${giftId}:module:${moduleId}`;
+      const dataRaw = await redis.get(completionKey);
+
+      if (dataRaw) {
+        try {
+          const data = typeof dataRaw === 'string' ? JSON.parse(dataRaw) : dataRaw;
+          if (data.score) {
+            totalScore += data.score;
+            count++;
+          }
+        } catch (e) {
+          console.warn(`Failed to parse module ${moduleId} data:`, e);
+        }
+      }
+    }
+
+    return count > 0 ? Math.round(totalScore / count) : 0;
+  } catch (error) {
+    console.error('Error calculating total score:', error);
+    return 0;
   }
 }

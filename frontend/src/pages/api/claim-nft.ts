@@ -7,6 +7,7 @@ import { generateNeutralGiftAddressServer, isNeutralGiftAddressServer } from "..
 import { ethers } from "ethers";
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { storeNFTMetadata, getNFTMetadata, updateNFTMetadata } from '../../lib/nftMetadataStore';
+import { trackGiftClaimed } from '../../lib/analyticsIntegration';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -235,6 +236,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (metadataError) {
       console.error('❌ Failed to update metadata after claim:', metadataError);
       // Don't fail the whole claim for metadata update issues
+    }
+
+    // Track gift claim in analytics
+    try {
+      // Get gift ID from mapping or metadata
+      const giftId = existingMetadata?.giftId || tokenId; // Use tokenId as fallback
+
+      await trackGiftClaimed({
+        giftId: giftId.toString(),
+        tokenId: tokenId.toString(),
+        claimerAddress,
+        previousOwner: currentOwner,
+        txHash: claimResult?.transactionHash,
+        metadata: {
+          tbaAddress,
+          claimMethod: 'real_nft_transfer',
+          hasGuardians: setupGuardians && guardianEmails.length >= 3,
+          claimedAt: new Date().toISOString()
+        }
+      });
+      console.log('📊 Analytics: Gift claim tracked successfully');
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+      // Don't fail the claim for analytics errors
     }
 
     res.status(200).json({

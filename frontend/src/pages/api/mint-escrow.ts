@@ -51,6 +51,7 @@ import {
 } from '../../lib/tokenIdValidator';
 import { executeMintTransaction } from '../../lib/gasPaidTransactions';
 import { getPublicBaseUrl } from '../../lib/publicBaseUrl';
+import { trackGiftCreated, trackCampaignCreated } from '../../lib/analyticsIntegration';
 
 /**
  * MULTI-GATEWAY IPFS VALIDATION - SURGICAL FIX
@@ -1318,7 +1319,33 @@ async function mintNFTEscrowGasless(
         } else {
           console.log('✅ MAPPING VALIDATED: Contract data confirms correct mapping');
         }
-        
+
+        // Track gift creation in analytics (gasless)
+        try {
+          await trackGiftCreated({
+            giftId: actualGiftId.toString(),
+            tokenId: tokenId.toString(),
+            campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
+            creatorAddress,
+            amount: 0, // Gift value will be tracked when deposited
+            timeframe: timeframeDays || 30,
+            hasEducation: educationModules && educationModules.length > 0,
+            educationModules: educationModules || [],
+            txHash: escrowResult.transactionHash,
+            metadata: {
+              salt: salt.slice(0, 10) + '...',
+              passwordHash: passwordHash ? passwordHash.slice(0, 10) + '...' : undefined,
+              giftMessage: giftMessage || undefined,
+              isDirectMint: false,
+              isGasless: true
+            }
+          });
+          console.log('📊 Analytics: Gift creation tracked successfully (gasless)');
+        } catch (analyticsError) {
+          console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+          // Don't fail the mint for analytics errors
+        }
+
       } catch (mappingError) {
         console.error('❌ Failed to store/validate gift mapping:', mappingError);
         // CRITICAL: Don't fail the entire mint, but log this as a severe issue
@@ -2622,7 +2649,33 @@ async function mintNFTEscrowGasPaid(
         } else {
           console.log('✅ MAPPING VALIDATED (GAS-PAID): Contract data confirms correct mapping');
         }
-        
+
+        // Track gift creation in analytics (gas-paid)
+        try {
+          await trackGiftCreated({
+            giftId: actualGiftIdGasPaid.toString(),
+            tokenId: tokenId.toString(),
+            campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
+            creatorAddress,
+            amount: 0, // Gift value will be tracked when deposited
+            timeframe: timeframeDays || 30,
+            hasEducation: educationModules && educationModules.length > 0,
+            educationModules: educationModules || [],
+            txHash: escrowResult.transactionHash,
+            metadata: {
+              salt: salt.slice(0, 10) + '...',
+              passwordHash: passwordHash ? passwordHash.slice(0, 10) + '...' : undefined,
+              giftMessage: giftMessage || undefined,
+              isDirectMint: false,
+              isGasPaid: true
+            }
+          });
+          console.log('📊 Analytics: Gift creation tracked successfully (gas-paid)');
+        } catch (analyticsError) {
+          console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+          // Don't fail the mint for analytics errors
+        }
+
       } catch (mappingError) {
         console.error('❌ Failed to store/validate gift mapping (gas-paid):', mappingError);
         // CRITICAL: Don't fail the entire mint, but log this as a severe issue

@@ -22,6 +22,7 @@ import {
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { debugLogger } from '../../lib/secureDebugLogger';
+import { trackGiftViewed } from '../../lib/analyticsIntegration';
 
 // Types
 interface ValidateClaimRequest {
@@ -343,7 +344,27 @@ export default async function handler(
       claimerAddress: claimerAddress.slice(0, 10) + '...',
       valid: true
     });
-    
+
+    // Track gift view (validation is essentially viewing the gift)
+    try {
+      await trackGiftViewed({
+        giftId: validation.giftId!.toString(),
+        tokenId,
+        viewerAddress: claimerAddress,
+        hasEducationRequirements: !!gateData && gateData !== '0x',
+        metadata: {
+          creator: validation.gift!.creator,
+          expirationTime: Number(validation.gift!.expirationTime),
+          status: validation.gift!.status,
+          viewedAt: new Date().toISOString()
+        }
+      });
+      console.log('📊 Analytics: Gift view tracked successfully');
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+      // Don't fail the validation for analytics errors
+    }
+
     return res.status(200).json(response);
     
   } catch (error: any) {

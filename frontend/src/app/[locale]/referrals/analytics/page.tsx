@@ -28,55 +28,7 @@ import type { CampaignStats, GiftStatus, TimeSeriesPoint } from '@/lib/giftAnaly
 // MOCK DATA - Replace with real API calls
 // ============================================================================
 
-const mockCampaignStats: CampaignStats[] = [
-  {
-    campaignId: 'camp-001',
-    campaignName: 'Holiday 2025',
-    createdAt: '2025-01-15T00:00:00Z',
-    owner: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb3',
-    totalGifts: 245,
-    status: {
-      created: 245,
-      viewed: 189,
-      preClaimStarted: 142,
-      educationCompleted: 98,
-      claimed: 87,
-      expired: 12,
-      returned: 8
-    },
-    conversionRate: 35.51,
-    avgClaimTime: 28,
-    totalValue: 4250.00,
-    topReferrers: [
-      { address: '0x1234...5678', count: 23, value: 890 },
-      { address: '0x8765...4321', count: 18, value: 720 },
-      { address: '0x9876...1234', count: 15, value: 580 }
-    ]
-  },
-  {
-    campaignId: 'camp-002',
-    campaignName: 'Corporate Onboarding',
-    createdAt: '2025-01-10T00:00:00Z',
-    owner: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb3',
-    totalGifts: 120,
-    status: {
-      created: 120,
-      viewed: 98,
-      preClaimStarted: 76,
-      educationCompleted: 65,
-      claimed: 58,
-      expired: 5,
-      returned: 3
-    },
-    conversionRate: 48.33,
-    avgClaimTime: 15,
-    totalValue: 2800.00,
-    topReferrers: [
-      { address: '0xabcd...efgh', count: 12, value: 450 },
-      { address: '0xijkl...mnop', count: 10, value: 380 }
-    ]
-  }
-];
+// Mock data removed - data now fetched from Redis API
 
 // ============================================================================
 // TYPES
@@ -105,8 +57,8 @@ export default function GiftAnalyticsPage() {
   const { showNotification } = useNotifications();
   
   // State
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState<CampaignStats[]>(mockCampaignStats);
+  const [loading, setLoading] = useState(true); // Start with loading true to fetch initial data
+  const [stats, setStats] = useState<CampaignStats[]>([]); // Initialize with empty array
   const [filter, setFilter] = useState<FilterState>({
     campaignIds: [],
     dateRange: { from: null, to: null },
@@ -213,17 +165,52 @@ export default function GiftAnalyticsPage() {
   
   async function fetchAnalytics(silent = false) {
     if (!silent) setLoading(true);
-    
+
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (!silent) {
-        showNotification({
-          type: 'success',
-          title: t('notifications.dataUpdated'),
-          message: t('notifications.dataUpdatedMessage')
-        });
+      // Fetch real data from API
+      const response = await fetch('/api/analytics/stats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campaignIds: filter.campaignIds,
+          from: filter.from?.toISOString(),
+          to: filter.to?.toISOString(),
+          status: filter.status,
+          limit: 50
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.stats) {
+        // Update stats with real data
+        setStats(data.stats);
+
+        // Update KPIs with summary data
+        if (data.summary) {
+          setKpis(prev => ({
+            ...prev,
+            totalGifts: data.summary.totalGifts,
+            claimedGifts: data.summary.totalClaimed,
+            conversionRate: data.summary.averageConversionRate,
+            totalValue: data.summary.totalValue,
+            activeUsers: data.summary.totalViewed
+          }));
+        }
+
+        if (!silent) {
+          showNotification({
+            type: 'success',
+            title: t('notifications.dataUpdated'),
+            message: `${data.stats.length} ${t('notifications.campaignsLoaded')}`
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
