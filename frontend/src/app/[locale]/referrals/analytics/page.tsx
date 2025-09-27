@@ -5,20 +5,7 @@ import { useTranslations, useFormatter } from 'next-intl';
 import { useActiveAccount } from 'thirdweb/react';
 import dynamic from 'next/dynamic';
 
-// Lazy load Recharts components with loading states
-const ChartLoadingState = () => (
-  <div className="h-64 bg-gradient-to-br from-gray-200/50 to-gray-300/30 animate-pulse rounded-lg flex items-center justify-center">
-    <div className="text-gray-400">Loading chart...</div>
-  </div>
-);
-
-// Import all Recharts components as a single dynamic import
-const RechartsComponents = dynamic(
-  () => import('recharts'),
-  { ssr: false, loading: ChartLoadingState }
-);
-
-// For now, import directly until we can fix the dynamic import types
+// Import Recharts components directly (no dynamic import due to TypeScript issues)
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   PieChart, Pie, Cell, RadialBarChart, RadialBar,

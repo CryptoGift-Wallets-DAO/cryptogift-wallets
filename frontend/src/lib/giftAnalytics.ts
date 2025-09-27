@@ -488,7 +488,7 @@ export async function cleanupOldData(daysToKeep: number = 180): Promise<void> {
     
     for (const key of tsKeys) {
       // Remove old entries from sorted sets
-      await redis.zremrangebyscore(key, '-inf', cutoffTime.toString());
+      await redis.zremrangebyscore(key, '-inf', cutoffTime);
     }
     
     debugLogger.operation('Old analytics data cleaned up', { 
