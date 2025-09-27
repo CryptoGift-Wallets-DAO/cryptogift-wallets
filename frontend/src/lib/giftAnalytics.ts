@@ -256,10 +256,59 @@ export async function getCampaignStats(
     const stats: CampaignStats[] = [];
     
     for (const campaignId of campaigns) {
-      const meta = await redis.hgetall(KEYS.campaignMeta(campaignId));
-      
+      let meta = await redis.hgetall(KEYS.campaignMeta(campaignId));
+
+      // If no metadata exists, create fallback metadata from events
       if (!meta || Object.keys(meta).length === 0) {
-        continue;
+        debugLogger.log('No metadata found, creating fallback', { campaignId });
+
+        // Get dates with events for this campaign
+        const eventKeys = await redis.keys(KEYS.counter(campaignId, '*', '*'));
+
+        if (eventKeys.length === 0) {
+          continue; // No events either, skip
+        }
+
+        // Create fallback metadata
+        meta = {
+          name: `Campaign ${campaignId.slice(0, 10)}...`,
+          owner: '',
+          createdAt: new Date().toISOString(),
+          total_created: '0',
+          total_viewed: '0',
+          total_preClaimStarted: '0',
+          total_educationCompleted: '0',
+          total_claimed: '0',
+          total_expired: '0',
+          total_returned: '0',
+          total_value: '0',
+          avg_claim_time: '0'
+        };
+
+        // Calculate totals from event counters
+        debugLogger.log('📊 Processing event keys', { campaignId, eventKeys: eventKeys.slice(0, 5) });
+
+        for (const eventKey of eventKeys) {
+          const match = eventKey.match(/gift:camp:.+:d:\d+:(.+)$/);
+          if (match) {
+            const status = match[1];
+            const count = await redis.get(eventKey);
+            if (count) {
+              const currentValue = parseInt(meta[`total_${status}`] as string || '0');
+              const newValue = currentValue + parseInt(String(count));
+              meta[`total_${status}`] = String(newValue);
+
+              debugLogger.log('📈 Updated counter', {
+                status,
+                eventKey: eventKey.slice(-20),
+                count,
+                newTotal: newValue
+              });
+            }
+          }
+        }
+
+        debugLogger.log('Created fallback metadata', { campaignId, meta });
       }
       
       // Calculate status counts
@@ -376,16 +425,58 @@ export async function getTimeSeries(
 
 /**
  * Get all campaign IDs (for filtering)
+ * Includes campaigns with metadata AND campaigns with events but no metadata
  */
 async function getAllCampaignIds(): Promise<string[]> {
   try {
     const redis = getRedisClient();
-    const keys = await redis.keys('gift:camp:*:meta');
-    
-    return keys.map(key => {
+
+    debugLogger.log('🔍 Searching for campaigns...');
+
+    // Get campaigns with metadata
+    const metaKeys = await redis.keys('gift:camp:*:meta');
+    const metaCampaigns = metaKeys.map(key => {
       const match = key.match(/gift:camp:(.+):meta/);
       return match ? match[1] : null;
     }).filter(Boolean) as string[];
+
+    debugLogger.log('📁 Found meta campaigns', { metaKeys, metaCampaigns });
+
+    // Get campaigns with events - search all possible patterns
+    const allGiftKeys = await redis.keys('gift:*');
+    const campaignPatterns = [
+      /gift:camp:(.+):d:\d+:.+$/,    // Counter keys: gift:camp:campaignId:d:YYYYMMDD:status
+      /gift:camp:(.+):ts:.+$/,       // Time series keys
+      /gift:camp:(.+):top-refs$/,    // Top referrers keys
+    ];
+
+    const eventCampaigns = new Set<string>();
+
+    for (const key of allGiftKeys) {
+      for (const pattern of campaignPatterns) {
+        const match = key.match(pattern);
+        if (match && match[1]) {
+          eventCampaigns.add(match[1]);
+        }
+      }
+    }
+
+    debugLogger.log('📊 Found event campaigns', {
+      totalKeys: allGiftKeys.length,
+      eventCampaigns: Array.from(eventCampaigns)
+    });
+
+    // Combine and deduplicate
+    const allCampaigns = [...new Set([...metaCampaigns, ...Array.from(eventCampaigns)])];
+
+    debugLogger.log('✅ All campaigns found', {
+      metaCampaigns: metaCampaigns.length,
+      eventCampaigns: eventCampaigns.size,
+      total: allCampaigns.length,
+      campaigns: allCampaigns
+    });
+
+    return allCampaigns;
   } catch (error) {
     console.error('Failed to get campaign IDs:', error);
     return [];
