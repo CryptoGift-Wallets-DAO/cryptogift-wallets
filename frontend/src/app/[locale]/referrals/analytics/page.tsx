@@ -350,6 +350,14 @@ export default function GiftAnalyticsPage() {
             <Download className="w-4 h-4" />
             {t('nav.export')}
           </button>
+
+          <a
+            href="/referrals/import"
+            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+          >
+            <Activity className="w-4 h-4" />
+            Importar Histórico
+          </a>
         </div>
       </DashboardGlassHeader>
       
