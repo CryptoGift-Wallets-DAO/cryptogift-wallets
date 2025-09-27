@@ -16,7 +16,12 @@ export async function trackGiftCreated(params: {
   tokenId: string;
   giftId?: string;
   campaignId?: string;
+  creatorAddress?: string;
   referrer?: string;
+  amount?: number;
+  timeframe?: number;
+  hasEducation?: boolean;
+  educationModules?: number[];
   value?: number;
   txHash?: string;
   metadata?: any;
@@ -50,6 +55,8 @@ export async function trackGiftViewed(params: {
   tokenId: string;
   giftId?: string;
   campaignId?: string;
+  viewerAddress?: string;
+  hasEducationRequirements?: boolean;
   viewerIp?: string;
   metadata?: any;
 }): Promise<void> {
@@ -102,14 +109,44 @@ export async function trackPreClaimStarted(params: {
 }
 
 /**
+ * Track education progress (individual module)
+ */
+export async function trackEducationProgress(params: {
+  giftId: string;
+  tokenId: string;
+  claimer: string;
+  moduleId: number;
+  moduleName: string;
+  score: number;
+  requiredScore: number;
+  passed: boolean;
+  completedModules: number;
+  totalModules: number;
+}): Promise<void> {
+  try {
+    debugLogger.operation('Education progress tracked', {
+      giftId: params.giftId,
+      moduleId: params.moduleId,
+      score: params.score
+    });
+  } catch (error) {
+    console.error('Failed to track education progress:', error);
+  }
+}
+
+/**
  * Track education completed
  */
 export async function trackEducationCompleted(params: {
   tokenId: string;
   giftId?: string;
   campaignId?: string;
+  claimer?: string;
   claimerAddress?: string;
   educationModules?: string[];
+  completedModules?: number[];
+  totalScore?: number;
+  completedAt?: string;
 }): Promise<void> {
   try {
     const event: GiftEvent = {
@@ -140,8 +177,10 @@ export async function trackGiftClaimed(params: {
   giftId?: string;
   campaignId?: string;
   claimerAddress: string;
+  previousOwner?: string;
   txHash?: string;
   value?: number;
+  metadata?: any;
 }): Promise<void> {
   try {
     const event: GiftEvent = {

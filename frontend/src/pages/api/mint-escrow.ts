@@ -1326,7 +1326,8 @@ async function mintNFTEscrowGasless(
             giftId: actualGiftId.toString(),
             tokenId: tokenId.toString(),
             campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
-            creatorAddress,
+            creatorAddress: creatorAddress,
+            referrer: creatorAddress,
             amount: 0, // Gift value will be tracked when deposited
             timeframe: timeframeDays || 30,
             hasEducation: educationModules && educationModules.length > 0,
@@ -2656,7 +2657,8 @@ async function mintNFTEscrowGasPaid(
             giftId: actualGiftIdGasPaid.toString(),
             tokenId: tokenId.toString(),
             campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
-            creatorAddress,
+            creatorAddress: creatorAddress,
+            referrer: creatorAddress,
             amount: 0, // Gift value will be tracked when deposited
             timeframe: timeframeDays || 30,
             hasEducation: educationModules && educationModules.length > 0,

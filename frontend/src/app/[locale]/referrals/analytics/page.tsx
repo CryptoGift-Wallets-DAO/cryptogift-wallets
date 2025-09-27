@@ -71,6 +71,13 @@ export default function GiftAnalyticsPage() {
   });
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [kpis, setKpis] = useState({
+    totalGifts: 0,
+    claimedGifts: 0,
+    conversionRate: 0,
+    activeUsers: 0,
+    totalValue: 0
+  });
   
   // Calculate aggregated metrics
   const metrics = useMemo(() => {
@@ -175,8 +182,8 @@ export default function GiftAnalyticsPage() {
         },
         body: JSON.stringify({
           campaignIds: filter.campaignIds,
-          from: filter.from?.toISOString(),
-          to: filter.to?.toISOString(),
+          from: filter.dateRange.from?.toISOString(),
+          to: filter.dateRange.to?.toISOString(),
           status: filter.status,
           limit: 50
         })

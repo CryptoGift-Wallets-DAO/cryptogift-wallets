@@ -217,6 +217,7 @@ export default async function handler(
           giftId: sessionData.giftId.toString(),
           tokenId: sessionData.tokenId,
           claimer: sessionData.claimer,
+          claimerAddress: sessionData.claimer,
           completedModules,
           totalScore: await calculateTotalScore(sessionData.claimer, sessionData.giftId, completedModules, redis),
           completedAt: new Date().toISOString()

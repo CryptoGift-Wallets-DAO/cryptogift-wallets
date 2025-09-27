@@ -216,9 +216,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // HALLAZGO 5 FIX: Update metadata in Redis with new owner after claim
     console.log('🔄 Updating NFT metadata with new owner after claim...');
+    let existingMetadata: any = null;
+    let previousOwner: string | undefined;
+
     try {
-      const existingMetadata = await getNFTMetadata(contractAddress, tokenId);
-      
+      existingMetadata = await getNFTMetadata(contractAddress, tokenId);
+      previousOwner = claimResult?.previousOwner || existingMetadata?.owner;
+
       if (existingMetadata) {
         // Update owner and status in metadata
         const updates = {
@@ -227,7 +231,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           claimedAt: new Date().toISOString(),
           claimTransactionHash: claimResult?.transactionHash || undefined
         };
-        
+
         await updateNFTMetadata(contractAddress, tokenId, updates);
         console.log('✅ NFT metadata updated successfully with new owner:', claimerAddress.slice(0,10) + '...');
       } else {
@@ -247,7 +251,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         giftId: giftId.toString(),
         tokenId: tokenId.toString(),
         claimerAddress,
-        previousOwner: currentOwner,
+        previousOwner: previousOwner,
         txHash: claimResult?.transactionHash,
         metadata: {
           tbaAddress,
