@@ -34,7 +34,7 @@ export default async function handler(
       giftId,
       tokenId,
       campaignId,
-      creator: '0x1234567890abcdef1234567890abcdef12345678',
+      creatorAddress: '0x1234567890abcdef1234567890abcdef12345678',
       value: 0.1,
       txHash: '0xtest123...',
       referrer: '0x1234567890abcdef1234567890abcdef12345678'
@@ -45,8 +45,10 @@ export default async function handler(
       giftId,
       tokenId,
       campaignId,
-      viewer: '0xabcdef1234567890abcdef1234567890abcdef12',
-      timestamp: Date.now()
+      viewerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      metadata: {
+        timestamp: Date.now()
+      }
     });
 
     // 4. Track education completed
