@@ -174,6 +174,35 @@ export default async function handler(
           ]
         },
 
+        transactions: {
+          createTxHash: '0x6351ff27f8f5aa6370223b8fee80d762883e1233b51bd626e8d1f50e2a149649',
+          claimTxHash: '0xabc123def456789...',
+          value: '100',
+          tokenAmount: '0'
+        },
+
+        metadata: {
+          imageUrl: 'https://example.com/image.png',
+          imageCid: 'QmExample...',
+          description: 'Mock gift for testing',
+          hasPassword: true,
+          passwordValidated: true,
+          passwordAttempts: 1,
+          referrer: '0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6',
+          tbaAddress: '0x1234567890abcdef...',
+          escrowAddress: '0x46175CfC233500DA803841DEef7f2816e7A129E0'
+        },
+
+        analytics: {
+          totalViews: 5,
+          uniqueViewers: 2,
+          viewerAddresses: ['0xViewer1...', '0xViewer2...'],
+          conversionRate: 100,
+          timeToClaimMinutes: 15,
+          educationCompletionRate: 100,
+          avgEducationScore: 100
+        },
+
         events: []
       };
 
@@ -207,12 +236,13 @@ export default async function handler(
 
     // 3. Get event history from stream
     try {
-      const events = await redis.xrange(
+      const eventsRaw = await redis.xrange(
         'ga:events',
         '-',
         '+',
         100 // Last 100 events max
-      ) as any[];
+      );
+      const events = (eventsRaw as unknown) as any[];
 
       // Filter events for this gift
       eventHistory = events

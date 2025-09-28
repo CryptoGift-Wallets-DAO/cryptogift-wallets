@@ -213,12 +213,15 @@ export default async function handler(
         const recentData = await redis.hgetall(cacheKey);
 
         // Also get last few events from stream
-        const recentEvents = await redis.xrevrange(
+        const recentEventsRaw = await redis.xrevrange(
           'ga:v1:events',
           '+',
           '-',
           10 // Last 10 events
         );
+
+        // Convert to array safely
+        const recentEvents = (recentEventsRaw as unknown) as any[];
 
         data = {
           summary: recentData,

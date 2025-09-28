@@ -280,13 +280,19 @@ export async function setLastProcessedBlock(
  */
 export function isAnalyticsEnabled(): boolean {
   // Server-side check
-  if (typeof process !== 'undefined') {
+  if (typeof process !== 'undefined' && process.env) {
     return process.env.FEATURE_ANALYTICS === 'true';
   }
 
-  // Client-side check (Next.js public env)
-  if (typeof window !== 'undefined' && typeof process !== 'undefined' && process.env) {
-    return process.env.NEXT_PUBLIC_FEATURE_ANALYTICS === 'true';
+  // Client-side check (Next.js public env) - in browser, process might exist but not have env
+  if (typeof window !== 'undefined') {
+    // Try to access process.env safely
+    try {
+      const processEnv = (typeof process !== 'undefined' && process && process.env) ? process.env : {};
+      return processEnv.NEXT_PUBLIC_FEATURE_ANALYTICS === 'true';
+    } catch {
+      return false;
+    }
   }
 
   return false;
