@@ -285,7 +285,7 @@ export function isAnalyticsEnabled(): boolean {
   }
 
   // Client-side check (Next.js public env)
-  if (typeof window !== 'undefined' && typeof process !== 'undefined') {
+  if (typeof window !== 'undefined' && typeof process !== 'undefined' && process.env) {
     return process.env.NEXT_PUBLIC_FEATURE_ANALYTICS === 'true';
   }
 

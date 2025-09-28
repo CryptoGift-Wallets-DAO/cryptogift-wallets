@@ -174,17 +174,6 @@ export default async function handler(
           ]
         },
 
-        blockchain: {
-          createTxHash: '0x6351ff27f8f5aa6370223b8fee80d762883e1233b51bd626e8d1f50e2a149649',
-          claimTxHash: '0xabc123def456789...',
-          value: '100',
-          tokenAddress: '0xeFCba1D72B8f053d93BA44b7b15a1BeED515C89b',
-          escrowAddress: '0x46175CfC233500DA803841DEef7f2816e7A129E0',
-          chainId: 84532,
-          gasUsed: '250000',
-          gasPrice: '1.5'
-        },
-
         events: []
       };
 
@@ -223,7 +212,7 @@ export default async function handler(
         '-',
         '+',
         100 // Last 100 events max
-      );
+      ) as any[];
 
       // Filter events for this gift
       eventHistory = events

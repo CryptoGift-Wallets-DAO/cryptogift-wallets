@@ -99,7 +99,7 @@ export default async function handler(
 
     let events: any[] = [];
     try {
-      events = await redis.xrange('ga:events', streamStartId, streamEndId, 1000);
+      events = await redis.xrange('ga:events', streamStartId, streamEndId, 1000) as any[];
     } catch (error) {
       debugLogger.error('Failed to read stream', error as Error);
       // Continue even if stream doesn't exist yet
