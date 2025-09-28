@@ -26,7 +26,7 @@ import {
  * - Feature flag controlled
  *
  * QStash Headers:
- * - Upstash-Cron: */2 * * * *
+ * - Upstash-Cron: every 2 minutes
  * - Upstash-Schedule-Id: ga-reconcile-2min
  * - Authorization: Bearer {INTERNAL_API_SECRET}
  */
