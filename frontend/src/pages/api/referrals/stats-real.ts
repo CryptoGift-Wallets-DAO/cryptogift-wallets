@@ -25,7 +25,7 @@ export default async function handler(
 
     // Initialize ThirdWeb client
     const client = createThirdwebClient({
-      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+      clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || "",
     });
 
     const nftContract = getContract({
