@@ -18,9 +18,12 @@ export default async function handler(
                           process.env.FEATURE_ANALYTICS === 'true';
 
   if (!analyticsEnabled) {
-    return res.status(503).json({
-      error: 'Analytics feature is currently disabled',
-      code: 'FEATURE_DISABLED'
+    // Return 200 with disabled flag to preserve UI compatibility
+    return res.status(200).json({
+      success: true,
+      disabled: true,
+      stats: [],
+      message: 'Analytics feature is currently disabled'
     });
   }
 

@@ -779,7 +779,48 @@ export default async function handler(
       // CRITICAL FIX: Also include the raw module IDs for direct use
       response.educationModules = gateCheck.modules;
     }
-    
+
+    // Track gift view event in enterprise analytics
+    try {
+      const { processBlockchainEvent, isAnalyticsEnabled } = await import('../../../lib/analytics/canonicalEvents');
+
+      if (isAnalyticsEnabled()) {
+        const { Redis } = await import('@upstash/redis');
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!
+        });
+
+        // Process as view event for canonical system
+        await processBlockchainEvent(
+          redis,
+          'GiftViewed',
+          `view_${tokenId}_${Date.now()}`,
+          0,
+          BigInt(Date.now()),
+          Date.now(),
+          {
+            giftId: giftId.toString(),
+            tokenId: tokenId,
+            viewer: deviceId || 'anonymous',
+            passwordValidated: true,
+            requiresEducation: response.requiresEducation,
+            metadata: {
+              hasEducation: response.requiresEducation,
+              moduleCount: response.educationModules?.length || 0,
+              expired: isGiftExpired(gift.expirationTime),
+              status: gift.status === 1 ? 'claimed' : gift.status === 2 ? 'returned' : 'available'
+            }
+          },
+          'realtime'
+        );
+
+        console.log('📊 Analytics: Gift view event tracked successfully');
+      }
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+    }
+
     return res.status(200).json(response);
     
   } catch (error: any) {

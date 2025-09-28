@@ -3044,6 +3044,50 @@ export default async function handler(
       message: result.message,
       rateLimit: finalRateLimit
     });
+
+    // Track gift creation event in enterprise analytics
+    if (isEscrowMint && result.giftId !== undefined) {
+      try {
+        const { processBlockchainEvent, isAnalyticsEnabled } = await import('../../lib/analytics/canonicalEvents');
+
+        if (isAnalyticsEnabled()) {
+          const { Redis } = await import('@upstash/redis');
+          const redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL!,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN!
+          });
+
+          // Process as blockchain event for canonical system
+          await processBlockchainEvent(
+            redis,
+            'GiftCreated',
+            result.escrowTransactionHash || result.transactionHash || `mint_${Date.now()}`,
+            0,
+            BigInt(Date.now()),
+            Date.now(),
+            {
+              giftId: result.giftId.toString(),
+              tokenId: result.tokenId.toString(),
+              creator: creatorAddress,
+              amount: amount.toString(),
+              expiresAt: expirationTime?.toString(),
+              educationRequired: educationModules && educationModules.length > 0,
+              metadata: {
+                gasless: result.gasless,
+                passwordProtected: !!password,
+                hasEducation: educationModules && educationModules.length > 0,
+                moduleCount: educationModules?.length || 0
+              }
+            },
+            'realtime'
+          );
+
+          console.log('📊 Analytics: Gift creation event tracked successfully');
+        }
+      } catch (analyticsError) {
+        console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+      }
+    }
     
     // Build response based on mint type
     const responseData: any = {

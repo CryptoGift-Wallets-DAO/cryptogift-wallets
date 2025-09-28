@@ -10,6 +10,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { debugLogger } from '../../../lib/secureDebugLogger';
 import { trackEducationProgress, trackEducationCompleted } from '../../../lib/analyticsIntegration';
+import {
+  startEducationSession,
+  recordEducationAnswer,
+  completeEducationSession
+} from '../../../lib/analytics/educationTracking';
+import { processBlockchainEvent } from '../../../lib/analytics/canonicalEvents';
 
 interface CompleteModuleRequest {
   sessionToken: string;
@@ -168,8 +174,46 @@ export default async function handler(
       await redis.setex(progressKey, 90 * 24 * 60 * 60, JSON.stringify(completedModules));
     }
 
-    // Track individual module completion
+    // Track with BOTH analytics systems for complete coverage
     try {
+      // NEW Enterprise Analytics System
+      const educationSessionId = `edu_${sessionToken}_${moduleId}_${Date.now()}`;
+
+      // Start or get education session
+      const educationSession = await startEducationSession({
+        sessionId: educationSessionId,
+        tokenId: sessionData.tokenId,
+        giftId: sessionData.giftId.toString(),
+        claimerAddress: sessionData.claimer,
+        moduleId: moduleId.toString(),
+        moduleName: getModuleName(moduleId),
+        email: req.body.email,
+        ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket?.remoteAddress,
+        userAgent: req.headers['user-agent'],
+        referrer: req.headers.referer,
+        campaignId: `gift_${sessionData.giftId}`
+      });
+
+      // Record question answers if provided
+      if (req.body.questionsAnswered && Array.isArray(req.body.questionsAnswered)) {
+        for (const question of req.body.questionsAnswered) {
+          await recordEducationAnswer({
+            sessionId: educationSessionId,
+            questionId: question.questionId,
+            questionText: question.questionText,
+            selectedAnswer: question.selectedAnswer,
+            correctAnswer: question.correctAnswer,
+            isCorrect: question.isCorrect,
+            timeSpent: question.timeSpent || 0
+          });
+        }
+      }
+
+      // Complete the education session
+      const passed = score >= requiredScore;
+      await completeEducationSession(educationSessionId, passed);
+
+      // Legacy Analytics for backward compatibility
       await trackEducationProgress({
         giftId: sessionData.giftId.toString(),
         tokenId: sessionData.tokenId,
@@ -178,11 +222,12 @@ export default async function handler(
         moduleName: getModuleName(moduleId),
         score,
         requiredScore,
-        passed: score >= requiredScore,
+        passed,
         completedModules: completedModules.length,
         totalModules: sessionData.modules.length
       });
-      console.log('📊 Analytics: Education module progress tracked');
+
+      console.log('📊 Analytics: Education module tracked in BOTH systems');
     } catch (analyticsError) {
       console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
     }

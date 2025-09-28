@@ -488,6 +488,51 @@ export default async function handler(
       nonce: result.nonce?.slice(0, 10) + '...',
       rateLimit: finalRateLimit
     });
+
+    // Track claim event in enterprise analytics
+    try {
+      const { processBlockchainEvent, isAnalyticsEnabled } = await import('../../lib/analytics/canonicalEvents');
+
+      if (isAnalyticsEnabled()) {
+        const { Redis } = await import('@upstash/redis');
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!
+        });
+
+        // Get giftId for tracking
+        const giftId = await getGiftIdFromTokenId(tokenId);
+
+        if (giftId !== null) {
+          // Process as blockchain event for canonical system
+          await processBlockchainEvent(
+            redis,
+            'GiftClaimed',
+            result.transactionHash || `claim_${Date.now()}`,
+            0,
+            BigInt(Date.now()),
+            Date.now(),
+            {
+              giftId: giftId.toString(),
+              tokenId: tokenId,
+              claimer: claimerAddress,
+              creator: gift.creator,
+              gasless: result.gasless,
+              metadata: {
+                transactionHash: result.transactionHash,
+                nonce: result.nonce,
+                gaslessStatus: gasless && gaslessTemporarilyDisabled ? 'temporarily_disabled' : 'enabled'
+              }
+            },
+            'realtime'
+          );
+
+          console.log('📊 Analytics: Claim event tracked successfully');
+        }
+      }
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+    }
     
     const responseData: any = {
       success: true,

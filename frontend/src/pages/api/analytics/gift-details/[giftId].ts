@@ -1,63 +1,120 @@
 /**
- * GIFT DETAILS API
- * Returns comprehensive details for a specific gift
+ * GIFT DETAILS API - ENTERPRISE EDITION
+ * Returns COMPLETE comprehensive details for a specific gift
+ * Includes ALL tracking data: education, emails, wallet, scores, questions
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Redis } from '@upstash/redis';
 import { validateRedisForCriticalOps } from '../../../../lib/redisConfig';
+import { getGiftEducationDetails } from '../../../../lib/analytics/educationTracking';
+import { debugLogger } from '../../../../lib/secureDebugLogger';
 
 interface GiftDetails {
+  // Core Identity
   giftId: string;
   tokenId: string;
   campaignId: string;
   creator: string;
   claimer?: string;
-  status: string;
+  claimerWallet?: string; // Complete wallet address
+  status: 'created' | 'viewed' | 'educationStarted' | 'educationCompleted' | 'claimed' | 'expired' | 'returned';
 
-  // Timeline
-  createdAt: string;
-  viewedAt?: string;
-  preClaimStartedAt?: string;
-  educationStartedAt?: string;
-  educationCompletedAt?: string;
-  claimedAt?: string;
-  expiresAt: string;
+  // Complete Timeline
+  timeline: {
+    createdAt: string;
+    createdBlockNumber?: string;
+    viewedAt?: string;
+    preClaimStartedAt?: string;
+    educationStartedAt?: string;
+    educationCompletedAt?: string;
+    claimedAt?: string;
+    claimedBlockNumber?: string;
+    expiresAt: string;
+    expiredAt?: string;
+    returnedAt?: string;
+  };
 
-  // Education data
-  educationRequired: boolean;
-  educationModules?: Array<{
-    moduleId: number;
+  // Complete Education Data
+  education?: {
+    required: boolean;
+    email?: string;
+    moduleId: string;
     moduleName: string;
-    score: number;
-    requiredScore: number;
-    passed: boolean;
-    completedAt: string;
-    attempts: number;
-    correctAnswers?: string[];
-    incorrectAnswers?: string[];
+    sessionId?: string;
+    totalTimeSpent?: number; // seconds
+    score?: number; // percentage
+    passed?: boolean;
+
+    // Detailed Question Tracking
+    questionsDetail?: Array<{
+      questionId: string;
+      questionText: string;
+      selectedAnswer: string;
+      correctAnswer: string;
+      isCorrect: boolean;
+      timeSpent: number; // seconds
+      attemptNumber: number;
+    }>;
+
+    // Summary Statistics
+    totalQuestions?: number;
+    correctAnswers?: number;
+    incorrectAnswers?: number;
+
+    // Engagement Metrics
+    videoWatched?: boolean;
+    videoWatchTime?: number;
+    resourcesViewed?: string[];
+
+    // User Info
+    ipAddress?: string;
+    userAgent?: string;
+    referrer?: string;
+  };
+
+  // Transaction Details
+  transactions: {
+    createTxHash?: string;
+    createGasUsed?: string;
+    claimTxHash?: string;
+    claimGasUsed?: string;
+    value?: number; // in USD or ETH
+    tokenAmount?: string;
+  };
+
+  // Complete Metadata
+  metadata: {
+    imageUrl?: string;
+    imageCid?: string;
+    description?: string;
+    hasPassword: boolean;
+    passwordValidated?: boolean;
+    passwordAttempts?: number;
+    referrer?: string;
+    tbaAddress?: string; // Token Bound Account
+    escrowAddress?: string;
+  };
+
+  // Analytics & Performance
+  analytics: {
+    totalViews: number;
+    uniqueViewers: number;
+    viewerAddresses?: string[];
+    conversionRate: number;
+    timeToClaimMinutes?: number;
+    educationCompletionRate?: number;
+    avgEducationScore?: number;
+  };
+
+  // Events History
+  events?: Array<{
+    eventId: string;
+    type: string;
+    timestamp: string;
+    txHash?: string;
+    data?: any;
   }>;
-  totalEducationScore?: number;
-  educationEmail?: string;
-
-  // Transaction data
-  createTxHash?: string;
-  claimTxHash?: string;
-  value?: number;
-
-  // Metadata
-  imageUrl?: string;
-  description?: string;
-  hasPassword: boolean;
-  passwordValidated?: boolean;
-  referrer?: string;
-  tbaAddress?: string;
-
-  // Analytics
-  totalViews: number;
-  uniqueViewers: number;
-  conversionRate: number;
-  timeToClaimMinutes?: number;
 }
 
 export default async function handler(
@@ -139,78 +196,277 @@ export default async function handler(
       });
     }
 
-    // Get gift details from Redis
+    // Get comprehensive gift details from multiple sources
+    const traceId = `gift-details-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    debugLogger.operation('Fetching comprehensive gift details', { giftId, traceId });
+
+    // Try multiple data sources
+    let giftData: any = null;
+    let educationData: any = null;
+    let eventHistory: any[] = [];
+
+    // 1. Get basic gift data
     const giftKey = `gift:detail:${giftId}`;
-    const giftData = await redis.get(giftKey);
+    giftData = await redis.get(giftKey);
 
+    // 2. Get education data from tracking system
+    try {
+      educationData = await getGiftEducationDetails(giftId);
+      debugLogger.log('Education data retrieved', { giftId, hasData: !!educationData });
+    } catch (error) {
+      debugLogger.error('Failed to get education data', { giftId, error });
+    }
+
+    // 3. Get event history from stream
+    try {
+      const events = await redis.xrange(
+        'ga:events',
+        '-',
+        '+',
+        100 // Last 100 events max
+      );
+
+      // Filter events for this gift
+      eventHistory = events
+        .filter(([_, fields]: [string, any]) => fields.giftId === giftId)
+        .map(([id, fields]: [string, any]) => ({
+          eventId: id,
+          type: fields.type,
+          timestamp: fields.timestamp,
+          txHash: fields.transactionHash,
+          data: fields.data ? JSON.parse(fields.data) : undefined
+        }));
+    } catch (error) {
+      debugLogger.error('Failed to get event history', { giftId, error });
+    }
+
+    // 4. Get campaign roll-up data
+    let campaignData: any = null;
     if (!giftData) {
-      // Try to construct from available data
-      const campaignKeys = await redis.keys(`gift:camp:*:meta`);
-
-      // Look for this gift in campaigns
-      let foundGift: GiftDetails | null = null;
-
+      // Try to find campaign by scanning
+      const campaignKeys = await redis.keys(`ga:rollup:campaign:*`);
       for (const key of campaignKeys) {
-        const campaignId = key.split(':')[2];
-
-        // Check counters
-        const created = await redis.get(`gift:camp:${campaignId}:d:*:created`);
-        const viewed = await redis.get(`gift:camp:${campaignId}:d:*:viewed`);
-        const claimed = await redis.get(`gift:camp:${campaignId}:d:*:claimed`);
-
-        if (created || viewed || claimed) {
-          // Build basic gift details
-          foundGift = {
-            giftId,
-            tokenId: giftId === '332' ? '305' : giftId,
-            campaignId,
-            creator: campaignId.replace('campaign_', ''),
-            status: claimed ? 'claimed' : viewed ? 'viewed' : 'created',
-
-            createdAt: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-
-            educationRequired: true,
-            hasPassword: false,
-
-            totalViews: Number(viewed) || 1,
-            uniqueViewers: 1,
-            conversionRate: claimed ? 100 : 0,
-          };
+        const data = await redis.hgetall(key);
+        if (data) {
+          campaignData = data;
           break;
         }
       }
+    }
 
-      if (!foundGift) {
-        return res.status(404).json({
-          success: false,
-          error: 'Gift not found'
+    // Build comprehensive gift details from all sources
+    if (!giftData && !educationData && eventHistory.length === 0) {
+      // No data found - try to construct from campaign data
+      if (campaignData) {
+        const gift: GiftDetails = {
+          giftId,
+          tokenId: giftId,
+          campaignId: 'unknown',
+          creator: 'unknown',
+          status: 'created',
+
+          timeline: {
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          },
+
+          transactions: {},
+
+          metadata: {
+            hasPassword: false
+          },
+
+          analytics: {
+            totalViews: parseInt(campaignData.viewed || '0'),
+            uniqueViewers: parseInt(campaignData.uniqueUsers || '0'),
+            conversionRate: parseFloat(campaignData.conversionRate || '0')
+          }
+        };
+
+        return res.status(200).json({
+          success: true,
+          gift,
+          source: 'campaign_rollup',
+          traceId
         });
       }
 
-      return res.status(200).json({
-        success: true,
-        gift: foundGift,
-        source: 'constructed'
+      // No data at all
+      return res.status(404).json({
+        success: false,
+        error: 'Gift not found',
+        traceId,
+        hint: 'Run reconciliation to import blockchain data'
       });
     }
 
-    // Parse gift data if it's a string
-    const gift = typeof giftData === 'string' ? JSON.parse(giftData) : giftData;
+    // Construct comprehensive gift details
+    const gift: GiftDetails = {
+      // Core Identity
+      giftId,
+      tokenId: giftData?.tokenId || educationData?.tokenId || giftId,
+      campaignId: giftData?.campaignId || 'unknown',
+      creator: giftData?.creator || giftData?.referrer || 'unknown',
+      claimer: educationData?.claimerAddress || giftData?.claimer,
+      claimerWallet: educationData?.claimerAddress,
+      status: determineStatus(giftData, educationData, eventHistory),
+
+      // Complete Timeline
+      timeline: {
+        createdAt: giftData?.createdAt || findEventTimestamp(eventHistory, 'GiftCreated') || new Date().toISOString(),
+        createdBlockNumber: giftData?.blockNumber,
+        viewedAt: findEventTimestamp(eventHistory, 'GiftViewed'),
+        preClaimStartedAt: giftData?.preClaimStartedAt,
+        educationStartedAt: educationData?.startedAt ? new Date(parseInt(educationData.startedAt)).toISOString() : undefined,
+        educationCompletedAt: educationData?.completedAt ? new Date(parseInt(educationData.completedAt)).toISOString() : undefined,
+        claimedAt: findEventTimestamp(eventHistory, 'GiftClaimed'),
+        claimedBlockNumber: findEventData(eventHistory, 'GiftClaimed', 'blockNumber'),
+        expiresAt: giftData?.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        expiredAt: findEventTimestamp(eventHistory, 'GiftExpired'),
+        returnedAt: findEventTimestamp(eventHistory, 'GiftReturned')
+      },
+
+      // Complete Education Data
+      education: educationData ? {
+        required: true,
+        email: educationData.email || undefined,
+        moduleId: educationData.moduleId || '1',
+        moduleName: educationData.moduleName || 'Sales Masterclass',
+        sessionId: educationData.sessionId,
+        totalTimeSpent: parseInt(educationData.totalTimeSpent || '0'),
+        score: parseInt(educationData.score || '0'),
+        passed: educationData.passed === 'true',
+
+        // Parse questions detail if available
+        questionsDetail: educationData.questionsDetail ?
+          (typeof educationData.questionsDetail === 'string' ?
+            JSON.parse(educationData.questionsDetail) :
+            educationData.questionsDetail) : undefined,
+
+        totalQuestions: educationData.totalQuestions,
+        correctAnswers: parseInt(educationData.correctAnswers || '0'),
+        incorrectAnswers: parseInt(educationData.incorrectAnswers || '0'),
+
+        videoWatched: educationData.videoWatched,
+        videoWatchTime: educationData.videoWatchTime,
+        resourcesViewed: educationData.resourcesViewed,
+
+        ipAddress: educationData.ipAddress,
+        userAgent: educationData.userAgent,
+        referrer: educationData.referrer
+      } : undefined,
+
+      // Transaction Details
+      transactions: {
+        createTxHash: giftData?.createTxHash || findEventData(eventHistory, 'GiftCreated', 'transactionHash'),
+        claimTxHash: giftData?.claimTxHash || findEventData(eventHistory, 'GiftClaimed', 'transactionHash'),
+        value: giftData?.value || campaignData?.totalValue,
+        tokenAmount: giftData?.amount
+      },
+
+      // Complete Metadata
+      metadata: {
+        imageUrl: giftData?.imageUrl,
+        imageCid: giftData?.imageCid,
+        description: giftData?.description,
+        hasPassword: giftData?.hasPassword || false,
+        passwordValidated: giftData?.passwordValidated,
+        passwordAttempts: giftData?.passwordAttempts,
+        referrer: giftData?.referrer,
+        tbaAddress: giftData?.tbaAddress,
+        escrowAddress: giftData?.escrowAddress
+      },
+
+      // Analytics & Performance
+      analytics: {
+        totalViews: giftData?.totalViews || eventHistory.filter(e => e.type === 'GiftViewed').length || 0,
+        uniqueViewers: giftData?.uniqueViewers || 1,
+        viewerAddresses: giftData?.viewerAddresses,
+        conversionRate: calculateConversionRate(giftData, educationData, eventHistory),
+        timeToClaimMinutes: calculateTimeToClaimMinutes(gift.timeline),
+        educationCompletionRate: educationData ? 100 : 0,
+        avgEducationScore: educationData?.score ? parseInt(educationData.score) : undefined
+      },
+
+      // Events History
+      events: eventHistory.length > 0 ? eventHistory : undefined
+    };
+
+    debugLogger.operation('Gift details compiled', {
+      giftId,
+      hasEducation: !!educationData,
+      eventCount: eventHistory.length,
+      traceId
+    });
+
+    // Add performance headers
+    res.setHeader('X-Trace-Id', traceId);
+    res.setHeader('Cache-Control', 'private, max-age=10'); // 10 second cache
 
     return res.status(200).json({
       success: true,
       gift,
-      source: 'redis'
+      sources: {
+        basic: !!giftData,
+        education: !!educationData,
+        events: eventHistory.length > 0,
+        campaign: !!campaignData
+      },
+      traceId
     });
 
   } catch (error: any) {
+    const errorTrace = `error-${Date.now()}`;
     console.error('Gift details error:', error);
+    debugLogger.error('Gift details failed', { error: error.message, trace: errorTrace });
 
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch gift details',
-      message: error.message || 'Unknown error'
+      message: error.message || 'Unknown error',
+      trace: errorTrace
     });
   }
+}
+
+// Helper functions
+
+function determineStatus(giftData: any, educationData: any, events: any[]): GiftDetails['status'] {
+  if (events.find(e => e.type === 'GiftReturned')) return 'returned';
+  if (events.find(e => e.type === 'GiftExpired')) return 'expired';
+  if (events.find(e => e.type === 'GiftClaimed')) return 'claimed';
+  if (educationData?.passed === 'true') return 'educationCompleted';
+  if (educationData?.startedAt) return 'educationStarted';
+  if (events.find(e => e.type === 'GiftViewed')) return 'viewed';
+  return 'created';
+}
+
+function findEventTimestamp(events: any[], type: string): string | undefined {
+  const event = events.find(e => e.type === type);
+  return event ? new Date(parseInt(event.timestamp)).toISOString() : undefined;
+}
+
+function findEventData(events: any[], type: string, field: string): any {
+  const event = events.find(e => e.type === type);
+  return event?.data?.[field];
+}
+
+function calculateConversionRate(giftData: any, educationData: any, events: any[]): number {
+  const created = events.find(e => e.type === 'GiftCreated');
+  const claimed = events.find(e => e.type === 'GiftClaimed');
+
+  if (created && claimed) return 100;
+  if (educationData?.passed === 'true') return 75;
+  if (educationData?.startedAt) return 50;
+  if (events.find(e => e.type === 'GiftViewed')) return 25;
+  return 0;
+}
+
+function calculateTimeToClaimMinutes(timeline: GiftDetails['timeline']): number | undefined {
+  if (!timeline.createdAt || !timeline.claimedAt) return undefined;
+
+  const created = new Date(timeline.createdAt).getTime();
+  const claimed = new Date(timeline.claimedAt).getTime();
+
+  return Math.round((claimed - created) / 60000); // Convert to minutes
 }
