@@ -61,7 +61,7 @@ export async function isEventProcessed(
     const exists = await redis.exists(`ga:v1:event:processed:${eventId}`);
     return exists === 1;
   } catch (error) {
-    debugLogger.error('Failed to check event processed status', { eventId, error });
+    debugLogger.error('Failed to check event processed status', error as Error);
     return false;
   }
 }
@@ -86,7 +86,7 @@ export async function markEventProcessed(
 
     return false; // Already existed
   } catch (error) {
-    debugLogger.error('Failed to mark event as processed', { eventId, error });
+    debugLogger.error('Failed to mark event as processed', error as Error);
     return false;
   }
 }
@@ -127,7 +127,7 @@ export async function addEventToStream(
 
     return streamId;
   } catch (error) {
-    debugLogger.error('Failed to add event to stream', { event, error });
+    debugLogger.error('Failed to add event to stream', error as Error);
     return null;
   }
 }
@@ -228,7 +228,7 @@ async function updateRealtimeAggregates(
       campaignId: event.campaignId
     });
   } catch (error) {
-    debugLogger.error('Failed to update aggregates', { event, error });
+    debugLogger.error('Failed to update aggregates', error as Error);
   }
 }
 
@@ -285,7 +285,7 @@ export function isAnalyticsEnabled(): boolean {
   }
 
   // Client-side check (Next.js public env)
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && typeof process !== 'undefined') {
     return process.env.NEXT_PUBLIC_FEATURE_ANALYTICS === 'true';
   }
 

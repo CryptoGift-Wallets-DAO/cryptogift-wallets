@@ -163,7 +163,7 @@ class EducationTracker {
   }): Promise<void> {
     const session = await this.getSession(params.sessionId);
     if (!session) {
-      debugLogger.error('Session not found', { sessionId: params.sessionId });
+      debugLogger.error('Session not found', new Error(`Session not found: ${params.sessionId}`));
       return;
     }
 

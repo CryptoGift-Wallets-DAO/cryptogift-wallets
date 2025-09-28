@@ -179,7 +179,7 @@ export default async function handler(
         try {
           const events = await getContractEvents({
             contract: escrowContract,
-            event: eventDef,
+            events: [eventDef],
             fromBlock,
             toBlock: currentToBlock
           });
@@ -235,12 +235,12 @@ export default async function handler(
               // Small delay before retry
               await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
             } else {
-              debugLogger.error(`Max retries reached for ${eventType}`, { error, traceId });
+              debugLogger.error(`Max retries reached for ${eventType}`, error);
               throw error;
             }
           } else {
             // Not a range error, log and continue
-            debugLogger.error(`Error processing ${eventType} events`, { error, traceId });
+            debugLogger.error(`Error processing ${eventType} events`, error);
             break; // Exit retry loop but continue with other events
           }
         }
@@ -327,7 +327,7 @@ export default async function handler(
   } catch (error: any) {
     const errorTrace = `error-${Date.now()}`;
     console.error('Reconciliation error:', error);
-    debugLogger.error('Reconciliation failed', { error: error.message, trace: errorTrace });
+    debugLogger.error('Reconciliation failed', error);
 
     // Don't expose internal errors
     res.status(500).json({

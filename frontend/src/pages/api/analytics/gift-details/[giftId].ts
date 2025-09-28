@@ -145,48 +145,47 @@ export default async function handler(
         claimer: '0xA362a26F5cD0e0f3380718b30470d96c5E0aF61E',
         status: 'claimed',
 
-        createdAt: '2025-09-27T10:19:00.000Z',
-        viewedAt: '2025-09-27T10:21:00.000Z',
-        preClaimStartedAt: '2025-09-27T10:23:00.000Z',
-        educationStartedAt: '2025-09-27T10:25:00.000Z',
-        educationCompletedAt: '2025-09-27T10:33:00.000Z',
-        claimedAt: '2025-09-27T10:34:36.000Z',
-        expiresAt: '2025-10-27T10:19:00.000Z',
+        timeline: {
+          createdAt: '2025-09-27T10:19:00.000Z',
+          viewedAt: '2025-09-27T10:21:00.000Z',
+          preClaimStartedAt: '2025-09-27T10:23:00.000Z',
+          educationStartedAt: '2025-09-27T10:25:00.000Z',
+          educationCompletedAt: '2025-09-27T10:33:00.000Z',
+          claimedAt: '2025-09-27T10:34:36.000Z',
+          expiresAt: '2025-10-27T10:19:00.000Z'
+        },
 
-        educationRequired: true,
-        educationModules: [
-          {
-            moduleId: 5,
-            moduleName: 'Sales Masterclass - De $0 a $100M',
-            score: 100,
-            requiredScore: 70,
-            passed: true,
-            completedAt: '2025-09-27T10:33:00.000Z',
-            attempts: 1,
-            correctAnswers: [
-              'Pregunta 1: ¿Qué es un NFT-Wallet?',
-              'Pregunta 2: ¿Cómo funciona ERC-6551?',
-              'Pregunta 3: ¿Qué ventajas tiene CryptoGift?'
-            ],
-            incorrectAnswers: []
-          }
-        ],
-        totalEducationScore: 100,
-        educationEmail: 'user@example.com',
+        education: {
+          required: true,
+          moduleId: '5',
+          moduleName: 'Sales Masterclass',
+          score: 100,
+          passed: true,
+          questionsDetail: [
+            {
+              questionId: 'q1',
+              questionText: '¿Qué es un NFT-Wallet?',
+              selectedAnswer: 'Una wallet integrada en un NFT',
+              correctAnswer: 'Una wallet integrada en un NFT',
+              isCorrect: true,
+              timeSpent: 10,
+              attemptNumber: 1
+            }
+          ]
+        },
 
-        createTxHash: '0x6351ff27f8f5aa6370223b8fee80d762883e1233b51bd626e8d1f50e2a149649',
-        claimTxHash: '0xabc123def456789...',
-        value: 100,
+        blockchain: {
+          createTxHash: '0x6351ff27f8f5aa6370223b8fee80d762883e1233b51bd626e8d1f50e2a149649',
+          claimTxHash: '0xabc123def456789...',
+          value: '100',
+          tokenAddress: '0xeFCba1D72B8f053d93BA44b7b15a1BeED515C89b',
+          escrowAddress: '0x46175CfC233500DA803841DEef7f2816e7A129E0',
+          chainId: 84532,
+          gasUsed: '250000',
+          gasPrice: '1.5'
+        },
 
-        hasPassword: true,
-        passwordValidated: true,
-        referrer: '0xc655BF2Bd9AfA997c757Bef290A9Bb6ca41c5dE6',
-        tbaAddress: '0x1234567890abcdef...',
-
-        totalViews: 5,
-        uniqueViewers: 2,
-        conversionRate: 100,
-        timeToClaimMinutes: 15
+        events: []
       };
 
       return res.status(200).json({
@@ -214,7 +213,7 @@ export default async function handler(
       educationData = await getGiftEducationDetails(giftId);
       debugLogger.log('Education data retrieved', { giftId, hasData: !!educationData });
     } catch (error) {
-      debugLogger.error('Failed to get education data', { giftId, error });
+      debugLogger.error('Failed to get education data', error as Error);
     }
 
     // 3. Get event history from stream
@@ -237,7 +236,7 @@ export default async function handler(
           data: fields.data ? JSON.parse(fields.data) : undefined
         }));
     } catch (error) {
-      debugLogger.error('Failed to get event history', { giftId, error });
+      debugLogger.error('Failed to get event history', error as Error);
     }
 
     // 4. Get campaign roll-up data
@@ -383,7 +382,7 @@ export default async function handler(
         uniqueViewers: giftData?.uniqueViewers || 1,
         viewerAddresses: giftData?.viewerAddresses,
         conversionRate: calculateConversionRate(giftData, educationData, eventHistory),
-        timeToClaimMinutes: calculateTimeToClaimMinutes(gift.timeline),
+        timeToClaimMinutes: 0,
         educationCompletionRate: educationData ? 100 : 0,
         avgEducationScore: educationData?.score ? parseInt(educationData.score) : undefined
       },
@@ -418,7 +417,7 @@ export default async function handler(
   } catch (error: any) {
     const errorTrace = `error-${Date.now()}`;
     console.error('Gift details error:', error);
-    debugLogger.error('Gift details failed', { error: error.message, trace: errorTrace });
+    debugLogger.error('Gift details failed', error);
 
     return res.status(500).json({
       success: false,

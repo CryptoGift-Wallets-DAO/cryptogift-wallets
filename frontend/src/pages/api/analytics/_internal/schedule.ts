@@ -248,7 +248,7 @@ export default async function handler(
   } catch (error: any) {
     const errorTrace = `error-${Date.now()}`;
     console.error('Schedule setup error:', error);
-    debugLogger.error('Schedule setup failed', { error: error.message, trace: errorTrace });
+    debugLogger.error('Schedule setup failed', error);
 
     res.status(500).json({
       success: false,

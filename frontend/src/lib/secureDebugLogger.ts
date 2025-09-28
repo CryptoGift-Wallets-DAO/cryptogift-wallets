@@ -110,6 +110,9 @@ export const debugLogger = {
   operation: (operation: string, details?: LogContext) =>
     secureDebugLog('info', `Operation: ${operation}`, details),
 
+  warn: (message: string, details?: LogContext) =>
+    secureDebugLog('warn', message, details),
+
   tokenCheck: (tokenId: string | number, contractAddress: string, result: any) =>
     secureDebugLog('info', `Token check result`, {
       tokenId: tokenId.toString(),

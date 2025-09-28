@@ -808,8 +808,8 @@ export default async function handler(
             metadata: {
               hasEducation: response.requiresEducation,
               moduleCount: response.educationModules?.length || 0,
-              expired: isGiftExpired(gift.expirationTime),
-              status: gift.status === 1 ? 'claimed' : gift.status === 2 ? 'returned' : 'available'
+              expired: validation.giftInfo ? isGiftExpired(validation.giftInfo.expirationTime) : false,
+              status: validation.giftInfo ? (validation.giftInfo.status === 1 ? 'claimed' : validation.giftInfo.status === 2 ? 'returned' : 'available') : 'unknown'
             }
           },
           'realtime'

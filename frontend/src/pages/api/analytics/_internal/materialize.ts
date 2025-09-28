@@ -101,7 +101,7 @@ export default async function handler(
     try {
       events = await redis.xrange('ga:events', streamStartId, streamEndId, 1000);
     } catch (error) {
-      debugLogger.error('Failed to read stream', { error, traceId });
+      debugLogger.error('Failed to read stream', error as Error);
       // Continue even if stream doesn't exist yet
     }
 
@@ -241,7 +241,7 @@ export default async function handler(
         }
 
       } catch (error) {
-        debugLogger.error('Error processing event', { error, streamId });
+        debugLogger.error('Error processing event', error as Error);
         continue;
       }
     }
@@ -367,7 +367,7 @@ export default async function handler(
   } catch (error: any) {
     const errorTrace = `error-${Date.now()}`;
     console.error('Materialization error:', error);
-    debugLogger.error('Materialization failed', { error: error.message, trace: errorTrace });
+    debugLogger.error('Materialization failed', error);
 
     res.status(500).json({
       success: false,

@@ -119,13 +119,14 @@ export default async function handler(
 
             for (const result of results) {
               if (result && typeof result === 'object') {
-                data.created += parseInt(result.created || '0');
-                data.viewed += parseInt(result.viewed || '0');
-                data.claimed += parseInt(result.claimed || '0');
-                data.expired += parseInt(result.expired || '0');
-                data.returned += parseInt(result.returned || '0');
-                data.totalValue += parseFloat(result.totalValue || '0');
-                data.uniqueUsers += parseInt(result.uniqueUsers || '0');
+                const r = result as any;
+                data.created += parseInt(r.created || '0');
+                data.viewed += parseInt(r.viewed || '0');
+                data.claimed += parseInt(r.claimed || '0');
+                data.expired += parseInt(r.expired || '0');
+                data.returned += parseInt(r.returned || '0');
+                data.totalValue += parseFloat(r.totalValue || '0');
+                data.uniqueUsers += parseInt(r.uniqueUsers || '0');
               }
             }
 
@@ -198,7 +199,7 @@ export default async function handler(
           // Format as time series
           data = dates.map((date, index) => ({
             date,
-            ...(results[index] || {})
+            ...(results[index] as any || {})
           }));
         } else {
           data = [];
@@ -221,9 +222,9 @@ export default async function handler(
 
         data = {
           summary: recentData,
-          recentEvents: recentEvents.map(([id, fields]) => ({
-            id,
-            ...fields
+          recentEvents: recentEvents.map((entry: any) => ({
+            id: entry[0],
+            ...entry[1]
           }))
         };
         break;
@@ -283,7 +284,7 @@ export default async function handler(
   } catch (error: any) {
     const responseTime = Date.now() - startTime;
     console.error('Fast stats error:', error);
-    debugLogger.error('Fast stats failed', { error: error.message, traceId });
+    debugLogger.error('Fast stats failed', error);
 
     res.status(500).json({
       success: false,

@@ -3069,7 +3069,7 @@ export default async function handler(
               giftId: result.giftId.toString(),
               tokenId: result.tokenId.toString(),
               creator: creatorAddress,
-              amount: amount.toString(),
+              amount: '0',
               expiresAt: expirationTime?.toString(),
               educationRequired: educationModules && educationModules.length > 0,
               metadata: {
