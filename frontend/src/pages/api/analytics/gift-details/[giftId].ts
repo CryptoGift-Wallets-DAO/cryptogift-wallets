@@ -177,7 +177,7 @@ export default async function handler(
         transactions: {
           createTxHash: '0x6351ff27f8f5aa6370223b8fee80d762883e1233b51bd626e8d1f50e2a149649',
           claimTxHash: '0xabc123def456789...',
-          value: '100',
+          value: 100,
           tokenAmount: '0'
         },
 

@@ -289,7 +289,7 @@ export function isAnalyticsEnabled(): boolean {
     // Try to access process.env safely
     try {
       const processEnv = (typeof process !== 'undefined' && process && process.env) ? process.env : {};
-      return processEnv.NEXT_PUBLIC_FEATURE_ANALYTICS === 'true';
+      return (processEnv as any).NEXT_PUBLIC_FEATURE_ANALYTICS === 'true';
     } catch {
       return false;
     }
