@@ -248,7 +248,7 @@ export default async function handler(
       // A. Check gift:detail:{giftId}
       const giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
       if (giftDetails) {
-        profile.creator.address = giftDetails.creator || giftDetails.referrer || profile.creator.address;
+        profile.creator.address = (giftDetails.creator as string) || (giftDetails.referrer as string) || profile.creator.address;
         profile.creator.createdAt = giftDetails.createdAt ?
           new Date(parseInt(giftDetails.createdAt as string)).toISOString() :
           profile.creator.createdAt;

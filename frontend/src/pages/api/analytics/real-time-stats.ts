@@ -120,9 +120,9 @@ export default async function handler(
           if (giftData.value) stats.totalValue += parseFloat(giftData.value as string);
 
           // Track by campaign
-          const campaignId = giftData.campaignId || 'default';
-          if (!stats.campaigns.has(campaignId)) {
-            stats.campaigns.set(campaignId, {
+          const campaignId = (giftData.campaignId as string) || 'default';
+          if (!stats.campaigns.has(campaignId as string)) {
+            stats.campaigns.set(campaignId as string, {
               campaignId,
               campaignName: `Campaign ${campaignId}`,
               totalGifts: 0,
@@ -142,7 +142,7 @@ export default async function handler(
             });
           }
 
-          const campaign = stats.campaigns.get(campaignId);
+          const campaign = stats.campaigns.get(campaignId as string);
           campaign.totalGifts++;
           campaign.status.created++;
 
@@ -209,7 +209,7 @@ export default async function handler(
       const events = await redis.xrevrange('ga:v1:events', '+', '-', 50);
       console.log(`Found ${events.length} events in stream`);
 
-      for (const [id, fields] of events as any[]) {
+      for (const [id, fields] of (events as unknown) as any[]) {
         const eventType = fields.type;
         const giftId = fields.giftId;
         const campaignId = fields.campaignId || 'default';
