@@ -112,18 +112,24 @@ const KEYS = {
 
 let redisClient: Redis | null = null;
 
-function getRedisClient(): Redis {
+function getRedisClient(): Redis | null {
   if (!redisClient) {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    
+
     if (!url || !token) {
-      throw new Error('Redis configuration missing for analytics');
+      console.warn('⚠️ Redis not configured for analytics - data will be stored locally');
+      return null;
     }
-    
-    redisClient = new Redis({ url, token });
+
+    try {
+      redisClient = new Redis({ url, token });
+    } catch (error) {
+      console.error('Failed to initialize Redis:', error);
+      return null;
+    }
   }
-  
+
   return redisClient;
 }
 
@@ -162,6 +168,25 @@ function getStatusFromEventType(type: GiftEvent['type']): keyof GiftStatus {
 export async function recordGiftEvent(event: GiftEvent): Promise<boolean> {
   try {
     const redis = getRedisClient();
+
+    // If Redis is not available, use local storage fallback
+    if (!redis) {
+      const { storeGiftLocally } = await import('./localAnalyticsStore');
+      storeGiftLocally({
+        giftId: event.giftId,
+        tokenId: event.tokenId || event.giftId,
+        campaignId: event.campaignId,
+        status: event.type,
+        creator: event.referrer,
+        claimer: event.claimer,
+        value: event.value,
+        createdAt: event.timestamp,
+        metadata: event.metadata
+      });
+      console.log('📊 Analytics stored locally (Redis not available)');
+      return true;
+    }
+
     const dateKey = getDateKey(event.timestamp);
     const status = getStatusFromEventType(event.type);
     

@@ -175,8 +175,8 @@ export default function GiftAnalyticsPage() {
     if (!silent) setLoading(true);
 
     try {
-      // Fetch REAL data from blockchain-based API
-      const response = await fetch('/api/referrals/stats-real', {
+      // Fetch REAL data from the unified real-time API
+      const response = await fetch('/api/analytics/real-time-stats', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
