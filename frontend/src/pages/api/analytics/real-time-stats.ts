@@ -313,6 +313,22 @@ export default async function handler(
     // Convert campaigns map to array
     const campaignStats = Array.from(stats.campaigns.values());
 
+    // Separate individual gifts from campaigns
+    // Gifts with IDs like "305", "306" are individual gifts
+    // Real campaigns will have proper campaign IDs (future feature with EIP-1155)
+    const individualGifts = stats.gifts.map(gift => ({
+      ...gift,
+      // Add custom name/reference field (can be updated later)
+      customName: gift.customName || `Gift #${gift.tokenId || gift.giftId}`,
+      displayId: gift.tokenId || gift.giftId,
+      creator: gift.creator || 'Unknown',
+      recipientReference: gift.recipientReference || '', // For noting who it was meant for
+    }));
+
+    // For now, we don't have real campaigns (those will use EIP-1155 in the future)
+    // So we'll return empty campaigns array
+    const realCampaigns = [];
+
     // Calculate summary
     const summary = {
       totalGifts: stats.created,
@@ -321,24 +337,27 @@ export default async function handler(
       totalEducationCompleted: stats.educationCompleted,
       averageConversionRate: stats.created > 0 ? (stats.claimed / stats.created) * 100 : 0,
       totalValue: stats.totalValue,
-      totalCampaigns: campaignStats.length,
-      recentGifts: stats.gifts.slice(0, 10)
+      totalCampaigns: realCampaigns.length, // Real campaigns, not fake ones
+      totalIndividualGifts: individualGifts.length,
+      recentGifts: individualGifts.slice(0, 10)
     };
 
     const responseTime = Date.now() - startTime;
 
     console.log(`✅ Real-time stats compiled in ${responseTime}ms`);
-    console.log(`📊 Found: ${stats.created} created, ${stats.claimed} claimed, ${campaignStats.length} campaigns`);
+    console.log(`📊 Found: ${individualGifts.length} individual gifts, ${stats.claimed} claimed, ${realCampaigns.length} campaigns`);
 
     return res.status(200).json({
       success: true,
-      stats: campaignStats,
+      stats: campaignStats, // Keep for backwards compatibility
+      campaigns: realCampaigns, // Real campaigns (empty for now)
+      gifts: individualGifts, // Individual gifts with all info
       summary,
-      gifts: stats.gifts.slice(0, 50), // Return last 50 gifts
       responseTimeMs: responseTime,
       sources: {
         giftDetails: stats.gifts.length > 0,
-        campaigns: campaignStats.length > 0,
+        campaigns: realCampaigns.length > 0,
+        individualGifts: individualGifts.length > 0,
         events: false, // Will be true when events are found
         rollups: false  // Will be true when rollups exist
       },

@@ -60,6 +60,8 @@ export default function GiftAnalyticsPage() {
   // State
   const [loading, setLoading] = useState(true); // Start with loading true to fetch initial data
   const [stats, setStats] = useState<CampaignStats[]>([]); // Initialize with empty array
+  const [individualGifts, setIndividualGifts] = useState<any[]>([]); // Individual gifts
+  const [realCampaigns, setRealCampaigns] = useState<any[]>([]); // Real campaigns (EIP-1155 future)
   const [filter, setFilter] = useState<FilterState>({
     campaignIds: [],
     dateRange: { from: null, to: null },
@@ -196,15 +198,27 @@ export default function GiftAnalyticsPage() {
 
       const data = await response.json();
 
-      if (data.success && data.stats) {
+      if (data.success) {
         // Update stats with real data
-        setStats(data.stats);
+        if (data.stats) {
+          setStats(data.stats); // Keep for compatibility
+        }
+
+        // Update individual gifts
+        if (data.gifts) {
+          setIndividualGifts(data.gifts);
+        }
+
+        // Update real campaigns (empty for now)
+        if (data.campaigns) {
+          setRealCampaigns(data.campaigns);
+        }
 
         // Update KPIs with summary data
         if (data.summary) {
           setKpis(prev => ({
             ...prev,
-            totalGifts: data.summary.totalGifts,
+            totalGifts: data.summary.totalIndividualGifts || data.summary.totalGifts,
             claimedGifts: data.summary.totalClaimed,
             conversionRate: data.summary.averageConversionRate,
             totalValue: data.summary.totalValue,
@@ -213,10 +227,12 @@ export default function GiftAnalyticsPage() {
         }
 
         if (!silent) {
+          const giftCount = data.gifts?.length || 0;
+          const campaignCount = data.campaigns?.length || 0;
           showNotification({
             type: 'success',
             title: t('notifications.dataUpdated'),
-            message: `${data.stats.length} ${t('notifications.campaignsLoaded')}`
+            message: `${giftCount} regalos y ${campaignCount} campañas cargados`
           });
         }
       }
@@ -573,84 +589,244 @@ export default function GiftAnalyticsPage() {
           </div>
         </ThemeCard>
         
-        {/* Campaign Table */}
-        <ThemeCard variant="default">
+        {/* Individual Gifts Table - NEW SECTION */}
+        <ThemeCard variant="highlighted" className="mb-6">
           <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">{t('charts.campaignDetails')}</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Gift className="w-5 h-5" />
+                🎁 Regalos Individuales (Gifts)
+              </h3>
+              <span className="text-sm text-gray-500">
+                Total: {individualGifts.length} regalos
+              </span>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">{t('table.campaign')}</th>
-                    <th className="text-center py-3 px-4">{t('table.total')}</th>
-                    <th className="text-center py-3 px-4">{t('table.claimed')}</th>
-                    <th className="text-center py-3 px-4">{t('table.conversion')}</th>
-                    <th className="text-center py-3 px-4">{t('table.value')}</th>
-                    <th className="text-center py-3 px-4">{t('table.topReferrer')}</th>
-                    <th className="text-center py-3 px-4">{t('table.actions')}</th>
+                  <tr className="border-b bg-gray-50 dark:bg-gray-800">
+                    <th className="text-left py-3 px-4 font-medium">Regalo ID</th>
+                    <th className="text-left py-3 px-4 font-medium">Referencia/Nombre</th>
+                    <th className="text-center py-3 px-4 font-medium">Estado</th>
+                    <th className="text-center py-3 px-4 font-medium">Creado</th>
+                    <th className="text-center py-3 px-4 font-medium">Reclamado Por</th>
+                    <th className="text-center py-3 px-4 font-medium">Educación</th>
+                    <th className="text-center py-3 px-4 font-medium">Valor</th>
+                    <th className="text-center py-3 px-4 font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.map(campaign => (
-                    <tr key={campaign.campaignId} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="py-3 px-4">
-                        <div>
-                          <div className="font-medium">{campaign.campaignName}</div>
-                          <div className="text-sm text-gray-500">ID: {campaign.campaignId}</div>
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        {format.number(campaign.totalGifts)}
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {format.number(campaign.status.claimed)}
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <span>
-                            {format.number(campaign.conversionRate / 100, {
-                              style: 'percent',
-                              minimumFractionDigits: 1
-                            })}
-                          </span>
-                          {campaign.conversionRate > 40 ? (
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        {format.number(campaign.totalValue, {
-                          style: 'currency',
-                          currency: 'USD',
-                          minimumFractionDigits: 0
-                        })}
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        {campaign.topReferrers[0] ? (
-                          <div className="text-sm">
-                            <div>{campaign.topReferrers[0].address}</div>
-                            <div className="text-gray-500">
-                              {format.number(campaign.topReferrers[0].count)} {t('table.refs')}
-                            </div>
+                  {individualGifts.length > 0 ? (
+                    individualGifts.slice(0, 20).map(gift => (
+                      <tr key={gift.giftId} className="border-b hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm font-bold">#{gift.displayId || gift.tokenId || gift.giftId}</span>
                           </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <Link
-                          href={`/referrals/analytics/gift/${campaign.campaignId.replace('campaign_', '')}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          {t('table.viewDetails')}
-                        </Link>
+                        </td>
+                        <td className="py-3 px-4">
+                          <input
+                            type="text"
+                            placeholder="Agregar referencia..."
+                            defaultValue={gift.recipientReference || ''}
+                            className="px-2 py-1 text-sm border rounded bg-transparent hover:bg-white dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onChange={(e) => {
+                              // TODO: Save reference to localStorage or API
+                              gift.recipientReference = e.target.value;
+                            }}
+                          />
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {gift.status === 'claimed' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              ✅ Reclamado
+                            </span>
+                          ) : gift.status === 'viewed' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                              👀 Visto
+                            </span>
+                          ) : gift.status === 'expired' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                              ⏰ Expirado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                              🎆 Creado
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4 text-sm">
+                          {gift.createdAt ? new Date(gift.createdAt).toLocaleDateString('es-ES') : '-'}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {gift.claimer ? (
+                            <span className="font-mono text-xs" title={gift.claimer}>
+                              {gift.claimer.slice(0, 6)}...{gift.claimer.slice(-4)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {gift.educationScore !== undefined ? (
+                            <span className={`font-bold ${
+                              gift.educationScore >= 80 ? 'text-green-600' :
+                              gift.educationScore >= 60 ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {gift.educationScore}%
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {gift.value ? (
+                            <span className="font-medium text-green-600">
+                              ${parseFloat(gift.value).toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">$0</span>
+                          )}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <Link
+                              href={`/referrals/analytics/gift/${gift.displayId || gift.tokenId || gift.giftId}`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+                            >
+                              🔍 Ver Detalles
+                            </Link>
+                            {gift.status === 'created' && !gift.expired && (
+                              <button
+                                onClick={() => {
+                                  const shareUrl = `${window.location.origin}/token/${gift.tokenId || gift.giftId}`;
+                                  navigator.clipboard.writeText(shareUrl);
+                                  showNotification({
+                                    type: 'success',
+                                    title: 'Link copiado',
+                                    message: 'El link del regalo ha sido copiado al portapapeles'
+                                  });
+                                }}
+                                className="text-green-600 hover:text-green-800 text-sm"
+                                title="Copiar link"
+                              >
+                                🔗
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="text-center py-8 text-gray-500">
+                        No hay regalos individuales creados aún.
                       </td>
                     </tr>
-                  ))}
+                  )}
+                </tbody>
+              </table>
+              {individualGifts.length > 20 && (
+                <div className="mt-4 text-center text-sm text-gray-500">
+                  Mostrando 20 de {individualGifts.length} regalos.
+                </div>
+              )}
+            </div>
+          </div>
+        </ThemeCard>
+
+        {/* Campaign Table - FUTURE FEATURE */}
+        <ThemeCard variant="default">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                🎉 Campañas (Campaigns) - Próximamente
+              </h3>
+              <span className="text-sm text-gray-500">
+                Usará EIP-1155 para regalos masivos
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50 dark:bg-gray-800">
+                    <th className="text-left py-3 px-4 font-medium">Campaña</th>
+                    <th className="text-center py-3 px-4 font-medium">Total NFTs</th>
+                    <th className="text-center py-3 px-4 font-medium">Reclamados</th>
+                    <th className="text-center py-3 px-4 font-medium">Conversión</th>
+                    <th className="text-center py-3 px-4 font-medium">Valor Total</th>
+                    <th className="text-center py-3 px-4 font-medium">Top Referrer</th>
+                    <th className="text-center py-3 px-4 font-medium">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {realCampaigns.length > 0 ? (
+                    realCampaigns.map(campaign => (
+                      <tr key={campaign.campaignId} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="py-3 px-4">
+                          <div>
+                            <div className="font-medium">{campaign.campaignName}</div>
+                            <div className="text-sm text-gray-500">ID: {campaign.campaignId}</div>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {format.number(campaign.totalGifts)}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {format.number(campaign.claimed || 0)}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <span>
+                              {format.number((campaign.conversionRate || 0) / 100, {
+                                style: 'percent',
+                                minimumFractionDigits: 1
+                              })}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          {format.number(campaign.totalValue || 0, {
+                            style: 'currency',
+                            currency: 'USD',
+                            minimumFractionDigits: 0
+                          })}
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <span className="text-gray-400">-</span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <Link
+                            href={`/referrals/analytics/campaign/${campaign.campaignId}`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            Ver Detalles
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="text-center py-12">
+                        <div className="flex flex-col items-center gap-3">
+                          <Users className="w-12 h-12 text-gray-300" />
+                          <div>
+                            <p className="text-gray-500 font-medium">No hay campañas activas</p>
+                            <p className="text-sm text-gray-400 mt-1">
+                              Las campañas permitirán crear múltiples regalos con una sola transacción usando EIP-1155
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              Esta funcionalidad estará disponible próximamente
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
