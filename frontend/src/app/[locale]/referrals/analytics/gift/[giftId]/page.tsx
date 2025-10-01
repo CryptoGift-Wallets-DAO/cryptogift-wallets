@@ -224,15 +224,15 @@ export default function GiftDetailsPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      created: 'text-blue-500',
-      viewed: 'text-yellow-500',
-      preClaimStarted: 'text-orange-500',
-      educationCompleted: 'text-purple-500',
-      claimed: 'text-green-500',
-      expired: 'text-red-500',
-      returned: 'text-gray-500'
+      created: 'text-blue-600 dark:text-blue-400',
+      viewed: 'text-yellow-600 dark:text-yellow-400',
+      preClaimStarted: 'text-orange-600 dark:text-orange-400',
+      educationCompleted: 'text-purple-600 dark:text-purple-400',
+      claimed: 'text-green-600 dark:text-green-400',
+      expired: 'text-red-600 dark:text-red-400',
+      returned: 'text-gray-600 dark:text-gray-400'
     };
-    return colors[status] || 'text-gray-400';
+    return colors[status] || 'text-gray-600 dark:text-gray-400';
   };
 
   const getStatusLabel = (status: string) => {
@@ -345,7 +345,7 @@ export default function GiftDetailsPage() {
                 <div className="relative mb-6">
                   <div className="absolute -left-8 w-4 h-4 bg-blue-500 rounded-full ring-4 ring-blue-100 dark:ring-blue-900"></div>
                   <div className="text-sm font-medium">🎁 Regalo Creado</div>
-                  <div className="text-xs text-gray-500 font-medium">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                     📅 {new Date(gift.creator.createdAt).toLocaleDateString('es-ES', {
                       weekday: 'long',
                       year: 'numeric',
@@ -359,7 +359,7 @@ export default function GiftDetailsPage() {
                       second: '2-digit'
                     })}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <div>Creador: <span className="font-mono">{formatFullAddress(gift.creator.address)}</span></div>
                     {gift.creator.referrer && (
                       <div>Referido por: <span className="font-mono">{formatAddress(gift.creator.referrer)}</span></div>
@@ -372,7 +372,7 @@ export default function GiftDetailsPage() {
                         href={`https://sepolia.basescan.org/tx/${gift.creator.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         TX: {formatAddress(gift.creator.txHash)}
                       </a>
@@ -385,10 +385,10 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-yellow-500 rounded-full ring-4 ring-yellow-100 dark:ring-yellow-900"></div>
                     <div className="text-sm font-medium">👁️ Historial de Vistas</div>
-                    <div className="text-xs text-gray-400 mt-2 space-y-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 space-y-2">
                       {gift.viewingHistory.map((view, idx) => (
                         <div key={idx} className="pl-2 border-l-2 border-gray-200 dark:border-gray-700">
-                          <div className="font-medium text-gray-500">
+                          <div className="font-medium text-gray-600 dark:text-gray-400">
                             📅 {new Date(view.timestamp).toLocaleDateString('es-ES', {
                               day: '2-digit',
                               month: '2-digit',
@@ -421,7 +421,7 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-orange-500 rounded-full ring-4 ring-orange-100 dark:ring-orange-900"></div>
                     <div className="text-sm font-medium">📚 Educación Iniciada</div>
-                    <div className="text-xs text-gray-500 font-medium">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                       📅 {new Date(gift.education.startedAt).toLocaleDateString('es-ES', {
                         weekday: 'long',
                         year: 'numeric',
@@ -435,7 +435,7 @@ export default function GiftDetailsPage() {
                         second: '2-digit'
                       })}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Módulo: {gift.education.moduleName || 'Sales Masterclass'}
                     </div>
                   </div>
@@ -446,7 +446,7 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-purple-500 rounded-full ring-4 ring-purple-100 dark:ring-purple-900"></div>
                     <div className="text-sm font-medium">🎓 Educación Completada</div>
-                    <div className="text-xs text-gray-500 font-medium">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                       📅 {new Date(gift.education.completedAt).toLocaleDateString('es-ES', {
                         weekday: 'long',
                         year: 'numeric',
@@ -460,7 +460,7 @@ export default function GiftDetailsPage() {
                         second: '2-digit'
                       })}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <div>Score Final: {gift.education.score}% {gift.education.passed ? '✅ Aprobado' : '❌ Reprobado'}</div>
                       <div>Tiempo Total: {Math.floor((gift.education.totalTimeSpent || 0) / 60)} minutos</div>
                     </div>
@@ -472,7 +472,7 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-green-500 rounded-full ring-4 ring-green-100 dark:ring-green-900"></div>
                     <div className="text-sm font-medium">🏆 Regalo Reclamado</div>
-                    <div className="text-xs text-gray-500 font-medium">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                       📅 {new Date(gift.claim.claimedAt).toLocaleDateString('es-ES', {
                         weekday: 'long',
                         year: 'numeric',
@@ -486,7 +486,7 @@ export default function GiftDetailsPage() {
                         second: '2-digit'
                       })}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <div>Reclamado por: <span className="font-mono">{formatFullAddress(gift.claim.claimerWallet || gift.claim.claimerAddress || 'Unknown')}</span></div>
                       {gift.claim.blockNumber && (
                         <div>Block: #{gift.claim.blockNumber}</div>
@@ -496,7 +496,7 @@ export default function GiftDetailsPage() {
                           href={`https://sepolia.basescan.org/tx/${gift.claim.txHash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
+                          className="text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           TX: {formatAddress(gift.claim.txHash)}
                         </a>
@@ -513,7 +513,7 @@ export default function GiftDetailsPage() {
                   <div className="relative">
                     <div className={`absolute -left-8 w-4 h-4 ${gift.status.isExpired ? 'bg-red-500' : 'bg-gray-400'} rounded-full ring-4 ${gift.status.isExpired ? 'ring-red-100 dark:ring-red-900' : 'ring-gray-100 dark:ring-gray-900'}`}></div>
                     <div className="text-sm font-medium">{gift.status.isExpired ? '⏰ Expirado' : '⏳ Expira'}</div>
-                    <div className="text-xs text-gray-500 font-medium">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                       📅 {new Date(gift.status.expiresAt).toLocaleDateString('es-ES', {
                         weekday: 'long',
                         year: 'numeric',
@@ -553,7 +553,7 @@ export default function GiftDetailsPage() {
                       <div>Email: <span className="font-mono">{gift.education.email}</span></div>
                     )}
                     {gift.education.emailHash && (
-                      <div className="text-xs text-gray-500">Hash SHA-256: <span className="font-mono">{gift.education.emailHash.slice(0, 16)}...</span></div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Hash SHA-256: <span className="font-mono">{gift.education.emailHash.slice(0, 16)}...</span></div>
                     )}
                   </div>
                 </div>
@@ -564,10 +564,10 @@ export default function GiftDetailsPage() {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-medium">{gift.education.moduleName || 'Sales Masterclass'}</h3>
-                    <p className="text-sm text-gray-500">Módulo ID: {gift.education.moduleId || '1'}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Módulo ID: {gift.education.moduleId || '1'}</p>
                   </div>
                   <div className="text-right">
-                    <div className={`text-2xl font-bold ${gift.education.passed ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`text-2xl font-bold ${gift.education.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                       {gift.education.score}%
                     </div>
                     <p className="text-xs">{gift.education.passed ? '✅ APROBADO' : '❌ REPROBADO'}</p>
@@ -577,22 +577,22 @@ export default function GiftDetailsPage() {
                 {/* Time & Performance Metrics */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                   <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                    <div className="text-xs text-gray-500">Tiempo Total</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Tiempo Total</div>
                     <div className="font-medium">{Math.floor((gift.education.totalTimeSpent || 0) / 60)}:{String((gift.education.totalTimeSpent || 0) % 60).padStart(2, '0')}</div>
                   </div>
                   {gift.education.questions && (
                     <>
                       <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                        <div className="text-xs text-gray-500">Preguntas</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Preguntas</div>
                         <div className="font-medium">{gift.education.questions.length}</div>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                        <div className="text-xs text-gray-500">Correctas</div>
-                        <div className="font-medium text-green-600">{gift.education.questions.filter(q => q.isCorrect).length}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Correctas</div>
+                        <div className="font-medium text-green-600 dark:text-green-400">{gift.education.questions.filter(q => q.isCorrect).length}</div>
                       </div>
                       <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                        <div className="text-xs text-gray-500">Incorrectas</div>
-                        <div className="font-medium text-red-600">{gift.education.questions.filter(q => !q.isCorrect).length}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Incorrectas</div>
+                        <div className="font-medium text-red-600 dark:text-red-400">{gift.education.questions.filter(q => !q.isCorrect).length}</div>
                       </div>
                     </>
                   )}
@@ -643,7 +643,7 @@ export default function GiftDetailsPage() {
                             </div>
                             <p className="text-sm mb-2">{question.questionText}</p>
                           </div>
-                          <div className="text-right text-xs text-gray-500">
+                          <div className="text-right text-xs text-gray-600 dark:text-gray-400">
                             <div>⏱️ {question.timeSpent}s</div>
                             {question.attemptNumber > 1 && (
                               <div>Intento #{question.attemptNumber}</div>
@@ -653,15 +653,15 @@ export default function GiftDetailsPage() {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-start gap-2">
-                            <span className="text-gray-500 min-w-fit">Tu respuesta:</span>
-                            <span className={`font-medium ${question.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className="text-gray-600 dark:text-gray-400 min-w-fit">Tu respuesta:</span>
+                            <span className={`font-medium ${question.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                               {question.selectedAnswer}
                             </span>
                           </div>
                           {!question.isCorrect && (
                             <div className="flex items-start gap-2">
-                              <span className="text-gray-500 min-w-fit">Respuesta correcta:</span>
-                              <span className="font-medium text-green-600">
+                              <span className="text-gray-600 dark:text-gray-400 min-w-fit">Respuesta correcta:</span>
+                              <span className="font-medium text-green-600 dark:text-green-400">
                                 {question.correctAnswer}
                               </span>
                             </div>
@@ -669,7 +669,7 @@ export default function GiftDetailsPage() {
                         </div>
 
                         {question.timestamp && (
-                          <div className="text-xs text-gray-400 mt-2">
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                             Respondida: {new Date(question.timestamp).toLocaleString('es-ES')}
                           </div>
                         )}
@@ -682,26 +682,26 @@ export default function GiftDetailsPage() {
                     <h4 className="font-medium mb-2">📈 Resumen de Rendimiento</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
-                        <div className="text-xs text-gray-500">Precisión</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Precisión</div>
                         <div className="font-bold text-lg">
                           {Math.round((gift.education.questions.filter(q => q.isCorrect).length / gift.education.questions.length) * 100)}%
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500">Tiempo Promedio</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Tiempo Promedio</div>
                         <div className="font-bold text-lg">
                           {Math.round(gift.education.questions.reduce((acc, q) => acc + q.timeSpent, 0) / gift.education.questions.length)}s
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500">Mejor Tiempo</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Mejor Tiempo</div>
                         <div className="font-bold text-lg">
                           {Math.min(...gift.education.questions.map(q => q.timeSpent))}s
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500">Score Final</div>
-                        <div className={`font-bold text-lg ${gift.education.passed ? 'text-green-500' : 'text-red-500'}`}>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Score Final</div>
+                        <div className={`font-bold text-lg ${gift.education.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                           {gift.education.score}%
                         </div>
                       </div>
@@ -735,13 +735,13 @@ export default function GiftDetailsPage() {
                           {event.type}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         {new Date(event.timestamp).toLocaleString('es-ES')}
                       </div>
                     </div>
 
                     <div className="space-y-1 text-xs">
-                      <div className="font-mono text-gray-600 dark:text-gray-400">
+                      <div className="font-mono text-gray-700 dark:text-gray-300">
                         Event ID: {event.eventId}
                       </div>
                       {event.txHash && (
@@ -750,7 +750,7 @@ export default function GiftDetailsPage() {
                             href={`https://sepolia.basescan.org/tx/${event.txHash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline font-mono"
+                            className="text-blue-600 dark:text-blue-400 hover:underline font-mono"
                           >
                             {formatAddress(event.txHash)}
                           </a>
@@ -786,19 +786,19 @@ export default function GiftDetailsPage() {
                   <div className="space-y-2 text-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <span className="text-gray-500">Token ID:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Token ID:</span>
                         <p className="font-mono">{gift.tokenId}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Gift ID:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Gift ID:</span>
                         <p className="font-mono">{gift.giftId}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Campaign ID:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Campaign ID:</span>
                         <p className="font-mono">{gift.campaignId || 'default'}</p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Status:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Status:</span>
                         <p className={`font-medium ${getStatusColor(gift.status.current)}`}>
                           {getStatusLabel(gift.status.current)}
                         </p>
@@ -813,19 +813,19 @@ export default function GiftDetailsPage() {
                   <div className="space-y-2 text-sm">
                     {gift.metadata.tbaAddress && (
                       <div>
-                        <span className="text-gray-500">TBA Address (ERC-6551):</span>
+                        <span className="text-gray-600 dark:text-gray-400">TBA Address (ERC-6551):</span>
                         <p className="font-mono break-all">{gift.metadata.tbaAddress}</p>
                       </div>
                     )}
                     {gift.metadata.escrowAddress && (
                       <div>
-                        <span className="text-gray-500">Escrow Contract:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Escrow Contract:</span>
                         <p className="font-mono break-all">{gift.metadata.escrowAddress}</p>
                       </div>
                     )}
                     <div>
                       <span className="text-gray-500">Is In Escrow:</span>
-                      <p className={`font-medium ${gift.status.isInEscrow ? 'text-yellow-500' : 'text-green-500'}`}>
+                      <p className={`font-medium ${gift.status.isInEscrow ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>
                         {gift.status.isInEscrow ? 'Yes (Not Claimed)' : 'No (Claimed)'}
                       </p>
                     </div>
@@ -849,7 +849,7 @@ export default function GiftDetailsPage() {
                             {gift.creator.txHash}
                           </a>
                           {gift.creator.gasUsed && (
-                            <div className="text-xs text-gray-500 mt-1">Gas Used: {gift.creator.gasUsed}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Gas Used: {gift.creator.gasUsed}</div>
                           )}
                         </div>
                       )}
@@ -865,7 +865,7 @@ export default function GiftDetailsPage() {
                             {gift.claim.txHash}
                           </a>
                           {gift.claim.gasUsed && (
-                            <div className="text-xs text-gray-500 mt-1">Gas Used: {gift.claim.gasUsed}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Gas Used: {gift.claim.gasUsed}</div>
                           )}
                         </div>
                       )}
@@ -880,25 +880,25 @@ export default function GiftDetailsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {gift.value.amount && (
                         <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                          <div className="text-xs text-gray-500">Valor USD</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Valor USD</div>
                           <div className="text-lg font-bold">${gift.value.amount.toFixed(2)}</div>
                         </div>
                       )}
                       {gift.value.tokenAmount && (
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <div className="text-xs text-gray-500">Tokens</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Tokens</div>
                           <div className="text-lg font-bold">{gift.value.tokenAmount}</div>
                         </div>
                       )}
                       {gift.value.tokenSymbol && (
                         <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                          <div className="text-xs text-gray-500">Symbol</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Symbol</div>
                           <div className="text-lg font-bold">{gift.value.tokenSymbol}</div>
                         </div>
                       )}
                       {gift.value.currency && (
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                          <div className="text-xs text-gray-500">Currency</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Currency</div>
                           <div className="text-lg font-bold">{gift.value.currency}</div>
                         </div>
                       )}
@@ -912,7 +912,7 @@ export default function GiftDetailsPage() {
                   <div className="space-y-2 text-sm">
                     {gift.metadata.imageUrl && (
                       <div>
-                        <span className="text-gray-500">Image URL:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Image URL:</span>
                         <a
                           href={gift.metadata.imageUrl}
                           target="_blank"
@@ -925,25 +925,25 @@ export default function GiftDetailsPage() {
                     )}
                     {gift.metadata.imageCid && (
                       <div>
-                        <span className="text-gray-500">IPFS CID:</span>
+                        <span className="text-gray-600 dark:text-gray-400">IPFS CID:</span>
                         <p className="font-mono">{gift.metadata.imageCid}</p>
                       </div>
                     )}
                     {gift.metadata.description && (
                       <div>
-                        <span className="text-gray-500">Description:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Description:</span>
                         <p>{gift.metadata.description}</p>
                       </div>
                     )}
                     <div>
                       <span className="text-gray-500">Has Password:</span>
-                      <p className={`font-medium ${gift.metadata.hasPassword ? 'text-yellow-500' : 'text-gray-400'}`}>
+                      <p className={`font-medium ${gift.metadata.hasPassword ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         {gift.metadata.hasPassword ? 'Yes' : 'No'}
                       </p>
                     </div>
                     {gift.claim?.passwordAttempts && (
                       <div>
-                        <span className="text-gray-500">Password Attempts:</span>
+                        <span className="text-gray-600 dark:text-gray-400">Password Attempts:</span>
                         <p>{gift.claim.passwordAttempts}</p>
                       </div>
                     )}
@@ -952,7 +952,7 @@ export default function GiftDetailsPage() {
 
                 {/* Raw JSON Export */}
                 <details className="mt-6">
-                  <summary className="cursor-pointer hover:text-blue-500 font-medium">📦 Ver JSON Completo</summary>
+                  <summary className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 font-medium">📦 Ver JSON Completo</summary>
                   <pre className="mt-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-x-auto text-xs">
                     {JSON.stringify(gift, null, 2)}
                   </pre>
@@ -978,7 +978,7 @@ export default function GiftDetailsPage() {
                   {getStatusLabel(gift.status.current)}
                 </div>
                 {gift.status.isInEscrow && (
-                  <div className="text-xs text-gray-500 mt-1">En Escrow</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">En Escrow</div>
                 )}
               </div>
 
@@ -1004,7 +1004,7 @@ export default function GiftDetailsPage() {
                 <div className="bg-white dark:bg-gray-800 p-3 rounded-lg">
                   <div className="text-xs text-gray-500 mb-2">🎓 Educación</div>
                   <div className="flex items-center justify-between">
-                    <div className={`text-2xl font-bold ${gift.education.passed ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`text-2xl font-bold ${gift.education.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                       {gift.education.score}%
                     </div>
                     <div className="text-xs">
@@ -1012,7 +1012,7 @@ export default function GiftDetailsPage() {
                     </div>
                   </div>
                   {gift.education.questions && (
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {gift.education.questions.filter(q => q.isCorrect).length}/{gift.education.questions.length} correctas
                     </div>
                   )}
@@ -1044,7 +1044,7 @@ export default function GiftDetailsPage() {
             <div className="space-y-3 text-xs">
               {/* Creator Wallet */}
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="text-gray-500 mb-1">🌟 Creador</div>
+                <div className="text-gray-600 dark:text-gray-400 mb-1">🌟 Creador</div>
                 <div className="font-mono break-all text-blue-600 dark:text-blue-400">
                   {gift.creator.address}
                 </div>
@@ -1059,7 +1059,7 @@ export default function GiftDetailsPage() {
               {/* Claimer Wallet */}
               {gift.claim?.claimerWallet && (
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="text-gray-500 mb-1">🏆 Reclamado por</div>
+                  <div className="text-gray-600 dark:text-gray-400 mb-1">🏆 Reclamado por</div>
                   <div className="font-mono break-all text-green-600 dark:text-green-400">
                     {gift.claim.claimerWallet}
                   </div>
@@ -1075,7 +1075,7 @@ export default function GiftDetailsPage() {
               {/* TBA Address */}
               {gift.metadata.tbaAddress && (
                 <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <div className="text-gray-500 mb-1">🔗 TBA (ERC-6551)</div>
+                  <div className="text-gray-600 dark:text-gray-400 mb-1">🔗 TBA (ERC-6551)</div>
                   <div className="font-mono break-all text-purple-600 dark:text-purple-400">
                     {gift.metadata.tbaAddress}
                   </div>
@@ -1085,7 +1085,7 @@ export default function GiftDetailsPage() {
               {/* Escrow Contract */}
               {gift.metadata.escrowAddress && (
                 <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                  <div className="text-gray-500 mb-1">🔒 Escrow</div>
+                  <div className="text-gray-600 dark:text-gray-400 mb-1">🔒 Escrow</div>
                   <div className="font-mono break-all text-yellow-600 dark:text-yellow-400">
                     {gift.metadata.escrowAddress}
                   </div>
@@ -1103,12 +1103,12 @@ export default function GiftDetailsPage() {
               </h2>
               <div className="space-y-2 text-sm">
                 <div>
-                  <div className="text-gray-500">Email:</div>
+                  <div className="text-gray-600 dark:text-gray-400">Email:</div>
                   <div className="font-medium">{gift.education.email}</div>
                 </div>
                 {gift.education.emailHash && (
                   <div>
-                    <div className="text-gray-500">SHA-256 Hash:</div>
+                    <div className="text-gray-600 dark:text-gray-400">SHA-256 Hash:</div>
                     <div className="font-mono text-xs break-all">{gift.education.emailHash}</div>
                   </div>
                 )}

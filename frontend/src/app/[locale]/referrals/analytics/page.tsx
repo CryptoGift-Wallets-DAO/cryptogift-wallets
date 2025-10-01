@@ -312,9 +312,9 @@ export default function GiftAnalyticsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <ThemeCard variant="default">
           <div className="p-8 text-center">
-            <Gift className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <Gift className="w-16 h-16 mx-auto mb-4 text-gray-600 dark:text-gray-400" />
             <h2 className="text-xl font-semibold mb-2">{t('auth.connectWallet')}</h2>
-            <p className="text-gray-600">{t('auth.connectMessage')}</p>
+            <p className="text-gray-700 dark:text-gray-300">{t('auth.connectMessage')}</p>
           </div>
         </ThemeCard>
       </div>
@@ -609,7 +609,7 @@ export default function GiftAnalyticsPage() {
                 <Gift className="w-5 h-5" />
                 🎁 {t('gifts.title') || 'Individual Gifts'}
               </h3>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 {t('gifts.total') || 'Total'}: {individualGifts.length} {t('gifts.gifts') || 'gifts'}
               </span>
             </div>
@@ -703,7 +703,7 @@ export default function GiftAnalyticsPage() {
                                 {gift.claimer.slice(0, 6)}...{gift.claimer.slice(-4)}
                               </span>
                               {gift.claimedAt && (
-                                <span className="text-xs text-gray-500 block mt-1">
+                                <span className="text-xs text-gray-600 dark:text-gray-400 block mt-1">
                                   {new Date(gift.claimedAt).toLocaleDateString('es-ES', {
                                     day: '2-digit',
                                     month: '2-digit',
@@ -718,25 +718,25 @@ export default function GiftAnalyticsPage() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-500 dark:text-gray-400">-</span>
                           )}
                         </td>
                         <td className="text-center py-3 px-4">
                           {gift.educationScore !== undefined ? (
                             <span className={`font-bold ${
-                              gift.educationScore >= 80 ? 'text-green-600' :
-                              gift.educationScore >= 60 ? 'text-yellow-600' :
-                              'text-red-600'
+                              gift.educationScore >= 80 ? 'text-green-600 dark:text-green-400' :
+                              gift.educationScore >= 60 ? 'text-yellow-600 dark:text-yellow-400' :
+                              'text-red-600 dark:text-red-400'
                             }`}>
                               {gift.educationScore}%
                             </span>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-500 dark:text-gray-400">-</span>
                           )}
                         </td>
                         <td className="text-center py-3 px-4">
                           {gift.value ? (
-                            <span className="font-medium text-green-600">
+                            <span className="font-medium text-green-600 dark:text-green-400">
                               ${parseFloat(gift.value).toFixed(2)}
                             </span>
                           ) : (
@@ -747,7 +747,7 @@ export default function GiftAnalyticsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <Link
                               href={`/referrals/analytics/gift/${gift.displayId || gift.tokenId || gift.giftId}`}
-                              className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-sm font-medium"
                             >
                               🔍 {t('gifts.viewDetails') || 'View Details'}
                             </Link>
@@ -762,7 +762,7 @@ export default function GiftAnalyticsPage() {
                                     message: 'El link del regalo ha sido copiado al portapapeles'
                                   });
                                 }}
-                                className="text-green-600 hover:text-green-800 text-sm"
+                                className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm"
                                 title="Copiar link"
                               >
                                 🔗
@@ -774,7 +774,7 @@ export default function GiftAnalyticsPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-gray-500">
+                      <td colSpan={8} className="text-center py-8 text-gray-600 dark:text-gray-400">
                         {t('gifts.noGifts') || 'No individual gifts created yet.'}
                       </td>
                     </tr>
@@ -782,7 +782,7 @@ export default function GiftAnalyticsPage() {
                 </tbody>
               </table>
               {individualGifts.length > 20 && (
-                <div className="mt-4 text-center text-sm text-gray-500">
+                <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                   {t('gifts.showing') || 'Showing'} 20 {t('gifts.of') || 'of'} {individualGifts.length} {t('gifts.gifts') || 'gifts'}.
                 </div>
               )}
@@ -798,7 +798,7 @@ export default function GiftAnalyticsPage() {
                 <Users className="w-5 h-5" />
                 🎉 Campañas (Campaigns) - Próximamente
               </h3>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 Usará EIP-1155 para regalos masivos
               </span>
             </div>
@@ -822,14 +822,14 @@ export default function GiftAnalyticsPage() {
                         <td className="py-3 px-4">
                           <div>
                             <div className="font-medium">{campaign.campaignName}</div>
-                            <div className="text-sm text-gray-500">ID: {campaign.campaignId}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">ID: {campaign.campaignId}</div>
                           </div>
                         </td>
                         <td className="text-center py-3 px-4">
                           {format.number(campaign.totalGifts)}
                         </td>
                         <td className="text-center py-3 px-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                             {format.number(campaign.claimed || 0)}
                           </span>
                         </td>
@@ -856,7 +856,7 @@ export default function GiftAnalyticsPage() {
                         <td className="text-center py-3 px-4">
                           <Link
                             href={`/referrals/analytics/campaign/${campaign.campaignId}`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline"
                           >
                             Ver Detalles
                           </Link>
@@ -867,13 +867,13 @@ export default function GiftAnalyticsPage() {
                     <tr>
                       <td colSpan={7} className="text-center py-12">
                         <div className="flex flex-col items-center gap-3">
-                          <Users className="w-12 h-12 text-gray-300" />
+                          <Users className="w-12 h-12 text-gray-400 dark:text-gray-600" />
                           <div>
-                            <p className="text-gray-500 font-medium">No hay campañas activas</p>
-                            <p className="text-sm text-gray-400 mt-1">
+                            <p className="text-gray-600 dark:text-gray-400 font-medium">No hay campañas activas</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               Las campañas permitirán crear múltiples regalos con una sola transacción usando EIP-1155
                             </p>
-                            <p className="text-xs text-gray-400 mt-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                               Esta funcionalidad estará disponible próximamente
                             </p>
                           </div>
