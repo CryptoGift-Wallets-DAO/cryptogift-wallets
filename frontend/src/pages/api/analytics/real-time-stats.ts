@@ -177,11 +177,16 @@ export default async function handler(
             status: actualStatus,
             createdAt: giftData.createdAt,
             claimedAt: giftData.claimedAt,
+            viewedAt: giftData.viewedAt,
+            educationStartedAt: giftData.educationStartedAt,
+            educationCompletedAt: giftData.educationCompletedAt,
             claimer: giftData.claimer,
             creator: giftData.creator || giftData.referrer,
             value: giftData.value,
             educationScore: giftData.educationScore,
-            recipientReference: giftData.recipientReference || giftData.recipientName || ''
+            recipientReference: giftData.recipientReference || giftData.recipientName || '',
+            expiresAt: giftData.expiresAt,
+            lastUpdated: giftData.lastUpdated
           });
         }
       }
@@ -223,6 +228,14 @@ export default async function handler(
       }
     } catch (e) {
       console.log('No campaign keys found');
+    }
+
+    // Load references from dedicated hash
+    let references: Record<string, string> = {};
+    try {
+      references = await redis.hgetall('gift:references') || {};
+    } catch (e) {
+      console.log('Could not load gift references');
     }
 
     // 3. Check ga:v1:events stream (canonical events)
@@ -343,8 +356,15 @@ export default async function handler(
       customName: gift.customName || `Gift #${gift.tokenId || gift.giftId || 'Unknown'}`,
       displayId: gift.tokenId || gift.giftId || 'Unknown',
       creator: gift.creator || 'Unknown',
-      recipientReference: gift.recipientReference || '', // For noting who it was meant for
+      recipientReference: references[gift.giftId] || gift.recipientReference || '', // From Redis references
       educationScore: gift.educationScore,
+      // Include all timestamps
+      createdAt: gift.createdAt,
+      claimedAt: gift.claimedAt,
+      viewedAt: gift.viewedAt,
+      educationStartedAt: gift.educationStartedAt,
+      educationCompletedAt: gift.educationCompletedAt,
+      expiresAt: gift.expiresAt,
     }));
 
     // For now, we don't have real campaigns (those will use EIP-1155 in the future)

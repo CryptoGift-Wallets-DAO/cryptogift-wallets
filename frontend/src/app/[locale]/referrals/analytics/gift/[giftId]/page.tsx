@@ -345,7 +345,20 @@ export default function GiftDetailsPage() {
                 <div className="relative mb-6">
                   <div className="absolute -left-8 w-4 h-4 bg-blue-500 rounded-full ring-4 ring-blue-100 dark:ring-blue-900"></div>
                   <div className="text-sm font-medium">🎁 Regalo Creado</div>
-                  <div className="text-xs text-gray-500">{new Date(gift.creator.createdAt).toLocaleString('es-ES')}</div>
+                  <div className="text-xs text-gray-500 font-medium">
+                    📅 {new Date(gift.creator.createdAt).toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                    <br />
+                    🕰️ {new Date(gift.creator.createdAt).toLocaleTimeString('es-ES', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
+                  </div>
                   <div className="text-xs text-gray-400 mt-1">
                     <div>Creador: <span className="font-mono">{formatFullAddress(gift.creator.address)}</span></div>
                     {gift.creator.referrer && (
@@ -375,7 +388,19 @@ export default function GiftDetailsPage() {
                     <div className="text-xs text-gray-400 mt-2 space-y-2">
                       {gift.viewingHistory.map((view, idx) => (
                         <div key={idx} className="pl-2 border-l-2 border-gray-200 dark:border-gray-700">
-                          <div>{new Date(view.timestamp).toLocaleString('es-ES')}</div>
+                          <div className="font-medium text-gray-500">
+                            📅 {new Date(view.timestamp).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                            {' '}
+                            🕰️ {new Date(view.timestamp).toLocaleTimeString('es-ES', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </div>
                           {view.viewerAddress && (
                             <div>Viewer: <span className="font-mono">{formatAddress(view.viewerAddress)}</span></div>
                           )}
@@ -396,7 +421,20 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-orange-500 rounded-full ring-4 ring-orange-100 dark:ring-orange-900"></div>
                     <div className="text-sm font-medium">📚 Educación Iniciada</div>
-                    <div className="text-xs text-gray-500">{new Date(gift.education.startedAt).toLocaleString('es-ES')}</div>
+                    <div className="text-xs text-gray-500 font-medium">
+                      📅 {new Date(gift.education.startedAt).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      <br />
+                      🕰️ {new Date(gift.education.startedAt).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </div>
                     <div className="text-xs text-gray-400 mt-1">
                       Módulo: {gift.education.moduleName || 'Sales Masterclass'}
                     </div>
@@ -408,7 +446,20 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-purple-500 rounded-full ring-4 ring-purple-100 dark:ring-purple-900"></div>
                     <div className="text-sm font-medium">🎓 Educación Completada</div>
-                    <div className="text-xs text-gray-500">{new Date(gift.education.completedAt).toLocaleString('es-ES')}</div>
+                    <div className="text-xs text-gray-500 font-medium">
+                      📅 {new Date(gift.education.completedAt).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      <br />
+                      🕰️ {new Date(gift.education.completedAt).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </div>
                     <div className="text-xs text-gray-400 mt-1">
                       <div>Score Final: {gift.education.score}% {gift.education.passed ? '✅ Aprobado' : '❌ Reprobado'}</div>
                       <div>Tiempo Total: {Math.floor((gift.education.totalTimeSpent || 0) / 60)} minutos</div>
@@ -421,7 +472,20 @@ export default function GiftDetailsPage() {
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-green-500 rounded-full ring-4 ring-green-100 dark:ring-green-900"></div>
                     <div className="text-sm font-medium">🏆 Regalo Reclamado</div>
-                    <div className="text-xs text-gray-500">{new Date(gift.claim.claimedAt).toLocaleString('es-ES')}</div>
+                    <div className="text-xs text-gray-500 font-medium">
+                      📅 {new Date(gift.claim.claimedAt).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      <br />
+                      🕰️ {new Date(gift.claim.claimedAt).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </div>
                     <div className="text-xs text-gray-400 mt-1">
                       <div>Reclamado por: <span className="font-mono">{formatFullAddress(gift.claim.claimerWallet || gift.claim.claimerAddress || 'Unknown')}</span></div>
                       {gift.claim.blockNumber && (
@@ -449,7 +513,20 @@ export default function GiftDetailsPage() {
                   <div className="relative">
                     <div className={`absolute -left-8 w-4 h-4 ${gift.status.isExpired ? 'bg-red-500' : 'bg-gray-400'} rounded-full ring-4 ${gift.status.isExpired ? 'ring-red-100 dark:ring-red-900' : 'ring-gray-100 dark:ring-gray-900'}`}></div>
                     <div className="text-sm font-medium">{gift.status.isExpired ? '⏰ Expirado' : '⏳ Expira'}</div>
-                    <div className="text-xs text-gray-500">{new Date(gift.status.expiresAt).toLocaleString('es-ES')}</div>
+                    <div className="text-xs text-gray-500 font-medium">
+                      📅 {new Date(gift.status.expiresAt).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                      <br />
+                      🕰️ {new Date(gift.status.expiresAt).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

@@ -621,7 +621,7 @@ export default function GiftAnalyticsPage() {
                     <th className="text-left py-3 px-4 font-medium">{t('gifts.columns.reference') || 'Reference/Name'}</th>
                     <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.status') || 'Status'}</th>
                     <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.created') || 'Created'}</th>
-                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.claimedBy') || 'Claimed By'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.claimedBy') || 'Claimed By & Date'}</th>
                     <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.education') || 'Education'}</th>
                     <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.value') || 'Value'}</th>
                     <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.actions') || 'Actions'}</th>
@@ -646,8 +646,27 @@ export default function GiftAnalyticsPage() {
                               const giftKey = gift.giftId || gift.tokenId;
                               const newRefs = { ...giftReferences, [giftKey]: e.target.value };
                               setGiftReferences(newRefs);
-                              // Save to localStorage
+                              // Save to localStorage as backup
                               localStorage.setItem('giftReferences', JSON.stringify(newRefs));
+                            }}
+                            onBlur={async (e) => {
+                              // Save to server when user leaves the field
+                              const giftKey = gift.giftId || gift.tokenId;
+                              const reference = e.target.value;
+
+                              try {
+                                const response = await fetch('/api/analytics/update-gift-reference', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ giftId: giftKey, reference })
+                                });
+
+                                if (response.ok) {
+                                  console.log(`Reference saved for gift ${giftKey}`);
+                                }
+                              } catch (error) {
+                                console.error('Failed to save reference:', error);
+                              }
                             }}
                           />
                         </td>
@@ -679,9 +698,25 @@ export default function GiftAnalyticsPage() {
                         </td>
                         <td className="text-center py-3 px-4">
                           {gift.claimer ? (
-                            <span className="font-mono text-xs" title={gift.claimer}>
-                              {gift.claimer.slice(0, 6)}...{gift.claimer.slice(-4)}
-                            </span>
+                            <div>
+                              <span className="font-mono text-xs block" title={gift.claimer}>
+                                {gift.claimer.slice(0, 6)}...{gift.claimer.slice(-4)}
+                              </span>
+                              {gift.claimedAt && (
+                                <span className="text-xs text-gray-500 block mt-1">
+                                  {new Date(gift.claimedAt).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: '2-digit'
+                                  })}
+                                  {' '}
+                                  {new Date(gift.claimedAt).toLocaleTimeString('es-ES', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
