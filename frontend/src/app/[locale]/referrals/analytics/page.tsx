@@ -56,12 +56,13 @@ export default function GiftAnalyticsPage() {
   const format = useFormatter();
   const account = useActiveAccount();
   const { showNotification } = useNotifications();
-  
+
   // State
   const [loading, setLoading] = useState(true); // Start with loading true to fetch initial data
   const [stats, setStats] = useState<CampaignStats[]>([]); // Initialize with empty array
   const [individualGifts, setIndividualGifts] = useState<any[]>([]); // Individual gifts
   const [realCampaigns, setRealCampaigns] = useState<any[]>([]); // Real campaigns (EIP-1155 future)
+  const [giftReferences, setGiftReferences] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<FilterState>({
     campaignIds: [],
     dateRange: { from: null, to: null },
@@ -206,7 +207,18 @@ export default function GiftAnalyticsPage() {
 
         // Update individual gifts
         if (data.gifts) {
-          setIndividualGifts(data.gifts);
+          // Load saved references from localStorage
+          const savedRefs = localStorage.getItem('giftReferences');
+          const refs = savedRefs ? JSON.parse(savedRefs) : {};
+
+          // Merge saved references with gifts
+          const giftsWithRefs = data.gifts.map((gift: any) => ({
+            ...gift,
+            recipientReference: refs[gift.giftId || gift.tokenId] || gift.recipientReference || ''
+          }));
+
+          setIndividualGifts(giftsWithRefs);
+          setGiftReferences(refs);
         }
 
         // Update real campaigns (empty for now)
@@ -595,24 +607,24 @@ export default function GiftAnalyticsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Gift className="w-5 h-5" />
-                🎁 Regalos Individuales (Gifts)
+                🎁 {t('gifts.title') || 'Individual Gifts'}
               </h3>
               <span className="text-sm text-gray-500">
-                Total: {individualGifts.length} regalos
+                {t('gifts.total') || 'Total'}: {individualGifts.length} {t('gifts.gifts') || 'gifts'}
               </span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b bg-gray-50 dark:bg-gray-800">
-                    <th className="text-left py-3 px-4 font-medium">Regalo ID</th>
-                    <th className="text-left py-3 px-4 font-medium">Referencia/Nombre</th>
-                    <th className="text-center py-3 px-4 font-medium">Estado</th>
-                    <th className="text-center py-3 px-4 font-medium">Creado</th>
-                    <th className="text-center py-3 px-4 font-medium">Reclamado Por</th>
-                    <th className="text-center py-3 px-4 font-medium">Educación</th>
-                    <th className="text-center py-3 px-4 font-medium">Valor</th>
-                    <th className="text-center py-3 px-4 font-medium">Acciones</th>
+                    <th className="text-left py-3 px-4 font-medium">{t('gifts.columns.id') || 'Gift ID'}</th>
+                    <th className="text-left py-3 px-4 font-medium">{t('gifts.columns.reference') || 'Reference/Name'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.status') || 'Status'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.created') || 'Created'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.claimedBy') || 'Claimed By'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.education') || 'Education'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.value') || 'Value'}</th>
+                    <th className="text-center py-3 px-4 font-medium">{t('gifts.columns.actions') || 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -627,31 +639,38 @@ export default function GiftAnalyticsPage() {
                         <td className="py-3 px-4">
                           <input
                             type="text"
-                            placeholder="Agregar referencia..."
-                            defaultValue={gift.recipientReference || ''}
+                            placeholder={t('gifts.addReference') || 'Add reference...'}
+                            value={giftReferences[gift.giftId || gift.tokenId] || gift.recipientReference || ''}
                             className="px-2 py-1 text-sm border rounded bg-transparent hover:bg-white dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             onChange={(e) => {
-                              // TODO: Save reference to localStorage or API
-                              gift.recipientReference = e.target.value;
+                              const giftKey = gift.giftId || gift.tokenId;
+                              const newRefs = { ...giftReferences, [giftKey]: e.target.value };
+                              setGiftReferences(newRefs);
+                              // Save to localStorage
+                              localStorage.setItem('giftReferences', JSON.stringify(newRefs));
                             }}
                           />
                         </td>
                         <td className="text-center py-3 px-4">
                           {gift.status === 'claimed' ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              ✅ Reclamado
+                              ✅ {t('gifts.status.claimed') || 'Claimed'}
                             </span>
                           ) : gift.status === 'viewed' ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                              👀 Visto
+                              👀 {t('gifts.status.viewed') || 'Viewed'}
+                            </span>
+                          ) : gift.status === 'educationCompleted' ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                              🎓 {t('gifts.status.educationCompleted') || 'Education Done'}
                             </span>
                           ) : gift.status === 'expired' ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                              ⏰ Expirado
+                              ⏰ {t('gifts.status.expired') || 'Expired'}
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                              🎆 Creado
+                              🎆 {t('gifts.status.created') || 'Created'}
                             </span>
                           )}
                         </td>
@@ -695,7 +714,7 @@ export default function GiftAnalyticsPage() {
                               href={`/referrals/analytics/gift/${gift.displayId || gift.tokenId || gift.giftId}`}
                               className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
                             >
-                              🔍 Ver Detalles
+                              🔍 {t('gifts.viewDetails') || 'View Details'}
                             </Link>
                             {gift.status === 'created' && !gift.expired && (
                               <button
@@ -721,7 +740,7 @@ export default function GiftAnalyticsPage() {
                   ) : (
                     <tr>
                       <td colSpan={8} className="text-center py-8 text-gray-500">
-                        No hay regalos individuales creados aún.
+                        {t('gifts.noGifts') || 'No individual gifts created yet.'}
                       </td>
                     </tr>
                   )}
@@ -729,7 +748,7 @@ export default function GiftAnalyticsPage() {
               </table>
               {individualGifts.length > 20 && (
                 <div className="mt-4 text-center text-sm text-gray-500">
-                  Mostrando 20 de {individualGifts.length} regalos.
+                  {t('gifts.showing') || 'Showing'} 20 {t('gifts.of') || 'of'} {individualGifts.length} {t('gifts.gifts') || 'gifts'}.
                 </div>
               )}
             </div>

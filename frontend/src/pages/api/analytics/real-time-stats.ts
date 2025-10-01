@@ -112,11 +112,29 @@ export default async function handler(
       for (const key of giftDetailKeys.slice(0, 100)) { // Limit to 100 for performance
         const giftData = await redis.hgetall(key);
         if (giftData) {
+          // Extract gift ID from the key (e.g., "gift:detail:305" -> "305")
+          const giftIdFromKey = key.split(':').pop() || '';
+
           stats.created++;
 
-          if (giftData.status === 'claimed') stats.claimed++;
-          if (giftData.status === 'viewed') stats.viewed++;
-          if (giftData.claimer) stats.claimed++;
+          // Determine actual status
+          let actualStatus = 'created';
+          if (giftData.claimer) {
+            actualStatus = 'claimed';
+            stats.claimed++;
+          } else if (giftData.status === 'viewed' || giftData.viewedAt) {
+            actualStatus = 'viewed';
+            stats.viewed++;
+          } else if (giftData.status === 'educationCompleted') {
+            actualStatus = 'educationCompleted';
+            stats.educationCompleted++;
+          } else if (giftData.status === 'expired' || giftData.expired === 'true') {
+            actualStatus = 'expired';
+            stats.expired++;
+          } else if (giftData.status) {
+            actualStatus = giftData.status as string;
+          }
+
           if (giftData.value) stats.totalValue += parseFloat(giftData.value as string);
 
           // Track by campaign
@@ -146,7 +164,7 @@ export default async function handler(
           campaign.totalGifts++;
           campaign.status.created++;
 
-          if (giftData.status === 'claimed') {
+          if (actualStatus === 'claimed') {
             campaign.status.claimed++;
           }
           if (giftData.value) {
@@ -154,13 +172,16 @@ export default async function handler(
           }
 
           stats.gifts.push({
-            giftId: giftData.giftId || giftData.tokenId,
-            tokenId: giftData.tokenId,
-            status: giftData.status,
+            giftId: giftData.giftId || giftData.tokenId || giftIdFromKey,
+            tokenId: giftData.tokenId || giftIdFromKey,
+            status: actualStatus,
             createdAt: giftData.createdAt,
             claimedAt: giftData.claimedAt,
             claimer: giftData.claimer,
-            value: giftData.value
+            creator: giftData.creator || giftData.referrer,
+            value: giftData.value,
+            educationScore: giftData.educationScore,
+            recipientReference: giftData.recipientReference || giftData.recipientName || ''
           });
         }
       }
@@ -319,10 +340,11 @@ export default async function handler(
     const individualGifts = stats.gifts.map(gift => ({
       ...gift,
       // Add custom name/reference field (can be updated later)
-      customName: gift.customName || `Gift #${gift.tokenId || gift.giftId}`,
-      displayId: gift.tokenId || gift.giftId,
+      customName: gift.customName || `Gift #${gift.tokenId || gift.giftId || 'Unknown'}`,
+      displayId: gift.tokenId || gift.giftId || 'Unknown',
       creator: gift.creator || 'Unknown',
       recipientReference: gift.recipientReference || '', // For noting who it was meant for
+      educationScore: gift.educationScore,
     }));
 
     // For now, we don't have real campaigns (those will use EIP-1155 in the future)

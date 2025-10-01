@@ -173,6 +173,33 @@
     "auth": {
       "connectWallet": "Connect your wallet",
       "connectMessage": "You need to connect your wallet to view analytics"
+    },
+    "gifts": {
+      "title": "Individual Gifts",
+      "total": "Total",
+      "gifts": "gifts",
+      "addReference": "Add reference...",
+      "viewDetails": "View Details",
+      "noGifts": "No individual gifts created yet.",
+      "showing": "Showing",
+      "of": "of",
+      "columns": {
+        "id": "Gift ID",
+        "reference": "Reference/Name",
+        "status": "Status",
+        "created": "Created",
+        "claimedBy": "Claimed By",
+        "education": "Education",
+        "value": "Value",
+        "actions": "Actions"
+      },
+      "status": {
+        "created": "Created",
+        "viewed": "Viewed",
+        "claimed": "Claimed",
+        "expired": "Expired",
+        "educationCompleted": "Education Done"
+      }
     }
   }
 }

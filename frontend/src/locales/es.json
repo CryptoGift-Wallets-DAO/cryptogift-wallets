@@ -173,6 +173,33 @@
     "auth": {
       "connectWallet": "Conecta tu wallet",
       "connectMessage": "Necesitas conectar tu wallet para ver las analíticas"
+    },
+    "gifts": {
+      "title": "Regalos Individuales",
+      "total": "Total",
+      "gifts": "regalos",
+      "addReference": "Agregar referencia...",
+      "viewDetails": "Ver Detalles",
+      "noGifts": "No hay regalos individuales creados aún.",
+      "showing": "Mostrando",
+      "of": "de",
+      "columns": {
+        "id": "Regalo ID",
+        "reference": "Referencia/Nombre",
+        "status": "Estado",
+        "created": "Creado",
+        "claimedBy": "Reclamado Por",
+        "education": "Educación",
+        "value": "Valor",
+        "actions": "Acciones"
+      },
+      "status": {
+        "created": "Creado",
+        "viewed": "Visto",
+        "claimed": "Reclamado",
+        "expired": "Expirado",
+        "educationCompleted": "Educación Completada"
+      }
     }
   }
 }
