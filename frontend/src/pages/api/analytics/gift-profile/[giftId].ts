@@ -264,6 +264,7 @@ export default async function handler(
             ...profile.claim,
             claimed: true,
             claimerAddress: giftDetails.claimer as string,
+            claimerWallet: (giftDetails.claimer as string) || profile.claim?.claimerWallet, // CRITICAL FIX: Preserve from blockchain
             claimedAt: giftDetails.claimedAt ?
               new Date(parseInt(giftDetails.claimedAt as string)).toISOString() :
               undefined
@@ -294,7 +295,7 @@ export default async function handler(
           }
         }
 
-        // Read encrypted email if available (FASE 1)
+        // CRITICAL FIX: Decrypt email from gift:detail (FASE 1)
         if (giftDetails.email_encrypted && giftDetails.email_hmac) {
           if (!profile.education) {
             profile.education = {
@@ -304,6 +305,22 @@ export default async function handler(
             };
           }
           profile.education.emailHash = giftDetails.email_hmac as string;
+
+          // Decrypt email for analytics display
+          try {
+            const { decryptEmail } = await import('@/lib/piiEncryption');
+            const decryptedEmail = decryptEmail(
+              giftDetails.email_encrypted as string,
+              giftDetails.email_hmac as string
+            );
+            if (decryptedEmail) {
+              profile.education.email = decryptedEmail;
+              console.log('📧 Email descifrado exitosamente para analytics');
+            }
+          } catch (decryptError) {
+            console.warn('⚠️ Could not decrypt email:', decryptError);
+            // Keep emailHash for reference
+          }
         }
       }
 
@@ -381,7 +398,7 @@ export default async function handler(
           }
         }
 
-        // Extract claim info from GiftClaimed event
+        // CRITICAL FIX: Extract claim info from GiftClaimed event with claimerWallet
         const claimEvent = profile.events.find(e => e.type === 'GiftClaimed');
         if (claimEvent) {
           profile.claim = {
@@ -392,6 +409,7 @@ export default async function handler(
           };
           if (claimEvent.details?.claimer) {
             profile.claim.claimerAddress = claimEvent.details.claimer;
+            profile.claim.claimerWallet = claimEvent.details.claimer; // CRITICAL FIX: Also set claimerWallet
           }
         }
       } catch (error) {
