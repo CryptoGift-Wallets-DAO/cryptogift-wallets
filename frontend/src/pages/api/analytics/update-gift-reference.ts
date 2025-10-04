@@ -56,7 +56,7 @@ export default async function handler(
     }
 
     // Also store in a dedicated references hash for quick lookup
-    await redis.hset('gift:references', giftId, reference || '');
+    await redis.hset('gift:references', { [giftId]: reference || '' });
 
     console.log(`✅ Reference updated for gift ${giftId}: "${reference}"`);
 

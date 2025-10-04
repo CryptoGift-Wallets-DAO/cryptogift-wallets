@@ -52,6 +52,8 @@ import {
 import { executeMintTransaction } from '../../lib/gasPaidTransactions';
 import { getPublicBaseUrl } from '../../lib/publicBaseUrl';
 import { trackGiftCreated, trackCampaignCreated } from '../../lib/analyticsIntegration';
+import { processBlockchainEvent } from '../../lib/analytics/canonicalEvents';
+import { validateRedisForCriticalOps } from '../../lib/redisConfig';
 
 /**
  * MULTI-GATEWAY IPFS VALIDATION - SURGICAL FIX
