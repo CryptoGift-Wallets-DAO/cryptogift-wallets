@@ -329,7 +329,46 @@ export default async function handler(
       key: claimRecordKey,
       claimerAddress: claimerAddress.slice(0, 10) + '...'
     });
-    
+
+    // CRITICAL FIX: Track claim event in canonical analytics system
+    try {
+      const { processBlockchainEvent } = await import('../../../lib/analytics/canonicalEvents');
+      const { getGiftIdFromTokenId } = await import('../../../lib/escrowUtils');
+
+      // Get giftId for tracking
+      const giftId = await getGiftIdFromTokenId(tokenId);
+
+      if (giftId !== null) {
+        await processBlockchainEvent(
+          redis!,
+          'GiftClaimed',
+          transactionHash,
+          0, // logIndex
+          BigInt(Date.now()), // blockNumber
+          Date.now(), // blockTimestamp
+          {
+            giftId: giftId.toString(),
+            tokenId: tokenId,
+            campaignId: `campaign_default`, // Will be enriched from gift:detail if available
+            claimer: claimerAddress,
+            metadata: {
+              transactionHash,
+              claimedAt: new Date().toISOString(),
+              claimMethod: 'frontend_direct',
+              metadataUpdated: true
+            }
+          },
+          'realtime'
+        );
+        console.log('📊 CRITICAL FIX: Claim event tracked in canonical analytics system');
+      } else {
+        console.warn('⚠️ Could not resolve giftId from tokenId for analytics tracking');
+      }
+    } catch (analyticsError) {
+      console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+      // Don't fail the whole operation for analytics errors
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Metadata updated successfully after claim'

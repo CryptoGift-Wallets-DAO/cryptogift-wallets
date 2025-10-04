@@ -22,7 +22,8 @@ import {
 import { ESCROW_ABI, ESCROW_CONTRACT_ADDRESS, type EscrowGift } from '../../lib/escrowABI';
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { debugLogger } from '../../lib/secureDebugLogger';
-import { trackGiftViewed } from '../../lib/analyticsIntegration';
+import { Redis } from '@upstash/redis';
+import { processBlockchainEvent } from '../../lib/analytics/canonicalEvents';
 
 // Types
 interface ValidateClaimRequest {
@@ -345,21 +346,40 @@ export default async function handler(
       valid: true
     });
 
-    // Track gift view (validation is essentially viewing the gift)
+    // CRITICAL FIX: Track gift view using canonical analytics system (not legacy)
     try {
-      await trackGiftViewed({
-        giftId: validation.giftId!.toString(),
-        tokenId,
-        viewerAddress: claimerAddress,
-        hasEducationRequirements: !!gateData && gateData !== '0x',
-        metadata: {
-          creator: validation.gift!.creator,
-          expirationTime: Number(validation.gift!.expirationTime),
-          status: validation.gift!.status,
-          viewedAt: new Date().toISOString()
-        }
-      });
-      console.log('📊 Analytics: Gift view tracked successfully');
+      if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        const redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL!,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN!
+        });
+
+        await processBlockchainEvent(
+          redis,
+          'GiftViewed',
+          `view_${tokenId}_${Date.now()}`, // txHash (unique view ID)
+          0, // logIndex
+          BigInt(Date.now()), // blockNumber
+          Date.now(), // blockTimestamp
+          {
+            giftId: validation.giftId!.toString(),
+            tokenId: tokenId,
+            campaignId: `campaign_${validation.gift!.creator.slice(0, 8)}`,
+            claimer: claimerAddress, // Viewer address
+            metadata: {
+              creator: validation.gift!.creator,
+              expirationTime: Number(validation.gift!.expirationTime),
+              status: validation.gift!.status,
+              viewedAt: new Date().toISOString(),
+              hasEducationRequirements: !!gateData && gateData !== '0x'
+            }
+          },
+          'realtime'
+        );
+        console.log('📊 CRITICAL FIX: Gift view tracked in canonical analytics system');
+      } else {
+        console.warn('⚠️ Redis not configured - view tracking skipped');
+      }
     } catch (analyticsError) {
       console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
       // Don't fail the validation for analytics errors
