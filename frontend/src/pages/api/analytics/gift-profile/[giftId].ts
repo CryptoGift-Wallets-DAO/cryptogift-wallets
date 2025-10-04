@@ -389,12 +389,26 @@ export default async function handler(
         // Update analytics from events
         profile.analytics.totalViews = profile.events.filter(e => e.type === 'GiftViewed').length;
 
-        // Extract creator info from GiftCreated event
+        // CRITICAL FIX: Extract creator info from GiftCreated event
         const createEvent = profile.events.find(e => e.type === 'GiftCreated');
         if (createEvent) {
           profile.creator.txHash = createEvent.txHash;
+          profile.creator.createdAt = createEvent.timestamp; // Update with actual blockchain timestamp
           if (createEvent.details?.creator) {
             profile.creator.address = createEvent.details.creator;
+          }
+        }
+
+        // FALLBACK: If creator still unknown, try to get from gift_mapping
+        if (profile.creator.address === 'unknown') {
+          try {
+            const mappingData = await redis.hgetall(`gift_mapping:${giftId}`);
+            if (mappingData && mappingData.creator) {
+              profile.creator.address = mappingData.creator as string;
+              console.log(`✅ Creator resolved from gift_mapping: ${profile.creator.address.slice(0, 10)}...`);
+            }
+          } catch (e) {
+            // Keep as unknown if mapping not found
           }
         }
 
