@@ -62,14 +62,15 @@ export default async function handler(
       // Check if events exist
       try {
         const events = await redis.xrevrange('ga:v1:events', '+', '-', 100);
-        const relevantEvents = (events as any[]).filter(([_, fields]) =>
+        const eventsArray = Array.isArray(events) ? events : Object.entries(events);
+        const relevantEvents = eventsArray.filter(([_, fields]: [string, any]) =>
           fields.giftId === targetGiftId.toString() ||
           fields.tokenId === (tokenId || '').toString()
         );
         diagnostics.data.canonicalEvents = relevantEvents.length > 0
-          ? relevantEvents.map(([id, fields]) => ({ id, ...fields }))
+          ? relevantEvents.map(([id, fields]: [string, any]) => ({ id, ...fields }))
           : 'NO_MATCHING_EVENTS';
-      } catch (e) {
+      } catch (e: any) {
         diagnostics.data.canonicalEvents = 'ERROR: ' + e.message;
       }
 
