@@ -67,6 +67,15 @@ export default async function handler(
     }
 
     const event = events[0];
+
+    // Type guard: Ensure event is EventLog (has args)
+    if (!('args' in event)) {
+      return res.status(500).json({
+        error: 'Invalid event structure',
+        message: 'Event does not contain args field'
+      });
+    }
+
     const giftId = event.args?.giftId?.toString();
     const creator = event.args?.creator;
     const expirationTime = event.args?.expirationTime?.toString();
@@ -94,8 +103,7 @@ export default async function handler(
       84532, // Base Sepolia
       {
         creator,
-        expirationTime,
-        registeredAt: blockTimestamp
+        createdAt: blockTimestamp
       }
     );
     console.log(`✅ Mapping created: gift_mapping:${tokenId}`);
