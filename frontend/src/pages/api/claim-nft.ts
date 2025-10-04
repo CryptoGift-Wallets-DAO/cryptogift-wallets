@@ -249,12 +249,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Get gift ID from mapping or metadata
       const giftId = existingMetadata?.giftId || tokenId; // Use tokenId as fallback
 
-      const useCanonical = process.env.ANALYTICS_CANONICAL_ONLY === '1' || process.env.ANALYTICS_DUAL_WRITE === '1';
+      // AUDIT FIX: ALWAYS use canonical tracking if Redis is available
+      const redis = validateRedisForCriticalOps('Analytics tracking');
 
-      if (useCanonical && isAnalyticsEnabled()) {
-        const redis = validateRedisForCriticalOps('Analytics tracking');
-
-        if (redis) {
+      if (redis) {
           await processBlockchainEvent(
             redis,
             'GiftClaimed',
@@ -277,41 +275,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
             'realtime'
           );
-          console.log('📊 Analytics: Gift claim tracked successfully (Canonical)');
-        } else {
-          console.warn('⚠️ Redis not available for Canonical tracking, falling back to Legacy');
-          // Fallback to legacy
-          await trackGiftClaimed({
-            giftId: giftId.toString(),
-            tokenId: tokenId.toString(),
-            claimerAddress,
-            previousOwner: previousOwner,
-            txHash: claimResult?.transactionHash,
-            metadata: {
-              tbaAddress,
-              claimMethod: 'real_nft_transfer',
-              hasGuardians: setupGuardians && guardianEmails.length >= 3,
-              claimedAt: new Date().toISOString()
-            }
-          });
-          console.log('📊 Analytics: Gift claim tracked successfully (Legacy fallback)');
-        }
+          console.log('📊 AUDIT FIX: Gift claim tracked successfully (Canonical, no fallback)');
       } else {
-        // Legacy system when feature flags disabled
-        await trackGiftClaimed({
-          giftId: giftId.toString(),
-          tokenId: tokenId.toString(),
-          claimerAddress,
-          previousOwner: previousOwner,
-          txHash: claimResult?.transactionHash,
-          metadata: {
-            tbaAddress,
-            claimMethod: 'real_nft_transfer',
-            hasGuardians: setupGuardians && guardianEmails.length >= 3,
-            claimedAt: new Date().toISOString()
-          }
-        });
-        console.log('📊 Analytics: Gift claim tracked successfully (Legacy)');
+        console.error('❌ CRITICAL: Redis not configured - claim analytics NOT tracked');
       }
     } catch (analyticsError) {
       console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);

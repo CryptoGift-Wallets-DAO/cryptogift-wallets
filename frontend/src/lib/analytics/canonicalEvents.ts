@@ -191,10 +191,10 @@ export async function processBlockchainEvent(
   // Update real-time aggregates
   await updateRealtimeAggregates(redis, canonicalEvent);
 
-  // FASE 2: Dual-write to gift:detail for backward compatibility
-  if (process.env.ANALYTICS_DUAL_WRITE === '1') {
-    await updateGiftDetail(redis, canonicalEvent);
-  }
+  // AUDIT FIX: ALWAYS dual-write to gift:detail (no feature flags)
+  // This ensures dashboard can read data immediately without relying on flags
+  await updateGiftDetail(redis, canonicalEvent);
+  console.log(`✅ AUDIT FIX: Dual-write to gift:detail:${canonicalEvent.giftId} completed`);
 
   return true;
 }

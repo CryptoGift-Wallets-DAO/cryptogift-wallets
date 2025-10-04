@@ -489,11 +489,12 @@ export default async function handler(
       rateLimit: finalRateLimit
     });
 
-    // Track claim event in enterprise analytics
+    // AUDIT FIX: Track claim event ALWAYS (no feature flags blocking)
     try {
-      const { processBlockchainEvent, isAnalyticsEnabled } = await import('../../lib/analytics/canonicalEvents');
+      const { processBlockchainEvent } = await import('../../lib/analytics/canonicalEvents');
 
-      if (isAnalyticsEnabled()) {
+      // CRITICAL: Only check if Redis is configured, NOT if analytics is "enabled"
+      if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
         const { Redis } = await import('@upstash/redis');
         const redis = new Redis({
           url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -527,8 +528,12 @@ export default async function handler(
             'realtime'
           );
 
-          console.log('📊 Analytics: Claim event tracked successfully');
+          console.log('📊 AUDIT FIX: Claim event tracked successfully (no feature flag guard)');
+        } else {
+          console.warn('⚠️ Could not resolve giftId from tokenId:', tokenId);
         }
+      } else {
+        console.error('❌ CRITICAL: Redis not configured - claim tracking skipped');
       }
     } catch (analyticsError) {
       console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);

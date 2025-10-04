@@ -115,20 +115,21 @@ export default async function handler(
           // Extract gift ID from the key (e.g., "gift:detail:305" -> "305")
           const giftIdFromKey = key.split(':').pop() || '';
 
-          // FASE 4: Resolve actual giftId using mapping system
+          // AUDIT FIX: Resolve actual giftId using CORRECT mapping prefix
           let resolvedGiftId = giftData.giftId as string || giftIdFromKey;
           const tokenId = giftData.tokenId as string || giftIdFromKey;
 
-          // Try to get real giftId from mapping (gift:mapping:token:{tokenId})
+          // CRITICAL: Use gift_mapping: prefix (with underscore) NOT gift:mapping:
           if (tokenId) {
             try {
-              const mappingData = await redis.hgetall(`gift:mapping:token:${tokenId}`);
+              const mappingData = await redis.hgetall(`gift_mapping:${tokenId}`);
               if (mappingData && mappingData.giftId) {
                 resolvedGiftId = mappingData.giftId as string;
+                console.log(`✅ AUDIT FIX: Resolved giftId ${resolvedGiftId} from tokenId ${tokenId}`);
               }
             } catch (e) {
               // Mapping not found, use fallback
-              console.log(`No mapping found for tokenId ${tokenId}, using ${resolvedGiftId}`);
+              console.log(`⚠️ No mapping found for tokenId ${tokenId}, using fallback ${resolvedGiftId}`);
             }
           }
 
@@ -266,16 +267,18 @@ export default async function handler(
         const tokenId = fields.tokenId;
         const campaignId = fields.campaignId || 'default';
 
-        // FASE 4: Resolve giftId from tokenId if needed
+        // AUDIT FIX: Resolve giftId from tokenId using CORRECT prefix
         if (tokenId && (!giftId || giftId === tokenId)) {
           try {
-            const mappingData = await redis.hgetall(`gift:mapping:token:${tokenId}`);
+            const mappingData = await redis.hgetall(`gift_mapping:${tokenId}`);
             if (mappingData && mappingData.giftId) {
               giftId = mappingData.giftId as string;
+              console.log(`✅ AUDIT FIX: Event stream resolved giftId ${giftId} from tokenId ${tokenId}`);
             }
           } catch (e) {
             // Use tokenId as fallback
             giftId = giftId || tokenId;
+            console.log(`⚠️ Event stream: No mapping for tokenId ${tokenId}, using fallback`);
           }
         }
 
