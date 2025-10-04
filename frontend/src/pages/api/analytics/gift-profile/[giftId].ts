@@ -245,7 +245,7 @@ export default async function handler(
     if (redis) {
       // Get gift details from multiple sources
 
-      // A. Check gift:detail:{giftId}
+      // A. Check gift:detail:{giftId} (PRIMARY SOURCE - FASE 2 & 3)
       const giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
       if (giftDetails) {
         profile.creator.address = (giftDetails.creator as string) || (giftDetails.referrer as string) || profile.creator.address;
@@ -268,6 +268,42 @@ export default async function handler(
               new Date(parseInt(giftDetails.claimedAt as string)).toISOString() :
               undefined
           };
+        }
+
+        // FASE 3: Read education data from gift:detail (written by complete-module.ts)
+        if (giftDetails.educationCompleted === 'true') {
+          profile.education = {
+            required: true,
+            completed: true,
+            completedAt: giftDetails.educationCompletedAt ?
+              new Date(parseInt(giftDetails.educationCompletedAt as string)).toISOString() :
+              undefined,
+            score: giftDetails.educationScore ? parseInt(giftDetails.educationScore as string) : undefined,
+            passed: true,
+            started: true
+          };
+
+          // Parse completed modules
+          if (giftDetails.educationModules) {
+            try {
+              const modules = JSON.parse(giftDetails.educationModules as string);
+              profile.education.moduleName = `${modules.length} módulos completados`;
+            } catch (e) {
+              console.warn('Could not parse education modules');
+            }
+          }
+        }
+
+        // Read encrypted email if available (FASE 1)
+        if (giftDetails.email_encrypted && giftDetails.email_hmac) {
+          if (!profile.education) {
+            profile.education = {
+              required: false,
+              started: false,
+              completed: false
+            };
+          }
+          profile.education.emailHash = giftDetails.email_hmac as string;
         }
       }
 

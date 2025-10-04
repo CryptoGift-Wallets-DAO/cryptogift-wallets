@@ -8,6 +8,8 @@ import { ethers } from "ethers";
 import { verifyJWT, extractTokenFromHeaders } from '../../lib/siweAuth';
 import { storeNFTMetadata, getNFTMetadata, updateNFTMetadata } from '../../lib/nftMetadataStore';
 import { trackGiftClaimed } from '../../lib/analyticsIntegration';
+import { validateRedisForCriticalOps } from '../../lib/redisConfig';
+import { processBlockchainEvent, isAnalyticsEnabled } from '../../lib/analytics/canonicalEvents';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -242,25 +244,75 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Don't fail the whole claim for metadata update issues
     }
 
-    // Track gift claim in analytics
+    // FASE 2: Track gift claim in analytics - Migrated to Canonical System
     try {
       // Get gift ID from mapping or metadata
       const giftId = existingMetadata?.giftId || tokenId; // Use tokenId as fallback
 
-      await trackGiftClaimed({
-        giftId: giftId.toString(),
-        tokenId: tokenId.toString(),
-        claimerAddress,
-        previousOwner: previousOwner,
-        txHash: claimResult?.transactionHash,
-        metadata: {
-          tbaAddress,
-          claimMethod: 'real_nft_transfer',
-          hasGuardians: setupGuardians && guardianEmails.length >= 3,
-          claimedAt: new Date().toISOString()
+      const useCanonical = process.env.ANALYTICS_CANONICAL_ONLY === '1' || process.env.ANALYTICS_DUAL_WRITE === '1';
+
+      if (useCanonical && isAnalyticsEnabled()) {
+        const redis = validateRedisForCriticalOps('Analytics tracking');
+
+        if (redis) {
+          await processBlockchainEvent(
+            redis,
+            'GiftClaimed',
+            claimResult?.transactionHash || `claim_${Date.now()}`,
+            0, // logIndex
+            BigInt(Date.now()), // blockNumber (using timestamp for non-blockchain events)
+            Date.now(), // blockTimestamp
+            {
+              giftId: giftId.toString(),
+              tokenId: tokenId.toString(),
+              campaignId: existingMetadata?.campaignId || `campaign_default`,
+              claimer: claimerAddress,
+              metadata: {
+                tbaAddress,
+                claimMethod: 'real_nft_transfer',
+                hasGuardians: setupGuardians && guardianEmails.length >= 3,
+                previousOwner: previousOwner,
+                claimedAt: new Date().toISOString()
+              }
+            },
+            'realtime'
+          );
+          console.log('📊 Analytics: Gift claim tracked successfully (Canonical)');
+        } else {
+          console.warn('⚠️ Redis not available for Canonical tracking, falling back to Legacy');
+          // Fallback to legacy
+          await trackGiftClaimed({
+            giftId: giftId.toString(),
+            tokenId: tokenId.toString(),
+            claimerAddress,
+            previousOwner: previousOwner,
+            txHash: claimResult?.transactionHash,
+            metadata: {
+              tbaAddress,
+              claimMethod: 'real_nft_transfer',
+              hasGuardians: setupGuardians && guardianEmails.length >= 3,
+              claimedAt: new Date().toISOString()
+            }
+          });
+          console.log('📊 Analytics: Gift claim tracked successfully (Legacy fallback)');
         }
-      });
-      console.log('📊 Analytics: Gift claim tracked successfully');
+      } else {
+        // Legacy system when feature flags disabled
+        await trackGiftClaimed({
+          giftId: giftId.toString(),
+          tokenId: tokenId.toString(),
+          claimerAddress,
+          previousOwner: previousOwner,
+          txHash: claimResult?.transactionHash,
+          metadata: {
+            tbaAddress,
+            claimMethod: 'real_nft_transfer',
+            hasGuardians: setupGuardians && guardianEmails.length >= 3,
+            claimedAt: new Date().toISOString()
+          }
+        });
+        console.log('📊 Analytics: Gift claim tracked successfully (Legacy)');
+      }
     } catch (analyticsError) {
       console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
       // Don't fail the claim for analytics errors

@@ -191,6 +191,11 @@ export async function processBlockchainEvent(
   // Update real-time aggregates
   await updateRealtimeAggregates(redis, canonicalEvent);
 
+  // FASE 2: Dual-write to gift:detail for backward compatibility
+  if (process.env.ANALYTICS_DUAL_WRITE === '1') {
+    await updateGiftDetail(redis, canonicalEvent);
+  }
+
   return true;
 }
 
@@ -229,6 +234,61 @@ async function updateRealtimeAggregates(
     });
   } catch (error) {
     debugLogger.error('Failed to update aggregates', error as Error);
+  }
+}
+
+/**
+ * FASE 2: Update gift:detail hash for backward compatibility
+ * Ensures dashboard can read gift data from legacy keys
+ */
+async function updateGiftDetail(
+  redis: Redis,
+  event: CanonicalEvent
+): Promise<void> {
+  try {
+    if (!event.giftId) {
+      debugLogger.warn('Cannot update gift:detail without giftId', { eventId: event.eventId });
+      return;
+    }
+
+    const giftDetailKey = `gift:detail:${event.giftId}`;
+
+    // Build update based on event type
+    const updates: Record<string, any> = {
+      giftId: event.giftId,
+      tokenId: event.tokenId,
+      campaignId: event.campaignId,
+      lastUpdated: Date.now()
+    };
+
+    // Event-specific updates
+    if (event.type === 'GiftCreated') {
+      updates.creator = event.data.creator || '';
+      updates.createdAt = event.blockTimestamp;
+      updates.status = 'created';
+      updates.transactionHash = event.transactionHash;
+    } else if (event.type === 'GiftClaimed') {
+      updates.claimer = event.data.claimer || '';
+      updates.claimedAt = event.blockTimestamp;
+      updates.status = 'claimed';
+      updates.claimTransactionHash = event.transactionHash;
+    } else if (event.type === 'GiftViewed') {
+      updates.viewedAt = event.blockTimestamp;
+      if (updates.status !== 'claimed') {
+        updates.status = 'viewed';
+      }
+    }
+
+    // Atomic update using HSET
+    await redis.hset(giftDetailKey, updates);
+
+    debugLogger.log('Gift detail updated', {
+      giftId: event.giftId,
+      eventType: event.type,
+      updates: Object.keys(updates)
+    });
+  } catch (error) {
+    debugLogger.error('Failed to update gift detail', error as Error);
   }
 }
 

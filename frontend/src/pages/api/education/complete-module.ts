@@ -249,12 +249,30 @@ export default async function handler(
         giftId: sessionData.giftId,
         claimer: sessionData.claimer
       }));
-      
+
       approvalGranted = true;
-      
+
       // Mark overall education as completed for this gift
       const completionFlagKey = `education:${sessionData.claimer}:${sessionData.giftId}`;
       await redis.setex(completionFlagKey, 90 * 24 * 60 * 60, 'true');
+
+      // FASE 3: Bridge education data to gift:detail for dashboard access
+      try {
+        const totalScore = await calculateTotalScore(sessionData.claimer, sessionData.giftId, completedModules, redis);
+        const giftDetailKey = `gift:detail:${sessionData.giftId}`;
+
+        await redis.hset(giftDetailKey, {
+          educationCompleted: 'true',
+          educationCompletedAt: Date.now(),
+          educationModules: JSON.stringify(completedModules),
+          educationScore: totalScore,
+          educationClaimer: sessionData.claimer
+        });
+
+        console.log('✅ FASE 3: Education data bridged to gift:detail successfully');
+      } catch (bridgeError) {
+        console.error('⚠️ Failed to bridge education data (non-critical):', bridgeError);
+      }
 
       // Track complete education completion
       try {

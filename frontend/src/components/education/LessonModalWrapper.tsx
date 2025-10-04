@@ -369,7 +369,8 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
               claimer: account.address, // CRITICAL FIX: Agregar claimer requerido
               giftId: 0, // Will be populated from session data in API
               educationCompleted: true,
-              module: lessonId
+              module: lessonId,
+              email: verifiedEmail || undefined // FASE 1: Enviar email verificado para analytics
             })
           });
 

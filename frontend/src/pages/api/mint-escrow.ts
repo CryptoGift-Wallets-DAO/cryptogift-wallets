@@ -1320,31 +1320,69 @@ async function mintNFTEscrowGasless(
           console.log('✅ MAPPING VALIDATED: Contract data confirms correct mapping');
         }
 
-        // Track gift creation in analytics (gasless)
+        // FASE 2: Track gift creation in analytics (gasless) - Migrated to Canonical System
         try {
-          await trackGiftCreated({
-            giftId: actualGiftId.toString(),
-            tokenId: tokenId.toString(),
-            campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
-            creatorAddress: creatorAddress,
-            referrer: creatorAddress,
-            amount: 0, // Gift value will be tracked when deposited
-            timeframe: timeframeDays || 30,
-            hasEducation: educationModules && educationModules.length > 0,
-            educationModules: educationModules || [],
-            txHash: escrowResult.transactionHash,
-            metadata: {
-              salt: salt.slice(0, 10) + '...',
-              passwordHash: passwordHash ? passwordHash.slice(0, 10) + '...' : undefined,
-              giftMessage: giftMessage || undefined,
-              isDirectMint: false,
-              isGasless: true
+          // Check if we should use Canonical system only
+          const useCanonical = process.env.ANALYTICS_CANONICAL_ONLY === '1' || process.env.ANALYTICS_DUAL_WRITE === '1';
+
+          if (useCanonical) {
+            // Use Canonical Event System
+            const { processBlockchainEvent, isAnalyticsEnabled } = await import('../../lib/analytics/canonicalEvents');
+
+            if (isAnalyticsEnabled()) {
+              const { Redis } = await import('@upstash/redis');
+              const redis = new Redis({
+                url: process.env.UPSTASH_REDIS_REST_URL!,
+                token: process.env.UPSTASH_REDIS_REST_TOKEN!
+              });
+
+              await processBlockchainEvent(
+                redis,
+                'GiftCreated',
+                escrowResult.transactionHash,
+                0,
+                BigInt(Date.now()),
+                Date.now(),
+                {
+                  giftId: actualGiftId.toString(),
+                  tokenId: tokenId.toString(),
+                  campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
+                  creator: creatorAddress,
+                  amount: '0',
+                  metadata: {
+                    gasless: true,
+                    passwordProtected: !!password,
+                    hasEducation: educationModules && educationModules.length > 0,
+                    moduleCount: educationModules?.length || 0,
+                    timeframe: timeframeDays || 30
+                  }
+                },
+                'realtime'
+              );
+
+              console.log('📊 Analytics: Gift creation tracked successfully (gasless - Canonical)');
             }
-          });
-          console.log('📊 Analytics: Gift creation tracked successfully (gasless)');
+          } else {
+            // Legacy system fallback
+            await trackGiftCreated({
+              giftId: actualGiftId.toString(),
+              tokenId: tokenId.toString(),
+              campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
+              creatorAddress: creatorAddress,
+              referrer: creatorAddress,
+              amount: 0,
+              timeframe: timeframeDays || 30,
+              hasEducation: educationModules && educationModules.length > 0,
+              educationModules: educationModules || [],
+              txHash: escrowResult.transactionHash,
+              metadata: {
+                isGasless: true
+              }
+            });
+            console.log('📊 Analytics: Gift creation tracked successfully (gasless - Legacy)');
+          }
         } catch (analyticsError) {
           console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
-          // Don't fail the mint for analytics errors
         }
 
       } catch (mappingError) {
@@ -2651,28 +2689,63 @@ async function mintNFTEscrowGasPaid(
           console.log('✅ MAPPING VALIDATED (GAS-PAID): Contract data confirms correct mapping');
         }
 
-        // Track gift creation in analytics (gas-paid)
+        // FASE 2: Track gift creation in analytics (gas-paid) - Migrated to Canonical System
         try {
-          await trackGiftCreated({
-            giftId: actualGiftIdGasPaid.toString(),
-            tokenId: tokenId.toString(),
-            campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
-            creatorAddress: creatorAddress,
-            referrer: creatorAddress,
-            amount: 0, // Gift value will be tracked when deposited
-            timeframe: timeframeDays || 30,
-            hasEducation: educationModules && educationModules.length > 0,
-            educationModules: educationModules || [],
-            txHash: escrowResult.transactionHash,
-            metadata: {
-              salt: salt.slice(0, 10) + '...',
-              passwordHash: passwordHash ? passwordHash.slice(0, 10) + '...' : undefined,
-              giftMessage: giftMessage || undefined,
-              isDirectMint: false,
-              isGasPaid: true
-            }
-          });
-          console.log('📊 Analytics: Gift creation tracked successfully (gas-paid)');
+          const useCanonical = process.env.ANALYTICS_CANONICAL_ONLY === '1' || process.env.ANALYTICS_DUAL_WRITE === '1';
+
+          if (useCanonical) {
+            await processBlockchainEvent(
+              redis,
+              'GiftCreated',
+              escrowResult.transactionHash,
+              0, // logIndex
+              BigInt(Date.now()), // blockNumber (using timestamp for non-blockchain events)
+              Date.now(), // blockTimestamp
+              {
+                giftId: actualGiftIdGasPaid.toString(),
+                tokenId: tokenId.toString(),
+                campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
+                creator: creatorAddress,
+                amount: '0',
+                metadata: {
+                  gasless: false,
+                  isGasPaid: true,
+                  passwordProtected: !!password,
+                  hasEducation: educationModules && educationModules.length > 0,
+                  moduleCount: educationModules?.length || 0,
+                  timeframe: timeframeDays || 30,
+                  salt: salt.slice(0, 10) + '...',
+                  passwordHash: passwordHash ? passwordHash.slice(0, 10) + '...' : undefined,
+                  giftMessage: giftMessage || undefined,
+                  isDirectMint: false
+                }
+              },
+              'realtime'
+            );
+            console.log('📊 Analytics: Gift creation tracked successfully (gas-paid - Canonical)');
+          } else {
+            // Legacy fallback when feature flags disabled
+            await trackGiftCreated({
+              giftId: actualGiftIdGasPaid.toString(),
+              tokenId: tokenId.toString(),
+              campaignId: `campaign_${creatorAddress.slice(0, 8)}`,
+              creatorAddress: creatorAddress,
+              referrer: creatorAddress,
+              amount: 0,
+              timeframe: timeframeDays || 30,
+              hasEducation: educationModules && educationModules.length > 0,
+              educationModules: educationModules || [],
+              txHash: escrowResult.transactionHash,
+              metadata: {
+                salt: salt.slice(0, 10) + '...',
+                passwordHash: passwordHash ? passwordHash.slice(0, 10) + '...' : undefined,
+                giftMessage: giftMessage || undefined,
+                isDirectMint: false,
+                isGasPaid: true
+              }
+            });
+            console.log('📊 Analytics: Gift creation tracked successfully (gas-paid - Legacy)');
+          }
         } catch (analyticsError) {
           console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
           // Don't fail the mint for analytics errors

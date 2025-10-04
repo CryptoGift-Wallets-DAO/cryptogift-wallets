@@ -20,6 +20,7 @@ interface ApprovalRequest {
   tokenId: string;
   claimer: string;
   giftId: number;
+  email?: string; // FASE 1: Email del receptor (opcional)
 }
 
 interface ApprovalResponse {
@@ -103,8 +104,9 @@ export default async function handler(
     const {
       sessionToken,
       tokenId,
-      claimer
-    }: Omit<ApprovalRequest, 'giftId'> & { giftId?: number } = req.body;
+      claimer,
+      email // FASE 1: Recibir email del frontend
+    }: Omit<ApprovalRequest, 'giftId'> & { giftId?: number; email?: string } = req.body;
     
     // Validate required fields
     if (!sessionToken || !tokenId || !claimer) {
@@ -363,7 +365,34 @@ export default async function handler(
       chainId: EIP712_DOMAIN.chainId,
       verifyingContract: EIP712_DOMAIN.verifyingContract
     });
-    
+
+    // FASE 1: Almacenar email encriptado en gift:detail si está disponible
+    if (email && redis) {
+      try {
+        const { encryptEmail, safeEncryptEmail } = await import('../../../lib/piiEncryption');
+        const encryptedData = safeEncryptEmail(email);
+
+        if (encryptedData) {
+          const giftDetailKey = `gift:detail:${giftId}`;
+
+          // Update gift detail con email encriptado y HMAC
+          await redis.hset(giftDetailKey, {
+            email_encrypted: encryptedData.encrypted,
+            email_hmac: encryptedData.hmac,
+            email_captured_at: Date.now()
+          });
+
+          console.log('📧 Email capturado y encriptado correctamente:', {
+            giftId,
+            hmac: encryptedData.hmac.substring(0, 16) + '...'
+          });
+        }
+      } catch (emailError) {
+        console.error('⚠️ Failed to store encrypted email (non-critical):', emailError);
+        // No fallar la aprobación si el email falla
+      }
+    }
+
     return res.status(200).json({
       success: true,
       signature,

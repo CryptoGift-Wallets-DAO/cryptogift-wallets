@@ -115,6 +115,23 @@ export default async function handler(
           // Extract gift ID from the key (e.g., "gift:detail:305" -> "305")
           const giftIdFromKey = key.split(':').pop() || '';
 
+          // FASE 4: Resolve actual giftId using mapping system
+          let resolvedGiftId = giftData.giftId as string || giftIdFromKey;
+          const tokenId = giftData.tokenId as string || giftIdFromKey;
+
+          // Try to get real giftId from mapping (gift:mapping:token:{tokenId})
+          if (tokenId) {
+            try {
+              const mappingData = await redis.hgetall(`gift:mapping:token:${tokenId}`);
+              if (mappingData && mappingData.giftId) {
+                resolvedGiftId = mappingData.giftId as string;
+              }
+            } catch (e) {
+              // Mapping not found, use fallback
+              console.log(`No mapping found for tokenId ${tokenId}, using ${resolvedGiftId}`);
+            }
+          }
+
           stats.created++;
 
           // Determine actual status
@@ -172,8 +189,8 @@ export default async function handler(
           }
 
           stats.gifts.push({
-            giftId: giftData.giftId || giftData.tokenId || giftIdFromKey,
-            tokenId: giftData.tokenId || giftIdFromKey,
+            giftId: resolvedGiftId, // FASE 4: Use resolved giftId
+            tokenId: tokenId,
             status: actualStatus,
             createdAt: giftData.createdAt,
             claimedAt: giftData.claimedAt,
@@ -245,14 +262,28 @@ export default async function handler(
 
       for (const [id, fields] of (events as unknown) as any[]) {
         const eventType = fields.type;
-        const giftId = fields.giftId;
+        let giftId = fields.giftId;
+        const tokenId = fields.tokenId;
         const campaignId = fields.campaignId || 'default';
+
+        // FASE 4: Resolve giftId from tokenId if needed
+        if (tokenId && (!giftId || giftId === tokenId)) {
+          try {
+            const mappingData = await redis.hgetall(`gift:mapping:token:${tokenId}`);
+            if (mappingData && mappingData.giftId) {
+              giftId = mappingData.giftId as string;
+            }
+          } catch (e) {
+            // Use tokenId as fallback
+            giftId = giftId || tokenId;
+          }
+        }
 
         // Create gift entry if not exists
         if (!stats.gifts.find(g => g.giftId === giftId)) {
           stats.gifts.push({
             giftId,
-            tokenId: fields.tokenId,
+            tokenId: tokenId || giftId,
             status: eventType.toLowerCase().replace('gift', ''),
             createdAt: new Date(parseInt(fields.blockTimestamp || fields.timestamp)).toISOString(),
             campaignId
