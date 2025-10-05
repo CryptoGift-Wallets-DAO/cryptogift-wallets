@@ -309,10 +309,7 @@ export default async function handler(
           // Decrypt email for analytics display
           try {
             const { decryptEmail } = await import('@/lib/piiEncryption');
-            const decryptedEmail = decryptEmail(
-              giftDetails.email_encrypted as string,
-              giftDetails.email_hmac as string
-            );
+            const decryptedEmail = decryptEmail(giftDetails.email_encrypted as string);
             if (decryptedEmail) {
               profile.education.email = decryptedEmail;
               console.log('📧 Email descifrado exitosamente para analytics');
