@@ -256,9 +256,10 @@ export default async function handler(
     const { getRedisConnection } = await import('@/lib/redisConfig');
     const redis = getRedisConnection();
 
-    console.log('🔍 DEBUG: Redis connection:', {
+    console.log('🔍 DEBUG: Redis connection CHECK:', {
       hasRedis: !!redis,
-      redisType: redis ? typeof redis : 'null'
+      redisType: redis ? typeof redis : 'null',
+      timestamp: new Date().toISOString()
     });
 
     if (redis) {
