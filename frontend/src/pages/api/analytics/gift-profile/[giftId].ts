@@ -252,11 +252,19 @@ export default async function handler(
     }
 
     // 2. Check Redis for detailed tracking data
-    // CRITICAL FIX #6: Use getRedisConnection() for analytics (read-only, not critical ops)
-    const { getRedisConnection } = await import('@/lib/redisConfig');
-    const redis = getRedisConnection();
+    // CRITICAL FIX #7: Wrap getRedisConnection in try-catch (throws in production)
+    let redis: Redis | null = null;
+    try {
+      const { getRedisConnection } = await import('@/lib/redisConfig');
+      redis = getRedisConnection();
+      console.log('✅ REDIS CONNECTED:', { type: typeof redis });
+    } catch (redisError: any) {
+      console.error('❌ REDIS CONNECTION FAILED:', redisError.message);
+      console.log('⚠️ Continuing with limited analytics (blockchain only)');
+      redis = null;
+    }
 
-    console.log('🔍 DEBUG: Redis connection CHECK:', {
+    console.log('🔍 DEBUG: Redis status:', {
       hasRedis: !!redis,
       redisType: redis ? typeof redis : 'null',
       timestamp: new Date().toISOString()
