@@ -260,6 +260,11 @@ export default async function handler(
 
       // A. Check gift:detail:{giftId} (PRIMARY SOURCE - FASE 2 & 3)
       const giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
+      console.log('🔍 DEBUG Section A - gift:detail:', {
+        giftId,
+        hasData: !!giftDetails,
+        keys: giftDetails ? Object.keys(giftDetails) : []
+      });
       if (giftDetails) {
         profile.creator.address = (giftDetails.creator as string) || (giftDetails.referrer as string) || profile.creator.address;
         profile.creator.createdAt = giftDetails.createdAt ?
@@ -344,6 +349,14 @@ export default async function handler(
           ? JSON.parse(educationRaw)
           : educationRaw;
 
+        console.log('🔍 DEBUG Section B - education:gift:', {
+          giftId,
+          educationKey,
+          hasData: !!educationData,
+          rawType: typeof educationRaw,
+          parsedKeys: educationData ? Object.keys(educationData) : []
+        });
+
         if (educationData && Object.keys(educationData).length > 0) {
           // CRITICAL FIX #4: Map actual structure from mint-escrow
           // Structure: { hasEducation, profileId, version, modules, policyHash, tokenId, giftId, createdAt }
@@ -391,11 +404,35 @@ export default async function handler(
         const { parseStreamResponse } = await import('@/lib/analytics/canonicalEvents');
         const eventsArray = parseStreamResponse(eventsRaw);
 
+        console.log('🔍 DEBUG Section C - events stream:', {
+          giftId,
+          tokenId,
+          totalEvents: eventsArray.length,
+          sampleEvents: eventsArray.slice(0, 3).map(([id, fields]: [string, any]) => ({
+            id,
+            giftId: fields.giftId,
+            tokenId: fields.tokenId,
+            type: fields.type
+          }))
+        });
+
         // Filter events for this gift and reverse to chronological order
-        profile.events = eventsArray
-          .filter(([_, fields]: [string, any]) =>
-            fields.giftId === giftId || fields.tokenId === giftId
-          )
+        const filteredEvents = eventsArray
+          .filter(([_, fields]: [string, any]) => {
+            const matches = fields.giftId === giftId || fields.tokenId === giftId;
+            if (matches) {
+              console.log('✅ Event MATCHED:', { giftId: fields.giftId, tokenId: fields.tokenId, type: fields.type });
+            }
+            return matches;
+          });
+
+        console.log('🔍 DEBUG: Filtered events:', {
+          giftId,
+          tokenId,
+          matchedCount: filteredEvents.length
+        });
+
+        profile.events = filteredEvents
           .reverse() // Reverse because XREVRANGE returns newest-first
           .map(([id, fields]: [string, any]) => ({
             eventId: id,
@@ -496,6 +533,27 @@ export default async function handler(
         profile.education.started ? 50 : 0;
       profile.analytics.avgEducationScore = profile.education.score;
     }
+
+    // CRITICAL DEBUG: Log what we're about to return
+    console.log('📊 GIFT PROFILE DEBUG:', {
+      urlParam: giftIdParam,
+      resolvedGiftId: giftId,
+      tokenId,
+      eventsCount: profile.events.length,
+      hasEducation: !!profile.education,
+      educationData: profile.education ? {
+        required: profile.education.required,
+        moduleName: profile.education.moduleName,
+        hasEmail: !!profile.education.email
+      } : null,
+      creatorAddress: profile.creator.address,
+      sources: {
+        blockchain: !!profile.creator.address,
+        redis: !!redis,
+        education: !!profile.education,
+        events: profile.events.length > 0
+      }
+    });
 
     // Add response headers
     res.setHeader('Cache-Control', 'private, max-age=5'); // 5 second cache
