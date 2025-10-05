@@ -252,35 +252,50 @@ export default async function handler(
     }
 
     // 2. Check Redis for detailed tracking data
-    console.log('🚀 STARTING REDIS CONNECTION ATTEMPT - Build 276dc5f');
+    // CRITICAL TEST: Use console.error to force immediate unbuffered logging
+    console.error('🚀 REDIS CONNECTION TEST - Build 141366d - UNBUFFERED LOG');
+
+    // Force immediate flush by using process.stdout if available
+    if (typeof process !== 'undefined' && process.stdout) {
+      process.stdout.write('📍 MARKER: About to import getRedisConnection\n');
+    }
 
     // CRITICAL FIX #7: Wrap getRedisConnection in try-catch (throws in production)
     let redis: Redis | null = null;
     try {
       const { getRedisConnection } = await import('@/lib/redisConfig');
+      console.error('✅ Import successful, calling getRedisConnection()');
       redis = getRedisConnection();
-      console.log('✅ REDIS CONNECTED:', { type: typeof redis });
+      console.error('✅ REDIS CONNECTED - TYPE:', typeof redis);
+
+      if (typeof process !== 'undefined' && process.stdout) {
+        process.stdout.write(`✅ Redis instance created: ${redis ? 'YES' : 'NO'}\n`);
+      }
     } catch (redisError: any) {
       console.error('❌ REDIS CONNECTION FAILED:', redisError.message);
-      console.log('⚠️ Continuing with limited analytics (blockchain only)');
+      console.error('❌ STACK:', redisError.stack);
       redis = null;
     }
 
-    console.log('🔍 DEBUG: Redis status:', {
+    console.error('🔍 FINAL REDIS STATUS:', {
       hasRedis: !!redis,
       redisType: redis ? typeof redis : 'null',
       timestamp: new Date().toISOString()
     });
 
     if (redis) {
+      console.error('🔄 ENTERING REDIS DATA FETCH - Redis instance confirmed');
+
       // Get gift details from multiple sources
 
       // A. Check gift:detail:{giftId} (PRIMARY SOURCE - FASE 2 & 3)
+      console.error(`📖 Section A: Fetching gift:detail:${giftId}`);
       const giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
-      console.log('🔍 DEBUG Section A - gift:detail:', {
+      console.error('🔍 Section A Result:', {
         giftId,
         hasData: !!giftDetails,
-        keys: giftDetails ? Object.keys(giftDetails) : []
+        keys: giftDetails ? Object.keys(giftDetails) : [],
+        raw: giftDetails
       });
       if (giftDetails) {
         profile.creator.address = (giftDetails.creator as string) || (giftDetails.referrer as string) || profile.creator.address;
