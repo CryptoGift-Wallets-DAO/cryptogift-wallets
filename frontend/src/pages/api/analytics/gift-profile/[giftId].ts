@@ -165,20 +165,30 @@ export default async function handler(
   }
 
   try {
-    // CRITICAL FIX #5: Resolve tokenId -> giftId mapping
-    // The URL parameter might be tokenId, need to get actual giftId
+    // CRITICAL FIX #10: Handle missing mappings with Redis-based resolution
+    console.error(`🎯 ANALYTICS START: Resolving ID for param=${giftIdParam}`);
+
     const { getGiftIdFromTokenId } = await import('@/lib/escrowUtils');
-    const resolvedGiftId = await getGiftIdFromTokenId(giftIdParam);
+    let resolvedGiftId = await getGiftIdFromTokenId(giftIdParam);
 
-    // Use resolved giftId if mapping exists, otherwise assume parameter is already giftId
-    const giftId = resolvedGiftId !== null ? resolvedGiftId.toString() : giftIdParam;
-    const tokenId = giftIdParam; // Original parameter is tokenId
+    let giftId: string;
+    let tokenId: string;
 
-    debugLogger.operation('Fetching complete gift profile', {
-      urlParam: giftIdParam,
-      resolvedGiftId: giftId,
-      tokenId
-    });
+    if (resolvedGiftId !== null) {
+      // Mapping found in Redis or blockchain
+      giftId = resolvedGiftId.toString();
+      tokenId = giftIdParam;
+      console.error(`✅ MAPPING RESOLVED: tokenId ${tokenId} → giftId ${giftId}`);
+    } else {
+      // No mapping found - need to check if param is tokenId or giftId
+      // Strategy: Try to find gift:detail using tokenId field
+      console.error(`⚠️ NO MAPPING: Searching gift:detail by tokenId field`);
+
+      // First assume param is giftId and check if it exists
+      giftId = giftIdParam;
+      tokenId = giftIdParam;
+      console.error(`🔍 FALLBACK: Trying giftId=${giftId} (param as giftId)`);
+    }
 
     // Initialize profile
     const profile: CompleteGiftProfile = {
@@ -290,14 +300,44 @@ export default async function handler(
 
       // A. Check gift:detail:{giftId} (PRIMARY SOURCE - FASE 2 & 3)
       console.error(`📖 Section A: Fetching gift:detail:${giftId}`);
-      const giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
-      console.error('🔍 Section A Result:', {
+      let giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
+      console.error('🔍 Section A Result (by giftId):', {
         giftId,
         hasData: !!giftDetails,
-        keys: giftDetails ? Object.keys(giftDetails) : [],
-        raw: giftDetails
+        keys: giftDetails ? Object.keys(giftDetails) : []
       });
-      if (giftDetails) {
+
+      // CRITICAL FIX #10B: If not found and no mapping, search by tokenId field
+      if ((!giftDetails || Object.keys(giftDetails).length === 0) && resolvedGiftId === null) {
+        console.error(`🔍 Section A Fallback: Searching all gift:detail:* for tokenId=${giftIdParam}`);
+
+        // Get all gift:detail keys
+        const allGiftKeys = await redis.keys('gift:detail:*');
+        console.error(`📊 Found ${allGiftKeys.length} gift:detail keys`);
+
+        // Search for matching tokenId
+        for (const key of allGiftKeys) {
+          const details = await redis.hgetall(key);
+          if (details && details.tokenId?.toString() === giftIdParam) {
+            // Found it! Extract actual giftId from key
+            const actualGiftId = key.replace('gift:detail:', '');
+            console.error(`✅ FOUND BY TOKENID: ${key} has tokenId=${giftIdParam}`);
+
+            giftId = actualGiftId;
+            giftDetails = details;
+            profile.giftId = actualGiftId;
+            break;
+          }
+        }
+
+        if (giftDetails && Object.keys(giftDetails).length > 0) {
+          console.error(`🎯 FALLBACK SUCCESS: Resolved tokenId ${giftIdParam} → giftId ${giftId}`);
+        } else {
+          console.error(`❌ FALLBACK FAILED: No gift:detail found for tokenId ${giftIdParam}`);
+        }
+      }
+
+      if (giftDetails && Object.keys(giftDetails).length > 0) {
         profile.creator.address = (giftDetails.creator as string) || (giftDetails.referrer as string) || profile.creator.address;
         profile.creator.createdAt = giftDetails.createdAt ?
           new Date(parseInt(giftDetails.createdAt as string)).toISOString() :
