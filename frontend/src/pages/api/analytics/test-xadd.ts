@@ -21,17 +21,16 @@ export default async function handler(
       tests: []
     };
 
-    // Test 1: Check stream exists and get info
-    console.log('TEST 1: Checking stream info...');
+    // Test 1: Check stream exists and get length
+    console.log('TEST 1: Checking stream length...');
     try {
       const xlen = await redis.xlen('ga:v1:events');
-      const xinfo = await redis.xinfo('stream', 'ga:v1:events');
 
       results.tests.push({
         test: 'Stream Info',
         success: true,
         xlen,
-        xinfo
+        message: `Stream has ${xlen} events`
       });
       console.log(`✅ Stream exists, XLEN = ${xlen}`);
     } catch (error: any) {
