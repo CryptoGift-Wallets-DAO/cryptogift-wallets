@@ -99,30 +99,35 @@ export async function addEventToStream(
   event: CanonicalEvent
 ): Promise<string | null> {
   try {
+    // CRITICAL FIX: Upstash Redis bug - empty strings corrupt stream reads
+    // Filter out empty/undefined values before XADD
+    const fields: Record<string, string> = {};
+
+    if (event.eventId) fields.eventId = event.eventId;
+    if (event.type) fields.type = event.type;
+    if (event.giftId) fields.giftId = event.giftId;
+    if (event.tokenId) fields.tokenId = event.tokenId;
+    if (event.campaignId) fields.campaignId = event.campaignId;
+    if (event.blockNumber) fields.blockNumber = event.blockNumber;
+    if (event.blockTimestamp) fields.blockTimestamp = event.blockTimestamp.toString();
+    if (event.transactionHash) fields.transactionHash = event.transactionHash;
+    if (event.logIndex !== undefined) fields.logIndex = event.logIndex.toString();
+    if (event.data) fields.data = JSON.stringify(event.data);
+    if (event.processedAt) fields.processedAt = event.processedAt.toString();
+    if (event.source) fields.source = event.source;
+
     // Use XADD with automatic ID generation and versioning
     const streamId = await redis.xadd(
       'ga:v1:events',
       '*', // Auto-generate ID based on Redis timestamp
-      {
-        eventId: event.eventId,
-        type: event.type,
-        giftId: event.giftId,
-        tokenId: event.tokenId,
-        campaignId: event.campaignId,
-        blockNumber: event.blockNumber,
-        blockTimestamp: event.blockTimestamp.toString(),
-        transactionHash: event.transactionHash,
-        logIndex: event.logIndex.toString(),
-        data: JSON.stringify(event.data),
-        processedAt: event.processedAt.toString(),
-        source: event.source
-      }
+      fields
     );
 
     debugLogger.operation('Event added to stream', {
       streamId,
       eventId: event.eventId,
-      type: event.type
+      type: event.type,
+      fieldsCount: Object.keys(fields).length
     });
 
     return streamId;
