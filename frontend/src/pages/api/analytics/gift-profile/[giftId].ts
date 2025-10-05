@@ -159,19 +159,32 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { giftId } = req.query;
+  const { giftId: giftIdParam } = req.query;
 
-  if (!giftId || typeof giftId !== 'string') {
+  if (!giftIdParam || typeof giftIdParam !== 'string') {
     return res.status(400).json({ error: 'Invalid gift ID' });
   }
 
   try {
-    debugLogger.operation('Fetching complete gift profile', { giftId });
+    // CRITICAL FIX #5: Resolve tokenId -> giftId mapping
+    // The URL parameter might be tokenId, need to get actual giftId
+    const { getGiftIdFromTokenId } = await import('@/lib/escrowUtils');
+    const resolvedGiftId = await getGiftIdFromTokenId(giftIdParam);
+
+    // Use resolved giftId if mapping exists, otherwise assume parameter is already giftId
+    const giftId = resolvedGiftId !== null ? resolvedGiftId.toString() : giftIdParam;
+    const tokenId = giftIdParam; // Original parameter is tokenId
+
+    debugLogger.operation('Fetching complete gift profile', {
+      urlParam: giftIdParam,
+      resolvedGiftId: giftId,
+      tokenId
+    });
 
     // Initialize profile
     const profile: CompleteGiftProfile = {
       giftId,
-      tokenId: giftId,
+      tokenId,
 
       creator: {
         address: 'unknown',
@@ -332,39 +345,38 @@ export default async function handler(
           : educationRaw;
 
         if (educationData && Object.keys(educationData).length > 0) {
-          profile.education = {
-            required: true,
-            moduleId: educationData.moduleId as string,
-            moduleName: educationData.moduleName as string || 'Sales Masterclass',
-
-            email: educationData.email as string,
-            emailHash: educationData.emailHash as string,
-
-            started: !!educationData.startedAt,
-            startedAt: educationData.startedAt ?
-              new Date(parseInt(educationData.startedAt as string)).toISOString() :
-              undefined,
-
-            completed: educationData.completed === 'true',
-            completedAt: educationData.completedAt ?
-              new Date(parseInt(educationData.completedAt as string)).toISOString() :
-              undefined,
-
-            score: educationData.score ? parseInt(educationData.score as string) : undefined,
-            passed: educationData.passed === 'true',
-            totalTimeSpent: educationData.totalTimeSpent ?
-              parseInt(educationData.totalTimeSpent as string) :
-              undefined
+          // CRITICAL FIX #4: Map actual structure from mint-escrow
+          // Structure: { hasEducation, profileId, version, modules, policyHash, tokenId, giftId, createdAt }
+          const moduleIds = educationData.modules || [];
+          const moduleNames: Record<number, string> = {
+            5: 'Sales Masterclass',
+            1: 'Wallet Básico',
+            2: 'Intro NFTs'
           };
 
-          // Parse questions detail if available
-          if (educationData.questionsDetail) {
-            try {
-              profile.education.questions = JSON.parse(educationData.questionsDetail as string);
-            } catch (e) {
-              debugLogger.log('Could not parse questions detail');
-            }
-          }
+          // Preserve email from gift:detail (section A)
+          const existingEmail = profile.education?.email;
+          const existingEmailHash = profile.education?.emailHash;
+
+          profile.education = {
+            required: educationData.hasEducation || false,
+            moduleId: moduleIds[0]?.toString() || undefined,
+            moduleName: moduleIds.map((id: number) => moduleNames[id] || `Módulo ${id}`).join(', '),
+
+            // Preserve email from gift:detail (populated in section A)
+            email: existingEmail,
+            emailHash: existingEmailHash,
+
+            started: false, // Not tracked in mint-time structure
+            startedAt: undefined,
+
+            completed: false, // Will be updated when module completed
+            completedAt: undefined,
+
+            score: undefined,
+            passed: undefined,
+            totalTimeSpent: undefined
+          };
         }
       } catch (error) {
         debugLogger.log('No education data found');
