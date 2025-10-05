@@ -81,31 +81,83 @@ export default async function handler(
       console.error('❌ XADD failed:', error);
     }
 
-    // Test 3: Read back events
-    console.log('TEST 3: Reading events...');
+    // Test 3: Read back events with XREVRANGE
+    console.log('TEST 3a: Reading events with XREVRANGE...');
     try {
       const events = await redis.xrevrange('ga:v1:events', '+', '-', 5);
       const eventsArray = Array.isArray(events) ? events : [];
 
       results.tests.push({
-        test: 'Read Events',
+        test: 'Read Events (XREVRANGE)',
         success: true,
         eventsCount: eventsArray.length,
-        events: eventsArray.map(([id, fields]: [string, any]) => ({
+        events: eventsArray.slice(0, 3).map(([id, fields]: [string, any]) => ({
           id,
-          type: fields.type,
-          giftId: fields.giftId,
-          tokenId: fields.tokenId
+          type: fields?.type || 'missing',
+          giftId: fields?.giftId || 'missing'
         }))
       });
-      console.log(`✅ Read ${eventsArray.length} events`);
+      console.log(`✅ XREVRANGE read ${eventsArray.length} events`);
     } catch (error: any) {
       results.tests.push({
-        test: 'Read Events',
+        test: 'Read Events (XREVRANGE)',
+        success: false,
+        error: error.message,
+        stack: error.stack
+      });
+      console.error('❌ XREVRANGE failed:', error);
+    }
+
+    // Test 3b: Try XRANGE (forward direction)
+    console.log('TEST 3b: Reading events with XRANGE...');
+    try {
+      const events = await redis.xrange('ga:v1:events', '-', '+', 5);
+      const eventsArray = Array.isArray(events) ? events : [];
+
+      results.tests.push({
+        test: 'Read Events (XRANGE)',
+        success: true,
+        eventsCount: eventsArray.length,
+        events: eventsArray.slice(0, 3).map(([id, fields]: [string, any]) => ({
+          id,
+          type: fields?.type || 'missing',
+          giftId: fields?.giftId || 'missing'
+        }))
+      });
+      console.log(`✅ XRANGE read ${eventsArray.length} events`);
+    } catch (error: any) {
+      results.tests.push({
+        test: 'Read Events (XRANGE)',
+        success: false,
+        error: error.message,
+        stack: error.stack
+      });
+      console.error('❌ XRANGE failed:', error);
+    }
+
+    // Test 3c: Try raw command to get first event
+    console.log('TEST 3c: Getting first event with custom range...');
+    try {
+      const events = await redis.xrange('ga:v1:events', '0', '+', 1);
+      const eventsArray = Array.isArray(events) ? events : [];
+
+      results.tests.push({
+        test: 'Read First Event',
+        success: true,
+        eventsCount: eventsArray.length,
+        firstEvent: eventsArray.length > 0 ? {
+          id: eventsArray[0][0],
+          fields: eventsArray[0][1]
+        } : null
+      });
+      console.log(`✅ First event retrieved`);
+    } catch (error: any) {
+      results.tests.push({
+        test: 'Read First Event',
         success: false,
         error: error.message
       });
-      console.error('❌ XREVRANGE failed:', error);
+      console.error('❌ Get first event failed:', error);
     }
 
     // Summary
