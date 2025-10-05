@@ -368,10 +368,13 @@ export default async function handler(
       // C. Check events stream
       try {
         const eventsRaw = await redis.xrange('ga:v1:events', '-', '+', 100);
-        const events = (eventsRaw as unknown) as any[];
+
+        // CRITICAL FIX: Parse Upstash stream response correctly
+        const { parseStreamResponse } = await import('@/lib/analytics/canonicalEvents');
+        const eventsArray = parseStreamResponse(eventsRaw);
 
         // Filter events for this gift
-        profile.events = events
+        profile.events = eventsArray
           .filter(([_, fields]: [string, any]) =>
             fields.giftId === giftId || fields.tokenId === giftId
           )
@@ -380,7 +383,7 @@ export default async function handler(
             type: fields.type,
             timestamp: new Date(parseInt(fields.blockTimestamp || fields.timestamp)).toISOString(),
             txHash: fields.transactionHash,
-            details: fields.data ? JSON.parse(fields.data) : undefined
+            details: fields.data ? (typeof fields.data === 'string' ? JSON.parse(fields.data) : fields.data) : undefined
           }));
 
         // Update analytics from events

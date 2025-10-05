@@ -51,6 +51,23 @@ export function getCanonicalEventId(txHash: string, logIndex: number | string): 
 }
 
 /**
+ * Parse Upstash Redis stream response
+ * CRITICAL: Upstash returns object, not array of tuples
+ * Format: { "streamId-0": { field1: "val1", ... }, "streamId-1": { ... } }
+ */
+export function parseStreamResponse(response: any): Array<[string, any]> {
+  if (!response) return [];
+
+  // Check if already in array format (shouldn't happen with Upstash but defensive)
+  if (Array.isArray(response)) {
+    return response as Array<[string, any]>;
+  }
+
+  // Convert object to array of [id, fields]
+  return Object.entries(response as Record<string, any>);
+}
+
+/**
  * Check if an event has already been processed (idempotency)
  */
 export async function isEventProcessed(
