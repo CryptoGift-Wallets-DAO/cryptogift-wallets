@@ -20,7 +20,6 @@ import { Redis } from '@upstash/redis';
 import { debugLogger } from '@/lib/secureDebugLogger';
 import { createThirdwebClient, getContract, readContract } from 'thirdweb';
 import { baseSepolia } from 'thirdweb/chains';
-import { validateRedisForCriticalOps } from '@/lib/redisConfig';
 
 const NFT_CONTRACT = "0xeFCba1D72B8f053d93BA44b7b15a1BeED515C89b";
 const ESCROW_CONTRACT = "0x46175CfC233500DA803841DEef7f2816e7A129E0";
@@ -253,7 +252,14 @@ export default async function handler(
     }
 
     // 2. Check Redis for detailed tracking data
-    const redis = validateRedisForCriticalOps('Gift profile');
+    // CRITICAL FIX #6: Use getRedisConnection() for analytics (read-only, not critical ops)
+    const { getRedisConnection } = await import('@/lib/redisConfig');
+    const redis = getRedisConnection();
+
+    console.log('🔍 DEBUG: Redis connection:', {
+      hasRedis: !!redis,
+      redisType: redis ? typeof redis : 'null'
+    });
 
     if (redis) {
       // Get gift details from multiple sources
