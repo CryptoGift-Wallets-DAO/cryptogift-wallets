@@ -324,7 +324,12 @@ export default async function handler(
       // B. Check education tracking
       try {
         const educationKey = `education:gift:${giftId}`;
-        const educationData = await redis.hgetall(educationKey);
+
+        // CRITICAL FIX #1: Read as JSON (not HASH) - education:gift stored with SET/SETEX
+        const educationRaw = await redis.get(educationKey);
+        const educationData = typeof educationRaw === 'string'
+          ? JSON.parse(educationRaw)
+          : educationRaw;
 
         if (educationData && Object.keys(educationData).length > 0) {
           profile.education = {
@@ -367,17 +372,19 @@ export default async function handler(
 
       // C. Check events stream
       try {
-        const eventsRaw = await redis.xrange('ga:v1:events', '-', '+', 100);
+        // CRITICAL FIX #2: Use XREVRANGE to read RECENT events (not oldest 100)
+        const eventsRaw = await redis.xrevrange('ga:v1:events', '+', '-', 500);
 
         // CRITICAL FIX: Parse Upstash stream response correctly
         const { parseStreamResponse } = await import('@/lib/analytics/canonicalEvents');
         const eventsArray = parseStreamResponse(eventsRaw);
 
-        // Filter events for this gift
+        // Filter events for this gift and reverse to chronological order
         profile.events = eventsArray
           .filter(([_, fields]: [string, any]) =>
             fields.giftId === giftId || fields.tokenId === giftId
           )
+          .reverse() // Reverse because XREVRANGE returns newest-first
           .map(([id, fields]: [string, any]) => ({
             eventId: id,
             type: fields.type,
@@ -402,10 +409,19 @@ export default async function handler(
         // FALLBACK: If creator still unknown, try to get from gift_mapping
         if (profile.creator.address === 'unknown') {
           try {
-            const mappingData = await redis.hgetall(`gift_mapping:${giftId}`);
-            if (mappingData && mappingData.creator) {
-              profile.creator.address = mappingData.creator as string;
-              console.log(`✅ Creator resolved from gift_mapping: ${profile.creator.address.slice(0, 10)}...`);
+            // CRITICAL FIX #3: Use reverse_mapping to get tokenId, then read gift_mapping as JSON
+            const tokenId = await redis.get(`reverse_mapping:${giftId}`);
+            if (typeof tokenId === 'string') {
+              const mappingRaw = await redis.get(`gift_mapping:${tokenId}`);
+              const mapping = mappingRaw ? JSON.parse(mappingRaw as string) : null;
+
+              if (mapping?.metadata?.creator) {
+                profile.creator.address = mapping.metadata.creator;
+                console.log(`✅ Creator resolved from gift_mapping: ${profile.creator.address.slice(0, 10)}...`);
+              }
+              if (mapping?.tokenId) {
+                profile.tokenId = mapping.tokenId;
+              }
             }
           } catch (e) {
             // Keep as unknown if mapping not found
