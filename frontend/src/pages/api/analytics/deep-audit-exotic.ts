@@ -84,18 +84,18 @@ export default async function handler(
     }
 
     // 4. Search all keys matching pattern
-    console.log('4. Searching all keys with pattern *313*...');
+    console.log(`4. Searching all keys with pattern *${tokenId}*...`);
     try {
-      const allKeys = await redis.keys('*313*');
+      const allKeys = await redis.keys(`*${tokenId}*`);
       results.searches.pattern_search = {
-        pattern: '*313*',
+        pattern: `*${tokenId}*`,
         keysFound: allKeys?.length || 0,
         keys: allKeys || []
       };
-      console.log(`   Found ${allKeys?.length || 0} keys matching *313*`);
+      console.log(`   Found ${allKeys?.length || 0} keys matching *${tokenId}*`);
     } catch (e: any) {
       results.searches.pattern_search = {
-        pattern: '*313*',
+        pattern: `*${tokenId}*`,
         error: e.message
       };
     }
