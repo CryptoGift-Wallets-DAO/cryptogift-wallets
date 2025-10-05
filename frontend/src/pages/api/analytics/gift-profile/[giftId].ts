@@ -252,6 +252,8 @@ export default async function handler(
     }
 
     // 2. Check Redis for detailed tracking data
+    console.log('🚀 STARTING REDIS CONNECTION ATTEMPT - Build 276dc5f');
+
     // CRITICAL FIX #7: Wrap getRedisConnection in try-catch (throws in production)
     let redis: Redis | null = null;
     try {
