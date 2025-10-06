@@ -279,6 +279,16 @@ interface Metrics {
   correctAnswers: number;
 }
 
+// FASE 2: Detailed answer tracking interface
+interface QuestionAnswer {
+  questionId: string;
+  questionText: string;
+  selectedAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  timeSpent: number; // seconds
+}
+
 // Constants
 const GIFT_CLAIM_URL = process.env.NEXT_PUBLIC_SITE_URL 
   ? `${process.env.NEXT_PUBLIC_SITE_URL}/gift/claim/demo-`
@@ -629,7 +639,11 @@ const SALES_BLOCKS: SalesBlock[] = [
 
 interface SalesMasterclassProps {
   educationalMode?: boolean;
-  onEducationComplete?: () => void;
+  onEducationComplete?: (data?: {
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+    questionsAnswered?: QuestionAnswer[]; // FASE 2: Detailed answers array
+  }) => void;
   onShowEmailVerification?: () => Promise<void>;
   onShowCalendar?: () => Promise<void>;
   verifiedEmail?: string;
@@ -701,6 +715,8 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const [showEmailVerification, setShowEmailVerification] = useState<boolean>(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showOutroVideo, setShowOutroVideo] = useState(false); // Video final después del EIP-712
+  const [questionsAnswered, setQuestionsAnswered] = useState<QuestionAnswer[]>([]); // FASE 2: Detailed answer tracking
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now()); // FASE 2: Track time per question
 
   // Removed router dependency to avoid App Router/Pages Router conflicts
   const timerRef = useRef<NodeJS.Timeout>();
@@ -815,31 +831,54 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   const handleAnswerSelect = useCallback((optionIndex: number) => {
     setSelectedAnswer(optionIndex);
     setShowQuestionFeedback(true);
-    
+
     const block = SALES_BLOCKS[currentBlock];
     const isCorrect = block.question?.options[optionIndex].isCorrect || false;
-    
+
     setMetrics(prev => ({
       ...prev,
       questionsAnswered: prev.questionsAnswered + 1,
       correctAnswers: prev.correctAnswers + (isCorrect ? 1 : 0)
     }));
-    
+
     setLeadData(prev => ({
       ...prev,
       totalQuestions: (prev.totalQuestions || 0) + 1,
       questionsCorrect: (prev.questionsCorrect || 0) + (isCorrect ? 1 : 0)
     }));
-    
+
+    // FASE 2: Save detailed answer tracking
+    if (block.question) {
+      const timeSpent = Math.round((Date.now() - questionStartTime) / 1000); // seconds
+      const questionId = `q${currentBlock}_${block.id}`;
+      const selectedOption = block.question.options[optionIndex];
+      const correctOption = block.question.options.find(opt => opt.isCorrect);
+
+      const answerDetail: QuestionAnswer = {
+        questionId,
+        questionText: block.question.text,
+        selectedAnswer: selectedOption.text,
+        correctAnswer: correctOption?.text || '',
+        isCorrect,
+        timeSpent
+      };
+
+      setQuestionsAnswered(prev => [...prev, answerDetail]);
+      console.log('📝 Answer recorded:', answerDetail);
+
+      // Reset timer for next question
+      setQuestionStartTime(Date.now());
+    }
+
     if (isCorrect) {
       celebrate();
     }
-    
+
     // Allow proceeding after answering
     setTimeout(() => {
       setCanProceed(true);
     }, 1500);
-  }, [currentBlock, celebrate]);
+  }, [currentBlock, celebrate, questionStartTime]);
 
   // FASE 2: State machine declarativa con next pointers
   const getNextBlock = useCallback((currentBlockIndex: number): number | null => {
@@ -1325,6 +1364,7 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             // Scroll to top when showing outro video
             window.scrollTo({ top: 0, behavior: 'instant' });
           }}
+          verifiedEmail={verifiedEmail}
         />;
       default:
         return null;
@@ -1489,7 +1529,14 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
               // Now complete the education flow after the video
               if (onEducationComplete) {
-                onEducationComplete();
+                onEducationComplete({
+                  email: verifiedEmail,
+                  questionsScore: {
+                    correct: leadData.questionsCorrect || 0,
+                    total: leadData.totalQuestions || 0
+                  },
+                  questionsAnswered // FASE 2: Include detailed answers array
+                });
               } else {
                 // Fallback to postMessage if no callback provided
                 if (window.parent !== window) {
@@ -2793,9 +2840,13 @@ const SuccessBlock: React.FC<{
   leadData: any;
   metrics: any;
   educationalMode?: boolean;
-  onEducationComplete?: () => void;
+  onEducationComplete?: (data?: {
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+  }) => void;
   onShowOutroVideo?: () => void;
-}> = ({ content, leadData, metrics, educationalMode = false, onEducationComplete, onShowOutroVideo }) => {
+  verifiedEmail?: string;
+}> = ({ content, leadData, metrics, educationalMode = false, onEducationComplete, onShowOutroVideo, verifiedEmail }) => {
   // Removed router dependency to avoid App Router/Pages Router conflicts
   
   return (

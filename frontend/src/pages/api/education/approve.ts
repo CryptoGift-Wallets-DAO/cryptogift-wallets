@@ -21,6 +21,15 @@ interface ApprovalRequest {
   claimer: string;
   giftId: number;
   email?: string; // FASE 1: Email del receptor (opcional)
+  questionsScore?: { correct: number; total: number }; // FASE 1: Education score for analytics
+  questionsAnswered?: Array<{
+    questionId: string;
+    questionText: string;
+    selectedAnswer: string;
+    correctAnswer: string;
+    isCorrect: boolean;
+    timeSpent: number;
+  }>; // FASE 2: Detailed answers array for in-depth analytics
 }
 
 interface ApprovalResponse {
@@ -105,8 +114,22 @@ export default async function handler(
       sessionToken,
       tokenId,
       claimer,
-      email // FASE 1: Recibir email del frontend
-    }: Omit<ApprovalRequest, 'giftId'> & { giftId?: number; email?: string } = req.body;
+      email, // FASE 1: Recibir email del frontend
+      questionsScore, // FASE 1: Recibir score educativo del frontend
+      questionsAnswered // FASE 2: Recibir array detallado de respuestas
+    }: Omit<ApprovalRequest, 'giftId'> & {
+      giftId?: number;
+      email?: string;
+      questionsScore?: { correct: number; total: number };
+      questionsAnswered?: Array<{
+        questionId: string;
+        questionText: string;
+        selectedAnswer: string;
+        correctAnswer: string;
+        isCorrect: boolean;
+        timeSpent: number;
+      }>;
+    } = req.body;
     
     // Validate required fields
     if (!sessionToken || !tokenId || !claimer) {
@@ -366,30 +389,62 @@ export default async function handler(
       verifyingContract: EIP712_DOMAIN.verifyingContract
     });
 
-    // FASE 1: Almacenar email encriptado en gift:detail si está disponible
-    if (email && redis) {
+    // FASE 1: Almacenar email encriptado y questionsScore en gift:detail si están disponibles
+    if ((email || questionsScore) && redis) {
       try {
-        const { encryptEmail, safeEncryptEmail } = await import('../../../lib/piiEncryption');
-        const encryptedData = safeEncryptEmail(email);
+        const giftDetailKey = `gift:detail:${giftId}`;
+        const updates: Record<string, any> = {};
 
-        if (encryptedData) {
-          const giftDetailKey = `gift:detail:${giftId}`;
+        // Encrypt and store email if provided
+        if (email) {
+          const { encryptEmail, safeEncryptEmail } = await import('../../../lib/piiEncryption');
+          const encryptedData = safeEncryptEmail(email);
 
-          // Update gift detail con email encriptado y HMAC
-          await redis.hset(giftDetailKey, {
-            email_encrypted: encryptedData.encrypted,
-            email_hmac: encryptedData.hmac,
-            email_captured_at: Date.now()
-          });
+          if (encryptedData) {
+            updates.email_encrypted = encryptedData.encrypted;
+            updates.email_hmac = encryptedData.hmac;
+            updates.email_captured_at = Date.now();
 
-          console.log('📧 Email capturado y encriptado correctamente:', {
+            console.log('📧 Email capturado y encriptado correctamente:', {
+              giftId,
+              hmac: encryptedData.hmac.substring(0, 16) + '...'
+            });
+          }
+        }
+
+        // Store questionsScore if provided
+        if (questionsScore) {
+          updates.education_score_correct = questionsScore.correct;
+          updates.education_score_total = questionsScore.total;
+          updates.education_score_percentage = Math.round((questionsScore.correct / questionsScore.total) * 100);
+          updates.education_completed_at = Date.now();
+
+          console.log('📊 Education score captured:', {
             giftId,
-            hmac: encryptedData.hmac.substring(0, 16) + '...'
+            score: `${questionsScore.correct}/${questionsScore.total}`,
+            percentage: updates.education_score_percentage
           });
         }
-      } catch (emailError) {
-        console.error('⚠️ Failed to store encrypted email (non-critical):', emailError);
-        // No fallar la aprobación si el email falla
+
+        // FASE 2: Store detailed answers array if provided
+        if (questionsAnswered && questionsAnswered.length > 0) {
+          updates.education_answers_detail = JSON.stringify(questionsAnswered);
+          updates.education_answers_count = questionsAnswered.length;
+
+          console.log('📝 Detailed answers captured:', {
+            giftId,
+            answersCount: questionsAnswered.length,
+            correctCount: questionsAnswered.filter(a => a.isCorrect).length
+          });
+        }
+
+        // Update gift detail with all captured data
+        if (Object.keys(updates).length > 0) {
+          await redis.hset(giftDetailKey, updates);
+        }
+      } catch (analyticsError) {
+        console.error('⚠️ Failed to store analytics data (non-critical):', analyticsError);
+        // No fallar la aprobación si los analytics fallan
       }
     }
 

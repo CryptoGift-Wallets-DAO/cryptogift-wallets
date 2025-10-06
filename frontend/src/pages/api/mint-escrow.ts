@@ -1362,21 +1362,29 @@ async function mintNFTEscrowGasless(
             console.error('❌ CRITICAL: Redis not configured - gasless mint NOT tracked');
           }
         } catch (analyticsError) {
-          console.error('⚠️ Analytics tracking failed (non-critical):', analyticsError);
+          // FASE 3: Make analytics failures more visible
+          console.error('🚨 CRITICAL: Analytics tracking failed - gift will not appear in analytics!');
+          console.error('❌ Analytics error details:', analyticsError);
+          console.error('📊 Affected gift:', {
+            tokenId,
+            giftId: actualGiftId,
+            error: (analyticsError as Error).message
+          });
         }
 
       } catch (mappingError) {
+        // FASE 3: CRITICAL - Always log mapping failures prominently
+        console.error('🚨🚨🚨 CRITICAL: Gift mapping storage/validation failed 🚨🚨🚨');
         console.error('❌ Failed to store/validate gift mapping:', mappingError);
-        // CRITICAL: Don't fail the entire mint, but log this as a severe issue
-        debugLogger.operation('CRITICAL: Gift mapping storage/validation failed', {
+        console.error('📊 Mapping failure details:', {
           tokenId,
           giftId: actualGiftId,
           error: (mappingError as Error).message,
           stack: (mappingError as Error).stack,
           educationModules: educationModules || [],
-          severity: 'CRITICAL'
+          severity: 'CRITICAL - Analytics will NOT work for this gift!'
         });
-        
+
         // Store error in response for monitoring but continue with mint
         console.error('🚨 MAPPING FAILURE - Education detection will not work for this gift!');
         // Don't throw - let the mint complete but track the issue

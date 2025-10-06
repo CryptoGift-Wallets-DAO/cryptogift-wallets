@@ -138,6 +138,18 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
+  const [completionData, setCompletionData] = useState<{
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+    questionsAnswered?: Array<{
+      questionId: string;
+      questionText: string;
+      selectedAnswer: string;
+      correctAnswer: string;
+      isCorrect: boolean;
+      timeSpent: number;
+    }>;
+  }>({});
   const account = useActiveAccount();
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
@@ -238,13 +250,37 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     }
   }, [account?.address, showConnectWallet, showSuccess]);
 
-  const handleLessonComplete = async () => {
-    console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
-    
+  const handleLessonComplete = async (data?: {
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+    questionsAnswered?: Array<{
+      questionId: string;
+      questionText: string;
+      selectedAnswer: string;
+      correctAnswer: string;
+      isCorrect: boolean;
+      timeSpent: number;
+    }>;
+  }) => {
+    console.log('✅ LESSON COMPLETION TRIGGERED:', {
+      lessonId,
+      mode,
+      accountConnected: !!account?.address,
+      email: data?.email,
+      questionsScore: data?.questionsScore,
+      questionsAnsweredCount: data?.questionsAnswered?.length || 0
+    });
+
+    // Store completion data for later use
+    if (data) {
+      setCompletionData(data);
+      console.log('📊 Completion data stored:', data);
+    }
+
     // En mode educational, mostrar el overlay de éxito y conectar wallet
     if (mode === 'educational' && onComplete) {
       console.log('🎓 Educational mode - showing success overlay and wallet connection');
-      
+
       // FIX: Llamar directamente a handleEducationCompletionAfterEmail
       // que muestra el overlay de éxito y pide conectar wallet
       handleEducationCompletionAfterEmail();
@@ -257,7 +293,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         origin: { y: 0.6 },
         colors: ['#FFD700', '#FFA500', '#FF6347']
       });
-      
+
       setTimeout(() => {
         onClose();
       }, 3000);
@@ -370,7 +406,9 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
               giftId: 0, // Will be populated from session data in API
               educationCompleted: true,
               module: lessonId,
-              email: verifiedEmail || undefined // FASE 1: Enviar email verificado para analytics
+              email: completionData.email || verifiedEmail || undefined, // FASE 1: Email from completion or verification
+              questionsScore: completionData.questionsScore, // FASE 1: Include questions score for analytics
+              questionsAnswered: completionData.questionsAnswered // FASE 2: Include detailed answers array
             })
           });
 
