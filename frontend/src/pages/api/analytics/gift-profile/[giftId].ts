@@ -470,28 +470,24 @@ export default async function handler(
             2: 'Intro NFTs'
           };
 
-          // Preserve email from gift:detail (section A)
-          const existingEmail = profile.education?.email;
-          const existingEmailHash = profile.education?.emailHash;
+          // CRITICAL FIX: Preserve ALL education data from gift:detail (Section A)
+          // Only update module-specific fields from education:gift
+          const existingEducation = profile.education;
 
           profile.education = {
-            required: educationData.hasEducation || false,
-            moduleId: moduleIds[0]?.toString() || undefined,
-            moduleName: moduleIds.map((id: number) => moduleNames[id] || `Módulo ${id}`).join(', '),
+            // Preserve from Section A (gift:detail) - use spread to copy all existing fields
+            ...existingEducation,
 
-            // Preserve email from gift:detail (populated in section A)
-            email: existingEmail,
-            emailHash: existingEmailHash,
+            // Update only module metadata from education:gift
+            required: educationData.hasEducation || existingEducation?.required || false,
+            moduleId: moduleIds[0]?.toString() || existingEducation?.moduleId,
+            moduleName: moduleIds.length > 0
+              ? moduleIds.map((id: number) => moduleNames[id] || `Módulo ${id}`).join(', ')
+              : existingEducation?.moduleName,
 
-            started: false, // Not tracked in mint-time structure
-            startedAt: undefined,
-
-            completed: false, // Will be updated when module completed
-            completedAt: undefined,
-
-            score: undefined,
-            passed: undefined,
-            totalTimeSpent: undefined
+            // Ensure required fields are set with defaults if not present
+            started: existingEducation?.started ?? false,
+            completed: existingEducation?.completed ?? false
           };
         }
       } catch (error) {
