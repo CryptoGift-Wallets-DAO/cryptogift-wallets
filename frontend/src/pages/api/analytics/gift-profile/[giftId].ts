@@ -438,6 +438,13 @@ export default async function handler(
         }
 
         // CRITICAL FIX: Decrypt email from gift:detail (FASE 1)
+        console.error('🔍 EMAIL CHECK:', {
+          giftId,
+          hasEmailEncrypted: !!giftDetails.email_encrypted,
+          hasEmailHmac: !!giftDetails.email_hmac,
+          emailEncryptedLength: giftDetails.email_encrypted ? String(giftDetails.email_encrypted).length : 0
+        });
+
         if (giftDetails.email_encrypted && giftDetails.email_hmac) {
           if (!profile.education) {
             profile.education = {
@@ -454,12 +461,24 @@ export default async function handler(
             const decryptedEmail = decryptEmail(giftDetails.email_encrypted as string);
             if (decryptedEmail) {
               profile.education.email = decryptedEmail;
-              console.log('📧 Email descifrado exitosamente para analytics');
+              console.error('✅ EMAIL DECRYPTED:', {
+                giftId,
+                emailPreview: decryptedEmail.substring(0, 3) + '***' + decryptedEmail.split('@')[1]
+              });
+            } else {
+              console.error('❌ EMAIL DECRYPTION FAILED - returned null/empty');
             }
           } catch (decryptError) {
-            console.warn('⚠️ Could not decrypt email:', decryptError);
-            // Keep emailHash for reference
+            console.error('❌ EMAIL DECRYPTION ERROR:', {
+              error: decryptError,
+              message: (decryptError as Error).message
+            });
           }
+        } else {
+          console.error('⚠️ NO EMAIL DATA in gift:detail:', {
+            giftId,
+            hasAnyEmailField: !!(giftDetails as any).email || !!(giftDetails as any).email_encrypted
+          });
         }
       }
 
