@@ -362,25 +362,56 @@ export default async function handler(
         }
 
         // FASE 3: Read education data from gift:detail (written by complete-module.ts)
-        if (giftDetails.educationCompleted === 'true') {
+        // CRITICAL FIX: Also read FASE 1 & 2 data (education_score_*, education_answers_detail)
+        const hasLegacyEducation = giftDetails.educationCompleted === 'true';
+        const hasFase1Education = giftDetails.education_score_percentage || giftDetails.education_score_total;
+
+        if (hasLegacyEducation || hasFase1Education) {
           profile.education = {
             required: true,
-            completed: true,
+            completed: hasLegacyEducation || !!giftDetails.education_completed_at,
             completedAt: giftDetails.educationCompletedAt ?
               new Date(parseInt(giftDetails.educationCompletedAt as string)).toISOString() :
-              undefined,
-            score: giftDetails.educationScore ? parseInt(giftDetails.educationScore as string) : undefined,
+              (giftDetails.education_completed_at ? new Date(parseInt(giftDetails.education_completed_at as string)).toISOString() : undefined),
+            score: giftDetails.educationScore ? parseInt(giftDetails.educationScore as string) :
+                   (giftDetails.education_score_percentage ? parseInt(giftDetails.education_score_percentage as string) : undefined),
             passed: true,
             started: true
           };
 
-          // Parse completed modules
+          // Parse completed modules (legacy)
           if (giftDetails.educationModules) {
             try {
               const modules = JSON.parse(giftDetails.educationModules as string);
               profile.education.moduleName = `${modules.length} módulos completados`;
             } catch (e) {
               console.warn('Could not parse education modules');
+            }
+          }
+
+          // FASE 2: Parse detailed question answers
+          if (giftDetails.education_answers_detail) {
+            try {
+              const answersDetail = JSON.parse(giftDetails.education_answers_detail as string);
+              profile.education.questions = answersDetail.map((answer: any, idx: number) => ({
+                questionId: answer.questionId,
+                questionText: answer.questionText,
+                selectedAnswer: answer.selectedAnswer,
+                correctAnswer: answer.correctAnswer,
+                isCorrect: answer.isCorrect,
+                timeSpent: answer.timeSpent,
+                attemptNumber: 1,
+                timestamp: new Date().toISOString()
+              }));
+
+              // Calculate total time from answers
+              if (answersDetail.length > 0) {
+                profile.education.totalTimeSpent = answersDetail.reduce((acc: number, q: any) => acc + (q.timeSpent || 0), 0);
+              }
+
+              console.log(`✅ FASE 2: Parsed ${answersDetail.length} question answers for giftId ${giftId}`);
+            } catch (parseError) {
+              console.error('⚠️ Could not parse education_answers_detail:', parseError);
             }
           }
         }

@@ -780,6 +780,80 @@ export default function GiftDetailsPage() {
               </h2>
 
               <div className="space-y-6">
+                {/* CRITICAL USER REQUEST: Email + Wallet Addresses - PROMINENT DISPLAY */}
+                <div className="p-5 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    📋 Datos del Usuario
+                  </h3>
+
+                  <div className="space-y-4">
+                    {/* Claimer Wallet Address - REQUESTED */}
+                    {gift.claim?.claimerWallet && (
+                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Wallet className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          <span className="font-semibold text-green-700 dark:text-green-400">Wallet del Reclamador:</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
+                            {gift.claim.claimerWallet}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(gift.claim.claimerWallet!);
+                              alert('✅ Wallet copiada al portapapeles!');
+                            }}
+                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
+                          >
+                            📋 Copiar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Email Address - REQUESTED */}
+                    {gift.education?.email && (
+                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          <span className="font-semibold text-blue-700 dark:text-blue-400">Email Verificado:</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
+                            {gift.education.email}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(gift.education.email!);
+                              alert('✅ Email copiado al portapapeles!');
+                            }}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
+                          >
+                            📋 Copiar
+                          </button>
+                        </div>
+                        {gift.education.emailHash && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Hash SHA-256: <code className="font-mono">{gift.education.emailHash.slice(0, 24)}...</code>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Calendar Booking Date - REQUESTED (placeholder for future implementation) */}
+                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 opacity-60">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="w-5 h-5 text-gray-500" />
+                        <span className="font-semibold text-gray-600 dark:text-gray-400">Fecha de Cita Agendada:</span>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                        ⏳ Próximamente - Sistema de calendario en desarrollo
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Blockchain Data */}
                 <div>
                   <h3 className="font-medium mb-3">⛓️ Datos Blockchain</h3>
