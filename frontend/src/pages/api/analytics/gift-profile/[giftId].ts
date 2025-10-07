@@ -357,20 +357,28 @@ export default async function handler(
             previousClaim: profile.claim
           });
 
+          const claimedAtISO = giftDetails.claimedAt ?
+            new Date(parseInt(giftDetails.claimedAt as string)).toISOString() :
+            undefined;
+
           profile.claim = {
             ...profile.claim,
             claimed: true,
             claimerAddress: giftDetails.claimer as string,
             claimerWallet: (giftDetails.claimer as string) || profile.claim?.claimerWallet, // CRITICAL FIX: Preserve from blockchain
-            claimedAt: giftDetails.claimedAt ?
-              new Date(parseInt(giftDetails.claimedAt as string)).toISOString() :
-              undefined
+            claimedAt: claimedAtISO
           };
+
+          // CRITICAL FIX: Also set fallback fields at root level for UI compatibility
+          (profile as any).claimer = giftDetails.claimer as string;
+          (profile as any).claimedAt = claimedAtISO;
 
           console.error('✅ SECCIÓN A - CLAIM OBJECT BUILT:', {
             giftId,
             claimObject: profile.claim,
-            hasClaimerWallet: !!profile.claim.claimerWallet
+            hasClaimerWallet: !!profile.claim.claimerWallet,
+            rootClaimer: (profile as any).claimer,
+            rootClaimedAt: (profile as any).claimedAt
           });
         }
 
