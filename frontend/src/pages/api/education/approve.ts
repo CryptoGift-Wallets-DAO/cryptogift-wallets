@@ -440,10 +440,51 @@ export default async function handler(
 
         // Update gift detail with all captured data
         if (Object.keys(updates).length > 0) {
-          await redis.hset(giftDetailKey, updates);
+          console.error('🔍 ATTEMPTING REDIS HSET:', {
+            giftDetailKey,
+            updateKeys: Object.keys(updates),
+            updateCount: Object.keys(updates).length,
+            hasEmail: !!updates.email_encrypted,
+            hasScore: !!updates.education_score_percentage,
+            hasAnswers: !!updates.education_answers_detail,
+            redisConnected: !!redis
+          });
+
+          try {
+            const result = await redis.hset(giftDetailKey, updates);
+            console.error('✅ REDIS HSET SUCCESS:', {
+              giftDetailKey,
+              result,
+              fieldsWritten: Object.keys(updates).length,
+              fields: Object.keys(updates)
+            });
+          } catch (hsetError) {
+            console.error('❌ REDIS HSET FAILED:', {
+              giftDetailKey,
+              error: hsetError,
+              message: (hsetError as Error).message,
+              stack: (hsetError as Error).stack,
+              updateKeys: Object.keys(updates)
+            });
+            throw hsetError; // Re-throw to see if caught by outer catch
+          }
+        } else {
+          console.error('⚠️ NO UPDATES TO WRITE - updates object empty:', {
+            giftId,
+            hasEmail: !!email,
+            hasQuestionsScore: !!questionsScore,
+            hasQuestionsAnswered: !!questionsAnswered,
+            redisAvailable: !!redis
+          });
         }
       } catch (analyticsError) {
-        console.error('⚠️ Failed to store analytics data (non-critical):', analyticsError);
+        console.error('⚠️ Failed to store analytics data (non-critical):', {
+          error: analyticsError,
+          message: (analyticsError as Error).message,
+          stack: (analyticsError as Error).stack,
+          giftId,
+          giftDetailKey: `gift:detail:${giftId}`
+        });
         // No fallar la aprobación si los analytics fallan
       }
     }
