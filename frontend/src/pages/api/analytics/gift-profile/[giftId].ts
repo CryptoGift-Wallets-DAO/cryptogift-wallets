@@ -350,6 +350,13 @@ export default async function handler(
         }
 
         if (giftDetails.claimer) {
+          console.error('🔍 SECCIÓN A - BUILDING CLAIM OBJECT:', {
+            giftId,
+            claimer: giftDetails.claimer,
+            claimedAt: giftDetails.claimedAt,
+            previousClaim: profile.claim
+          });
+
           profile.claim = {
             ...profile.claim,
             claimed: true,
@@ -359,6 +366,12 @@ export default async function handler(
               new Date(parseInt(giftDetails.claimedAt as string)).toISOString() :
               undefined
           };
+
+          console.error('✅ SECCIÓN A - CLAIM OBJECT BUILT:', {
+            giftId,
+            claimObject: profile.claim,
+            hasClaimerWallet: !!profile.claim.claimerWallet
+          });
         }
 
         // FASE 3: Read education data from gift:detail (written by complete-module.ts)
@@ -657,6 +670,16 @@ export default async function handler(
     // Add response headers
     res.setHeader('Cache-Control', 'private, max-age=5'); // 5 second cache
     res.setHeader('X-Gift-Status', profile.status.current);
+
+    // CRITICAL DEBUG: Log profile.claim before returning
+    console.error('🔍 FINAL PROFILE CHECK:', {
+      giftId,
+      hasClaim: !!profile.claim,
+      claimData: profile.claim,
+      hasClaimerWallet: !!profile.claim?.claimerWallet,
+      status: profile.status.current,
+      eventsCount: profile.events.length
+    });
 
     return res.status(200).json({
       success: true,
