@@ -304,8 +304,23 @@ export default async function handler(
       console.error('🔍 Section A Result (by giftId):', {
         giftId,
         hasData: !!giftDetails,
-        keys: giftDetails ? Object.keys(giftDetails) : []
+        keys: giftDetails ? Object.keys(giftDetails) : [],
+        hasClaimer: !!(giftDetails as any)?.claimer,
+        claimerValue: (giftDetails as any)?.claimer
       });
+
+      // CRITICAL FIX: Always set claimer at root level if it exists in Redis
+      if (giftDetails && (giftDetails as any).claimer) {
+        (profile as any).claimer = (giftDetails as any).claimer;
+        (profile as any).claimedAt = (giftDetails as any).claimedAt ?
+          new Date(parseInt((giftDetails as any).claimedAt as string)).toISOString() :
+          undefined;
+        console.error('✅ CLAIMER SET AT ROOT LEVEL:', {
+          giftId,
+          claimer: (profile as any).claimer,
+          claimedAt: (profile as any).claimedAt
+        });
+      }
 
       // CRITICAL FIX #10B: If not found and no mapping, search by tokenId field
       if ((!giftDetails || Object.keys(giftDetails).length === 0) && resolvedGiftId === null) {
