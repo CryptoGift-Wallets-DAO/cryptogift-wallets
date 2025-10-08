@@ -629,7 +629,7 @@ export default function GiftAnalyticsPage() {
                 </thead>
                 <tbody>
                   {individualGifts.length > 0 ? (
-                    individualGifts.slice(0, 20).map(gift => (
+                    individualGifts.map(gift => (
                       <tr key={gift.giftId} className="border-b hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">

@@ -109,7 +109,7 @@ export default async function handler(
       const giftDetailKeys = await redis.keys('gift:detail:*');
       console.log(`Found ${giftDetailKeys.length} gift detail keys`);
 
-      for (const key of giftDetailKeys.slice(0, 100)) { // Limit to 100 for performance
+      for (const key of giftDetailKeys) { // Process ALL gifts - NO LIMIT
         const giftData = await redis.hgetall(key);
         if (giftData) {
           // Extract gift ID from the key (e.g., "gift:detail:305" -> "305")
