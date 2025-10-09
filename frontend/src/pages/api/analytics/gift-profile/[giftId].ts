@@ -347,6 +347,19 @@ export default async function handler(
 
         if (giftDetails && Object.keys(giftDetails).length > 0) {
           console.error(`🎯 FALLBACK SUCCESS: Resolved tokenId ${giftIdParam} → giftId ${giftId}`);
+
+          // CRITICAL FIX: Set claimer at root level for tokenId fallback case
+          if ((giftDetails as any).claimer) {
+            (profile as any).claimer = (giftDetails as any).claimer;
+            (profile as any).claimedAt = (giftDetails as any).claimedAt ?
+              new Date(parseInt((giftDetails as any).claimedAt as string)).toISOString() :
+              undefined;
+            console.error('✅ CLAIMER SET FROM TOKENID FALLBACK:', {
+              tokenId: giftIdParam,
+              resolvedGiftId: giftId,
+              claimer: (profile as any).claimer
+            });
+          }
         } else {
           console.error(`❌ FALLBACK FAILED: No gift:detail found for tokenId ${giftIdParam}`);
         }
