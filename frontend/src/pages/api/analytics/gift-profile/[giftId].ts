@@ -322,8 +322,9 @@ export default async function handler(
         });
       }
 
-      // CRITICAL FIX #10B: If not found and no mapping, search by tokenId field
-      if ((!giftDetails || Object.keys(giftDetails).length === 0) && resolvedGiftId === null) {
+      // CRITICAL FIX #10B: If not found, search by tokenId field
+      // UPDATED: Also search when we have resolvedGiftId but no data found
+      if (!giftDetails || Object.keys(giftDetails).length === 0) {
         console.error(`🔍 Section A Fallback: Searching all gift:detail:* for tokenId=${giftIdParam}`);
 
         // Get all gift:detail keys
