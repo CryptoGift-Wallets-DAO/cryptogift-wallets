@@ -3240,7 +3240,7 @@ export default async function handler(
         const giftDetails = {
           tokenId: result.tokenId.toString(), // CRITICAL: Always store tokenId for fallback search
           giftId: result.giftId.toString(),
-          creator: userAddress || 'unknown',
+          creator: creatorAddress || 'unknown',
           createdAt: Date.now().toString(),
           status: 'created',
           hasPassword: !!password,
@@ -3248,14 +3248,14 @@ export default async function handler(
           imageUrl: responseData.imageUrl || '',
           metadataUrl: responseData.metadataUrl || '',
           transactionHash: result.transactionHash || '',
-          campaignId: campaignId || 'default'
+          campaignId: `campaign_${creatorAddress.slice(0, 8)}` || 'default'
         };
 
         await redis.hset(giftDetailKey, giftDetails);
         console.log(`✅ Gift details stored in ${giftDetailKey}:`, {
           giftId: result.giftId,
           tokenId: result.tokenId,
-          creator: userAddress?.slice(0, 10) + '...'
+          creator: creatorAddress?.slice(0, 10) + '...'
         });
       }
     } catch (giftDetailError) {
