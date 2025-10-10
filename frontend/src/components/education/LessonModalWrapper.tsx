@@ -117,10 +117,11 @@ export interface LessonModalWrapperProps {
   mode: 'knowledge' | 'educational';
   isOpen: boolean;
   onClose: () => void;
-  
+
   // Educational mode specific props
   tokenId?: string;
   sessionToken?: string;
+  giftId?: string; // Pass giftId for appointment saving
   onComplete?: (gateData: string) => void;
 }
 
@@ -131,6 +132,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   onClose,
   tokenId,
   sessionToken,
+  giftId,
   onComplete
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -695,6 +697,8 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
               onClose={handleCalendarBooked}
               userEmail={verifiedEmail || undefined}
               source="educational-masterclass"
+              giftId={giftId}
+              tokenId={tokenId}
             />
           </>
         )}

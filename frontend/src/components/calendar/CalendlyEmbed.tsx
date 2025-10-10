@@ -2,14 +2,16 @@
  * CALENDLY EMBED COMPONENT
  * Componente para embedding de Calendly optimizado para Next.js 2025
  * Basado en mejores prácticas de integración Calendly + React
- * 
+ *
+ * ENHANCED: Auto-saves appointment data to backend when scheduled
+ *
  * Made by mbxarts.com The Moon in a Box property
  * Co-Author: Godez22
  */
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 
 interface CalendlyEmbedProps {
   url: string;
@@ -27,6 +29,10 @@ interface CalendlyEmbedProps {
     utmContent?: string;
     utmTerm?: string;
   };
+  // NUEVO: Props para guardar automáticamente la cita
+  giftId?: string;
+  tokenId?: string;
+  onAppointmentScheduled?: (data: any) => void;
 }
 
 export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
@@ -34,8 +40,79 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
   height = 700,
   className = "",
   prefill = {},
-  utm = {}
+  utm = {},
+  giftId,
+  tokenId,
+  onAppointmentScheduled
 }) => {
+  // Función para guardar automáticamente la cita en el backend
+  const saveAppointmentToBackend = useCallback(async (eventData: any) => {
+    if (!giftId) {
+      console.warn('No giftId provided, cannot save appointment');
+      return;
+    }
+
+    try {
+      console.log('📅 Guardando cita automáticamente...', eventData);
+
+      // Extraer información del evento de Calendly
+      const appointmentData = {
+        eventName: eventData.event?.event_type_name || 'Consulta CryptoGift',
+        eventDate: eventData.event?.start_time ? new Date(eventData.event.start_time).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        eventTime: eventData.event?.start_time ? new Date(eventData.event.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '',
+        duration: eventData.event?.duration || 30,
+        timezone: eventData.event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        meetingUrl: eventData.event?.location?.join_url || eventData.event?.location || '',
+        inviteeName: eventData.invitee?.name || prefill.name || '',
+        inviteeEmail: eventData.invitee?.email || prefill.email || '',
+        additionalInfo: {
+          eventUri: eventData.event?.uri,
+          inviteeUri: eventData.invitee?.uri,
+          status: eventData.event?.status || 'scheduled',
+          createdAt: eventData.event?.created_at,
+          cancelUrl: eventData.invitee?.cancel_url,
+          rescheduleUrl: eventData.invitee?.reschedule_url
+        }
+      };
+
+      // Llamar al endpoint para guardar la cita
+      const response = await fetch('/api/calendar/save-appointment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          giftId,
+          tokenId,
+          appointmentData
+        })
+      });
+
+      if (response.ok) {
+        console.log('✅ Cita guardada exitosamente en el sistema');
+
+        // Mostrar notificación de éxito al usuario
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+        notification.innerHTML = '✅ ¡Cita agendada y guardada exitosamente!';
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.remove();
+        }, 5000);
+
+        // Llamar callback opcional
+        if (onAppointmentScheduled) {
+          onAppointmentScheduled(appointmentData);
+        }
+      } else {
+        console.error('Error al guardar la cita:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error al procesar la cita:', error);
+    }
+  }, [giftId, tokenId, prefill, onAppointmentScheduled]);
+
   useEffect(() => {
     // Cargar Calendly widget script dinámicamente
     const script = document.createElement('script');
@@ -43,13 +120,34 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
     script.async = true;
     document.body.appendChild(script);
 
+    // CRITICAL: Escuchar eventos de Calendly
+    const handleCalendlyEvent = (e: MessageEvent) => {
+      // Verificar que el mensaje viene de Calendly
+      if (e.origin !== 'https://calendly.com') return;
+
+      // Parsear el mensaje
+      if (e.data && e.data.event) {
+        console.log('📅 Evento de Calendly recibido:', e.data.event);
+
+        // Detectar cuando se agenda una cita
+        if (e.data.event === 'calendly.event_scheduled') {
+          console.log('🎉 ¡Cita agendada! Guardando automáticamente...');
+          saveAppointmentToBackend(e.data.payload);
+        }
+      }
+    };
+
+    // Agregar listener para mensajes de Calendly
+    window.addEventListener('message', handleCalendlyEvent);
+
     return () => {
-      // Cleanup script al desmontar
+      // Cleanup
+      window.removeEventListener('message', handleCalendlyEvent);
       if (document.body.contains(script)) {
         document.body.removeChild(script);
       }
     };
-  }, []);
+  }, [saveAppointmentToBackend]);
 
   // Construir URL con parámetros
   const buildCalendlyUrl = () => {

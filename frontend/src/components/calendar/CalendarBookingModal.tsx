@@ -20,6 +20,8 @@ interface CalendarBookingModalProps {
   userEmail?: string;
   userName?: string;
   source?: string; // 'masterclass' | 'general'
+  giftId?: string; // NUEVO: Para guardar automáticamente la cita
+  tokenId?: string; // NUEVO: Para guardar automáticamente la cita
 }
 
 export const CalendarBookingModal: React.FC<CalendarBookingModalProps> = ({
@@ -27,7 +29,9 @@ export const CalendarBookingModal: React.FC<CalendarBookingModalProps> = ({
   onClose,
   userEmail = '',
   userName = '',
-  source = 'masterclass'
+  source = 'masterclass',
+  giftId,
+  tokenId
 }) => {
   // URL de Calendly - usando variable de entorno o fallback de demo
   const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/cryptogift-demo/consultation';
@@ -112,6 +116,16 @@ export const CalendarBookingModal: React.FC<CalendarBookingModalProps> = ({
                   utmMedium: 'modal',
                   utmCampaign: 'post-masterclass-booking',
                   utmContent: source
+                }}
+                // NUEVO: Pasar IDs para guardar automáticamente
+                giftId={giftId}
+                tokenId={tokenId}
+                onAppointmentScheduled={() => {
+                  console.log('✅ Cita agendada y guardada automáticamente');
+                  // Opcionalmente cerrar el modal después de agendar
+                  setTimeout(() => {
+                    onClose();
+                  }, 3000);
                 }}
               />
             </div>

@@ -109,6 +109,7 @@ interface ValidationState {
   educationRequirements?: EducationRequirement[];
   educationModules?: number[]; // Add modules to state
   sessionToken?: string;
+  giftId?: string; // Add giftId to state for appointment saving
   error?: string;
   remainingAttempts?: number;
 }
@@ -284,13 +285,27 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       });
 
       if (data.valid) {
+        // Get giftId from tokenId for appointment saving
+        let giftId: string | undefined;
+        try {
+          const giftIdResponse = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
+          if (giftIdResponse.ok) {
+            const giftIdData = await giftIdResponse.json();
+            giftId = giftIdData.giftId?.toString();
+            console.log('📊 GiftId retrieved for appointment saving:', giftId);
+          }
+        } catch (error) {
+          console.warn('Failed to get giftId:', error);
+        }
+
         setValidationState({
           isValidating: false,
           isValid: true,
           requiresEducation: data.requiresEducation || false,
           educationRequirements: data.educationRequirements,
           sessionToken: data.sessionToken,
-          educationModules: data.educationModules // Store modules for later use
+          educationModules: data.educationModules, // Store modules for later use
+          giftId // Store giftId for appointment saving
         });
 
         // Save session to localStorage for recovery
@@ -790,6 +805,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           }}
           tokenId={tokenId}
           sessionToken={validationState.sessionToken}
+          giftId={validationState.giftId} // Pass giftId for appointment saving
           onComplete={(gateData) => {
             console.log('Education completed with gate data:', gateData);
             setShowEducationalModule(false);
