@@ -3230,7 +3230,39 @@ export default async function handler(
         // Non-critical error - continue with response
       }
     }
-    
+
+    // CRITICAL FIX: Store gift creation details in gift:detail for analytics
+    try {
+      const redis = validateRedisForCriticalOps('Store gift details');
+
+      if (redis && result.giftId) {
+        const giftDetailKey = `gift:detail:${result.giftId}`;
+        const giftDetails = {
+          tokenId: result.tokenId.toString(), // CRITICAL: Always store tokenId for fallback search
+          giftId: result.giftId.toString(),
+          creator: userAddress || 'unknown',
+          createdAt: Date.now().toString(),
+          status: 'created',
+          hasPassword: !!password,
+          hasEducation: educationModules && educationModules.length > 0,
+          imageUrl: responseData.imageUrl || '',
+          metadataUrl: responseData.metadataUrl || '',
+          transactionHash: result.transactionHash || '',
+          campaignId: campaignId || 'default'
+        };
+
+        await redis.hset(giftDetailKey, giftDetails);
+        console.log(`✅ Gift details stored in ${giftDetailKey}:`, {
+          giftId: result.giftId,
+          tokenId: result.tokenId,
+          creator: userAddress?.slice(0, 10) + '...'
+        });
+      }
+    } catch (giftDetailError) {
+      console.error('❌ Failed to store gift details:', giftDetailError);
+      // Non-critical, continue
+    }
+
     return res.status(200).json(responseData);
     
   } catch (error: any) {

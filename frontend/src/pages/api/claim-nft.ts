@@ -244,6 +244,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Don't fail the whole claim for metadata update issues
     }
 
+    // CRITICAL FIX: Store claimer information in gift:detail for analytics
+    try {
+      const redis = validateRedisForCriticalOps('Store claim data');
+
+      if (redis) {
+        // Get the actual giftId from tokenId mapping
+        const { getGiftIdFromTokenId } = await import('@/lib/escrowUtils');
+        const resolvedGiftId = await getGiftIdFromTokenId(tokenId);
+        const giftId = resolvedGiftId?.toString() || existingMetadata?.giftId || tokenId;
+
+        // Store claimer data in gift:detail hash
+        const giftDetailKey = `gift:detail:${giftId}`;
+        const claimUpdates = {
+          claimer: claimerAddress,
+          claimedAt: Date.now().toString(),
+          claimTransactionHash: claimResult?.transactionHash || '',
+          tokenId: tokenId.toString(), // CRITICAL: Always store tokenId for fallback search
+          status: 'claimed'
+        };
+
+        await redis.hset(giftDetailKey, claimUpdates);
+        console.log(`✅ Claimer data stored in ${giftDetailKey}:`, {
+          claimer: claimerAddress.slice(0, 10) + '...',
+          giftId,
+          tokenId
+        });
+      }
+    } catch (claimStorageError) {
+      console.error('❌ Failed to store claim data:', claimStorageError);
+      // Non-critical, continue
+    }
+
     // FASE 2: Track gift claim in analytics - Migrated to Canonical System
     try {
       // Get gift ID from mapping or metadata

@@ -397,20 +397,47 @@ export default async function handler(
 
         // Encrypt and store email if provided
         if (email) {
-          const { encryptEmail, safeEncryptEmail } = await import('../../../lib/piiEncryption');
-          const encryptedData = safeEncryptEmail(email);
+          const { encryptEmail, safeEncryptEmail, isPIIEncryptionEnabled } = await import('../../../lib/piiEncryption');
 
-          if (encryptedData) {
-            updates.email_encrypted = encryptedData.encrypted;
-            updates.email_hmac = encryptedData.hmac;
-            updates.email_captured_at = Date.now();
-
-            console.log('📧 Email capturado y encriptado correctamente:', {
+          // First check if PII encryption is configured
+          if (!isPIIEncryptionEnabled()) {
+            console.error('❌ PII ENCRYPTION NOT CONFIGURED:', {
               giftId,
-              hmac: encryptedData.hmac.substring(0, 16) + '...'
+              email: email.substring(0, 3) + '***',
+              error: 'Missing PII_ENCRYPTION_KEY or PII_HMAC_SECRET environment variables'
             });
+            // Store plain email temporarily with warning flag
+            updates.email_plain = email;
+            updates.email_warning = 'STORED_UNENCRYPTED_PII_NOT_CONFIGURED';
+            updates.email_captured_at = Date.now();
+          } else {
+            const encryptedData = safeEncryptEmail(email);
+
+            if (encryptedData) {
+              updates.email_encrypted = encryptedData.encrypted;
+              updates.email_hmac = encryptedData.hmac;
+              updates.email_captured_at = Date.now();
+
+              console.log('📧 Email capturado y encriptado correctamente:', {
+                giftId,
+                hmac: encryptedData.hmac.substring(0, 16) + '...'
+              });
+            } else {
+              console.error('❌ EMAIL ENCRYPTION FAILED:', {
+                giftId,
+                email: email.substring(0, 3) + '***',
+                error: 'safeEncryptEmail returned undefined'
+              });
+              // Store plain email temporarily with error flag
+              updates.email_plain = email;
+              updates.email_warning = 'ENCRYPTION_FAILED';
+              updates.email_captured_at = Date.now();
+            }
           }
         }
+
+        // CRITICAL FIX: Always store tokenId to enable fallback search
+        updates.tokenId = tokenId;
 
         // Store questionsScore if provided
         if (questionsScore) {
@@ -421,6 +448,7 @@ export default async function handler(
 
           console.log('📊 Education score captured:', {
             giftId,
+            tokenId,
             score: `${questionsScore.correct}/${questionsScore.total}`,
             percentage: updates.education_score_percentage
           });

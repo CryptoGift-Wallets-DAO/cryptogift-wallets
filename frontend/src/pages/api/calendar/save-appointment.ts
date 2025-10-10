@@ -103,7 +103,9 @@ export default async function handler(
       appointment_timezone: appointmentRecord.timezone,
       appointment_meeting_url: appointmentRecord.meetingUrl,
       appointment_invitee_name: appointmentRecord.inviteeName,
-      appointment_created_at: appointmentRecord.createdAt
+      appointment_created_at: appointmentRecord.createdAt,
+      // CRITICAL FIX: Always store tokenId to enable fallback search
+      tokenId: tokenId || ''
     };
 
     // If we have invitee email, encrypt it if PII encryption is available
