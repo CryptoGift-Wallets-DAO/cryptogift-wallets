@@ -73,6 +73,19 @@ interface CompleteGiftProfile {
   claimer?: string; // Wallet address of claimer (fallback when claim object not present)
   claimedAt?: string; // Timestamp when claimed (fallback)
 
+  // Appointment Information (Calendly)
+  appointment?: {
+    scheduled: boolean;
+    eventDate?: string;
+    eventTime?: string;
+    duration?: number;
+    timezone?: string;
+    meetingUrl?: string;
+    inviteeName?: string;
+    inviteeEmail?: string;
+    createdAt?: string;
+  };
+
   // Viewing History
   viewingHistory: Array<{
     timestamp: string;
@@ -854,16 +867,50 @@ export default function GiftDetailsPage() {
                       </div>
                     )}
 
-                    {/* Calendar Booking Date - REQUESTED (placeholder for future implementation) */}
-                    <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 opacity-60">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-5 h-5 text-gray-500" />
-                        <span className="font-semibold text-gray-600 dark:text-gray-400">Fecha de Cita Agendada:</span>
+                    {/* Calendar Booking Date - REQUESTED (now functional!) */}
+                    {gift.appointment?.scheduled ? (
+                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          <span className="font-semibold text-purple-700 dark:text-purple-400">Fecha de Cita Agendada:</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm">
+                              📅 {gift.appointment.eventDate} a las {gift.appointment.eventTime}
+                            </code>
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            {gift.appointment.duration && (
+                              <div>⏱️ Duración: {gift.appointment.duration} minutos</div>
+                            )}
+                            {gift.appointment.timezone && (
+                              <div>🌍 Zona horaria: {gift.appointment.timezone}</div>
+                            )}
+                            {gift.appointment.inviteeName && (
+                              <div>👤 Invitado: {gift.appointment.inviteeName}</div>
+                            )}
+                            {gift.appointment.meetingUrl && (
+                              <div>
+                                🔗 URL de reunión: <a href={gift.appointment.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-purple-400 hover:underline">
+                                  {gift.appointment.meetingUrl.substring(0, 30)}...
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                        ⏳ Próximamente - Sistema de calendario en desarrollo
-                      </p>
-                    </div>
+                    ) : (
+                      <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 opacity-60">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="w-5 h-5 text-gray-500" />
+                          <span className="font-semibold text-gray-600 dark:text-gray-400">Fecha de Cita Agendada:</span>
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                          ⏳ No se ha agendado ninguna cita todavía
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1143,15 +1190,15 @@ export default function GiftDetailsPage() {
                 </button>
               </div>
 
-              {/* Claimer Wallet */}
-              {gift.claim?.claimerWallet && (
+              {/* Claimer Wallet - SHOW CLAIMER, NOT CREATOR */}
+              {(gift.claim?.claimerWallet || gift.claimer) && (
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">🏆 Reclamado por</div>
                   <div className="font-mono break-all text-green-600 dark:text-green-400">
-                    {gift.claim.claimerWallet}
+                    {gift.claim?.claimerWallet || gift.claimer}
                   </div>
                   <button
-                    onClick={() => navigator.clipboard.writeText(gift.claim.claimerWallet!)}
+                    onClick={() => navigator.clipboard.writeText(gift.claim?.claimerWallet || gift.claimer!)}
                     className="mt-2 text-green-500 hover:text-green-600"
                   >
                     📋 Copiar dirección

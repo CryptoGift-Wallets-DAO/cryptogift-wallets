@@ -111,6 +111,19 @@ interface CompleteGiftProfile {
     passwordValidatedAt?: string;
   };
 
+  // Appointment Information (Calendly)
+  appointment?: {
+    scheduled: boolean;
+    eventDate?: string;
+    eventTime?: string;
+    duration?: number;
+    timezone?: string;
+    meetingUrl?: string;
+    inviteeName?: string;
+    inviteeEmail?: string;
+    createdAt?: string;
+  };
+
   // Value & Rewards
   value: {
     amount?: number;
@@ -236,10 +249,11 @@ export default async function handler(
       });
 
       // Get current owner
+      // CRITICAL FIX: Use tokenId for ownerOf call, not giftId
       const owner = await readContract({
         contract: nftContract,
         method: "function ownerOf(uint256) view returns (address)",
-        params: [BigInt(giftId)]
+        params: [BigInt(tokenId)]
       });
 
       if (owner) {
@@ -315,10 +329,21 @@ export default async function handler(
         (profile as any).claimedAt = (giftDetails as any).claimedAt ?
           new Date(parseInt((giftDetails as any).claimedAt as string)).toISOString() :
           undefined;
-        console.error('✅ CLAIMER SET AT ROOT LEVEL:', {
+
+        // ALSO set in claim object for UI compatibility
+        profile.claim = {
+          ...profile.claim,
+          claimed: true,
+          claimerAddress: (giftDetails as any).claimer,
+          claimerWallet: (giftDetails as any).claimer, // CRITICAL: Set both fields
+          claimedAt: (profile as any).claimedAt
+        };
+
+        console.error('✅ CLAIMER SET AT ROOT AND CLAIM OBJECT:', {
           giftId,
           claimer: (profile as any).claimer,
-          claimedAt: (profile as any).claimedAt
+          claimedAt: (profile as any).claimedAt,
+          claimObject: profile.claim
         });
       }
 
@@ -355,10 +380,21 @@ export default async function handler(
             (profile as any).claimedAt = (giftDetails as any).claimedAt ?
               new Date(parseInt((giftDetails as any).claimedAt as string)).toISOString() :
               undefined;
+
+            // ALSO set in claim object for UI compatibility
+            profile.claim = {
+              ...profile.claim,
+              claimed: true,
+              claimerAddress: (giftDetails as any).claimer,
+              claimerWallet: (giftDetails as any).claimer, // CRITICAL: Set both fields
+              claimedAt: (profile as any).claimedAt
+            };
+
             console.error('✅ CLAIMER SET FROM TOKENID FALLBACK:', {
               tokenId: giftIdParam,
               resolvedGiftId: giftId,
-              claimer: (profile as any).claimer
+              claimer: (profile as any).claimer,
+              claimObject: profile.claim
             });
           }
         } else {
@@ -471,9 +507,11 @@ export default async function handler(
           giftId,
           hasEmailEncrypted: !!giftDetails.email_encrypted,
           hasEmailHmac: !!giftDetails.email_hmac,
+          hasEmailPlain: !!giftDetails.email_plain,
           emailEncryptedLength: giftDetails.email_encrypted ? String(giftDetails.email_encrypted).length : 0
         });
 
+        // Try to get email - encrypted first, then plain as fallback
         if (giftDetails.email_encrypted && giftDetails.email_hmac) {
           if (!profile.education) {
             profile.education = {
@@ -503,10 +541,69 @@ export default async function handler(
               message: (decryptError as Error).message
             });
           }
+        } else if (giftDetails.email_plain) {
+          // Fallback to plain email if encryption failed or was not configured
+          if (!profile.education) {
+            profile.education = {
+              required: false,
+              started: false,
+              completed: false
+            };
+          }
+          profile.education.email = giftDetails.email_plain as string;
+
+          console.error('⚠️ USING PLAIN EMAIL (FALLBACK):', {
+            giftId,
+            emailPreview: (giftDetails.email_plain as string).substring(0, 3) + '***',
+            warning: giftDetails.email_warning || 'PII_NOT_ENCRYPTED'
+          });
         } else {
           console.error('⚠️ NO EMAIL DATA in gift:detail:', {
             giftId,
-            hasAnyEmailField: !!(giftDetails as any).email || !!(giftDetails as any).email_encrypted
+            hasAnyEmailField: !!(giftDetails as any).email || !!(giftDetails as any).email_encrypted || !!(giftDetails as any).email_plain
+          });
+        }
+
+        // CRITICAL FIX: Read appointment data from gift:detail
+        if (giftDetails.appointment_scheduled === 'true' || giftDetails.appointment_date) {
+          profile.appointment = {
+            scheduled: true,
+            eventDate: giftDetails.appointment_date as string,
+            eventTime: giftDetails.appointment_time as string,
+            duration: giftDetails.appointment_duration ? parseInt(giftDetails.appointment_duration as string) : 30,
+            timezone: giftDetails.appointment_timezone as string || 'UTC',
+            meetingUrl: giftDetails.appointment_meeting_url as string,
+            inviteeName: giftDetails.appointment_invitee_name as string,
+            createdAt: giftDetails.appointment_created_at ?
+              new Date(parseInt(giftDetails.appointment_created_at as string)).toISOString() :
+              undefined
+          };
+
+          // Try to decrypt appointment invitee email
+          if (giftDetails.appointment_invitee_email_encrypted && giftDetails.appointment_invitee_email_hmac) {
+            try {
+              const { decryptEmail } = await import('@/lib/piiEncryption');
+              const decryptedEmail = decryptEmail(giftDetails.appointment_invitee_email_encrypted as string);
+              if (decryptedEmail) {
+                profile.appointment.inviteeEmail = decryptedEmail;
+                console.error('✅ APPOINTMENT EMAIL DECRYPTED:', {
+                  giftId,
+                  emailPreview: decryptedEmail.substring(0, 3) + '***'
+                });
+              }
+            } catch (error) {
+              console.error('❌ APPOINTMENT EMAIL DECRYPTION ERROR:', error);
+            }
+          } else if (giftDetails.appointment_invitee_email_plain) {
+            // Fallback to plain email
+            profile.appointment.inviteeEmail = giftDetails.appointment_invitee_email_plain as string;
+          }
+
+          console.error('📅 APPOINTMENT DATA LOADED:', {
+            giftId,
+            hasAppointment: true,
+            eventDate: profile.appointment.eventDate,
+            eventTime: profile.appointment.eventTime
           });
         }
       }
