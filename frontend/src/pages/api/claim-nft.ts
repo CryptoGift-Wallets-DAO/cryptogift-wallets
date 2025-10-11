@@ -270,6 +270,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           giftId,
           tokenId
         });
+
+        // CRITICAL FIX 2: Also store in reverse - using tokenId as giftId for double lookup
+        // This ensures we can find data regardless of which ID is used
+        if (giftId !== tokenId) {
+          const tokenDetailKey = `gift:detail:${tokenId}`;
+          await redis.hset(tokenDetailKey, claimUpdates);
+          console.log(`✅ DOUBLE STORAGE: Also stored in ${tokenDetailKey} for tokenId lookup`);
+        }
       }
     } catch (claimStorageError) {
       console.error('❌ Failed to store claim data:', claimStorageError);

@@ -133,6 +133,14 @@ export default async function handler(
     // Update gift detail with appointment data
     await redis.hset(giftDetailKey, updates);
 
+    // CRITICAL FIX: Double storage for tokenId lookup
+    // Store the same data using tokenId as key for double lookup
+    if (tokenId && tokenId !== giftId) {
+      const tokenDetailKey = `gift:detail:${tokenId}`;
+      await redis.hset(tokenDetailKey, updates);
+      console.log(`✅ DOUBLE STORAGE: Also stored appointment in ${tokenDetailKey} for tokenId lookup`);
+    }
+
     // Also save a separate appointment record for easy retrieval
     const appointmentKey = `appointment:gift:${giftId}`;
     await redis.setex(
