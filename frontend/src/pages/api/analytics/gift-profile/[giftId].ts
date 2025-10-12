@@ -237,6 +237,8 @@ export default async function handler(
     };
 
     // 1. Check blockchain for current owner
+    // FORCE ALWAYS SET CLAIMER FROM BLOCKCHAIN - THIS IS THE SOURCE OF TRUTH
+    let blockchainOwner: string | null = null;
     try {
       const client = createThirdwebClient({
         clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || "",
@@ -256,6 +258,8 @@ export default async function handler(
         params: [BigInt(tokenId)]
       });
 
+      blockchainOwner = owner as string;
+
       if (owner) {
         profile.status.isInEscrow = owner.toLowerCase() === ESCROW_CONTRACT.toLowerCase();
 
@@ -270,7 +274,7 @@ export default async function handler(
             claimerWallet: owner
           };
 
-          // CRITICAL FIX: Also set at root level for frontend fallback
+          // CRITICAL FIX: ALWAYS set at root level - THIS IS WHAT FRONTEND EXPECTS
           (profile as any).claimer = owner;
 
           console.error('🔗 BLOCKCHAIN DATA - CLAIMER FROM OWNERSHIP:', {
@@ -282,6 +286,7 @@ export default async function handler(
         }
       }
     } catch (error) {
+      console.error('❌ BLOCKCHAIN READ FAILED:', error);
       debugLogger.log('Could not fetch blockchain data', { giftId, error });
     }
 
@@ -847,12 +852,36 @@ export default async function handler(
     res.setHeader('Cache-Control', 'private, max-age=5'); // 5 second cache
     res.setHeader('X-Gift-Status', profile.status.current);
 
+    // FINAL FIX: GUARANTEE blockchain claimer is set if it was read successfully
+    if (blockchainOwner && !profile.status.isInEscrow) {
+      if (!(profile as any).claimer) {
+        console.error('🚨 EMERGENCY FIX: Setting claimer from blockchainOwner at end of API', {
+          blockchainOwner,
+          hadClaimerBefore: !!(profile as any).claimer
+        });
+
+        (profile as any).claimer = blockchainOwner;
+        (profile as any).claimedAt = profile.claim?.claimedAt || new Date().toISOString();
+
+        if (!profile.claim) {
+          profile.claim = {
+            claimed: true,
+            claimerAddress: blockchainOwner,
+            claimerWallet: blockchainOwner
+          };
+        }
+      }
+    }
+
     // CRITICAL DEBUG: Log profile.claim before returning
     console.error('🔍 FINAL PROFILE CHECK:', {
       giftId,
       hasClaim: !!profile.claim,
       claimData: profile.claim,
       hasClaimerWallet: !!profile.claim?.claimerWallet,
+      hasClaimerRoot: !!(profile as any).claimer,
+      claimerValue: (profile as any).claimer,
+      blockchainOwner,
       status: profile.status.current,
       eventsCount: profile.events.length
     });
