@@ -479,6 +479,7 @@ export default async function handler(
           });
 
           try {
+            // PRIMARY STORAGE: Store in gift:detail:{giftId}
             const result = await redis.hset(giftDetailKey, updates);
             console.error('✅ REDIS HSET SUCCESS:', {
               giftDetailKey,
@@ -486,6 +487,18 @@ export default async function handler(
               fieldsWritten: Object.keys(updates).length,
               fields: Object.keys(updates)
             });
+
+            // CRITICAL FIX: DOUBLE STORAGE for tokenId lookup
+            // Store the same data using tokenId as key for double lookup
+            if (tokenId && tokenId !== giftId.toString()) {
+              const tokenDetailKey = `gift:detail:${tokenId}`;
+              await redis.hset(tokenDetailKey, updates);
+              console.error('✅ DOUBLE STORAGE: Also stored in', {
+                tokenDetailKey,
+                reason: 'Enable tokenId-based lookup when giftId mapping fails',
+                fieldsWritten: Object.keys(updates).length
+              });
+            }
           } catch (hsetError) {
             console.error('❌ REDIS HSET FAILED:', {
               giftDetailKey,
