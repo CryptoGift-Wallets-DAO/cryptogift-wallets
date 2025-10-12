@@ -816,38 +816,35 @@ export default function GiftDetailsPage() {
                   </h3>
 
                   <div className="space-y-4">
-                    {/* Claimer Wallet Address - REQUESTED */}
-                    {/* CRITICAL FIX: Use ALL possible data sources */}
-                    {(() => {
-                      const claimerWallet = gift.claim?.claimerWallet || gift.claim?.claimerAddress || gift.claimer || (gift as any).claimerWallet;
-                      return claimerWallet ? (
-                        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Wallet className="w-5 h-5 text-green-600 dark:text-green-400" />
-                            <span className="font-semibold text-green-700 dark:text-green-400">Wallet del Reclamador:</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
-                              {claimerWallet}
-                            </code>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(claimerWallet);
-                                alert('✅ Wallet copiada al portapapeles!');
-                              }}
-                              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
-                            >
-                              📋 Copiar
-                            </button>
-                          </div>
-                          {(gift.claimedAt || gift.claim?.claimedAt) && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                              Reclamado: {new Date(gift.claim?.claimedAt || gift.claimedAt!).toLocaleString('es-ES')}
-                            </div>
-                          )}
+                    {/* Claimer Wallet Address - EXACT COPY from /referrals/analytics */}
+                    {/* This is THE EXACT logic that works in the table view */}
+                    {gift.claimer ? (
+                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Wallet className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          <span className="font-semibold text-green-700 dark:text-green-400">Wallet del Reclamador:</span>
                         </div>
-                      ) : null;
-                    })()}
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
+                            {gift.claimer}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(gift.claimer!);
+                              alert('✅ Wallet copiada al portapapeles!');
+                            }}
+                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
+                          >
+                            📋 Copiar
+                          </button>
+                        </div>
+                        {gift.claimedAt && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Reclamado: {new Date(gift.claimedAt).toLocaleString('es-ES')}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
 
                     {/* Email Address - REQUESTED */}
                     {/* CRITICAL FIX: Use ALL possible data sources */}
