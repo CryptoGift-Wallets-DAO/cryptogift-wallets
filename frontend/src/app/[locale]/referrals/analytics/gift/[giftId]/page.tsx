@@ -209,6 +209,17 @@ export default function GiftDetailsPage() {
       if (!response.ok) throw new Error('Failed to fetch gift details');
 
       const data = await response.json();
+
+      // DEBUG: Log what API actually sends
+      console.log('🔍 API RESPONSE DATA:', {
+        fullResponse: data,
+        profile: data.profile,
+        claimer: data.profile?.claimer,
+        claimObject: data.profile?.claim,
+        education: data.profile?.education,
+        appointment: data.profile?.appointment
+      });
+
       setGift(data.profile);
     } catch (err: any) {
       setError(err.message);
@@ -806,111 +817,129 @@ export default function GiftDetailsPage() {
 
                   <div className="space-y-4">
                     {/* Claimer Wallet Address - REQUESTED */}
-                    {/* CRITICAL FIX: Use fallback gift.claimer when claim object not present */}
-                    {(gift.claim?.claimerWallet || gift.claimer) && (
-                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Wallet className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          <span className="font-semibold text-green-700 dark:text-green-400">Wallet del Reclamador:</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
-                            {gift.claim?.claimerWallet || gift.claimer}
-                          </code>
-                          <button
-                            onClick={() => {
-                              const address = gift.claim?.claimerWallet || gift.claimer;
-                              if (address) {
-                                navigator.clipboard.writeText(address);
-                                alert('✅ Wallet copiada al portapapeles!');
-                              }
-                            }}
-                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
-                          >
-                            📋 Copiar
-                          </button>
-                        </div>
-                        {gift.claimedAt && !gift.claim?.claimedAt && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Reclamado: {new Date(gift.claimedAt).toLocaleString('es-ES')}
+                    {/* CRITICAL FIX: Use ALL possible data sources */}
+                    {(() => {
+                      const claimerWallet = gift.claim?.claimerWallet || gift.claim?.claimerAddress || gift.claimer || (gift as any).claimerWallet;
+                      return claimerWallet ? (
+                        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Wallet className="w-5 h-5 text-green-600 dark:text-green-400" />
+                            <span className="font-semibold text-green-700 dark:text-green-400">Wallet del Reclamador:</span>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
+                              {claimerWallet}
+                            </code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(claimerWallet);
+                                alert('✅ Wallet copiada al portapapeles!');
+                              }}
+                              className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
+                            >
+                              📋 Copiar
+                            </button>
+                          </div>
+                          {(gift.claimedAt || gift.claim?.claimedAt) && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              Reclamado: {new Date(gift.claim?.claimedAt || gift.claimedAt!).toLocaleString('es-ES')}
+                            </div>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* Email Address - REQUESTED */}
-                    {gift.education?.email && (
-                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          <span className="font-semibold text-blue-700 dark:text-blue-400">Email Verificado:</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
-                            {gift.education.email}
-                          </code>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(gift.education.email!);
-                              alert('✅ Email copiado al portapapeles!');
-                            }}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
-                          >
-                            📋 Copiar
-                          </button>
-                        </div>
-                        {gift.education.emailHash && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Hash SHA-256: <code className="font-mono">{gift.education.emailHash.slice(0, 24)}...</code>
+                    {/* CRITICAL FIX: Use ALL possible data sources */}
+                    {(() => {
+                      const email = gift.education?.email || (gift as any).email || (gift as any).emailPlain;
+                      const emailHash = gift.education?.emailHash || (gift as any).emailHash;
+                      return email ? (
+                        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <span className="font-semibold text-blue-700 dark:text-blue-400">Email Verificado:</span>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm break-all">
+                              {email}
+                            </code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(email);
+                                alert('✅ Email copiado al portapapeles!');
+                              }}
+                              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap"
+                            >
+                              📋 Copiar
+                            </button>
+                          </div>
+                          {emailHash && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              Hash SHA-256: <code className="font-mono">{emailHash.slice(0, 24)}...</code>
+                            </div>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* Calendar Booking Date - REQUESTED (now functional!) */}
-                    {gift.appointment?.scheduled ? (
-                      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                          <span className="font-semibold text-purple-700 dark:text-purple-400">Fecha de Cita Agendada:</span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm">
-                              📅 {gift.appointment.eventDate} a las {gift.appointment.eventTime}
-                            </code>
+                    {/* CRITICAL FIX: Use ALL possible data sources */}
+                    {(() => {
+                      const appointmentScheduled = gift.appointment?.scheduled || (gift as any).appointmentScheduled;
+                      const eventDate = gift.appointment?.eventDate || (gift as any).appointmentDate;
+                      const eventTime = gift.appointment?.eventTime || (gift as any).appointmentTime;
+                      const duration = gift.appointment?.duration || (gift as any).appointmentDuration;
+                      const timezone = gift.appointment?.timezone || (gift as any).appointmentTimezone;
+                      const inviteeName = gift.appointment?.inviteeName || (gift as any).appointmentInviteeName;
+                      const meetingUrl = gift.appointment?.meetingUrl || (gift as any).appointmentMeetingUrl;
+
+                      return (appointmentScheduled || (eventDate && eventTime)) ? (
+                        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            <span className="font-semibold text-purple-700 dark:text-purple-400">Fecha de Cita Agendada:</span>
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                            {gift.appointment.duration && (
-                              <div>⏱️ Duración: {gift.appointment.duration} minutos</div>
-                            )}
-                            {gift.appointment.timezone && (
-                              <div>🌍 Zona horaria: {gift.appointment.timezone}</div>
-                            )}
-                            {gift.appointment.inviteeName && (
-                              <div>👤 Invitado: {gift.appointment.inviteeName}</div>
-                            )}
-                            {gift.appointment.meetingUrl && (
-                              <div>
-                                🔗 URL de reunión: <a href={gift.appointment.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-purple-400 hover:underline">
-                                  {gift.appointment.meetingUrl.substring(0, 30)}...
-                                </a>
+                          <div className="space-y-2">
+                            {eventDate && eventTime && (
+                              <div className="flex items-center gap-2">
+                                <code className="flex-1 p-2 bg-gray-50 dark:bg-gray-900 rounded font-mono text-sm">
+                                  📅 {eventDate} a las {eventTime}
+                                </code>
                               </div>
                             )}
+                            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                              {duration && (
+                                <div>⏱️ Duración: {duration} minutos</div>
+                              )}
+                              {timezone && (
+                                <div>🌍 Zona horaria: {timezone}</div>
+                              )}
+                              {inviteeName && (
+                                <div>👤 Invitado: {inviteeName}</div>
+                              )}
+                              {meetingUrl && (
+                                <div>
+                                  🔗 URL de reunión: <a href={meetingUrl} target="_blank" rel="noopener noreferrer" className="text-purple-600 dark:text-purple-400 hover:underline">
+                                    {meetingUrl.substring(0, 30)}...
+                                  </a>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 opacity-60">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-5 h-5 text-gray-500" />
-                          <span className="font-semibold text-gray-600 dark:text-gray-400">Fecha de Cita Agendada:</span>
+                      ) : (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 opacity-60">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Calendar className="w-5 h-5 text-gray-500" />
+                            <span className="font-semibold text-gray-600 dark:text-gray-400">Fecha de Cita Agendada:</span>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                            ⏳ No se ha agendado ninguna cita todavía
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                          ⏳ No se ha agendado ninguna cita todavía
-                        </p>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
 
