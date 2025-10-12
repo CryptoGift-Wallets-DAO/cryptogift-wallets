@@ -1176,21 +1176,8 @@ export default function GiftDetailsPage() {
             </h2>
 
             <div className="space-y-3 text-xs">
-              {/* Creator Wallet */}
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="text-gray-600 dark:text-gray-400 mb-1">🌟 Creador</div>
-                <div className="font-mono break-all text-blue-600 dark:text-blue-400">
-                  {gift.creator.address}
-                </div>
-                <button
-                  onClick={() => navigator.clipboard.writeText(gift.creator.address)}
-                  className="mt-2 text-blue-500 hover:text-blue-600"
-                >
-                  📋 Copiar dirección
-                </button>
-              </div>
-
-              {/* Claimer Wallet - SHOW CLAIMER, NOT CREATOR */}
+              {/* CRITICAL FIX: ONLY SHOW CLAIMER WALLET, NOT CREATOR */}
+              {/* User explicitly requested: "LA WALLET DEL CLAIMER, NADAMAS, LA DEL CREADOR NO LA NECESITAMOS PONER AHI" */}
               {(gift.claim?.claimerWallet || gift.claimer) && (
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">🏆 Reclamado por</div>
