@@ -239,33 +239,55 @@ export default async function handler(
     // 1. Check blockchain for current owner
     // FORCE ALWAYS SET CLAIMER FROM BLOCKCHAIN - THIS IS THE SOURCE OF TRUTH
     let blockchainOwner: string | null = null;
+
+    console.error('🔗 BLOCKCHAIN READ START:', {
+      giftId,
+      tokenId,
+      NFT_CONTRACT,
+      ESCROW_CONTRACT,
+      hasClientId: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
+      clientIdLength: process.env.NEXT_PUBLIC_TW_CLIENT_ID?.length || 0
+    });
+
     try {
       const client = createThirdwebClient({
         clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || "",
       });
+      console.error('✅ ThirdWeb client created');
 
       const nftContract = getContract({
         client,
         chain: baseSepolia,
         address: NFT_CONTRACT,
       });
+      console.error('✅ NFT contract created');
 
       // Get current owner
       // CRITICAL FIX: Use tokenId for ownerOf call, not giftId
+      console.error('🔍 Calling ownerOf for tokenId:', tokenId);
       const owner = await readContract({
         contract: nftContract,
         method: "function ownerOf(uint256) view returns (address)",
         params: [BigInt(tokenId)]
       });
+      console.error('✅ ownerOf returned:', owner);
 
       blockchainOwner = owner as string;
 
       if (owner) {
-        profile.status.isInEscrow = owner.toLowerCase() === ESCROW_CONTRACT.toLowerCase();
+        const isEscrow = owner.toLowerCase() === ESCROW_CONTRACT.toLowerCase();
+        profile.status.isInEscrow = isEscrow;
 
-        if (profile.status.isInEscrow) {
+        console.error('🔍 OWNER COMPARISON:', {
+          owner: owner.toLowerCase(),
+          escrow: ESCROW_CONTRACT.toLowerCase(),
+          isInEscrow: isEscrow
+        });
+
+        if (isEscrow) {
           profile.status.current = 'created';
           profile.creator.address = ESCROW_CONTRACT;
+          console.error('📦 STATUS: Gift still in escrow (not claimed)');
         } else {
           profile.status.current = 'claimed';
           profile.claim = {
@@ -281,12 +303,21 @@ export default async function handler(
             tokenId,
             owner,
             claimObject: profile.claim,
-            rootClaimer: (profile as any).claimer
+            rootClaimer: (profile as any).claimer,
+            status: profile.status.current
           });
         }
+      } else {
+        console.error('⚠️ ownerOf returned null/undefined');
       }
-    } catch (error) {
-      console.error('❌ BLOCKCHAIN READ FAILED:', error);
+    } catch (error: any) {
+      console.error('❌ BLOCKCHAIN READ FAILED:', {
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        errorType: error?.constructor?.name,
+        giftId,
+        tokenId
+      });
       debugLogger.log('Could not fetch blockchain data', { giftId, error });
     }
 
