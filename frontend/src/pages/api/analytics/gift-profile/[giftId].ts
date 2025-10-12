@@ -269,6 +269,16 @@ export default async function handler(
             claimerAddress: owner,
             claimerWallet: owner
           };
+
+          // CRITICAL FIX: Also set at root level for frontend fallback
+          (profile as any).claimer = owner;
+
+          console.error('🔗 BLOCKCHAIN DATA - CLAIMER FROM OWNERSHIP:', {
+            tokenId,
+            owner,
+            claimObject: profile.claim,
+            rootClaimer: (profile as any).claimer
+          });
         }
       }
     } catch (error) {
@@ -414,6 +424,7 @@ export default async function handler(
           profile.value.amount = parseFloat(giftDetails.value as string);
         }
 
+        // CRITICAL FIX: If Redis has claimer data, use it. Otherwise preserve blockchain data.
         if (giftDetails.claimer) {
           console.error('🔍 SECCIÓN A - BUILDING CLAIM OBJECT:', {
             giftId,
@@ -445,6 +456,18 @@ export default async function handler(
             rootClaimer: (profile as any).claimer,
             rootClaimedAt: (profile as any).claimedAt
           });
+        } else {
+          // CRITICAL FIX: If Redis has NO claimer but blockchain does, PRESERVE blockchain data
+          if (profile.claim?.claimerWallet) {
+            console.error('🔗 PRESERVING BLOCKCHAIN CLAIMER (Redis has no claimer):', {
+              giftId,
+              blockchainClaimer: profile.claim.claimerWallet,
+              redisHasClaimer: false
+            });
+
+            // ALSO set at root level for frontend fallback
+            (profile as any).claimer = profile.claim.claimerWallet;
+          }
         }
 
         // FASE 3: Read education data from gift:detail (written by complete-module.ts)
