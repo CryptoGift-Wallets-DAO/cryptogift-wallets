@@ -11,7 +11,6 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Redis } from '@upstash/redis';
 import { debugLogger } from '@/lib/secureDebugLogger';
 
 export default async function handler(
@@ -25,9 +24,12 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
-    // Check Redis configuration
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-      console.log('Redis not configured, using local storage fallback');
+    // CRITICAL FIX FASE 3: Use getRedisConnection() instead of direct instantiation
+    const { getRedisConnection } = await import('@/lib/redisConfig');
+    const redis = getRedisConnection();
+
+    if (!redis) {
+      console.log('Redis not available, using local storage fallback');
 
       // Use local storage fallback
       const { getLocalGifts, getLocalCampaigns } = await import('@/lib/localAnalyticsStore');
@@ -82,11 +84,6 @@ export default async function handler(
         timestamp: new Date().toISOString()
       });
     }
-
-    const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN
-    });
 
     console.log('🔍 Fetching real-time analytics from all sources...');
 

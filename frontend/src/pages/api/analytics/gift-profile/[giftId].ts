@@ -171,11 +171,14 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { giftId: giftIdParam } = req.query;
+  const { giftId: giftIdParamRaw } = req.query;
 
-  if (!giftIdParam || typeof giftIdParam !== 'string') {
+  if (!giftIdParamRaw || typeof giftIdParamRaw !== 'string') {
     return res.status(400).json({ error: 'Invalid gift ID' });
   }
+
+  // CRITICAL FIX FASE 2: Decode URL-encoded giftId to handle special characters (#, %, ?)
+  const giftIdParam = decodeURIComponent(giftIdParamRaw);
 
   try {
     // CRITICAL FIX #10: Handle missing mappings with Redis-based resolution
