@@ -236,92 +236,10 @@ export default async function handler(
       }
     };
 
-    // 1. Check blockchain for current owner
-    // FORCE ALWAYS SET CLAIMER FROM BLOCKCHAIN - THIS IS THE SOURCE OF TRUTH
+    // 1. Declare blockchainOwner variable (will be populated AFTER Redis updates tokenId)
     let blockchainOwner: string | null = null;
 
-    console.error('🔗 BLOCKCHAIN READ START:', {
-      giftId,
-      tokenId,
-      NFT_CONTRACT,
-      ESCROW_CONTRACT,
-      hasClientId: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
-      clientIdLength: process.env.NEXT_PUBLIC_TW_CLIENT_ID?.length || 0
-    });
-
-    try {
-      const client = createThirdwebClient({
-        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || "",
-      });
-      console.error('✅ ThirdWeb client created');
-
-      const nftContract = getContract({
-        client,
-        chain: baseSepolia,
-        address: NFT_CONTRACT,
-      });
-      console.error('✅ NFT contract created');
-
-      // Get current owner
-      // CRITICAL FIX: Use tokenId for ownerOf call, not giftId
-      console.error('🔍 Calling ownerOf for tokenId:', tokenId);
-      const owner = await readContract({
-        contract: nftContract,
-        method: "function ownerOf(uint256) view returns (address)",
-        params: [BigInt(tokenId)]
-      });
-      console.error('✅ ownerOf returned:', owner);
-
-      blockchainOwner = owner as string;
-
-      if (owner) {
-        const isEscrow = owner.toLowerCase() === ESCROW_CONTRACT.toLowerCase();
-        profile.status.isInEscrow = isEscrow;
-
-        console.error('🔍 OWNER COMPARISON:', {
-          owner: owner.toLowerCase(),
-          escrow: ESCROW_CONTRACT.toLowerCase(),
-          isInEscrow: isEscrow
-        });
-
-        if (isEscrow) {
-          profile.status.current = 'created';
-          profile.creator.address = ESCROW_CONTRACT;
-          console.error('📦 STATUS: Gift still in escrow (not claimed)');
-        } else {
-          profile.status.current = 'claimed';
-          profile.claim = {
-            claimed: true,
-            claimerAddress: owner,
-            claimerWallet: owner
-          };
-
-          // CRITICAL FIX: ALWAYS set at root level - THIS IS WHAT FRONTEND EXPECTS
-          (profile as any).claimer = owner;
-
-          console.error('🔗 BLOCKCHAIN DATA - CLAIMER FROM OWNERSHIP:', {
-            tokenId,
-            owner,
-            claimObject: profile.claim,
-            rootClaimer: (profile as any).claimer,
-            status: profile.status.current
-          });
-        }
-      } else {
-        console.error('⚠️ ownerOf returned null/undefined');
-      }
-    } catch (error: any) {
-      console.error('❌ BLOCKCHAIN READ FAILED:', {
-        errorMessage: error?.message,
-        errorStack: error?.stack,
-        errorType: error?.constructor?.name,
-        giftId,
-        tokenId
-      });
-      debugLogger.log('Could not fetch blockchain data', { giftId, error });
-    }
-
-    // 2. Check Redis for detailed tracking data
+    // 2. Check Redis for detailed tracking data (MUST happen BEFORE blockchain read to update tokenId)
     // CRITICAL TEST: Use console.error to force immediate unbuffered logging
     console.error('🚀 REDIS CONNECTION TEST - Build 141366d - UNBUFFERED LOG');
 
@@ -449,6 +367,21 @@ export default async function handler(
       }
 
       if (giftDetails && Object.keys(giftDetails).length > 0) {
+        // CRITICAL FIX FASE 1: Update tokenId if Redis has the real value
+        if (giftDetails.tokenId && giftDetails.tokenId.toString() !== tokenId) {
+          const previousTokenId = tokenId;
+          tokenId = giftDetails.tokenId.toString();
+          profile.tokenId = tokenId;
+
+          console.error('🔄 TOKENID UPDATE FROM REDIS:', {
+            giftId,
+            previousTokenId,
+            redisTokenId: giftDetails.tokenId,
+            updatedTokenId: tokenId,
+            willUseForBlockchain: `ownerOf(${tokenId})`
+          });
+        }
+
         profile.creator.address = (giftDetails.creator as string) || (giftDetails.referrer as string) || profile.creator.address;
         profile.creator.createdAt = giftDetails.createdAt ?
           new Date(parseInt(giftDetails.createdAt as string)).toISOString() :
@@ -841,6 +774,99 @@ export default async function handler(
       } catch (error) {
         debugLogger.log('No viewing history found');
       }
+    }
+
+    // 3. BLOCKCHAIN READ - NOW with correct tokenId from Redis
+    // CRITICAL: This MUST happen AFTER Redis updates tokenId
+    console.error('🔗 BLOCKCHAIN READ START (POST-REDIS):', {
+      giftId,
+      tokenId,
+      tokenIdSource: 'Updated from Redis',
+      NFT_CONTRACT,
+      ESCROW_CONTRACT,
+      hasClientId: !!process.env.NEXT_PUBLIC_TW_CLIENT_ID,
+      clientIdLength: process.env.NEXT_PUBLIC_TW_CLIENT_ID?.length || 0
+    });
+
+    try {
+      const client = createThirdwebClient({
+        clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || "",
+      });
+      console.error('✅ ThirdWeb client created');
+
+      const nftContract = getContract({
+        client,
+        chain: baseSepolia,
+        address: NFT_CONTRACT,
+      });
+      console.error('✅ NFT contract created');
+
+      // Get current owner using CORRECT tokenId
+      console.error('🔍 Calling ownerOf for CORRECT tokenId:', tokenId);
+      const owner = await readContract({
+        contract: nftContract,
+        method: "function ownerOf(uint256) view returns (address)",
+        params: [BigInt(tokenId)]
+      });
+      console.error('✅ ownerOf returned:', owner);
+
+      blockchainOwner = owner as string;
+
+      if (owner) {
+        const isEscrow = owner.toLowerCase() === ESCROW_CONTRACT.toLowerCase();
+        profile.status.isInEscrow = isEscrow;
+
+        console.error('🔍 OWNER COMPARISON:', {
+          owner: owner.toLowerCase(),
+          escrow: ESCROW_CONTRACT.toLowerCase(),
+          isInEscrow: isEscrow
+        });
+
+        if (isEscrow) {
+          profile.status.current = 'created';
+          profile.creator.address = ESCROW_CONTRACT;
+          console.error('📦 STATUS: Gift still in escrow (not claimed)');
+        } else {
+          profile.status.current = 'claimed';
+
+          // Only set claim if Redis hasn't already set it
+          if (!profile.claim?.claimed) {
+            profile.claim = {
+              claimed: true,
+              claimerAddress: owner,
+              claimerWallet: owner
+            };
+          } else {
+            // Preserve Redis claim data but update with blockchain confirmation
+            profile.claim.claimerAddress = profile.claim.claimerAddress || owner;
+            profile.claim.claimerWallet = profile.claim.claimerWallet || owner;
+          }
+
+          // CRITICAL FIX: ALWAYS set at root level - THIS IS WHAT FRONTEND EXPECTS
+          if (!(profile as any).claimer) {
+            (profile as any).claimer = owner;
+          }
+
+          console.error('🔗 BLOCKCHAIN DATA - CLAIMER FROM OWNERSHIP:', {
+            tokenId,
+            owner,
+            claimObject: profile.claim,
+            rootClaimer: (profile as any).claimer,
+            status: profile.status.current
+          });
+        }
+      } else {
+        console.error('⚠️ ownerOf returned null/undefined');
+      }
+    } catch (error: any) {
+      console.error('❌ BLOCKCHAIN READ FAILED:', {
+        errorMessage: error?.message,
+        errorStack: error?.stack,
+        errorType: error?.constructor?.name,
+        giftId,
+        tokenId
+      });
+      debugLogger.log('Could not fetch blockchain data', { giftId, error });
     }
 
     // Calculate analytics
