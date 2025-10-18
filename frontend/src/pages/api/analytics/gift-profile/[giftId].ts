@@ -277,17 +277,51 @@ export default async function handler(
       // Get gift details from multiple sources
 
       // A. Check gift:detail:{giftId} (PRIMARY SOURCE - FASE 2 & 3)
-      console.error(`📖 Section A: Fetching gift:detail:${giftId}`);
+      // STRATEGY: Try BOTH giftId AND tokenId approaches like real-time-stats does
+      console.error(`📖 Section A: Fetching gift:detail:${giftId} and gift:detail:${tokenId}`);
+
       let giftDetails = await redis.hgetall(`gift:detail:${giftId}`);
       console.error('🔍 Section A Result (by giftId):', {
         giftId,
-        hasData: !!giftDetails,
+        hasData: !!giftDetails && Object.keys(giftDetails).length > 0,
         keys: giftDetails ? Object.keys(giftDetails) : [],
         hasClaimer: !!(giftDetails as any)?.claimer,
         claimerValue: (giftDetails as any)?.claimer
       });
 
-      // CRITICAL FIX: Always set claimer at root level if it exists in Redis
+      // CRITICAL FIX: ALSO try tokenId directly (like real-time-stats does)
+      let giftDetailsByTokenId = await redis.hgetall(`gift:detail:${tokenId}`);
+      console.error('🔍 Section A Result (by tokenId):', {
+        tokenId,
+        hasData: !!giftDetailsByTokenId && Object.keys(giftDetailsByTokenId).length > 0,
+        keys: giftDetailsByTokenId ? Object.keys(giftDetailsByTokenId) : [],
+        hasClaimer: !!(giftDetailsByTokenId as any)?.claimer,
+        claimerValue: (giftDetailsByTokenId as any)?.claimer
+      });
+
+      // MERGE STRATEGY: Use tokenId data if it has claimer, otherwise use giftId data
+      if (giftDetailsByTokenId && Object.keys(giftDetailsByTokenId).length > 0 && (giftDetailsByTokenId as any).claimer) {
+        console.error('✅ USING TOKENID DATA (has claimer)');
+
+        // If giftId data exists, MERGE (keep education from giftId, claimer from tokenId)
+        if (giftDetails && Object.keys(giftDetails).length > 0) {
+          console.error('🔀 MERGING: education from giftId + claimer from tokenId');
+          giftDetails = {
+            ...giftDetails,
+            claimer: (giftDetailsByTokenId as any).claimer,
+            claimedAt: (giftDetailsByTokenId as any).claimedAt,
+            status: 'claimed'
+          };
+        } else {
+          // No giftId data, use tokenId data completely
+          giftDetails = giftDetailsByTokenId;
+        }
+      } else if (!giftDetails || Object.keys(giftDetails).length === 0) {
+        // Neither has data, use whatever we got
+        giftDetails = giftDetailsByTokenId || giftDetails;
+      }
+
+      // CRITICAL FIX: Always set claimer at root level if it exists
       if (giftDetails && (giftDetails as any).claimer) {
         (profile as any).claimer = (giftDetails as any).claimer;
         (profile as any).claimedAt = (giftDetails as any).claimedAt ?
@@ -299,84 +333,21 @@ export default async function handler(
           ...profile.claim,
           claimed: true,
           claimerAddress: (giftDetails as any).claimer,
-          claimerWallet: (giftDetails as any).claimer, // CRITICAL: Set both fields
+          claimerWallet: (giftDetails as any).claimer,
           claimedAt: (profile as any).claimedAt
         };
 
+        // Override status if we have claimer
+        profile.status.current = 'claimed';
+
         console.error('✅ CLAIMER SET AT ROOT AND CLAIM OBJECT:', {
           giftId,
+          tokenId,
           claimer: (profile as any).claimer,
           claimedAt: (profile as any).claimedAt,
+          status: profile.status.current,
           claimObject: profile.claim
         });
-      }
-
-      // CRITICAL FIX #10B: If not found, search by tokenId field
-      // UPDATED: Also search when we have resolvedGiftId but no data found
-      // SURGICAL FIX: ALSO search if giftDetails exists but has NO claimer
-      if (!giftDetails || Object.keys(giftDetails).length === 0 || !(giftDetails as any).claimer) {
-        console.error(`🔍 Section A Fallback: Searching all gift:detail:* for tokenId=${giftIdParam} (reason: ${!giftDetails ? 'no giftDetails' : Object.keys(giftDetails).length === 0 ? 'empty giftDetails' : 'missing claimer'})`);
-
-        // Get all gift:detail keys
-        const allGiftKeys = await redis.keys('gift:detail:*');
-        console.error(`📊 Found ${allGiftKeys.length} gift:detail keys`);
-
-        // Search for matching tokenId WITH claimer data
-        for (const key of allGiftKeys) {
-          const details = await redis.hgetall(key);
-          if (details && details.tokenId?.toString() === giftIdParam && details.claimer) {
-            // Found it! Extract actual giftId from key
-            const actualGiftId = key.replace('gift:detail:', '');
-            console.error(`✅ FOUND CLAIMER DATA: ${key} has tokenId=${giftIdParam} AND claimer=${details.claimer}`);
-
-            // If we already have giftDetails from primary lookup, MERGE the claimer data
-            if (giftDetails && Object.keys(giftDetails).length > 0) {
-              console.error(`🔀 MERGING claimer data from ${key} into existing giftDetails for giftId=${giftId}`);
-
-              // Merge claimer-specific fields
-              giftDetails.claimer = details.claimer;
-              giftDetails.claimedAt = details.claimedAt;
-              giftDetails.status = 'claimed'; // Override status
-            } else {
-              // No previous giftDetails, use this one completely
-              giftId = actualGiftId;
-              giftDetails = details;
-              profile.giftId = actualGiftId;
-            }
-
-            break;
-          }
-        }
-
-        if (giftDetails && Object.keys(giftDetails).length > 0) {
-          console.error(`🎯 FALLBACK SUCCESS: Resolved tokenId ${giftIdParam} → giftId ${giftId}`);
-
-          // CRITICAL FIX: Set claimer at root level for tokenId fallback case
-          if ((giftDetails as any).claimer) {
-            (profile as any).claimer = (giftDetails as any).claimer;
-            (profile as any).claimedAt = (giftDetails as any).claimedAt ?
-              new Date(parseInt((giftDetails as any).claimedAt as string)).toISOString() :
-              undefined;
-
-            // ALSO set in claim object for UI compatibility
-            profile.claim = {
-              ...profile.claim,
-              claimed: true,
-              claimerAddress: (giftDetails as any).claimer,
-              claimerWallet: (giftDetails as any).claimer, // CRITICAL: Set both fields
-              claimedAt: (profile as any).claimedAt
-            };
-
-            console.error('✅ CLAIMER SET FROM TOKENID FALLBACK:', {
-              tokenId: giftIdParam,
-              resolvedGiftId: giftId,
-              claimer: (profile as any).claimer,
-              claimObject: profile.claim
-            });
-          }
-        } else {
-          console.error(`❌ FALLBACK FAILED: No gift:detail found for tokenId ${giftIdParam}`);
-        }
       }
 
       if (giftDetails && Object.keys(giftDetails).length > 0) {
