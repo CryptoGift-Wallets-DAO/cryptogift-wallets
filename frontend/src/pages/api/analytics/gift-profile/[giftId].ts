@@ -240,28 +240,19 @@ export default async function handler(
     let blockchainOwner: string | null = null;
 
     // 2. Check Redis for detailed tracking data (MUST happen BEFORE blockchain read to update tokenId)
-    // CRITICAL TEST: Use console.error to force immediate unbuffered logging
-    console.error('🚀 REDIS CONNECTION TEST - Build 141366d - UNBUFFERED LOG');
+    // CRITICAL FIX: Use direct Redis instantiation like real-time-stats (works reliably)
+    console.error('🚀 REDIS CONNECTION - Using direct instantiation like real-time-stats');
 
-    // Force immediate flush by using process.stdout if available
-    if (typeof process !== 'undefined' && process.stdout) {
-      process.stdout.write('📍 MARKER: About to import getRedisConnection\n');
-    }
-
-    // CRITICAL FIX #7: Wrap getRedisConnection in try-catch (throws in production)
     let redis: Redis | null = null;
     try {
-      const { getRedisConnection } = await import('@/lib/redisConfig');
-      console.error('✅ Import successful, calling getRedisConnection()');
-      redis = getRedisConnection();
-      console.error('✅ REDIS CONNECTED - TYPE:', typeof redis);
-
-      if (typeof process !== 'undefined' && process.stdout) {
-        process.stdout.write(`✅ Redis instance created: ${redis ? 'YES' : 'NO'}\n`);
-      }
+      // Use same pattern as real-time-stats.ts which WORKS
+      redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN
+      });
+      console.error('✅ REDIS CONNECTED DIRECTLY - TYPE:', typeof redis);
     } catch (redisError: any) {
       console.error('❌ REDIS CONNECTION FAILED:', redisError.message);
-      console.error('❌ STACK:', redisError.stack);
       redis = null;
     }
 
