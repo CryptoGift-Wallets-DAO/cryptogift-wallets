@@ -313,24 +313,37 @@ export default async function handler(
 
       // CRITICAL FIX #10B: If not found, search by tokenId field
       // UPDATED: Also search when we have resolvedGiftId but no data found
-      if (!giftDetails || Object.keys(giftDetails).length === 0) {
-        console.error(`🔍 Section A Fallback: Searching all gift:detail:* for tokenId=${giftIdParam}`);
+      // SURGICAL FIX: ALSO search if giftDetails exists but has NO claimer
+      if (!giftDetails || Object.keys(giftDetails).length === 0 || !(giftDetails as any).claimer) {
+        console.error(`🔍 Section A Fallback: Searching all gift:detail:* for tokenId=${giftIdParam} (reason: ${!giftDetails ? 'no giftDetails' : Object.keys(giftDetails).length === 0 ? 'empty giftDetails' : 'missing claimer'})`);
 
         // Get all gift:detail keys
         const allGiftKeys = await redis.keys('gift:detail:*');
         console.error(`📊 Found ${allGiftKeys.length} gift:detail keys`);
 
-        // Search for matching tokenId
+        // Search for matching tokenId WITH claimer data
         for (const key of allGiftKeys) {
           const details = await redis.hgetall(key);
-          if (details && details.tokenId?.toString() === giftIdParam) {
+          if (details && details.tokenId?.toString() === giftIdParam && details.claimer) {
             // Found it! Extract actual giftId from key
             const actualGiftId = key.replace('gift:detail:', '');
-            console.error(`✅ FOUND BY TOKENID: ${key} has tokenId=${giftIdParam}`);
+            console.error(`✅ FOUND CLAIMER DATA: ${key} has tokenId=${giftIdParam} AND claimer=${details.claimer}`);
 
-            giftId = actualGiftId;
-            giftDetails = details;
-            profile.giftId = actualGiftId;
+            // If we already have giftDetails from primary lookup, MERGE the claimer data
+            if (giftDetails && Object.keys(giftDetails).length > 0) {
+              console.error(`🔀 MERGING claimer data from ${key} into existing giftDetails for giftId=${giftId}`);
+
+              // Merge claimer-specific fields
+              giftDetails.claimer = details.claimer;
+              giftDetails.claimedAt = details.claimedAt;
+              giftDetails.status = 'claimed'; // Override status
+            } else {
+              // No previous giftDetails, use this one completely
+              giftId = actualGiftId;
+              giftDetails = details;
+              profile.giftId = actualGiftId;
+            }
+
             break;
           }
         }

@@ -746,7 +746,7 @@ export default function GiftAnalyticsPage() {
                         <td className="text-center py-3 px-4">
                           <div className="flex items-center justify-center gap-2">
                             <Link
-                              href={`/referrals/analytics/gift/${gift.displayId || gift.tokenId || gift.giftId}`}
+                              href={`/referrals/analytics/gift/${encodeURIComponent((gift.displayId || gift.tokenId || gift.giftId || '').toString().replace(/^#/, ''))}`}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline text-sm font-medium"
                             >
                               🔍 {t('gifts.viewDetails') || 'View Details'}
