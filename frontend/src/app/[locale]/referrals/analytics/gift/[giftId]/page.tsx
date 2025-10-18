@@ -197,21 +197,15 @@ export default function GiftDetailsPage() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'education' | 'events' | 'technical'>('timeline');
 
   useEffect(() => {
-    // CRITICAL FIX FASE 4: Handle missing/empty giftId
-    if (!giftId || giftId.trim() === '') {
-      setError('ID de regalo inválido o vacío');
-      setLoading(false);
-      return;
+    if (giftId) {
+      fetchGiftDetails();
     }
-
-    fetchGiftDetails();
   }, [giftId]);
 
   async function fetchGiftDetails() {
     try {
       setLoading(true);
-      // CRITICAL FIX FASE 2: Encode giftId to handle special characters (#, %, ?)
-      const response = await fetch(`/api/analytics/gift-profile/${encodeURIComponent(giftId)}`);
+      const response = await fetch(`/api/analytics/gift-profile/${giftId}`);
       if (!response.ok) throw new Error('Failed to fetch gift details');
 
       const data = await response.json();
@@ -251,12 +245,6 @@ export default function GiftDetailsPage() {
         <ThemeCard variant="warning" className="p-6">
           <AlertCircle className="w-6 h-6 mb-2" />
           <p>{error || 'Gift not found'}</p>
-          <Link
-            href="/referrals/analytics"
-            className="mt-4 inline-block px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            ← Volver a Analytics
-          </Link>
         </ThemeCard>
       </div>
     );
