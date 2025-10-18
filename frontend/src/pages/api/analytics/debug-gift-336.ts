@@ -14,12 +14,21 @@ export default async function handler(
   }
 
   try {
-    const { getRedisConnection } = await import('@/lib/redisConfig');
-    const redis = getRedisConnection();
+    // CRITICAL FIX: Use direct Redis instantiation (same pattern as gift-profile)
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN
+    });
+    console.error('✅ DEBUG: Redis connected directly');
 
     // 1. Check specific keys for token 336
     const byTokenId336 = await redis.hgetall('gift:detail:336');
     const byGiftId362 = await redis.hgetall('gift:detail:362');
+
+    console.error('🔍 DEBUG: Redis data fetched', {
+      byTokenId336Keys: byTokenId336 ? Object.keys(byTokenId336) : [],
+      byGiftId362Keys: byGiftId362 ? Object.keys(byGiftId362) : []
+    });
 
     // 2. Search for tokenId=336 in all gift:detail keys
     const allGiftDetailKeys = await redis.keys('gift:detail:*');
@@ -47,8 +56,14 @@ export default async function handler(
     // 4. Check reverse mapping
     const reverseMapping = await redis.get('reverse_mapping:362');
 
-    // 5. Check gift_mapping
-    const giftMapping336 = await redis.hgetall('gift_mapping:336');
+    // 5. Check gift_mapping (CRITICAL FIX: use GET not HGETALL - it's JSON not hash)
+    let giftMapping336 = null;
+    try {
+      const mappingRaw = await redis.get('gift_mapping:336');
+      giftMapping336 = mappingRaw ? (typeof mappingRaw === 'string' ? JSON.parse(mappingRaw) : mappingRaw) : null;
+    } catch (e) {
+      console.error('gift_mapping:336 parse error:', e);
+    }
 
     return res.status(200).json({
       success: true,
@@ -57,7 +72,7 @@ export default async function handler(
       resolvedGiftId,
       reverseMapping,
       giftMapping336: giftMapping336 ? {
-        exists: Object.keys(giftMapping336).length > 0,
+        exists: true,
         data: giftMapping336
       } : { exists: false },
       allGiftDetailKeys: allGiftDetailKeys.length,
@@ -67,8 +82,11 @@ export default async function handler(
         claimer: (byTokenId336 as any)?.claimer,
         claimedAt: (byTokenId336 as any)?.claimedAt,
         status: (byTokenId336 as any)?.status,
-        email: (byTokenId336 as any)?.email_plain || (byTokenId336 as any)?.email_encrypted ? 'ENCRYPTED' : 'NONE',
-        appointment: (byTokenId336 as any)?.appointment_scheduled,
+        emailPlain: (byTokenId336 as any)?.email_plain,
+        emailEncrypted: (byTokenId336 as any)?.email_encrypted ? 'EXISTS' : 'NO',
+        appointmentScheduled: (byTokenId336 as any)?.appointment_scheduled,
+        appointmentDate: (byTokenId336 as any)?.appointment_date,
+        appointmentTime: (byTokenId336 as any)?.appointment_time,
         fullData: byTokenId336
       },
       byGiftId362: {
@@ -77,8 +95,11 @@ export default async function handler(
         claimer: (byGiftId362 as any)?.claimer,
         claimedAt: (byGiftId362 as any)?.claimedAt,
         status: (byGiftId362 as any)?.status,
-        email: (byGiftId362 as any)?.email_plain || (byGiftId362 as any)?.email_encrypted ? 'ENCRYPTED' : 'NONE',
-        appointment: (byGiftId362 as any)?.appointment_scheduled,
+        emailPlain: (byGiftId362 as any)?.email_plain,
+        emailEncrypted: (byGiftId362 as any)?.email_encrypted ? 'EXISTS' : 'NO',
+        appointmentScheduled: (byGiftId362 as any)?.appointment_scheduled,
+        appointmentDate: (byGiftId362 as any)?.appointment_date,
+        appointmentTime: (byGiftId362 as any)?.appointment_time,
         fullData: byGiftId362
       },
       matching336,
