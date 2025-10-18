@@ -1106,11 +1106,17 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
   }, [leadData, metrics, celebrate, handleNextBlock, educationalMode, onEducationComplete]);
 
   // Email verification handler
-  const handleEmailVerified = useCallback((email: string) => {
+  const handleEmailVerified = useCallback(async (email: string) => {
     // verifiedEmail is now managed by parent LessonModalWrapper
     setShowEmailVerification(false);
-    setShowCalendar(true);
-  }, [setShowEmailVerification, setShowCalendar]);
+
+    // CRITICAL FIX: In educational mode, use parent's calendar modal (with giftId/tokenId)
+    if (educationalMode && onShowCalendar) {
+      await onShowCalendar();
+    } else {
+      setShowCalendar(true);
+    }
+  }, [setShowEmailVerification, setShowCalendar, educationalMode, onShowCalendar]);
 
   // Calendar booking success handler
   const handleBookingSuccess = useCallback(() => {
@@ -1347,9 +1353,9 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
             total: leadData.totalQuestions || 0
           }}
           educationalMode={educationalMode}
-          // Email verification props
-          onShowEmailVerification={() => setShowEmailVerification(true)}
-          onShowCalendar={() => setShowCalendar(true)}
+          // Email verification props - Use parent's callbacks in educational mode
+          onShowEmailVerification={educationalMode && onShowEmailVerification ? onShowEmailVerification : () => setShowEmailVerification(true)}
+          onShowCalendar={educationalMode && onShowCalendar ? onShowCalendar : () => setShowCalendar(true)}
           verifiedEmail={verifiedEmail}
         />;
       case 'success':
@@ -1581,29 +1587,39 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
         </div>
       )}
 
-      {/* EMAIL VERIFICATION MODAL */}
-      <EmailVerificationModal
-        isOpen={showEmailVerification}
-        onClose={() => setShowEmailVerification(false)}
-        onVerified={(email) => {
-          // verifiedEmail is now managed by parent LessonModalWrapper
-          setShowEmailVerification(false);
-          setShowCalendar(true);
-          console.log('✅ Email verified for masterclass:', email);
-        }}
-        source="masterclass"
-        title="📧 ¡Necesitamos tu Email!"
-        subtitle="Para enviarte información exclusiva y próximos pasos"
-      />
+      {/* EMAIL VERIFICATION MODAL - Only in knowledge mode, educational mode uses parent's modal */}
+      {!educationalMode && (
+        <EmailVerificationModal
+          isOpen={showEmailVerification}
+          onClose={() => setShowEmailVerification(false)}
+          onVerified={async (email) => {
+            // verifiedEmail is now managed by parent LessonModalWrapper
+            setShowEmailVerification(false);
+            console.log('✅ Email verified for masterclass:', email);
 
-      {/* CALENDAR BOOKING MODAL */}
-      <CalendarBookingModal
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        userEmail={verifiedEmail || undefined}
-        userName={leadData.contact || undefined}
-        source="masterclass"
-      />
+            // CRITICAL FIX: In educational mode, use parent's calendar modal (with giftId/tokenId)
+            if (educationalMode && onShowCalendar) {
+              await onShowCalendar();
+            } else {
+              setShowCalendar(true);
+            }
+          }}
+          source="masterclass"
+          title="📧 ¡Necesitamos tu Email!"
+          subtitle="Para enviarte información exclusiva y próximos pasos"
+        />
+      )}
+
+      {/* CALENDAR BOOKING MODAL - Only in knowledge mode, educational mode uses parent's modal */}
+      {!educationalMode && (
+        <CalendarBookingModal
+          isOpen={showCalendar}
+          onClose={() => setShowCalendar(false)}
+          userEmail={verifiedEmail || undefined}
+          userName={leadData.contact || undefined}
+          source="masterclass"
+        />
+      )}
       </div>
     </div>
   );
