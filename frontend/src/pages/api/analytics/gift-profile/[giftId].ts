@@ -296,12 +296,32 @@ export default async function handler(
 
         // If giftId data exists, MERGE (keep education from giftId, claimer from tokenId)
         if (giftDetails && Object.keys(giftDetails).length > 0) {
-          console.error('🔀 MERGING: education from giftId + claimer from tokenId');
+          console.error('🔀 MERGING: education from giftId + claimer/email/appointment from tokenId');
           giftDetails = {
             ...giftDetails,
+            // Claimer data (existing)
             claimer: (giftDetailsByTokenId as any).claimer,
             claimedAt: (giftDetailsByTokenId as any).claimedAt,
-            status: 'claimed'
+            status: 'claimed',
+
+            // Email data (CRITICAL FIX: merge from tokenId if giftId doesn't have it)
+            email_plain: giftDetails.email_plain || (giftDetailsByTokenId as any).email_plain,
+            email_encrypted: giftDetails.email_encrypted || (giftDetailsByTokenId as any).email_encrypted,
+            email_hmac: giftDetails.email_hmac || (giftDetailsByTokenId as any).email_hmac,
+            email_warning: giftDetails.email_warning || (giftDetailsByTokenId as any).email_warning,
+
+            // Appointment data (CRITICAL FIX: merge from tokenId if giftId doesn't have it)
+            appointment_scheduled: giftDetails.appointment_scheduled || (giftDetailsByTokenId as any).appointment_scheduled,
+            appointment_date: giftDetails.appointment_date || (giftDetailsByTokenId as any).appointment_date,
+            appointment_time: giftDetails.appointment_time || (giftDetailsByTokenId as any).appointment_time,
+            appointment_duration: giftDetails.appointment_duration || (giftDetailsByTokenId as any).appointment_duration,
+            appointment_timezone: giftDetails.appointment_timezone || (giftDetailsByTokenId as any).appointment_timezone,
+            appointment_meeting_url: giftDetails.appointment_meeting_url || (giftDetailsByTokenId as any).appointment_meeting_url,
+            appointment_invitee_name: giftDetails.appointment_invitee_name || (giftDetailsByTokenId as any).appointment_invitee_name,
+            appointment_invitee_email_encrypted: giftDetails.appointment_invitee_email_encrypted || (giftDetailsByTokenId as any).appointment_invitee_email_encrypted,
+            appointment_invitee_email_hmac: giftDetails.appointment_invitee_email_hmac || (giftDetailsByTokenId as any).appointment_invitee_email_hmac,
+            appointment_invitee_email_plain: giftDetails.appointment_invitee_email_plain || (giftDetailsByTokenId as any).appointment_invitee_email_plain,
+            appointment_created_at: giftDetails.appointment_created_at || (giftDetailsByTokenId as any).appointment_created_at
           };
         } else {
           // No giftId data, use tokenId data completely
