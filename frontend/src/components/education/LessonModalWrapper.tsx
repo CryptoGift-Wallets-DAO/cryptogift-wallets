@@ -395,6 +395,17 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
             module: lessonId
           });
 
+          // CRITICAL FIX: Use verifiedEmail from parent state FIRST (most reliable source)
+          // completionData.email might be empty string if child component doesn't track email
+          const emailToSend = verifiedEmail || (completionData.email && completionData.email.trim()) || undefined;
+
+          console.error('📧 EMAIL TO APPROVE.TS:', {
+            verifiedEmailFromState: verifiedEmail || 'EMPTY',
+            completionDataEmail: completionData.email || 'EMPTY',
+            finalEmailToSend: emailToSend || 'UNDEFINED',
+            willSaveToRedis: !!emailToSend
+          });
+
           // Call education approval API to mark as completed
           const response = await fetch('/api/education/approve', {
             method: 'POST',
@@ -408,7 +419,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
               giftId: 0, // Will be populated from session data in API
               educationCompleted: true,
               module: lessonId,
-              email: completionData.email || verifiedEmail || undefined, // FASE 1: Email from completion or verification
+              email: emailToSend, // FASE 1: Email from parent state (most reliable)
               questionsScore: completionData.questionsScore, // FASE 1: Include questions score for analytics
               questionsAnswered: completionData.questionsAnswered // FASE 2: Include detailed answers array
             })
