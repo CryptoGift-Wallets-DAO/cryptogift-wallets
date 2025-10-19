@@ -154,9 +154,34 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
 
   // Generate salt on mount, recover session if exists, and trigger confetti
   useEffect(() => {
+    // CRITICAL FIX: Get giftId IMMEDIATELY on mount for appointment/email saving
+    const fetchGiftId = async () => {
+      try {
+        const giftIdResponse = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
+        if (giftIdResponse.ok) {
+          const giftIdData = await giftIdResponse.json();
+          const resolvedGiftId = giftIdData.giftId?.toString();
+          console.log('📊 GiftId retrieved on mount:', resolvedGiftId);
+
+          // Update validation state with giftId immediately
+          setValidationState(prev => ({
+            ...prev,
+            giftId: resolvedGiftId
+          }));
+        } else {
+          console.warn('Failed to get giftId on mount, will use tokenId fallback');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch giftId on mount:', error);
+      }
+    };
+
+    // Fetch giftId immediately
+    fetchGiftId();
+
     // Try to recover existing session first
     const existingSession = loadClaimSession(tokenId);
-    
+
     if (existingSession && !sessionNeedsRefresh(tokenId)) {
       console.log('🔄 Recovering existing session:', {
         tokenId,
@@ -164,21 +189,22 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         educationCompleted: existingSession.educationCompleted,
         hasGateData: !!existingSession.educationGateData
       });
-      
+
       // Restore session state
       setSalt(existingSession.salt);
-      setValidationState({
+      setValidationState(prev => ({
+        ...prev, // Keep giftId from fetchGiftId
         isValidating: false,
         isValid: existingSession.passwordValidated,
         requiresEducation: existingSession.requiresEducation,
         educationModules: existingSession.educationModules,
         sessionToken: existingSession.sessionToken
-      });
-      
+      }));
+
       // If education was completed, show option to skip or restart
       if (existingSession.educationCompleted && existingSession.educationGateData) {
         setCanReinitialize(true);
-        
+
         // Automatically call onValidationSuccess with recovered data
         onValidationSuccess(
           existingSession.sessionToken,
@@ -191,7 +217,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       // Generate new salt if no valid session
       const newSalt = generateSalt();
       setSalt(newSalt);
-      
+
       // AUDIT: Salt generation logging
       console.log('🧂 FRONTEND SALT GENERATION:', {
         salt: newSalt,
@@ -200,7 +226,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         saltStartsWith0x: newSalt.startsWith('0x'),
         timestamp: new Date().toISOString()
       });
-      
+
       // Save initial session
       saveClaimSession(tokenId, {
         salt: newSalt,
@@ -209,7 +235,7 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
         educationCompleted: false
       });
     }
-    
+
     // Trigger confetti when component mounts (user lands on claim page)
     triggerConfetti({
       particleCount: 100,
@@ -285,28 +311,17 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       });
 
       if (data.valid) {
-        // Get giftId from tokenId for appointment saving
-        let giftId: string | undefined;
-        try {
-          const giftIdResponse = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
-          if (giftIdResponse.ok) {
-            const giftIdData = await giftIdResponse.json();
-            giftId = giftIdData.giftId?.toString();
-            console.log('📊 GiftId retrieved for appointment saving:', giftId);
-          }
-        } catch (error) {
-          console.warn('Failed to get giftId:', error);
-        }
-
-        setValidationState({
+        // UPDATED: giftId already obtained in useEffect on mount
+        // Just use the existing one from validationState
+        setValidationState(prev => ({
+          ...prev, // Keep existing giftId from mount
           isValidating: false,
           isValid: true,
           requiresEducation: data.requiresEducation || false,
           educationRequirements: data.educationRequirements,
           sessionToken: data.sessionToken,
-          educationModules: data.educationModules, // Store modules for later use
-          giftId // Store giftId for appointment saving
-        });
+          educationModules: data.educationModules // Store modules for later use
+        }));
 
         // Save session to localStorage for recovery
         saveClaimSession(tokenId, {
