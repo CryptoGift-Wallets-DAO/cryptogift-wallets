@@ -84,6 +84,38 @@ export default function TokenPage() {
     }
   }, [account, nftData, checkOwnership]);
 
+  // CRITICAL FIX: Fetch real giftId on mount for proper email/appointment saving
+  // This mirrors the logic in PreClaimFlow to ensure data is saved to correct Redis keys
+  useEffect(() => {
+    const fetchGiftId = async () => {
+      if (!tokenId) return;
+
+      try {
+        console.log('📊 CRITICAL: Fetching giftId for tokenId:', tokenId);
+        const giftIdResponse = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
+        if (giftIdResponse.ok) {
+          const giftIdData = await giftIdResponse.json();
+          const resolvedGiftId = giftIdData.giftId?.toString();
+          console.log('✅ CRITICAL: GiftId resolved on token page mount:', {
+            tokenId,
+            resolvedGiftId,
+            willBeUsedBy: 'ClaimEscrowInterface child components'
+          });
+          // Store in sessionStorage so child components can access if needed
+          if (resolvedGiftId && typeof window !== 'undefined') {
+            sessionStorage.setItem(`giftId_${tokenId}`, resolvedGiftId);
+          }
+        } else {
+          console.warn('⚠️ Failed to resolve giftId, will use tokenId fallback');
+        }
+      } catch (error) {
+        console.warn('⚠️ Error fetching giftId on mount:', error);
+      }
+    };
+
+    fetchGiftId();
+  }, [tokenId]);
+
   // Auto-open wallet if URL parameter is present
   useEffect(() => {
     const walletParam = searchParams?.get('wallet');
