@@ -11,18 +11,20 @@ export default async function handler(
 ) {
   const versionInfo = {
     endpoint: '/api/analytics/version-check',
-    commitExpected: '4334ef6',
-    deploymentDate: '2025-10-19',
+    commitExpected: '65b690b',
+    deploymentDate: '2025-10-19-v2',
     features: {
       tokenIdResolution: true,
       dualKeyStorage: true,
-      comprehensiveLogging: true
+      comprehensiveLogging: true,
+      giftIdOnMount: true  // NEW: Fetch giftId immediately on PreClaimFlow mount
     },
     codeSignature: {
       saveEmailManual: 'ENHANCED_WITH_RESOLUTION',
       saveAppointment: 'ENHANCED_WITH_RESOLUTION',
       hasNewLogging: true,
-      hasRealGiftIdField: true
+      hasRealGiftIdField: true,
+      preClaimFlowGiftIdFetch: true  // NEW
     },
     timestamp: new Date().toISOString(),
     vercelRegion: process.env.VERCEL_REGION || 'unknown',
