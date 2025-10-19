@@ -53,7 +53,27 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
       return;
     }
 
-    const effectiveGiftId = giftId || tokenId;
+    // CRITICAL FIX: Try to get real giftId from sessionStorage (set by token page on mount)
+    // This ensures we save to the CORRECT Redis key
+    const sessionGiftId = typeof window !== 'undefined'
+      ? sessionStorage.getItem(`giftId_${tokenId}`)
+      : null;
+
+    // Priority order: sessionStorage → prop → tokenId fallback
+    const effectiveGiftId = sessionGiftId || giftId || tokenId;
+
+    if (sessionGiftId) {
+      console.log('✅ CRITICAL: Using giftId from sessionStorage for appointment:', {
+        tokenId,
+        resolvedGiftId: sessionGiftId,
+        source: 'token_page_mount'
+      });
+    } else {
+      console.warn('⚠️ No giftId in sessionStorage for appointment, using fallback:', {
+        giftIdProp: giftId || 'undefined',
+        tokenIdFallback: tokenId
+      });
+    }
 
     try {
       console.log('📅 Guardando cita automáticamente...', {

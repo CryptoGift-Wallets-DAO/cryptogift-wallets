@@ -353,8 +353,27 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     // Don't wait for approve.ts - save it now with giftId/tokenId
     if (mode === 'educational' && tokenId) {
       try {
-        // ROBUST FIX: Use tokenId as giftId fallback if giftId is not available
-        const effectiveGiftId = giftId || tokenId;
+        // CRITICAL FIX: Try to get real giftId from sessionStorage (set by token page on mount)
+        // This ensures we save to the CORRECT Redis key
+        const sessionGiftId = typeof window !== 'undefined'
+          ? sessionStorage.getItem(`giftId_${tokenId}`)
+          : null;
+
+        // Priority order: sessionStorage → prop → tokenId fallback
+        const effectiveGiftId = sessionGiftId || giftId || tokenId;
+
+        if (sessionGiftId) {
+          console.log('✅ CRITICAL: Using giftId from sessionStorage:', {
+            tokenId,
+            resolvedGiftId: sessionGiftId,
+            source: 'token_page_mount'
+          });
+        } else {
+          console.warn('⚠️ No giftId in sessionStorage, using fallback:', {
+            giftIdProp: giftId || 'undefined',
+            tokenIdFallback: tokenId
+          });
+        }
 
         console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {
           giftId: giftId || 'NOT_PROVIDED_USING_TOKENID_FALLBACK',
