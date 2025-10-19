@@ -47,13 +47,21 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
 }) => {
   // Función para guardar automáticamente la cita en el backend
   const saveAppointmentToBackend = useCallback(async (eventData: any) => {
-    if (!giftId) {
-      console.warn('No giftId provided, cannot save appointment');
+    // ROBUST FIX: Use tokenId as giftId fallback if giftId is not available
+    if (!giftId && !tokenId) {
+      console.warn('No giftId or tokenId provided, cannot save appointment');
       return;
     }
 
+    const effectiveGiftId = giftId || tokenId;
+
     try {
-      console.log('📅 Guardando cita automáticamente...', eventData);
+      console.log('📅 Guardando cita automáticamente...', {
+        giftId: giftId || 'NOT_PROVIDED_USING_TOKENID_FALLBACK',
+        tokenId,
+        effectiveGiftId,
+        eventData
+      });
 
       // Extraer información del evento de Calendly
       const appointmentData = {
@@ -82,7 +90,7 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          giftId,
+          giftId: effectiveGiftId,
           tokenId,
           appointmentData
         })

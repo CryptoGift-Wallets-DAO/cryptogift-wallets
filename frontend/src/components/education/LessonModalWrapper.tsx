@@ -351,11 +351,15 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
     // CRITICAL FIX: Save email to Redis IMMEDIATELY to avoid timing/props issues
     // Don't wait for approve.ts - save it now with giftId/tokenId
-    if (mode === 'educational' && giftId && tokenId) {
+    if (mode === 'educational' && tokenId) {
       try {
+        // ROBUST FIX: Use tokenId as giftId fallback if giftId is not available
+        const effectiveGiftId = giftId || tokenId;
+
         console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {
-          giftId,
+          giftId: giftId || 'NOT_PROVIDED_USING_TOKENID_FALLBACK',
           tokenId,
+          effectiveGiftId,
           email: email.substring(0, 3) + '***',
           timestamp: new Date().toISOString()
         });
@@ -364,7 +368,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            giftId,
+            giftId: effectiveGiftId,
             tokenId,
             email
           })
@@ -374,7 +378,8 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
         if (saveData.success) {
           console.error('✅ EMAIL SAVED TO REDIS SUCCESSFULLY:', {
-            giftId,
+            giftId: effectiveGiftId,
+            tokenId,
             fieldsWritten: Object.keys(saveData.updates || {}).length
           });
         } else {
