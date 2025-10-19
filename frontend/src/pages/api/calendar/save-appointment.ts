@@ -1,6 +1,10 @@
 /**
- * SAVE APPOINTMENT API
+ * SAVE APPOINTMENT API - ENHANCED WITH AUTOMATIC TOKENID → GIFTID RESOLUTION
  * Guarda información de citas agendadas de Calendly
+ * Automatically resolves tokenId to real giftId and saves to BOTH keys for reliability
+ *
+ * CRITICAL FIX: Addresses the issue where frontend passes tokenId as giftId,
+ * causing appointment to be saved in wrong Redis key (e.g., tokenId=340 but real giftId=366)
  *
  * @author CryptoGift Wallets
  */
@@ -8,6 +12,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { validateRedisForCriticalOps } from '../../../lib/redisConfig';
 import { debugLogger } from '../../../lib/secureDebugLogger';
+import { getGiftIdFromTokenId } from '../../../lib/escrowUtils';
 
 interface AppointmentRequest {
   giftId: string;
@@ -50,19 +55,12 @@ export default async function handler(
     }: AppointmentRequest = req.body;
 
     // Validate required fields
-    if (!giftId || !appointmentData || !appointmentData.eventDate || !appointmentData.eventTime) {
+    if ((!giftId && !tokenId) || !appointmentData || !appointmentData.eventDate || !appointmentData.eventTime) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: giftId, appointmentData.eventDate, appointmentData.eventTime'
+        error: 'Missing required fields: (giftId or tokenId), appointmentData.eventDate, appointmentData.eventTime'
       });
     }
-
-    console.log('📅 Saving appointment data:', {
-      giftId,
-      tokenId,
-      eventDate: appointmentData.eventDate,
-      eventTime: appointmentData.eventTime
-    });
 
     // Get Redis connection
     const redis = validateRedisForCriticalOps('Save appointment');
@@ -74,10 +72,45 @@ export default async function handler(
       });
     }
 
+    // CRITICAL FIX: Automatic tokenId → giftId resolution
+    // This ensures we always save to the correct primary key
+    let realGiftId = giftId;
+    const tokenIdStr = tokenId || giftId;
+
+    console.error('🔍 SAVE APPOINTMENT - RESOLUTION:', {
+      receivedGiftId: giftId,
+      receivedTokenId: tokenId,
+      willAttemptResolution: !!tokenIdStr
+    });
+
+    if (tokenIdStr) {
+      try {
+        const resolvedGiftId = await getGiftIdFromTokenId(tokenIdStr);
+        if (resolvedGiftId !== null) {
+          realGiftId = resolvedGiftId.toString();
+          console.error(`✅ RESOLVED MAPPING: tokenId ${tokenIdStr} → realGiftId ${realGiftId}`);
+        } else {
+          console.warn(`⚠️ NO MAPPING FOUND: tokenId ${tokenIdStr}, using provided giftId: ${giftId}`);
+          // Keep realGiftId as the provided giftId
+        }
+      } catch (resolutionError: any) {
+        console.warn(`⚠️ RESOLUTION FAILED for tokenId ${tokenIdStr}:`, resolutionError.message);
+        console.warn(`⚠️ FALLBACK: Using provided giftId: ${giftId}`);
+        // Keep realGiftId as the provided giftId
+      }
+    }
+
+    console.log('📅 Saving appointment data:', {
+      realGiftId,
+      tokenId: tokenIdStr,
+      eventDate: appointmentData.eventDate,
+      eventTime: appointmentData.eventTime
+    });
+
     // Prepare data to save
     const appointmentRecord = {
-      giftId,
-      tokenId: tokenId || '',
+      giftId: realGiftId,
+      tokenId: tokenIdStr || '',
       eventName: appointmentData.eventName || 'Consulta CryptoGift',
       eventDate: appointmentData.eventDate,
       eventTime: appointmentData.eventTime,
@@ -91,8 +124,8 @@ export default async function handler(
       updatedAt: Date.now()
     };
 
-    // Save to gift:detail hash
-    const giftDetailKey = `gift:detail:${giftId}`;
+    // CRITICAL: Save to REAL giftId key (PRIMARY STORAGE)
+    const realGiftDetailKey = `gift:detail:${realGiftId}`;
 
     // Store appointment data
     const updates: Record<string, any> = {
@@ -105,7 +138,7 @@ export default async function handler(
       appointment_invitee_name: appointmentRecord.inviteeName,
       appointment_created_at: appointmentRecord.createdAt,
       // CRITICAL FIX: Always store tokenId to enable fallback search
-      tokenId: tokenId || ''
+      tokenId: tokenIdStr || ''
     };
 
     // If we have invitee email, encrypt it if PII encryption is available
@@ -130,35 +163,46 @@ export default async function handler(
       }
     }
 
-    // Update gift detail with appointment data
-    await redis.hset(giftDetailKey, updates);
+    // CRITICAL: Save to REAL giftId key (PRIMARY STORAGE)
+    await redis.hset(realGiftDetailKey, updates);
+    console.error(`✅ PRIMARY STORAGE: Saved appointment to ${realGiftDetailKey}`);
 
-    // CRITICAL FIX: Double storage for tokenId lookup
-    // Store the same data using tokenId as key for double lookup
-    if (tokenId && tokenId !== giftId) {
-      const tokenDetailKey = `gift:detail:${tokenId}`;
+    // REDUNDANCY: Also save using tokenId as key for double lookup
+    if (tokenIdStr && tokenIdStr !== realGiftId) {
+      const tokenDetailKey = `gift:detail:${tokenIdStr}`;
       await redis.hset(tokenDetailKey, updates);
-      console.log(`✅ DOUBLE STORAGE: Also stored appointment in ${tokenDetailKey} for tokenId lookup`);
+      console.error(`✅ REDUNDANT STORAGE: Also saved appointment to ${tokenDetailKey}`);
     }
 
     // Also save a separate appointment record for easy retrieval
-    const appointmentKey = `appointment:gift:${giftId}`;
+    const appointmentKey = `appointment:gift:${realGiftId}`;
     await redis.setex(
       appointmentKey,
       86400 * 30, // 30 days TTL
       JSON.stringify(appointmentRecord)
     );
 
+    console.error('📊 SAVE APPOINTMENT - COMPLETE:', {
+      realGiftId,
+      tokenId: tokenIdStr,
+      savedToKeys: tokenIdStr !== realGiftId
+        ? [realGiftDetailKey, `gift:detail:${tokenIdStr}`]
+        : [realGiftDetailKey],
+      appointmentKey,
+      eventDate: appointmentData.eventDate,
+      eventTime: appointmentData.eventTime
+    });
+
     console.log('✅ Appointment saved successfully:', {
-      giftId,
+      realGiftId,
       appointmentKey,
       eventDate: appointmentData.eventDate,
       eventTime: appointmentData.eventTime
     });
 
     debugLogger.operation('Appointment saved', {
-      giftId,
-      tokenId,
+      realGiftId,
+      tokenId: tokenIdStr,
       eventDate: appointmentData.eventDate,
       eventTime: appointmentData.eventTime,
       timezone: appointmentData.timezone
