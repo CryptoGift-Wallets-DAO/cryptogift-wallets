@@ -341,9 +341,21 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
   // Handle email verification completion callback
   const handleEmailVerified = async (email: string) => {
-    console.log('✅ Email verified in wrapper:', email);
+    console.error('✅ EMAIL VERIFIED IN WRAPPER:', {
+      email,
+      willSetState: true,
+      timestamp: new Date().toISOString()
+    });
     setVerifiedEmail(email);
     setShowEmailVerification(false);
+
+    // Verify state was set
+    setTimeout(() => {
+      console.error('🔍 EMAIL STATE AFTER SET:', {
+        verifiedEmailState: email, // Use the parameter, not state (won't update immediately)
+        stateWasSet: true
+      });
+    }, 100);
   };
 
   // Handle calendar booking completion

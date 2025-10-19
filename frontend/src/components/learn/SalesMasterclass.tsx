@@ -1535,8 +1535,11 @@ const SalesMasterclass: React.FC<SalesMasterclassProps> = ({
 
               // Now complete the education flow after the video
               if (onEducationComplete) {
+                // CRITICAL FIX: In educational mode, DON'T pass email here
+                // The parent (LessonModalWrapper) already has it in its state
+                // Passing it from here would use outdated prop value
                 onEducationComplete({
-                  email: verifiedEmail,
+                  email: educationalMode ? undefined : verifiedEmail, // Only pass in knowledge mode
                   questionsScore: {
                     correct: leadData.questionsCorrect || 0,
                     total: leadData.totalQuestions || 0
