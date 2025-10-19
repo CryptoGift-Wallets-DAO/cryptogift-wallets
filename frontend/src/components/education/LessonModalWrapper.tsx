@@ -349,6 +349,43 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     setVerifiedEmail(email);
     setShowEmailVerification(false);
 
+    // CRITICAL FIX: Save email to Redis IMMEDIATELY to avoid timing/props issues
+    // Don't wait for approve.ts - save it now with giftId/tokenId
+    if (mode === 'educational' && giftId && tokenId) {
+      try {
+        console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {
+          giftId,
+          tokenId,
+          email: email.substring(0, 3) + '***',
+          timestamp: new Date().toISOString()
+        });
+
+        const saveResponse = await fetch('/api/analytics/save-email-manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            giftId,
+            tokenId,
+            email
+          })
+        });
+
+        const saveData = await saveResponse.json();
+
+        if (saveData.success) {
+          console.error('✅ EMAIL SAVED TO REDIS SUCCESSFULLY:', {
+            giftId,
+            fieldsWritten: Object.keys(saveData.updates || {}).length
+          });
+        } else {
+          console.error('❌ EMAIL SAVE FAILED:', saveData.error);
+        }
+      } catch (saveError) {
+        console.error('❌ EMAIL SAVE ERROR (non-critical):', saveError);
+        // Don't fail the verification flow if save fails
+      }
+    }
+
     // Verify state was set
     setTimeout(() => {
       console.error('🔍 EMAIL STATE AFTER SET:', {
