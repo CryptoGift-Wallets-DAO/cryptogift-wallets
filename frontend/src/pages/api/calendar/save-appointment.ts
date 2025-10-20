@@ -34,6 +34,8 @@ interface AppointmentResponse {
   success: boolean;
   message?: string;
   error?: string;
+  received?: any;
+  hint?: string;
 }
 
 export default async function handler(
