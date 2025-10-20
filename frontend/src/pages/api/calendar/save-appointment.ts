@@ -54,11 +54,30 @@ export default async function handler(
       appointmentData
     }: AppointmentRequest = req.body;
 
-    // Validate required fields
-    if ((!giftId && !tokenId) || !appointmentData || !appointmentData.eventDate || !appointmentData.eventTime) {
+    // CRITICAL: BOTH giftId and tokenId are now REQUIRED
+    if (!giftId || !tokenId || !appointmentData || !appointmentData.eventDate || !appointmentData.eventTime) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: (giftId or tokenId), appointmentData.eventDate, appointmentData.eventTime'
+        error: 'giftId, tokenId, appointmentData.eventDate, and appointmentData.eventTime are all required',
+        received: {
+          giftId: !!giftId,
+          tokenId: !!tokenId,
+          eventDate: !!appointmentData?.eventDate,
+          eventTime: !!appointmentData?.eventTime
+        }
+      });
+    }
+
+    // GUARD: Reject if giftId === tokenId (integration error)
+    if (giftId === tokenId) {
+      console.error('❌ GUARD VIOLATION: giftId === tokenId (misuse detected)', {
+        giftId,
+        tokenId
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'giftId and tokenId must be different - integration error',
+        hint: 'Parent component must resolve giftId from tokenId before calling this endpoint'
       });
     }
 
@@ -72,33 +91,40 @@ export default async function handler(
       });
     }
 
-    // CRITICAL FIX: Automatic tokenId → giftId resolution
-    // This ensures we always save to the correct primary key
-    let realGiftId = giftId;
-    const tokenIdStr = tokenId || giftId;
+    // SERVER-SIDE VALIDATION: Resolve tokenId → giftId and compare with client
+    const tokenIdStr = tokenId.toString();
+    const clientGiftId = giftId.toString();
+    let serverGiftId: string | null = null;
 
-    console.error('🔍 SAVE APPOINTMENT - RESOLUTION:', {
-      receivedGiftId: giftId,
-      receivedTokenId: tokenId,
-      willAttemptResolution: !!tokenIdStr
+    console.error('🔍 SAVE APPOINTMENT - SERVER VALIDATION:', {
+      clientGiftId,
+      tokenId: tokenIdStr
     });
 
-    if (tokenIdStr) {
-      try {
-        const resolvedGiftId = await getGiftIdFromTokenId(tokenIdStr);
-        if (resolvedGiftId !== null) {
-          realGiftId = resolvedGiftId.toString();
-          console.error(`✅ RESOLVED MAPPING: tokenId ${tokenIdStr} → realGiftId ${realGiftId}`);
-        } else {
-          console.warn(`⚠️ NO MAPPING FOUND: tokenId ${tokenIdStr}, using provided giftId: ${giftId}`);
-          // Keep realGiftId as the provided giftId
+    try {
+      const resolvedGiftId = await getGiftIdFromTokenId(tokenIdStr);
+      if (resolvedGiftId !== null) {
+        serverGiftId = resolvedGiftId.toString();
+        console.error(`✅ SERVER RESOLVED: tokenId ${tokenIdStr} → giftId ${serverGiftId}`);
+
+        // CRITICAL: Compare client vs server resolution
+        if (serverGiftId !== clientGiftId) {
+          console.error(`⚠️ MISMATCH: Client sent giftId=${clientGiftId} but server resolved giftId=${serverGiftId}`, {
+            action: 'PRIORITIZING_SERVER_RESOLUTION'
+          });
+          // Use server-resolved giftId as source of truth
         }
-      } catch (resolutionError: any) {
-        console.warn(`⚠️ RESOLUTION FAILED for tokenId ${tokenIdStr}:`, resolutionError.message);
-        console.warn(`⚠️ FALLBACK: Using provided giftId: ${giftId}`);
-        // Keep realGiftId as the provided giftId
+      } else {
+        console.warn(`⚠️ NO MAPPING FOUND: tokenId ${tokenIdStr} - using client giftId as fallback`);
+        serverGiftId = clientGiftId;  // Trust client if no mapping exists
       }
+    } catch (resolutionError: any) {
+      console.warn(`⚠️ RESOLUTION FAILED for tokenId ${tokenIdStr}:`, resolutionError.message);
+      serverGiftId = clientGiftId;  // Trust client on error
     }
+
+    // Use server-resolved giftId as the canonical source of truth
+    const realGiftId = serverGiftId || clientGiftId;
 
     console.log('📅 Saving appointment data:', {
       realGiftId,
@@ -163,15 +189,17 @@ export default async function handler(
       }
     }
 
-    // CRITICAL: Save to REAL giftId key (PRIMARY STORAGE)
+    // CRITICAL: Save ONLY to canonical giftId key (SINGLE SOURCE OF TRUTH)
     await redis.hset(realGiftDetailKey, updates);
-    console.error(`✅ PRIMARY STORAGE: Saved appointment to ${realGiftDetailKey}`);
+    console.error(`✅ CANONICAL STORAGE: Saved appointment to ${realGiftDetailKey} (no tokenId key)`);
 
-    // REDUNDANCY: Also save using tokenId as key for double lookup
+    // TELEMETRY: Alert if we would have written to tokenId key (regression detection)
     if (tokenIdStr && tokenIdStr !== realGiftId) {
-      const tokenDetailKey = `gift:detail:${tokenIdStr}`;
-      await redis.hset(tokenDetailKey, updates);
-      console.error(`✅ REDUNDANT STORAGE: Also saved appointment to ${tokenDetailKey}`);
+      console.error('📊 TELEMETRY: Would have written to tokenId key in old code', {
+        wouldHaveWrittenTo: `gift:detail:${tokenIdStr}`,
+        actuallyWroteTo: realGiftDetailKey,
+        prevention: 'GUARD_ACTIVE'
+      });
     }
 
     // Also save a separate appointment record for easy retrieval
@@ -185,12 +213,11 @@ export default async function handler(
     console.error('📊 SAVE APPOINTMENT - COMPLETE:', {
       realGiftId,
       tokenId: tokenIdStr,
-      savedToKeys: tokenIdStr !== realGiftId
-        ? [realGiftDetailKey, `gift:detail:${tokenIdStr}`]
-        : [realGiftDetailKey],
+      savedToKey: realGiftDetailKey,
       appointmentKey,
       eventDate: appointmentData.eventDate,
-      eventTime: appointmentData.eventTime
+      eventTime: appointmentData.eventTime,
+      clientVsServer: clientGiftId === realGiftId ? 'MATCH' : 'MISMATCH_SERVER_PRIORITIZED'
     });
 
     console.log('✅ Appointment saved successfully:', {

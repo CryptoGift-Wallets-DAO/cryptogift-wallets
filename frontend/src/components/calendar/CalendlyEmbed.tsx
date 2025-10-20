@@ -47,39 +47,35 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
 }) => {
   // Función para guardar automáticamente la cita en el backend
   const saveAppointmentToBackend = useCallback(async (eventData: any) => {
-    // ROBUST FIX: Use tokenId as giftId fallback if giftId is not available
-    if (!giftId && !tokenId) {
-      console.warn('No giftId or tokenId provided, cannot save appointment');
+    // CRITICAL FIX: REQUIRE giftId from props - NO sessionStorage fallback
+    // The giftId MUST be resolved and passed by the parent component
+    if (!giftId) {
+      console.error('❌ CRITICAL: No giftId provided to save appointment', {
+        tokenId,
+        hasGiftIdProp: !!giftId,
+        hasTokenIdProp: !!tokenId
+      });
+      // Don't save without valid giftId - show error to user
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+      notification.innerHTML = '❌ Error: No se puede guardar la cita (falta giftId)';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 5000);
       return;
     }
 
-    // CRITICAL FIX: Try to get real giftId from sessionStorage (set by token page on mount)
-    // This ensures we save to the CORRECT Redis key
-    const sessionGiftId = typeof window !== 'undefined'
-      ? sessionStorage.getItem(`giftId_${tokenId}`)
-      : null;
+    const effectiveGiftId = giftId;  // Use ONLY the prop, no fallbacks
 
-    // Priority order: sessionStorage → prop → tokenId fallback
-    const effectiveGiftId = sessionGiftId || giftId || tokenId;
-
-    if (sessionGiftId) {
-      console.log('✅ CRITICAL: Using giftId from sessionStorage for appointment:', {
-        tokenId,
-        resolvedGiftId: sessionGiftId,
-        source: 'token_page_mount'
-      });
-    } else {
-      console.warn('⚠️ No giftId in sessionStorage for appointment, using fallback:', {
-        giftIdProp: giftId || 'undefined',
-        tokenIdFallback: tokenId
-      });
-    }
+    console.log('✅ Using giftId from props for appointment (no fallback):', {
+      giftId: effectiveGiftId,
+      tokenId,
+      source: 'parent_component_prop'
+    });
 
     try {
       console.log('📅 Guardando cita automáticamente...', {
-        giftId: giftId || 'NOT_PROVIDED_USING_TOKENID_FALLBACK',
+        giftId: effectiveGiftId,
         tokenId,
-        effectiveGiftId,
         eventData
       });
 

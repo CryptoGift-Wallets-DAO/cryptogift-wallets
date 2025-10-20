@@ -353,32 +353,28 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     // Don't wait for approve.ts - save it now with giftId/tokenId
     if (mode === 'educational' && tokenId) {
       try {
-        // CRITICAL FIX: Try to get real giftId from sessionStorage (set by token page on mount)
-        // This ensures we save to the CORRECT Redis key
-        const sessionGiftId = typeof window !== 'undefined'
-          ? sessionStorage.getItem(`giftId_${tokenId}`)
-          : null;
-
-        // Priority order: sessionStorage → prop → tokenId fallback
-        const effectiveGiftId = sessionGiftId || giftId || tokenId;
-
-        if (sessionGiftId) {
-          console.log('✅ CRITICAL: Using giftId from sessionStorage:', {
+        // CRITICAL FIX: REQUIRE giftId from props - NO sessionStorage fallback
+        // The giftId MUST be resolved and passed by the parent component
+        if (!giftId) {
+          console.error('❌ CRITICAL: No giftId provided to save email', {
             tokenId,
-            resolvedGiftId: sessionGiftId,
-            source: 'token_page_mount'
+            mode,
+            hasGiftIdProp: !!giftId
           });
-        } else {
-          console.warn('⚠️ No giftId in sessionStorage, using fallback:', {
-            giftIdProp: giftId || 'undefined',
-            tokenIdFallback: tokenId
-          });
+          throw new Error('giftId is required for educational mode - integration error');
         }
 
-        console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {
-          giftId: giftId || 'NOT_PROVIDED_USING_TOKENID_FALLBACK',
+        const effectiveGiftId = giftId;  // Use ONLY the prop, no fallbacks
+
+        console.log('✅ Using giftId from props (no fallback):', {
+          giftId: effectiveGiftId,
           tokenId,
-          effectiveGiftId,
+          source: 'parent_component_prop'
+        });
+
+        console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {
+          giftId: effectiveGiftId,
+          tokenId,
           email: email.substring(0, 3) + '***',
           timestamp: new Date().toISOString()
         });
