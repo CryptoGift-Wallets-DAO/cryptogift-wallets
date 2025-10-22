@@ -479,24 +479,21 @@ export default async function handler(
           });
 
           try {
-            // PRIMARY STORAGE: Store in gift:detail:{giftId}
+            // CANONICAL STORAGE: Store ONLY in gift:detail:{giftId} (SINGLE SOURCE OF TRUTH)
             const result = await redis.hset(giftDetailKey, updates);
-            console.error('✅ REDIS HSET SUCCESS:', {
+            console.error('✅ CANONICAL STORAGE: Saved to', {
               giftDetailKey,
               result,
               fieldsWritten: Object.keys(updates).length,
               fields: Object.keys(updates)
             });
 
-            // CRITICAL FIX: DOUBLE STORAGE for tokenId lookup
-            // Store the same data using tokenId as key for double lookup
+            // TELEMETRY: Alert if we would have written to tokenId key (regression detection)
             if (tokenId && tokenId !== giftId.toString()) {
-              const tokenDetailKey = `gift:detail:${tokenId}`;
-              await redis.hset(tokenDetailKey, updates);
-              console.error('✅ DOUBLE STORAGE: Also stored in', {
-                tokenDetailKey,
-                reason: 'Enable tokenId-based lookup when giftId mapping fails',
-                fieldsWritten: Object.keys(updates).length
+              console.error('📊 TELEMETRY: Would have written to tokenId key in old code', {
+                wouldHaveWrittenTo: `gift:detail:${tokenId}`,
+                actuallyWroteTo: giftDetailKey,
+                prevention: 'GUARD_ACTIVE'
               });
             }
           } catch (hsetError) {
