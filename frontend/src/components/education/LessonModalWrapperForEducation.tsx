@@ -18,6 +18,7 @@ interface LessonModalWrapperForEducationProps {
   moduleId: number;
   sessionToken: string;
   tokenId: string;
+  giftId?: string; // CRITICAL FIX: Real giftId for email/appointment saving
   onComplete: (gateData?: string) => void; // FIXED: Accept optional gateData
   giftInfo?: any;
   nftMetadata?: any;
@@ -27,6 +28,7 @@ export const LessonModalWrapperForEducation: React.FC<LessonModalWrapperForEduca
   moduleId,
   sessionToken,
   tokenId,
+  giftId, // CRITICAL FIX: Accept giftId from parent
   onComplete,
   giftInfo,
   nftMetadata
@@ -138,6 +140,7 @@ export const LessonModalWrapperForEducation: React.FC<LessonModalWrapperForEduca
             // No llamar onComplete aquí, esperar a que la lección se complete
           }}
           tokenId={tokenId}
+          giftId={giftId} // CRITICAL FIX: Pass giftId for email/appointment saving
           sessionToken={sessionToken}
           onComplete={(gateData) => {
             console.log('✅ Lesson completed with gate data:', gateData);

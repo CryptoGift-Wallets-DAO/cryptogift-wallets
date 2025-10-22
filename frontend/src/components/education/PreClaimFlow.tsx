@@ -311,16 +311,39 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       });
 
       if (data.valid) {
-        // UPDATED: giftId already obtained in useEffect on mount
-        // Just use the existing one from validationState
+        // CRITICAL FIX: Ensure giftId is available before proceeding
+        // Fetch giftId NOW if not already in state (race condition fix)
+        let currentGiftId = validationState.giftId;
+
+        if (!currentGiftId) {
+          console.log('⚠️ GiftId not yet available, fetching now before proceeding...');
+          try {
+            const giftIdResponse = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
+            if (giftIdResponse.ok) {
+              const giftIdData = await giftIdResponse.json();
+              currentGiftId = giftIdData.giftId?.toString();
+              console.log('✅ GiftId fetched just-in-time:', currentGiftId);
+            } else {
+              console.warn('⚠️ Failed to fetch giftId, using tokenId as fallback');
+              currentGiftId = tokenId; // Fallback to tokenId
+            }
+          } catch (error) {
+            console.warn('⚠️ Error fetching giftId:', error);
+            currentGiftId = tokenId; // Fallback to tokenId
+          }
+        } else {
+          console.log('✅ GiftId already available from mount:', currentGiftId);
+        }
+
         setValidationState(prev => ({
-          ...prev, // Keep existing giftId from mount
+          ...prev,
           isValidating: false,
           isValid: true,
           requiresEducation: data.requiresEducation || false,
           educationRequirements: data.educationRequirements,
           sessionToken: data.sessionToken,
-          educationModules: data.educationModules // Store modules for later use
+          educationModules: data.educationModules,
+          giftId: currentGiftId // Ensure giftId is set
         }));
 
         // Save session to localStorage for recovery
@@ -332,7 +355,8 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
           flowState: data.requiresEducation ? 'education' : 'claim',
           passwordValidated: true,
           educationCompleted: false,
-          educationGateData: data.educationGateData || '0x'
+          educationGateData: data.educationGateData || '0x',
+          giftId: currentGiftId // Save giftId to session
         });
 
         // FIX: Pass the educationGateData and modules from validation

@@ -117,9 +117,10 @@ export interface LessonModalWrapperProps {
   mode: 'knowledge' | 'educational';
   isOpen: boolean;
   onClose: () => void;
-  
+
   // Educational mode specific props
   tokenId?: string;
+  giftId?: string; // CRITICAL FIX: Real giftId for email/appointment saving
   sessionToken?: string;
   onComplete?: (gateData: string) => void;
 }

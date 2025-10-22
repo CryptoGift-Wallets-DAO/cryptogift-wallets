@@ -9,6 +9,7 @@
 
 export interface ClaimSession {
   tokenId: string;
+  giftId?: string; // CRITICAL FIX: Real giftId for email/appointment saving
   sessionToken: string;
   salt: string;
   educationGateData?: string;

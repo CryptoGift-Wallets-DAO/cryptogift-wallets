@@ -61,12 +61,15 @@ export default function ClaimGiftPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [claimed, setClaimed] = useState(false);
-  
+
   // New states for education flow
   const [flowState, setFlowState] = useState<ClaimFlowState | null>(null); // Start with null to prevent race conditions
   const [educationSession, setEducationSession] = useState<EducationSession | null>(null);
   const [educationGateData, setEducationGateData] = useState<string>('0x'); // EIP-712 signature for education approval
   const [hasEducationRequirements, setHasEducationRequirements] = useState<boolean>(false);
+
+  // CRITICAL FIX: Store real giftId for email/appointment saving
+  const [giftId, setGiftId] = useState<string | undefined>(undefined);
 
   // Handle theme hydration
   useEffect(() => {
@@ -76,9 +79,30 @@ export default function ClaimGiftPage() {
   // Load gift information when page loads and recover session if exists
   useEffect(() => {
     if (tokenId && typeof tokenId === 'string') {
+      // CRITICAL FIX: Fetch giftId immediately for email/appointment saving
+      const fetchGiftId = async () => {
+        try {
+          const response = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
+          if (response.ok) {
+            const data = await response.json();
+            const resolvedGiftId = data.giftId?.toString();
+            console.log('✅ GiftId resolved on page load:', resolvedGiftId);
+            setGiftId(resolvedGiftId);
+          } else {
+            console.warn('⚠️ Failed to resolve giftId, using tokenId as fallback');
+            setGiftId(tokenId);
+          }
+        } catch (error) {
+          console.warn('⚠️ Error fetching giftId:', error);
+          setGiftId(tokenId);
+        }
+      };
+
+      fetchGiftId();
+
       // Clean up any expired sessions
       cleanupExpiredSessions();
-      
+
       // Try to recover existing session
       const existingSession = loadClaimSession(tokenId);
       if (existingSession) {
@@ -569,6 +593,7 @@ export default function ClaimGiftPage() {
                 moduleId={educationSession.requiredModules[educationSession.currentModuleIndex || 0]}
                 sessionToken={educationSession.sessionToken}
                 tokenId={tokenId as string}
+                giftId={giftId} // CRITICAL FIX: Pass real giftId for email/appointment saving
                 onComplete={(gateData) => handleModuleComplete(gateData)}
                 giftInfo={giftInfo}
                 nftMetadata={nftMetadata}
