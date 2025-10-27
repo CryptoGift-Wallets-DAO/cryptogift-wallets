@@ -33,11 +33,11 @@ interface TransactionAttempt {
 import { validateRedisForCriticalOps, getRedisStatus } from './redisConfig';
 
 // Helper function to wrap Redis operations with timeout protection
-async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 3000): Promise<T> {
-  const timeoutPromise = new Promise<never>((_, reject) => 
+async function redisWithTimeout<T>(operation: Promise<T>, timeoutMs: number = 10000): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('Redis operation timeout')), timeoutMs)
   );
-  
+
   return Promise.race([operation, timeoutPromise]);
 }
 

@@ -292,9 +292,9 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
       // Method 1: HEAD without Range (per audit) - Independent timeout
       console.log(`🔍 Testing HEAD: ${url}`);
       const headStart = Date.now();
-      
+
       const headController = new AbortController();
-      const headTimeout = setTimeout(() => headController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
+      const headTimeout = setTimeout(() => headController.abort(), 10000); // 10s timeout for reliable IPFS gateway testing
       
       try {
         
@@ -324,9 +324,9 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     // Method 2: GET with Range bytes=0-0 (per audit) - Independent timeout
     console.log(`🔍 Testing GET+Range: ${url}`);
     const getRangeStart = Date.now();
-    
+
     const getRangeController = new AbortController();
-    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
+    const getRangeTimeout = setTimeout(() => getRangeController.abort(), 10000); // 10s timeout for reliable IPFS gateway testing
     
     try {
       
@@ -354,9 +354,9 @@ async function testGatewayAccess(url: string, gateway: string): Promise<{
     // Method 3: GET without Range (per audit) - Independent timeout
     console.log(`🔍 Testing GET (no Range): ${url}`);
     const getStart = Date.now();
-    
+
     const getController = new AbortController();
-    const getTimeout = setTimeout(() => getController.abort(), 3000); // FAST PROBING: 3s timeout for quick gateway testing
+    const getTimeout = setTimeout(() => getController.abort(), 10000); // 10s timeout for reliable IPFS gateway testing
     
     try {
       
@@ -552,12 +552,23 @@ async function validateIPFSMetadata(metadataUrl: string): Promise<{
 /**
  * ENHANCED VALIDATION: Validates both metadata JSON and image field within it
  * This addresses audit finding #4: superficial validation
+ * @param metadataUrl - The IPFS metadata URL to validate
+ * @param initialPropagationDelaySeconds - Optional delay before first validation attempt (useful for fresh uploads)
  */
-async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ success: boolean; error?: string }> {
+async function validateIPFSMetadataAndImage(
+  metadataUrl: string,
+  initialPropagationDelaySeconds: number = 0
+): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('🔍 METADATA + IMAGE VALIDATION: Starting comprehensive validation');
     console.log('📋 MetadataURL:', metadataUrl);
-    
+
+    // Optional initial propagation delay for fresh IPFS uploads
+    if (initialPropagationDelaySeconds > 0) {
+      console.log(`⏳ IPFS PROPAGATION DELAY: Waiting ${initialPropagationDelaySeconds}s for fresh content to propagate...`);
+      await new Promise(resolve => setTimeout(resolve, initialPropagationDelaySeconds * 1000));
+    }
+
     // Step 1: Validate metadata JSON accessibility with ENHANCED IPFS propagation retry
     let metadataValidation;
     let attempts = 0;
@@ -595,9 +606,9 @@ async function validateIPFSMetadataAndImage(metadataUrl: string): Promise<{ succ
     // Step 2: Download and parse metadata JSON
     let metadataJson;
     try {
-      const response = await fetch(metadataValidation.workingUrl!, { 
+      const response = await fetch(metadataValidation.workingUrl!, {
         method: 'GET',
-        signal: AbortSignal.timeout(3000)  // FAST PROBING: 3s timeout for quick validation
+        signal: AbortSignal.timeout(10000)  // 10s timeout for reliable IPFS metadata fetch
       });
       
       if (!response.ok) {
@@ -928,13 +939,14 @@ async function mintNFTEscrowGasless(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: ENHANCED IPFS VALIDATION with PROPAGATION RETRY - METADATA + IMAGE 
+    // Step 2.5: ENHANCED IPFS VALIDATION with PROPAGATION RETRY - METADATA + IMAGE
     console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation with retry');
-    console.log('🚀 Enhancement: Validates JSON metadata + image field + handles IPFS propagation delays'); 
+    console.log('🚀 Enhancement: Validates JSON metadata + image field + handles IPFS propagation delays');
     console.log('🔍 MetadataURI for validation:', tokenURI);
-    
+
     // ENHANCED VALIDATION with IPFS propagation retry: Check metadata JSON + image field
-    const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI);
+    // 5s initial delay allows fresh IPFS content to propagate across gateways
+    const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI, 5);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
       
@@ -1676,13 +1688,14 @@ async function mintNFTEscrowGasPaid(
     transactionNonce = validation.nonce;
     console.log('✅ Anti-double minting validation passed. Nonce:', transactionNonce.slice(0, 10) + '...');
     
-    // Step 2.5: ENHANCED IPFS VALIDATION with PROPAGATION RETRY - METADATA + IMAGE 
+    // Step 2.5: ENHANCED IPFS VALIDATION with PROPAGATION RETRY - METADATA + IMAGE
     console.log('🔍 ENHANCED VALIDATION: Starting comprehensive metadata + image validation with retry');
-    console.log('🚀 Enhancement: Validates JSON metadata + image field + handles IPFS propagation delays'); 
+    console.log('🚀 Enhancement: Validates JSON metadata + image field + handles IPFS propagation delays');
     console.log('🔍 MetadataURI for validation:', tokenURI);
-    
+
     // ENHANCED VALIDATION with IPFS propagation retry: Check metadata JSON + image field
-    const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI);
+    // 5s initial delay allows fresh IPFS content to propagate across gateways
+    const ipfsValidation = await validateIPFSMetadataAndImage(tokenURI, 5);
     if (!ipfsValidation.success) {
       console.error('❌ IPFS VALIDATION FAILED:', ipfsValidation.error);
       
