@@ -23,8 +23,8 @@ export interface VideoConfig {
 export const VIDEO_CONFIG: Record<string, VideoConfig> = {
   // Sales Masterclass intro video
   salesMasterclass: {
-    lessonId: "sales-masterclass-v3", // Updated to v3 for new Complete Presentation video
-    muxPlaybackId: "3W6iaGGBJN2AyMh37o5Qg3kdNDEFi2JP4UIBRK00QJhE", // Complete Presentation video
+    lessonId: "sales-masterclass-v4", // Updated to v4 for English translated presentation
+    muxPlaybackId: "3lWAgyukmAHnff02tpTAzYD00DeftIi005YWLmk5AYFs00Y", // English presentation
     title: "CryptoGift Project",
     description: "Learn about our vision. Starts with a brief video with audio, get comfortable to enjoy it\n\nEstimated time: 10 minutes",
     // poster: "/images/videos/sales-masterclass-poster.jpg", // Uncomment when you have a poster

@@ -33,8 +33,8 @@ export const VIDEO_CONFIG: Record<string, VideoConfig> = {
 
   // Presentation CGC - Video final después del EIP-712 y antes del claim
   presentationCGC: {
-    lessonId: "presentation-cgc-v1",
-    muxPlaybackId: "dsEZYVMpcrkuNvn0200p8C7nz9qEqY3dr7Mx9OiauZSro", // Presentation CGC video
+    lessonId: "presentation-cgc-v2", // Updated to v2 for Spanish translated video
+    muxPlaybackId: "PBqn7kacf00PoAczsHLk02TyU01OAx4VdUNYJaYdbbasQw", // Presentation FINAL SPANISH
     title: "Presentación CryptoGift Club",
     description: "Descubre las oportunidades exclusivas que te esperan como miembro del CryptoGift Club",
   },
