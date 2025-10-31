@@ -1067,11 +1067,17 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
   }, [leadData, metrics, celebrate, handleNextBlock, educationalMode, onEducationComplete]);
 
   // Email verification handler
-  const handleEmailVerified = useCallback((email: string) => {
+  const handleEmailVerified = useCallback(async (email: string) => {
     // verifiedEmail is now managed by parent LessonModalWrapper
     setShowEmailVerification(false);
-    setShowCalendar(true);
-  }, [setShowEmailVerification, setShowCalendar]);
+
+    // CRITICAL FIX: In educational mode, use parent's calendar modal (with giftId/tokenId)
+    if (educationalMode && onShowCalendar) {
+      await onShowCalendar();
+    } else {
+      setShowCalendar(true);
+    }
+  }, [setShowEmailVerification, setShowCalendar, educationalMode, onShowCalendar]);
 
   // Calendar booking success handler
   const handleBookingSuccess = useCallback(() => {
@@ -1308,9 +1314,9 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
             total: leadData.totalQuestions || 0
           }}
           educationalMode={educationalMode}
-          // Email verification props
-          onShowEmailVerification={() => setShowEmailVerification(true)}
-          onShowCalendar={() => setShowCalendar(true)}
+          // Email verification props - Use parent's callbacks in educational mode
+          onShowEmailVerification={educationalMode && onShowEmailVerification ? onShowEmailVerification : () => setShowEmailVerification(true)}
+          onShowCalendar={educationalMode && onShowCalendar ? onShowCalendar : () => setShowCalendar(true)}
           verifiedEmail={verifiedEmail}
         />;
       case 'success':
@@ -1534,29 +1540,39 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
         </div>
       )}
 
-      {/* EMAIL VERIFICATION MODAL */}
-      <EmailVerificationModal
-        isOpen={showEmailVerification}
-        onClose={() => setShowEmailVerification(false)}
-        onVerified={(email) => {
-          // verifiedEmail is now managed by parent LessonModalWrapper
-          setShowEmailVerification(false);
-          setShowCalendar(true);
-          console.log('✅ Email verified for masterclass:', email);
-        }}
-        source="masterclass"
-        title="📧 We Need Your Email!"
-        subtitle="To send you exclusive information and next steps"
-      />
+      {/* EMAIL VERIFICATION MODAL - Only in knowledge mode, educational mode uses parent's modal */}
+      {!educationalMode && (
+        <EmailVerificationModal
+          isOpen={showEmailVerification}
+          onClose={() => setShowEmailVerification(false)}
+          onVerified={async (email) => {
+            // verifiedEmail is now managed by parent LessonModalWrapper
+            setShowEmailVerification(false);
+            console.log('✅ Email verified for masterclass:', email);
 
-      {/* CALENDAR BOOKING MODAL */}
-      <CalendarBookingModal
-        isOpen={showCalendar}
-        onClose={() => setShowCalendar(false)}
-        userEmail={verifiedEmail || undefined}
-        userName={leadData.contact || undefined}
-        source="masterclass"
-      />
+            // CRITICAL FIX: In educational mode, use parent's calendar modal (with giftId/tokenId)
+            if (educationalMode && onShowCalendar) {
+              await onShowCalendar();
+            } else {
+              setShowCalendar(true);
+            }
+          }}
+          source="masterclass"
+          title="📧 We Need Your Email!"
+          subtitle="To send you exclusive information and next steps"
+        />
+      )}
+
+      {/* CALENDAR BOOKING MODAL - Only in knowledge mode, educational mode uses parent's modal */}
+      {!educationalMode && (
+        <CalendarBookingModal
+          isOpen={showCalendar}
+          onClose={() => setShowCalendar(false)}
+          userEmail={verifiedEmail || undefined}
+          userName={leadData.contact || undefined}
+          source="masterclass"
+        />
+      )}
       </div>
     </div>
   );
@@ -2605,18 +2621,18 @@ const CaptureBlock: React.FC<{
                         <span className="text-lg">📧</span>
                       </div>
                       <span className="font-semibold text-gray-800 dark:text-white">
-                        Verificar tu email
+                        Verify your email
                       </span>
                       {emailVerified && (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full 
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full
                           border border-green-500/30 backdrop-blur-xl">
-                          ✓ Verificado
+                          ✓ Verified
                         </span>
                       )}
                       {processingEmail && (
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full 
+                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full
                           border border-blue-500/30 backdrop-blur-xl animate-pulse">
-                          Procesando...
+                          Processing...
                         </span>
                       )}
                     </div>
@@ -2658,15 +2674,15 @@ const CaptureBlock: React.FC<{
                         Schedule a free session
                       </span>
                       {calendarScheduled && (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full 
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full
                           border border-green-500/30 backdrop-blur-xl">
-                          ✓ Agendado
+                          ✓ Scheduled
                         </span>
                       )}
                       {processingCalendar && (
-                        <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full 
+                        <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full
                           border border-purple-500/30 backdrop-blur-xl animate-pulse">
-                          Procesando...
+                          Processing...
                         </span>
                       )}
                     </div>
