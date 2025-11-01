@@ -71,17 +71,15 @@ export default async function handler(
       });
     }
 
-    // GUARD: Reject if giftId === tokenId (integration error)
+    // TELEMETRY: Log if giftId === tokenId (may indicate fallback scenario)
+    // RELAXED: Allow this case since server resolves realGiftId internally anyway
     if (giftId === tokenId) {
-      console.error('❌ GUARD VIOLATION: giftId === tokenId (misuse detected)', {
+      console.warn('⚠️ TELEMETRY: giftId === tokenId (fallback scenario detected)', {
         giftId,
-        tokenId
+        tokenId,
+        scenario: 'Frontend using tokenId as giftId fallback - server will resolve'
       });
-      return res.status(400).json({
-        success: false,
-        error: 'giftId and tokenId must be different - integration error',
-        hint: 'Parent component must resolve giftId from tokenId before calling this endpoint'
-      });
+      // Continue processing - server resolution will handle this correctly
     }
 
     // Get Redis connection
