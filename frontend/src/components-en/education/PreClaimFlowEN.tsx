@@ -111,6 +111,7 @@ interface ValidationState {
   educationRequirements?: EducationRequirement[];
   educationModules?: number[]; // Add modules to state
   sessionToken?: string;
+  giftId?: string; // Add giftId to state for appointment saving
   error?: string;
   remainingAttempts?: number;
 }
@@ -154,6 +155,31 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
 
   // Generate salt on mount, recover session if exists, and trigger confetti
   useEffect(() => {
+    // CRITICAL FIX: Get giftId IMMEDIATELY on mount for appointment/email saving
+    const fetchGiftId = async () => {
+      try {
+        const giftIdResponse = await fetch(`/api/get-gift-id?tokenId=${tokenId}`);
+        if (giftIdResponse.ok) {
+          const giftIdData = await giftIdResponse.json();
+          const resolvedGiftId = giftIdData.giftId?.toString();
+          console.log('📊 GiftId retrieved on mount:', resolvedGiftId);
+
+          // Update validation state with giftId immediately
+          setValidationState(prev => ({
+            ...prev,
+            giftId: resolvedGiftId
+          }));
+        } else {
+          console.warn('Failed to get giftId on mount, will use tokenId fallback');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch giftId on mount:', error);
+      }
+    };
+
+    // Fetch giftId immediately
+    fetchGiftId();
+
     // Try to recover existing session first
     const existingSession = loadClaimSession(tokenId);
     
@@ -791,6 +817,7 @@ export const PreClaimFlowEN: React.FC<PreClaimFlowProps> = ({
           }}
           tokenId={tokenId}
           sessionToken={validationState.sessionToken}
+          giftId={validationState.giftId} // Pass giftId for appointment saving
           onComplete={(gateData) => {
             console.log('Education completed with gate data:', gateData);
             setShowEducationalModule(false);
