@@ -112,43 +112,9 @@ CryptoGiftTheme = {
 - **Glass Morphism**: backdrop-blur-xl + transparencias sofisticadas
 - **Mobile-First**: Touch events = Mouse events, experiencia unificada
 
-### 🏆 ICONOGRAFÍA & BRANDING STRATEGY
-
-#### **Sistema de Iconos Actual:**
-- **Lucide React**: Librería principal para iconos semánticos
-- **Emoji Strategic**: Solo para contextos específicos (celebraciones, etc.)
-- **Dynamic Icons**: React.createElement para render dinámico
-
-#### **🎯 PROPUESTA PROACTIVA - ICONOS PERSONALIZADOS MARCA:**
-**VISIÓN**: Crear system completo de iconos custom con identidad CryptoGift
-```typescript
-// FUTURA IMPLEMENTACIÓN RECOMENDADA
-const CryptoGiftIcons = {
-  // Core Platform Icons
-  CryptoGiftLogo: CustomSVG,     // Logo oficial vectorial
-  NFTWalletIcon: CustomSVG,      // Icono NFT-Wallet único
-  EscrowIcon: CustomSVG,         // Icono sistema escrow
-  
-  // Blockchain Icons
-  BaseChainIcon: CustomSVG,      // Icono Base chain custom
-  EthereumIcon: CustomSVG,       // ETH icon con branding
-  
-  // Education System Icons
-  MasterclassIcon: CustomSVG,    // Icono educación
-  CertificateIcon: CustomSVG,    // Icono certificaciones
-  
-  // Action Icons con Brand Colors
-  GiftIcon: CustomSVG,           // Icono regalar con colores marca
-  ClaimIcon: CustomSVG,          // Icono reclamar
-  SwapIcon: CustomSVG,           // Icono swap
-}
-```
-
-**BENEFICIOS ESTRATÉGICOS**:
-- ✨ **Brand Recognition**: Iconografía única memorable
-- 🎨 **Visual Cohesion**: Consistencia total en design language
-- 🚀 **Professional Polish**: Diferenciación visual competitiva
-- 📱 **Scalable System**: Icons optimizados para todas las resoluciones
+### 🏆 ICONOGRAFÍA & BRANDING
+**Sistema Actual**: Lucide React (iconos semánticos), Emoji estratégico, Dynamic Icons
+**Roadmap**: Custom SVG icon system con identidad CryptoGift para brand recognition y cohesión visual
 
 ---
 
@@ -444,99 +410,16 @@ frontend/src/data/curriculumData.ts                 // ⭐ Complete curriculum d
 - 🏛️ **DeFi Protocol Integration**: Advanced financial products
 
 ### 🎨 DESIGN EVOLUTION ROADMAP
-
-#### **AESTHETIC PHILOSOPHY PROGRESSION**:
-**CURRENT STATE**: Glass Morphism Premium
-**NEXT EVOLUTION**: Neo-Glassmorphism + AI-Enhanced Visuals
-**FUTURE VISION**: Immersive 3D Interface + Haptic Feedback
-
-#### **ICONOGRAPHY STRATEGIC DEVELOPMENT**:
-```typescript
-// PHASE 1: Custom Icon System (IMMEDIATE)
-const CryptoGiftIconsV1 = {
-  // Replace all Lucide icons with branded equivalents
-  brandedLogo: CustomSVG,
-  nftWalletIcon: CustomSVG,
-  educationIcons: CustomSVG[]
-};
-
-// PHASE 2: Animated Icon System (Q4 2025)
-const CryptoGiftIconsV2 = {
-  // Micro-animations for all interactions
-  animatedGiftIcon: LottieAnimation,
-  interactiveButtons: MorphingIcons,
-  contextualFeedback: StateBasedIcons
-};
-
-// PHASE 3: AI-Generated Contextual Icons (2026)
-const CryptoGiftIconsV3 = {
-  // Dynamic icon generation based on user context
-  personalizedIcons: AIGeneratedSVG,
-  contextualAdaptation: SmartIconSystem,
-  brandConsistency: AIBrandCompliance
-};
-```
+**CURRENT**: Glass Morphism Premium → **NEXT**: Neo-Glassmorphism + AI Visuals → **FUTURE**: 3D + Haptic
+**Icon Evolution**: Custom SVG (P1) → Animated Lottie (P2) → AI-Generated (P3)
 
 ### 💡 PROPUESTAS PROACTIVAS INMEDIATAS
-
-#### **🎯 HIGH-IMPACT IMPROVEMENTS READY FOR IMPLEMENTATION**:
-
-**1. COMPREHENSIVE NOTIFICATION INTEGRATION** 📱
-```typescript
-// IMMEDIATE OPPORTUNITY: Global notification system
-<NotificationProvider>
-  // Auto-handles ALL transaction states across platform
-  // Real-time feedback for user operations
-  // Block explorer links integration
-  // Persistent notification history
-</NotificationProvider>
-```
-
-**2. ADVANCED GLASS HEADER ROLLOUT** ✨
-```typescript
-// EXPAND: Implement sophisticated blur headers across ALL pages
-const PlatformPages = [
-  '/knowledge',     // ✅ READY: DashboardGlassHeader
-  '/referrals',     // ✅ READY: AnalyticsGlassHeader  
-  '/my-wallets',    // ✅ IMPLEMENTED: Already using
-  '/token/[id]',    // 🎯 NEXT: ModalGlassHeader
-  '/',              // 🎯 NEXT: NavigationGlassHeader
-];
-```
-
-**3. INTELLIGENT CHAIN SWITCHING UNIVERSAL DEPLOYMENT** 🔗
-```typescript
-// IMPLEMENT: Context-aware chain switching across platform
-const ChainSwitchIntegration = {
-  walletPages: 'Automatic Base Sepolia detection',
-  claimPages: 'Smart network prompting',
-  mintingFlow: 'Pre-transaction network validation',
-  educationFlow: 'Seamless network management'
-};
-```
-
-**4. CREATOR STUDIO TEMPLATE EXPANSION** 🎨
-```typescript
-// EXPAND: Educational content template library
-const TemplateCategories = {
-  onboarding: '10+ wallet setup templates',
-  security: '15+ security awareness templates', 
-  defi: '20+ DeFi education templates',
-  nft: '12+ NFT creation templates',
-  collaboration: '8+ community building templates'
-};
-```
-
-**5. PERFORMANCE MONITORING SYSTEM** 📊
-```typescript
-// IMPLEMENT: Comprehensive performance tracking
-const PerformanceMetrics = {
-  ipfsGatewayLatency: 'Real-time gateway performance',
-  transactionSuccess: 'Success rate monitoring',
-  userExperience: 'Interaction completion rates',
-  educationEngagement: 'Learning completion analytics'
-};
-```
+**HIGH-IMPACT IMPROVEMENTS READY**:
+1. **NotificationProvider**: Global system para transaction/wallet feedback con block explorer links
+2. **Glass Headers**: Expandir a /knowledge, /referrals, /token/[id], / (DashboardGlassHeader variants)
+3. **Chain Switching**: Universal deployment con context-aware detection (wallet/claim/mint/education)
+4. **Creator Templates**: Expand library (onboarding, security, defi, nft, collaboration - 65+ templates)
+5. **Performance Monitoring**: IPFS latency, transaction success, UX completion, education analytics
 
 ---
 
@@ -627,197 +510,38 @@ const PerformanceMetrics = {
 **VALIDATION**: TypeScript clean, ESLint compliant, Vercel deployment successful
 
 ### 🚀 AGOSTO 23, 2025 - MOBILE & UX PERFECTION ✅
-**BREAKTHROUGH SESSION**: Critical mobile experience improvements
+**FIXES**: Mobile IPFS upload (exponential backoff retry 2s→4s→8s), DAO showcase unified (lessonId→sales-masterclass), Theme toggle navigation (separated from Link)
+**FILES**: ipfs.ts, PreClaimFlow.tsx, Navbar.tsx (3 files, 146+/104-)
 
-#### **🎯 MOBILE IPFS UPLOAD FIX - EXPONENTIAL BACKOFF RETRY**
-- **PROBLEMA CRÍTICO**: Los uploads de gifts en móvil siempre fallaban en primer intento
-- **Root Cause**: `validateMultiGatewayAccess` tenía retry loop **INCOMPLETO** (líneas 246-327)
-- **SOLUCIÓN TIPO B**: Completed retry loop con exponential backoff (2s→4s→8s)
-- **IMPACT**: ✅ First-time mobile uploads funcionan automáticamente
+### 🚀 AGOSTO 21, 2025 - KNOWLEDGE ACADEMY COMPLETE ✅
+**BREAKTHROUGH**: TU RUTA DE APRENDIZAJE restaurada (8 módulos curados), Creator Studio (wizard + RuleBuilder + 20+ templates + tab system), Unified Knowledge↔Educational (same Sales Masterclass, LessonModalWrapper universal)
+**FILES**: 15+ across curriculum tree, achievement system, type system
 
-#### **🎯 DAO SHOWCASE UNIFIED - SALES MASTERCLASS**
-- **PROBLEMA**: El DAO showcase "¡Ya eres parte de CryptoGift!" no aparecía en PreClaim
-- **SOLUCIÓN TIPO A**: Cambio `lessonId="claim-first-gift"` → `lessonId="sales-masterclass"`
-- **IMPACT**: ✅ Experiencia espectacular unificada en ambos contextos
+### 🚀 AGOSTO 14, 2025 - EDUCATION SYSTEM FIXES ✅
+**CRITICAL BUGS FIXED**: Missing claimer field, wallet connection timing, gateData fallbacks, modal height
+**MOBILE CLAIMING**: `/api/nft/update-metadata-after-claim` endpoint (Redis sync), NFTs show real images
+**FILES**: 8+ education/mobile systems, TypeScript clean
 
-#### **🔧 THEME TOGGLE NAVIGATION FIX**
-- **PROBLEMA**: Cambiar tema (Dark/Light/Auto) siempre redirigía al inicio
-- **Root Cause**: `ThemeToggle` anidado dentro del `Link href="/"`
-- **SOLUCIÓN TIPO A**: Separated ThemeToggle from Link component
-- **IMPACT**: ✅ Cambio de tema sin perder contexto de página
+### 🚀 AGOSTO 10, 2025 - PRODUCTION FIX ✅
+**CRITICAL**: `req is not defined` in mint-escrow (added req parameter), User-Agent dependencies eliminated (6 locations → timestamp/origin/X-Client-Type)
+**FILES**: 11 files (30+/12-)
 
-**FILES MODIFIED**: 3 files, 146 insertions, 104 deletions
-- `frontend/src/utils/ipfs.ts` (Mobile retry logic)
-- `frontend/src/components/education/PreClaimFlow.tsx` (DAO showcase)
-- `frontend/src/components/Navbar.tsx` (Theme toggle separation)
+### 🚀 AGOSTO 9, 2025 - BASESCAN + DESKTOP ZOOM ✅
+**FIXES**: BaseScan NFT display (`X-Frame-Options: DENY` → `SAMEORIGIN`), Desktop zoom (100% browser zoom perfect), IPFS fallback (triple gateway NFT.Storage→Cloudflare→IPFS.io, 2s timeout)
+**FILES**: Multiple metadata endpoints + fallback systems
 
-### 🚀 AGOSTO 21, 2025 - KNOWLEDGE ACADEMY COMPLETE + LEARNING PATH RESTORED ✅
-**MAJOR BREAKTHROUGH**: Complete Knowledge Academy implementation
-
-#### **🌳 TU RUTA DE APRENDIZAJE - INFORMACIÓN RESTAURADA**
-- **DISCOVERY**: Versión actual usaba datos genéricos, pero commit 7dfa065 tenía nodos específicos curados
-- **SOLUCIÓN**: Best of both worlds - nodos específicos + UI rica completa
-- **RESULT**: ✅ 8 módulos curados con descripciones contextuales detalladas
-
-#### **🏗️ CREATOR STUDIO SYSTEM IMPLEMENTED**
-- **CreatorWizard**: Universal wizard con auto-save y recovery
-- **RuleBuilder**: Visual drag-and-drop para JsonLogic rules
-- **20+ Templates**: Pre-built lessons y campaigns ready to use
-- **Tab System**: Knowledge Academy con 4 tabs integrados
-
-#### **🎯 UNIFIED KNOWLEDGE ↔ EDUCATIONAL SYSTEM**
-- **BREAKTHROUGH**: Same Sales Masterclass usado en ambos contextos
-- **LessonModalWrapper**: Modal universal con estructura GiftWizard
-- **Automatic Registration**: New lessons automáticamente disponibles
-
-**FILES MODIFIED**: 15+ files across learning system
-- Complete curriculum tree implementation
-- Achievement system + progress rings
-- Main Knowledge page integration
-- Type system + data layer updates
-
-### 🚀 AGOSTO 14, 2025 - EDUCATION SYSTEM + CRITICAL FIXES ✅
-**CRITICAL SESSION**: Education system debugging y mobile claim fixes
-
-#### **🔴 CRITICAL EDUCATION BUGS FIXED**:
-1. **Missing claimer field**: LessonModalWrapper added required claimer validation
-2. **Wallet connection timing**: Mobile flow requires wallet before password validation
-3. **Silent gateData fallbacks**: Proper error display instead of dangerous '0x' fallback
-4. **Modal height issues**: Conditional height classes fixed empty space
-
-#### **📱 MOBILE CLAIMING CRISIS RESOLVED**:
-- **Root Cause**: Frontend claims (mobile) no actualizaban Redis metadata
-- **Solution**: `/api/nft/update-metadata-after-claim` endpoint
-- **Impact**: ✅ Mobile NFTs ahora muestran imágenes reales, no placeholders
-
-**FILES MODIFIED**: 8+ files across education y mobile systems
-- Education API fixes + mobile Redis sync
-- Comprehensive error handling improvements
-- TypeScript compilation clean
-
-### 🚀 AGOSTO 10, 2025 - CRITICAL PRODUCTION FIX + AUDIT COMPLIANCE ✅
-**EMERGENCY SESSION**: Production-breaking errors resolved
-
-#### **🔴 CRITICAL ERROR RESOLVED - TIPO A**:
-- **Problem**: `ReferenceError: req is not defined` causing 500 errors in mint-escrow
-- **Root Cause**: `getPublicBaseUrl(req)` called without req parameter
-- **Solution**: Added req parameter to function signature
-- **Impact**: ✅ Complete mint pipeline restored
-
-#### **🧹 USER-AGENT DEPENDENCIES ELIMINATED - TIPO A**:
-- **Problem**: 6 locations with User-Agent dependencies causing CI failures
-- **Solution**: Replaced with stable alternatives (timestamp, origin, X-Client-Type)
-- **Impact**: ✅ CI compatible, headers consistent
-
-**FILES MODIFIED**: 11 files, 30 insertions, 12 deletions
-- Critical mint-escrow fix
-- User-Agent elimination across 7 files
-- Script hardcode fixes
-
-### 🚀 AGOSTO 9, 2025 - BASESCAN COMPATIBILITY + DESKTOP ZOOM FIX ✅
-**COMPREHENSIVE SESSION**: Block explorer compatibility + critical UX fixes
-
-#### **🖼️ BaseScan NFT Image Display - TIPO B**:
-- **Problem**: NFT images not displaying in BaseScan (worked in MetaMask)
-- **Root Cause**: `X-Frame-Options: DENY` interfering with viewport
-- **Solution**: Changed to `X-Frame-Options: SAMEORIGIN`
-- **Impact**: ✅ NFT images display en MetaMask Y BaseScan
-
-#### **🔍 Desktop Zoom Interference - TIPO A**:
-- **Problem**: Page appeared 110% larger, required 90% browser zoom
-- **Root Cause**: Same X-Frame-Options header causing viewport scaling
-- **Solution**: Single line fix DENY → SAMEORIGIN
-- **Impact**: ✅ Perfect display at 100% browser zoom
-
-#### **🌐 IPFS Gateway Fallback System - TIPO B**:
-- **Implementation**: Triple gateway fallback (NFT.Storage → Cloudflare → IPFS.io)
-- **Timeout System**: 2s timeout each con automatic testing
-- **Impact**: ✅ Maximum reliability for block explorer image loading
-
-**FILES MODIFIED**: Multiple metadata endpoints + fallback systems
-- BaseScan compatibility headers
-- Gateway fallback implementation
-- Script migration completion
-
-### 🚀 AGOSTO 4, 2025 - MOBILE UX REVOLUTION R1-R6 COMPLETADO ✅
-**COMPREHENSIVE MOBILE OPTIMIZATION**: Complete mobile experience overhaul
-
-#### **R1 - Mobile Deeplink Authentication - TIPO B**:
-- **Implementation**: Triple fallback system (MetaMask native → custom scheme → universal link)
-- **Features**: User-activation first-line, authenticated page con auto-redirect
-- **Impact**: ✅ Mobile authentication flows directamente de vuelta a la app
-
-#### **R2 - Enhanced MetaMask NFT Visibility - TIPO A**:
-- **Implementation**: Pre-pin TokenURI, smart toast system, user denial handling
-- **Features**: <30s visibility, step-by-step manual instructions
-- **Impact**: ✅ NFTs aparecen inmediatamente en MetaMask mobile
-
-#### **R3 - Spanish Error Messages + Unit Tests - TIPO A**:
-- **Implementation**: Corrected messages, Spanish date format, Jest unit tests
-- **Coverage**: 6 test cases, >95% coverage, all gift states
-- **Impact**: ✅ Mensajes claros en español con fechas específicas
-
-#### **R4 - Vertical Image Layout Fix - TIPO B**:
-- **Implementation**: ResizeObserver, flex wrapper, object-contain fix
-- **Coverage**: GiftSummary, FilterSelector, ImageUpload components
-- **Impact**: ✅ Imágenes verticales completas sin recortes ni márgenes
-
-#### **R5 - Desktop Zoom Compensation - TIPO A**:
-- **Implementation**: CSS @media rules, scale 1.12, WCAG AA compliance
-- **Coverage**: Headers, cards, buttons, inputs, content areas
-- **Impact**: ✅ Desktop UI perfectly scaled, mobile mantiene zoom 0.88
-
-#### **R6 - IPFS Gateway Retry System - TIPO B**:
-- **Implementation**: 3-gateway fallback, exponential backoff, telemetry integration
-- **Features**: Privacy-conscious logging, CID truncation
-- **Impact**: ✅ IPFS images load consistently across all platforms
-
-**PROTOCOL V2 COMPLIANCE**: 4×TIPO A, 2×TIPO B, 0×TIPO C
-**FILES MODIFIED**: Multiple mobile optimization files
+### 🚀 AGOSTO 4, 2025 - MOBILE UX R1-R6 ✅
+**R1**: Deeplink auth (triple fallback MetaMask→custom→universal) | **R2**: MetaMask NFT visibility (<30s, pre-pin TokenURI) | **R3**: Spanish errors + Jest tests (6 cases, >95%) | **R4**: Vertical images (ResizeObserver, object-contain) | **R5**: Desktop zoom (scale 1.12, WCAG AA) | **R6**: IPFS retry (3-gateway, exponential backoff)
 **VALIDATION**: TypeScript clean, ESLint compliant, backward compatible
 
-### 🚀 AGOSTO 2, 2025 - UI SYSTEM REVOLUTION + CRITICAL FIXES ✅
-**COMPREHENSIVE UI OVERHAUL**: Enterprise-grade design system implementation
-
-#### **🖼️ CRITICAL NFT IMAGE DISPLAY FIXES**:
-- **URL Encoding Fix**: Caracteres especiales en nombres NFT
-- **IPFS Gateway Optimization**: Multiple fallback gateways
-- **MetaMask Compatibility**: URLs properly encoded para wallets
-- **Impact**: ✅ NFTs con nombres como "Presentación final.JPEG.jpg" display correctly
-
-#### **🚨 REDIS DEVELOPMENT MODE & EXPIRED GIFTS FIX**:
-- **Development Fallbacks**: Redis no configurado no bloquea funcionalidad
-- **Expired Gift Claims**: Sistema permite claim sin Redis en development  
-- **Production Security**: Mantiene validación estricta en production
-- **Impact**: ✅ Expired gifts claimable without Redis configuration errors
-
-#### **🎨 UNIFIED THEME SYSTEM - CRYPTOGIFT DESIGN LANGUAGE**:
-- **ThemeSystem.tsx**: Complete design system con variants
-- **CryptoGiftTheme**: Unified export para consistent theming
-- **Variant System**: default, highlighted, interactive, warning, success
-- **Integration**: ExpiredGiftManager con ThemeCard styling
-
-#### **📱 GLASS PANEL HEADER CON EFECTOS AVANZADOS**:
-- **GlassPanelHeader**: Advanced glassmorphism con multiple blur intensities
-- **Scroll Effects**: Dynamic blur y opacity based on scroll position
-- **Pre-configured Variants**: Navigation, Dashboard, Modal headers
-- **Integration**: My Wallets con DashboardGlassHeader
-
-#### **🔗 INTELLIGENT CHAIN SWITCHING SYSTEM**:
-- **ChainSwitchingSystem**: Automatic detection con smart prompts
-- **Context-aware Switching**: Beautiful modal interfaces
-- **QuickChainSwitch**: Compact component para headers/toolbars
-- **Multi-chain Support**: Ethereum Sepolia y Base Sepolia networks
-
-#### **🔔 COMPREHENSIVE NOTIFICATION SYSTEM**:
-- **NotificationProvider**: React Context para global notification state
-- **Transaction Notifications**: Real-time feedback para pending, success, failed
-- **Wallet Action Feedback**: Comprehensive feedback para all operations
-- **Block Explorer Links**: Transaction hash links a BaseScan/Etherscan
-- **Auto-dismiss Logic**: Configurable timing con persistent options
-
-**FILES MODIFIED**: 15+ files across UI system
-**ACHIEVEMENTS**: Enterprise-grade design system, performance optimizations, modal UX improvements
+### 🚀 AGOSTO 2, 2025 - UI SYSTEM REVOLUTION ✅
+**NFT FIXES**: URL encoding (special chars), IPFS fallback gateways, MetaMask compatibility
+**REDIS**: Development mode fallbacks, expired gifts claimable
+**THEME SYSTEM**: ThemeSystem.tsx (variants: default/highlighted/interactive/warning/success), CryptoGiftTheme unified
+**GLASS HEADERS**: GlassPanelHeader (blur intensities, scroll effects, Navigation/Dashboard/Modal variants)
+**CHAIN SWITCHING**: ChainSwitchingSystem (auto-detection, context-aware, QuickChainSwitch, multi-chain)
+**NOTIFICATIONS**: NotificationProvider (transaction/wallet feedback, block explorer links, auto-dismiss)
+**FILES**: 15+ across UI system
 
 ---
 
@@ -894,6 +618,50 @@ const PerformanceMetrics = {
 **PRESERVAR FUNCIONALIDAD PRIMERO.**
 **PROPONER MEJORAS PROACTIVAS ACORDE A LA VISIÓN.**
 **SER EL MEJOR COLABORADOR TÉCNICO POSIBLE.**
+
+---
+
+## 📝 GUÍAS DE MANTENIMIENTO DEL CLAUDE.MD
+
+### ⚠️ LÍMITE DE CARACTERES: 40,000 caracteres máximo (actual: optimizado)
+
+### 🔧 CÓMO ACTUALIZAR SIN EXCEDER LÍMITE:
+
+#### **AL AÑADIR NUEVAS SESIONES:**
+1. **Formato Compacto**: Usar formato condensado tipo AGOSTO 2025 (bullet points, pipes |)
+2. **Información Esencial**: Solo problema/solución/archivos/resultado
+3. **Archivar Sesiones Antiguas**: Mover sesiones >6 meses a `CLAUDE_ARCHIVE.md`
+
+#### **TEMPLATE PARA NUEVAS SESIONES:**
+```markdown
+### 🚀 [FECHA] - [TÍTULO DESCRIPTIVO] ✅
+**PROBLEMA**: [Descripción breve]
+**SOLUCIÓN**: [Fix implementado]
+**FILES**: [Archivos modificados] ([líneas +/-])
+**RESULTADO**: ✅ [Impacto verificable]
+```
+
+#### **SECCIONES A COMPRIMIR PRIMERO (SI SE EXCEDE LÍMITE):**
+1. **Historial de Sesiones**: Condensar sesiones >3 meses
+2. **Roadmap Futuro**: Reducir detalles de fases lejanas (Fase 3-4)
+3. **Propuestas Proactivas**: Mantener solo lista, eliminar código ejemplo
+4. **Design Roadmap**: Formato ultra-compacto arrow-based
+
+#### **MANTENER SIEMPRE COMPLETAS:**
+- ✅ Contratos Smart desplegados (addresses críticas)
+- ✅ Stack tecnológico core y versiones
+- ✅ Sistemas críticos operativos (R1-R6, Education, etc.)
+- ✅ Estructura de archivos críticos
+- ✅ Protocolos de desarrollo obligatorios
+- ✅ Último commit & cambios recientes
+
+### 📊 VERIFICACIÓN DE TAMAÑO:
+```bash
+# Contar caracteres actuales
+wc -m CLAUDE.md
+
+# Si excede 40,000 → comprimir historial o mover a archivo
+```
 
 ---
 

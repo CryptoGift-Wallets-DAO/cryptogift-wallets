@@ -20,7 +20,7 @@ interface AppointmentRequest {
   appointmentData: {
     eventName?: string;
     eventDate: string;
-    eventTime: string;
+    eventTime?: string; // ENHANCED: Now optional - will fallback to '00:00' if not provided
     duration?: number;
     timezone?: string;
     meetingUrl?: string;
@@ -57,10 +57,11 @@ export default async function handler(
     }: AppointmentRequest = req.body;
 
     // CRITICAL: BOTH giftId and tokenId are now REQUIRED
-    if (!giftId || !tokenId || !appointmentData || !appointmentData.eventDate || !appointmentData.eventTime) {
+    // ENHANCED: eventTime is now optional with sensible fallback
+    if (!giftId || !tokenId || !appointmentData || !appointmentData.eventDate) {
       return res.status(400).json({
         success: false,
-        error: 'giftId, tokenId, appointmentData.eventDate, and appointmentData.eventTime are all required',
+        error: 'giftId, tokenId, and appointmentData.eventDate are required (eventTime is optional)',
         received: {
           giftId: !!giftId,
           tokenId: !!tokenId,
@@ -136,12 +137,21 @@ export default async function handler(
     });
 
     // Prepare data to save
+    // ENHANCED: Use fallback for eventTime if not provided
+    const eventTime = appointmentData.eventTime || '00:00';
+
+    console.log('📅 Using eventTime:', {
+      provided: appointmentData.eventTime,
+      fallback: !appointmentData.eventTime,
+      final: eventTime
+    });
+
     const appointmentRecord = {
       giftId: realGiftId,
       tokenId: tokenIdStr || '',
       eventName: appointmentData.eventName || 'Consulta CryptoGift',
       eventDate: appointmentData.eventDate,
-      eventTime: appointmentData.eventTime,
+      eventTime, // Use fallback-enhanced eventTime
       duration: appointmentData.duration || 30,
       timezone: appointmentData.timezone || 'UTC',
       meetingUrl: appointmentData.meetingUrl || '',
@@ -159,7 +169,7 @@ export default async function handler(
     const updates: Record<string, any> = {
       appointment_scheduled: 'true',
       appointment_date: appointmentData.eventDate,
-      appointment_time: appointmentData.eventTime,
+      appointment_time: eventTime, // Use fallback-enhanced eventTime
       appointment_duration: appointmentRecord.duration,
       appointment_timezone: appointmentRecord.timezone,
       appointment_meeting_url: appointmentRecord.meetingUrl,
@@ -218,7 +228,8 @@ export default async function handler(
       savedToKey: realGiftDetailKey,
       appointmentKey,
       eventDate: appointmentData.eventDate,
-      eventTime: appointmentData.eventTime,
+      eventTime, // Use fallback-enhanced eventTime
+      eventTimeSource: appointmentData.eventTime ? 'calendly' : 'fallback',
       clientVsServer: clientGiftId === realGiftId ? 'MATCH' : 'MISMATCH_SERVER_PRIORITIZED'
     });
 
@@ -226,14 +237,15 @@ export default async function handler(
       realGiftId,
       appointmentKey,
       eventDate: appointmentData.eventDate,
-      eventTime: appointmentData.eventTime
+      eventTime, // Use fallback-enhanced eventTime
+      usedFallback: !appointmentData.eventTime
     });
 
     debugLogger.operation('Appointment saved', {
       realGiftId,
       tokenId: tokenIdStr,
       eventDate: appointmentData.eventDate,
-      eventTime: appointmentData.eventTime,
+      eventTime, // Use fallback-enhanced eventTime
       timezone: appointmentData.timezone
     });
 

@@ -80,10 +80,58 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
       });
 
       // Extraer información del evento de Calendly
+      // CRITICAL FIX: Robust eventTime extraction with multiple fallbacks
+      let eventTime = '00:00'; // Sensible default
+
+      // Try primary source: eventData.event.start_time
+      if (eventData.event?.start_time) {
+        try {
+          eventTime = new Date(eventData.event.start_time).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+        } catch (e) {
+          console.warn('⚠️ Failed to parse event.start_time, trying fallback');
+        }
+      }
+
+      // Try fallback source: payload.event.start_time
+      if (eventTime === '00:00' && eventData.payload?.event?.start_time) {
+        try {
+          eventTime = new Date(eventData.payload.event.start_time).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+        } catch (e) {
+          console.warn('⚠️ Failed to parse payload.event.start_time, using default');
+        }
+      }
+
+      // Try alternative: scheduled_time
+      if (eventTime === '00:00' && eventData.event?.scheduled_time) {
+        try {
+          eventTime = new Date(eventData.event.scheduled_time).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+        } catch (e) {
+          console.warn('⚠️ Failed to parse scheduled_time');
+        }
+      }
+
+      console.log('📅 Extracted eventTime:', {
+        eventTime,
+        rawStartTime: eventData.event?.start_time,
+        source: eventData.event?.start_time ? 'event.start_time' : 'fallback'
+      });
+
       const appointmentData = {
         eventName: eventData.event?.event_type_name || 'Consulta CryptoGift',
         eventDate: eventData.event?.start_time ? new Date(eventData.event.start_time).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        eventTime: eventData.event?.start_time ? new Date(eventData.event.start_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '',
+        eventTime, // Use robustly extracted time
         duration: eventData.event?.duration || 30,
         timezone: eventData.event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         meetingUrl: eventData.event?.location?.join_url || eventData.event?.location || '',

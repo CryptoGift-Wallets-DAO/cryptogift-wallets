@@ -629,20 +629,29 @@ const SALES_BLOCKS: SalesBlock[] = [
 
 interface SalesMasterclassProps {
   educationalMode?: boolean;
+  giftId?: string; // CRITICAL FIX: Add giftId for appointment tracking
+  tokenId?: string; // CRITICAL FIX: Add tokenId for appointment tracking
   onEducationComplete?: () => void;
   onShowEmailVerification?: () => Promise<void>;
   onShowCalendar?: () => Promise<void>;
   verifiedEmail?: string;
 }
 
-const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({ 
+const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
   educationalMode = false,
+  giftId, // CRITICAL FIX: Receive giftId from parent
+  tokenId, // CRITICAL FIX: Receive tokenId from parent
   onEducationComplete,
   onShowEmailVerification,
   onShowCalendar,
   verifiedEmail
 }) => {
-  console.log('🚀 SALES MASTERCLASS INIT:', { educationalMode, hasOnEducationComplete: !!onEducationComplete });
+  console.log('🚀 SALES MASTERCLASS INIT:', {
+    educationalMode,
+    hasOnEducationComplete: !!onEducationComplete,
+    giftId,
+    tokenId
+  });
   
   // Defensive initialization - ensure all state variables are properly initialized
   const [isComponentInitialized, setIsComponentInitialized] = useState(false);
@@ -1568,6 +1577,8 @@ const SalesMasterclassEN: React.FC<SalesMasterclassProps> = ({
         <CalendarBookingModal
           isOpen={showCalendar}
           onClose={() => setShowCalendar(false)}
+          giftId={giftId} // CRITICAL FIX: Pass giftId for appointment tracking
+          tokenId={tokenId} // CRITICAL FIX: Pass tokenId for appointment tracking
           userEmail={verifiedEmail || undefined}
           userName={leadData.contact || undefined}
           source="masterclass"
