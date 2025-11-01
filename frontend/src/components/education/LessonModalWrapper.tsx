@@ -140,6 +140,9 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
+  // CRITICAL FIX: Track completion vs cancellation
+  const [emailVerificationSuccess, setEmailVerificationSuccess] = useState<boolean>(false);
+  const [calendarBookingSuccess, setCalendarBookingSuccess] = useState<boolean>(false);
   const [completionData, setCompletionData] = useState<{
     email?: string;
     questionsScore?: { correct: number; total: number };
@@ -154,6 +157,10 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   }>({});
   const account = useActiveAccount();
   const contentScrollRef = useRef<HTMLDivElement>(null);
+
+  // CRITICAL FIX: Refs to store Promise resolvers/rejectors to avoid stale closures
+  const emailVerificationResolverRef = useRef<{ resolve: () => void; reject: (error: Error) => void } | null>(null);
+  const calendarBookingResolverRef = useRef<{ resolve: () => void; reject: (error: Error) => void } | null>(null);
 
   // FASE 4: connectWallet() abstraction with Promise-based API
   const connectWallet = useCallback((): Promise<string> => {
@@ -241,16 +248,44 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         address: account.address,
         showSuccess
       });
-      
+
       // Hide the connect button since wallet is now connected
       setShowConnectWallet(false);
-      
+
       // Process EIP-712 generation after a small delay to ensure smooth UX
       setTimeout(() => {
         processEIP712Generation();
       }, 500);
     }
   }, [account?.address, showConnectWallet, showSuccess]);
+
+  // CRITICAL FIX: Handle email verification modal closure (rejection on cancel)
+  useEffect(() => {
+    // If modal was open and now closed
+    if (!showEmailVerification && emailVerificationResolverRef.current) {
+      // Check if it was successful or cancelled
+      if (!emailVerificationSuccess) {
+        console.log('❌ Email verification cancelled by user (modal closed without success)');
+        emailVerificationResolverRef.current.reject(new Error('Email verification cancelled'));
+        emailVerificationResolverRef.current = null;
+      }
+      // If successful, the resolver was already called in handleEmailVerified
+    }
+  }, [showEmailVerification, emailVerificationSuccess]);
+
+  // CRITICAL FIX: Handle calendar booking modal closure (rejection on cancel)
+  useEffect(() => {
+    // If modal was open and now closed
+    if (!showCalendar && calendarBookingResolverRef.current) {
+      // Check if it was successful or cancelled
+      if (!calendarBookingSuccess) {
+        console.log('❌ Calendar booking cancelled by user (modal closed without success)');
+        calendarBookingResolverRef.current.reject(new Error('Calendar booking cancelled'));
+        calendarBookingResolverRef.current = null;
+      }
+      // If successful, the resolver was already called in handleCalendarBooked
+    }
+  }, [showCalendar, calendarBookingSuccess]);
 
   const handleLessonComplete = async (data?: {
     email?: string;
@@ -305,37 +340,25 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   // FASE 1.2: Async functions for email verification and calendar
   const handleShowEmailVerification = async (): Promise<void> => {
     console.log('📧 Showing email verification modal');
+    setEmailVerificationSuccess(false);  // Reset success flag
     setShowEmailVerification(true);
-    
-    // Return a Promise that resolves when modal closes
-    return new Promise((resolve) => {
-      const checkModalClosed = () => {
-        if (!showEmailVerification) {
-          resolve();
-        } else {
-          setTimeout(checkModalClosed, 100);
-        }
-      };
-      // Start checking after a short delay
-      setTimeout(checkModalClosed, 100);
+
+    // CRITICAL FIX: Return a Promise and store resolve/reject in ref to avoid stale closures
+    return new Promise((resolve, reject) => {
+      emailVerificationResolverRef.current = { resolve, reject };
+      console.log('📧 Promise resolvers stored in ref');
     });
   };
 
   const handleShowCalendar = async (): Promise<void> => {
     console.log('📅 Showing calendar booking modal');
+    setCalendarBookingSuccess(false);  // Reset success flag
     setShowCalendar(true);
-    
-    // Return a Promise that resolves when modal closes
-    return new Promise((resolve) => {
-      const checkModalClosed = () => {
-        if (!showCalendar) {
-          resolve();
-        } else {
-          setTimeout(checkModalClosed, 100);
-        }
-      };
-      // Start checking after a short delay
-      setTimeout(checkModalClosed, 100);
+
+    // CRITICAL FIX: Return a Promise and store resolve/reject in ref to avoid stale closures
+    return new Promise((resolve, reject) => {
+      calendarBookingResolverRef.current = { resolve, reject };
+      console.log('📅 Promise resolvers stored in ref');
     });
   };
 
@@ -346,6 +369,7 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
       willSetState: true,
       timestamp: new Date().toISOString()
     });
+    setEmailVerificationSuccess(true);  // CRITICAL FIX: Mark as successful before closing
     setVerifiedEmail(email);
     setShowEmailVerification(false);
 
@@ -406,6 +430,13 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
       }
     }
 
+    // CRITICAL FIX: Resolve the Promise directly from ref to avoid stale closure
+    if (emailVerificationResolverRef.current) {
+      console.log('✅ Resolving email verification Promise');
+      emailVerificationResolverRef.current.resolve();
+      emailVerificationResolverRef.current = null; // Clear ref
+    }
+
     // Verify state was set
     setTimeout(() => {
       console.error('🔍 EMAIL STATE AFTER SET:', {
@@ -418,7 +449,15 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   // Handle calendar booking completion
   const handleCalendarBooked = () => {
     console.log('✅ Calendar booking completed');
+    setCalendarBookingSuccess(true);  // Mark as successful
     setShowCalendar(false);
+
+    // CRITICAL FIX: Resolve the Promise directly from ref to avoid stale closure
+    if (calendarBookingResolverRef.current) {
+      console.log('✅ Resolving calendar booking Promise');
+      calendarBookingResolverRef.current.resolve();
+      calendarBookingResolverRef.current = null; // Clear ref
+    }
     // FIX: NO llamar handleEducationCompletionAfterEmail aquí
     // Solo cerrar el modal, el usuario debe hacer clic en "CONTINUAR AL REGALO"
   };
