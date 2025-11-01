@@ -644,6 +644,8 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                 <div className="h-full">
                   <SalesMasterclassEN
                     educationalMode={mode === 'educational'}
+                    giftId={giftId} // CRITICAL FIX: Pass giftId for appointment tracking
+                    tokenId={tokenId} // CRITICAL FIX: Pass tokenId for appointment tracking
                     onEducationComplete={handleLessonComplete}
                     onShowEmailVerification={handleShowEmailVerification}
                     onShowCalendar={handleShowCalendar}
