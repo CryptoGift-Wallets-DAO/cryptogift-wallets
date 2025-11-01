@@ -244,7 +244,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Don't fail the whole claim for metadata update issues
     }
 
-    // CRITICAL FIX: Store claimer information in gift:detail for analytics
+    /**
+     * DUAL STORAGE PATTERN (REQUIRED - DO NOT REMOVE)
+     *
+     * We write claim data to BOTH keys:
+     * 1. gift:detail:{giftId} - Canonical source (complete data)
+     * 2. gift:detail:{tokenId} - Search index/fallback (enables lookups)
+     *
+     * WHY BOTH?
+     * - Analytics (gift-profile.ts) reads BOTH and merges when giftId incomplete
+     * - TokenId→GiftId mapping can fail (only searches last 100 gifts)
+     * - Dual write enables resilient lookups by either ID
+     *
+     * This is NOT duplication - it's a Redis best practice for:
+     * - Multi-index support (search by giftId OR tokenId)
+     * - Hot key mitigation (distribute read load)
+     * - Fallback resilience (when mapping fails)
+     *
+     * VERIFIED PATTERN: Used in mint-escrow, claim-nft, save-appointment, save-email
+     */
     try {
       const redis = validateRedisForCriticalOps('Store claim data');
 
@@ -254,8 +272,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const resolvedGiftId = await getGiftIdFromTokenId(tokenId);
         const giftId = resolvedGiftId?.toString() || existingMetadata?.giftId || tokenId;
 
-        // Store claimer data in gift:detail hash
-        const giftDetailKey = `gift:detail:${giftId}`;
+        // Prepare claim updates
         const claimUpdates = {
           claimer: claimerAddress,
           claimedAt: Date.now().toString(),
@@ -264,19 +281,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: 'claimed'
         };
 
+        // PRIMARY: Write to canonical giftId key
+        const giftDetailKey = `gift:detail:${giftId}`;
         await redis.hset(giftDetailKey, claimUpdates);
-        console.log(`✅ Claimer data stored in ${giftDetailKey}:`, {
+        console.log(`✅ PRIMARY STORAGE: Stored in ${giftDetailKey}:`, {
           claimer: claimerAddress.slice(0, 10) + '...',
           giftId,
           tokenId
         });
 
-        // CRITICAL FIX 2: Also store in reverse - using tokenId as giftId for double lookup
-        // This ensures we can find data regardless of which ID is used
+        // MIRROR: Write to tokenId key for search/fallback (REQUIRED by analytics)
         if (giftId !== tokenId) {
           const tokenDetailKey = `gift:detail:${tokenId}`;
           await redis.hset(tokenDetailKey, claimUpdates);
-          console.log(`✅ DOUBLE STORAGE: Also stored in ${tokenDetailKey} for tokenId lookup`);
+          console.log(`✅ MIRROR STORAGE: Also stored in ${tokenDetailKey} for tokenId lookup`);
         }
       }
     } catch (claimStorageError) {

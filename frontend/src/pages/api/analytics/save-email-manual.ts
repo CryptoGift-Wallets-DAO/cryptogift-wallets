@@ -102,19 +102,19 @@ export default async function handler(
       updates.appointment_created_at = Date.now().toString();
     }
 
-    // CRITICAL: Save ONLY to canonical giftId key (SINGLE SOURCE OF TRUTH)
+    // PRIMARY: Write to canonical giftId key (complete data source)
     const realGiftDetailKey = `gift:detail:${realGiftId}`;
     await redis.hset(realGiftDetailKey, updates);
-    console.error(`✅ CANONICAL STORAGE: Saved to ${realGiftDetailKey} (no tokenId key)`);
+    console.error(`✅ PRIMARY STORAGE: Saved to ${realGiftDetailKey}`);
 
-    // TELEMETRY: Alert if we would have written to tokenId key (regression detection)
+    // MIRROR: Write to tokenId key for search/fallback (REQUIRED by analytics merge logic)
+    // Analytics (gift-profile.ts) reads BOTH keys and merges when giftId incomplete
     if (tokenIdStr && tokenIdStr !== realGiftId) {
-      console.error('📊 TELEMETRY: Would have written to tokenId key in old code', {
-        wouldHaveWrittenTo: `gift:detail:${tokenIdStr}`,
-        actuallyWroteTo: realGiftDetailKey,
-        prevention: 'GUARD_ACTIVE'
-      });
+      const tokenDetailKey = `gift:detail:${tokenIdStr}`;
+      await redis.hset(tokenDetailKey, updates);
+      console.error(`✅ MIRROR STORAGE: Also saved to ${tokenDetailKey} for tokenId lookup`);
     }
+
 
     console.error('📊 SAVE EMAIL MANUAL - COMPLETE:', {
       realGiftId,
