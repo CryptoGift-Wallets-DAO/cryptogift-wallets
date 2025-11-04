@@ -193,14 +193,55 @@ export default async function handler(
       tokenId = giftIdParam;
       console.error(`✅ MAPPING RESOLVED: tokenId ${tokenId} → giftId ${giftId}`);
     } else {
-      // No mapping found - need to check if param is tokenId or giftId
-      // Strategy: Try to find gift:detail using tokenId field
-      console.error(`⚠️ NO MAPPING: Searching gift:detail by tokenId field`);
+      // No mapping found - need to check events stream for correct giftId
+      // CRITICAL FIX (Gift #357): Events stream is source of truth when mapping fails
+      console.error(`⚠️ NO MAPPING: Searching events stream for tokenId=${giftIdParam}`);
 
-      // First assume param is giftId and check if it exists
-      giftId = giftIdParam;
-      tokenId = giftIdParam;
-      console.error(`🔍 FALLBACK: Trying giftId=${giftId} (param as giftId)`);
+      // Try to get Redis connection for events stream search
+      let redis: Redis | null = null;
+      try {
+        redis = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN
+        });
+      } catch (e) {
+        console.error('❌ Redis connection failed during ID resolution');
+      }
+
+      if (redis) {
+        try {
+          // Search events stream for most recent GiftCreated with this tokenId
+          const eventsRaw = await redis.xrevrange('ga:v1:events', '+', '-', 500);
+          const { parseStreamResponse } = await import('@/lib/analytics/canonicalEvents');
+          const eventsArray = parseStreamResponse(eventsRaw);
+
+          // Find most recent GiftCreated event with matching tokenId
+          const createEvent = eventsArray.find(([_, fields]: [string, any]) =>
+            fields.type === 'GiftCreated' && fields.tokenId === giftIdParam
+          );
+
+          if (createEvent) {
+            const [_, eventFields] = createEvent;
+            giftId = eventFields.giftId;
+            tokenId = eventFields.tokenId;
+            console.error(`✅ EVENTS STREAM RESOLVED: tokenId ${tokenId} → giftId ${giftId} (from GiftCreated event)`);
+          } else {
+            // No event found, assume param is giftId (old behavior)
+            giftId = giftIdParam;
+            tokenId = giftIdParam;
+            console.error(`🔍 FALLBACK: No event found, using param as giftId=${giftId}`);
+          }
+        } catch (eventsError) {
+          console.error('❌ Events stream search failed:', eventsError);
+          giftId = giftIdParam;
+          tokenId = giftIdParam;
+        }
+      } else {
+        // No Redis, fallback to old behavior
+        giftId = giftIdParam;
+        tokenId = giftIdParam;
+        console.error(`🔍 FALLBACK: No Redis, using param as giftId=${giftId}`);
+      }
     }
 
     // Initialize profile
