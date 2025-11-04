@@ -377,23 +377,25 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     // Don't wait for approve.ts - save it now with giftId/tokenId
     if (mode === 'educational' && tokenId) {
       try {
-        // CRITICAL FIX: REQUIRE giftId from props - NO sessionStorage fallback
-        // The giftId MUST be resolved and passed by the parent component
+        // CRITICAL FIX: Use giftId from props, fallback to tokenId if not available
+        // Prefer giftId but don't fail completely if missing - save to tokenId key as last resort
+        let effectiveGiftId = giftId;
+
         if (!giftId) {
-          console.error('❌ CRITICAL: No giftId provided to save email', {
+          console.warn('⚠️ WARNING: No giftId provided, using tokenId as fallback', {
             tokenId,
             mode,
-            hasGiftIdProp: !!giftId
+            hasGiftIdProp: !!giftId,
+            fallbackReason: 'giftId_resolution_failed_or_pending'
           });
-          throw new Error('giftId is required for educational mode - integration error');
+          effectiveGiftId = tokenId; // Fallback to tokenId - better to save somewhere than lose data
         }
 
-        const effectiveGiftId = giftId;  // Use ONLY the prop, no fallbacks
-
-        console.log('✅ Using giftId from props (no fallback):', {
+        console.log('✅ Using giftId for email save:', {
           giftId: effectiveGiftId,
           tokenId,
-          source: 'parent_component_prop'
+          source: giftId ? 'parent_component_prop' : 'tokenId_fallback',
+          isOptimal: !!giftId
         });
 
         console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {

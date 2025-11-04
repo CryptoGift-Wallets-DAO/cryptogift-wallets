@@ -210,8 +210,9 @@ export default async function handler(
 
       if (redis) {
         try {
-          // Search events stream for most recent GiftCreated with this tokenId
-          const eventsRaw = await redis.xrevrange('ga:v1:events', '+', '-', 500);
+          // CRITICAL FIX: Expand search to 2000 events to cover older tokens (348-355 range)
+          // Previous limit of 500 was insufficient for gifts created earlier in deployment
+          const eventsRaw = await redis.xrevrange('ga:v1:events', '+', '-', 2000);
           const { parseStreamResponse } = await import('@/lib/analytics/canonicalEvents');
           const eventsArray = parseStreamResponse(eventsRaw);
 
@@ -692,8 +693,9 @@ export default async function handler(
 
       // C. Check events stream
       try {
-        // CRITICAL FIX #2: Use XREVRANGE to read RECENT events (not oldest 100)
-        const eventsRaw = await redis.xrevrange('ga:v1:events', '+', '-', 500);
+        // CRITICAL FIX: Expand search to 2000 events to cover older tokens (348-355 range)
+        // Previous limit of 500 was insufficient for gifts created earlier in deployment
+        const eventsRaw = await redis.xrevrange('ga:v1:events', '+', '-', 2000);
 
         // CRITICAL FIX: Parse Upstash stream response correctly
         const { parseStreamResponse } = await import('@/lib/analytics/canonicalEvents');

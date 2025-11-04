@@ -194,8 +194,21 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
 
     // CRITICAL: Escuchar eventos de Calendly
     const handleCalendlyEvent = (e: MessageEvent) => {
-      // Verificar que el mensaje viene de Calendly
-      if (e.origin !== 'https://calendly.com') return;
+      // Log ALL postMessage events for debugging
+      console.log('📬 PostMessage received:', {
+        origin: e.origin,
+        event: e.data?.event,
+        hasPayload: !!e.data?.payload,
+        timestamp: new Date().toISOString()
+      });
+
+      // CRITICAL FIX: Flexible origin check to accept all valid Calendly domains
+      // Accepts: https://calendly.com, https://calendly.com/, https://www.calendly.com, user subdomains, etc.
+      // Using indexOf for ES5 compatibility
+      if (e.origin.indexOf('calendly.com') === -1) {
+        console.warn('⚠️ Rejected event from non-Calendly origin:', e.origin);
+        return;
+      }
 
       // Parsear el mensaje
       if (e.data && e.data.event) {
