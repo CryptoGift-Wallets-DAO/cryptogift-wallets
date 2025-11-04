@@ -331,27 +331,31 @@ export default async function handler(
         claimerValue: (giftDetailsByTokenId as any)?.claimer
       });
 
-      // MERGE STRATEGY: Use tokenId data if it has claimer, otherwise use giftId data
-      if (giftDetailsByTokenId && Object.keys(giftDetailsByTokenId).length > 0 && (giftDetailsByTokenId as any).claimer) {
-        console.error('✅ USING TOKENID DATA (has claimer)');
+      // CORRECTED MERGE STRATEGY (Gift #357 fix): giftId data is PRIMARY, tokenId only fills gaps
+      // CRITICAL: After events stream resolution, giftId is the REAL canonical ID
+      // tokenId key may contain stale data from previous gifts that reused the same tokenId
+      if (giftDetails && Object.keys(giftDetails).length > 0) {
+        console.error('✅ USING GIFTID DATA AS PRIMARY (canonical source)');
 
-        // If giftId data exists, MERGE (keep education from giftId, claimer from tokenId)
-        if (giftDetails && Object.keys(giftDetails).length > 0) {
-          console.error('🔀 MERGING: education from giftId + claimer/email/appointment from tokenId');
+        // If tokenId data exists, use it ONLY to fill gaps where giftId data is missing
+        if (giftDetailsByTokenId && Object.keys(giftDetailsByTokenId).length > 0) {
+          console.error('🔀 MERGING: giftId PRIMARY + tokenId for missing fields only');
           giftDetails = {
-            ...giftDetails,
-            // Claimer data (existing)
-            claimer: (giftDetailsByTokenId as any).claimer,
-            claimedAt: (giftDetailsByTokenId as any).claimedAt,
-            status: 'claimed',
+            ...giftDetailsByTokenId, // Base: tokenId data (fallback)
+            ...giftDetails, // Override: giftId data (PRIORITY - overwrites tokenId)
 
-            // Email data (CRITICAL FIX: merge from tokenId if giftId doesn't have it)
+            // CRITICAL: For claim data, ALWAYS prioritize giftId (canonical)
+            claimer: giftDetails.claimer || (giftDetailsByTokenId as any).claimer,
+            claimedAt: giftDetails.claimedAt || (giftDetailsByTokenId as any).claimedAt,
+            status: giftDetails.status || (giftDetailsByTokenId as any).status || 'claimed',
+
+            // Email data: giftId first, tokenId fallback
             email_plain: giftDetails.email_plain || (giftDetailsByTokenId as any).email_plain,
             email_encrypted: giftDetails.email_encrypted || (giftDetailsByTokenId as any).email_encrypted,
             email_hmac: giftDetails.email_hmac || (giftDetailsByTokenId as any).email_hmac,
             email_warning: giftDetails.email_warning || (giftDetailsByTokenId as any).email_warning,
 
-            // Appointment data (CRITICAL FIX: merge from tokenId if giftId doesn't have it)
+            // Appointment data: giftId first, tokenId fallback
             appointment_scheduled: giftDetails.appointment_scheduled || (giftDetailsByTokenId as any).appointment_scheduled,
             appointment_date: giftDetails.appointment_date || (giftDetailsByTokenId as any).appointment_date,
             appointment_time: giftDetails.appointment_time || (giftDetailsByTokenId as any).appointment_time,
@@ -364,13 +368,11 @@ export default async function handler(
             appointment_invitee_email_plain: giftDetails.appointment_invitee_email_plain || (giftDetailsByTokenId as any).appointment_invitee_email_plain,
             appointment_created_at: giftDetails.appointment_created_at || (giftDetailsByTokenId as any).appointment_created_at
           };
-        } else {
-          // No giftId data, use tokenId data completely
-          giftDetails = giftDetailsByTokenId;
         }
-      } else if (!giftDetails || Object.keys(giftDetails).length === 0) {
-        // Neither has data, use whatever we got
-        giftDetails = giftDetailsByTokenId || giftDetails;
+      } else if (giftDetailsByTokenId && Object.keys(giftDetailsByTokenId).length > 0) {
+        // No giftId data at all, use tokenId data as fallback
+        console.error('⚠️ FALLBACK: Using tokenId data (no giftId data found)');
+        giftDetails = giftDetailsByTokenId;
       }
 
       // CRITICAL FIX: Always set claimer at root level if it exists
