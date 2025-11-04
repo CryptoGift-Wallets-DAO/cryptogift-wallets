@@ -496,7 +496,7 @@ export default function GiftDetailsPage() {
                 )}
 
                 {/* Claimed */}
-                {gift.claim?.claimedAt && (
+                {gift.claim?.claimedAt && !gift.status.isInEscrow && (
                   <div className="relative mb-6">
                     <div className="absolute -left-8 w-4 h-4 bg-green-500 rounded-full ring-4 ring-green-100 dark:ring-green-900"></div>
                     <div className="text-sm font-medium">🏆 Regalo Reclamado</div>
