@@ -281,20 +281,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: 'claimed'
         };
 
-        // PRIMARY: Write to canonical giftId key
+        // CRITICAL FIX: READ-BEFORE-WRITE to preserve email/education fields
+        // Email and appointment data may already exist from pre-claim flow
         const giftDetailKey = `gift:detail:${giftId}`;
-        await redis.hset(giftDetailKey, claimUpdates);
+        const existingData = await redis.hgetall(giftDetailKey);
+        const mergedUpdates = { ...existingData, ...claimUpdates };
+
+        // PRIMARY: Write merged data to canonical giftId key
+        await redis.hset(giftDetailKey, mergedUpdates);
         console.log(`✅ PRIMARY STORAGE: Stored in ${giftDetailKey}:`, {
           claimer: claimerAddress.slice(0, 10) + '...',
           giftId,
-          tokenId
+          tokenId,
+          preservedFields: Object.keys(existingData).length
         });
 
-        // MIRROR: Write to tokenId key for search/fallback (REQUIRED by analytics)
+        // MIRROR: Write merged data to tokenId key for search/fallback (REQUIRED by analytics)
         if (giftId !== tokenId) {
           const tokenDetailKey = `gift:detail:${tokenId}`;
-          await redis.hset(tokenDetailKey, claimUpdates);
-          console.log(`✅ MIRROR STORAGE: Also stored in ${tokenDetailKey} for tokenId lookup`);
+          const existingMirrorData = await redis.hgetall(tokenDetailKey);
+          const mergedMirrorUpdates = { ...existingMirrorData, ...claimUpdates };
+          await redis.hset(tokenDetailKey, mergedMirrorUpdates);
+          console.log(`✅ MIRROR STORAGE: Also stored in ${tokenDetailKey} for tokenId lookup`, {
+            preservedFields: Object.keys(existingMirrorData).length
+          });
         }
       }
     } catch (claimStorageError) {
