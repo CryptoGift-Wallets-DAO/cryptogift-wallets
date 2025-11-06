@@ -143,6 +143,18 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
   // CRITICAL FIX: Track completion vs cancellation
   const [emailVerificationSuccess, setEmailVerificationSuccess] = useState<boolean>(false);
   const [calendarBookingSuccess, setCalendarBookingSuccess] = useState<boolean>(false);
+  const [completionData, setCompletionData] = useState<{
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+    questionsAnswered?: Array<{
+      questionId: string;
+      questionText: string;
+      selectedAnswer: string;
+      correctAnswer: string;
+      isCorrect: boolean;
+      timeSpent: number;
+    }>;
+  }>({});
   const account = useActiveAccount();
   const contentScrollRef = useRef<HTMLDivElement>(null);
 
@@ -275,13 +287,37 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
     }
   }, [showCalendar, calendarBookingSuccess]);
 
-  const handleLessonComplete = async () => {
-    console.log('✅ LESSON COMPLETION TRIGGERED:', { lessonId, mode, accountConnected: !!account?.address });
-    
+  const handleLessonComplete = async (data?: {
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+    questionsAnswered?: Array<{
+      questionId: string;
+      questionText: string;
+      selectedAnswer: string;
+      correctAnswer: string;
+      isCorrect: boolean;
+      timeSpent: number;
+    }>;
+  }) => {
+    console.log('✅ LESSON COMPLETION TRIGGERED:', {
+      lessonId,
+      mode,
+      accountConnected: !!account?.address,
+      email: data?.email,
+      questionsScore: data?.questionsScore,
+      questionsAnsweredCount: data?.questionsAnswered?.length || 0
+    });
+
+    // Store completion data for later use
+    if (data) {
+      setCompletionData(data);
+      console.log('📊 Completion data stored:', data);
+    }
+
     // In educational mode, show success overlay and connect wallet
     if (mode === 'educational' && onComplete) {
       console.log('🎓 Educational mode - showing success overlay and wallet connection');
-      
+
       // FIX: Call handleEducationCompletionAfterEmail directly
       // that shows the success overlay and asks to connect wallet
       handleEducationCompletionAfterEmail();
@@ -457,6 +493,17 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
             module: lessonId
           });
 
+          // CRITICAL FIX: Build email to send - prioritize parent state over child data
+          // completionData.email might be empty string if child component doesn't track email
+          const emailToSend = verifiedEmail || (completionData.email && completionData.email.trim()) || undefined;
+
+          console.log('🔍 EMAIL RESOLUTION FOR API:', {
+            verifiedEmailState: verifiedEmail || 'EMPTY',
+            completionDataEmail: completionData.email || 'EMPTY',
+            finalEmailToSend: emailToSend || 'UNDEFINED',
+            willSaveToRedis: !!emailToSend
+          });
+
           // Call education approval API to mark as completed
           const response = await fetch('/api/education/approve', {
             method: 'POST',
@@ -469,7 +516,10 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
               claimer: account.address, // CRITICAL FIX: Agregar claimer requerido
               giftId: 0, // Will be populated from session data in API
               educationCompleted: true,
-              module: lessonId
+              module: lessonId,
+              email: emailToSend, // FASE 1: Email from parent state (most reliable)
+              questionsScore: completionData.questionsScore, // FASE 1: Include questions score for analytics
+              questionsAnswered: completionData.questionsAnswered // FASE 2: Include detailed answers array
             })
           });
 

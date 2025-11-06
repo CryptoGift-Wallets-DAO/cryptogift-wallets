@@ -79,53 +79,105 @@ export const CalendlyEmbed: React.FC<CalendlyEmbedProps> = ({
         eventData
       });
 
+      // CRITICAL DIAGNOSIS: Log COMPLETE Calendly payload structure
+      console.error('🔍 COMPLETE CALENDLY PAYLOAD STRUCTURE:', {
+        fullPayload: JSON.stringify(eventData, null, 2),
+        eventKeys: eventData.event ? Object.keys(eventData.event) : [],
+        payloadKeys: eventData.payload ? Object.keys(eventData.payload) : [],
+        inviteeKeys: eventData.invitee ? Object.keys(eventData.invitee) : [],
+        eventType: typeof eventData.event,
+        payloadType: typeof eventData.payload,
+        hasUri: !!eventData.payload?.event?.uri,
+        uri: eventData.payload?.event?.uri || 'NO URI'
+      });
+
       // Extraer información del evento de Calendly
       // CRITICAL FIX: Robust eventTime extraction with multiple fallbacks
       let eventTime = '00:00'; // Sensible default
+      let timeSource = 'default';
 
       // Try primary source: eventData.event.start_time
       if (eventData.event?.start_time) {
         try {
-          eventTime = new Date(eventData.event.start_time).toLocaleTimeString('es-ES', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
+          const parsedDate = new Date(eventData.event.start_time);
+          if (!isNaN(parsedDate.getTime())) {
+            eventTime = parsedDate.toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            timeSource = 'event.start_time';
+            console.log('✅ Time extracted from event.start_time');
+          }
         } catch (e) {
-          console.warn('⚠️ Failed to parse event.start_time, trying fallback');
+          console.warn('⚠️ Failed to parse event.start_time:', e);
         }
       }
 
       // Try fallback source: payload.event.start_time
       if (eventTime === '00:00' && eventData.payload?.event?.start_time) {
         try {
-          eventTime = new Date(eventData.payload.event.start_time).toLocaleTimeString('es-ES', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
+          const parsedDate = new Date(eventData.payload.event.start_time);
+          if (!isNaN(parsedDate.getTime())) {
+            eventTime = parsedDate.toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            timeSource = 'payload.event.start_time';
+            console.log('✅ Time extracted from payload.event.start_time');
+          }
         } catch (e) {
-          console.warn('⚠️ Failed to parse payload.event.start_time, using default');
+          console.warn('⚠️ Failed to parse payload.event.start_time:', e);
         }
       }
 
       // Try alternative: scheduled_time
       if (eventTime === '00:00' && eventData.event?.scheduled_time) {
         try {
-          eventTime = new Date(eventData.event.scheduled_time).toLocaleTimeString('es-ES', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
+          const parsedDate = new Date(eventData.event.scheduled_time);
+          if (!isNaN(parsedDate.getTime())) {
+            eventTime = parsedDate.toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            timeSource = 'event.scheduled_time';
+            console.log('✅ Time extracted from event.scheduled_time');
+          }
         } catch (e) {
-          console.warn('⚠️ Failed to parse scheduled_time');
+          console.warn('⚠️ Failed to parse scheduled_time:', e);
         }
       }
 
-      console.log('📅 Extracted eventTime:', {
-        eventTime,
-        rawStartTime: eventData.event?.start_time,
-        source: eventData.event?.start_time ? 'event.start_time' : 'fallback'
+      // Try additional source: invitee.event.start_time
+      if (eventTime === '00:00' && eventData.invitee?.event?.start_time) {
+        try {
+          const parsedDate = new Date(eventData.invitee.event.start_time);
+          if (!isNaN(parsedDate.getTime())) {
+            eventTime = parsedDate.toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+            timeSource = 'invitee.event.start_time';
+            console.log('✅ Time extracted from invitee.event.start_time');
+          }
+        } catch (e) {
+          console.warn('⚠️ Failed to parse invitee.event.start_time:', e);
+        }
+      }
+
+      console.error('📅 EVENTTIME EXTRACTION RESULT:', {
+        finalEventTime: eventTime,
+        source: timeSource,
+        allSourcesChecked: {
+          'event.start_time': eventData.event?.start_time || 'MISSING',
+          'payload.event.start_time': eventData.payload?.event?.start_time || 'MISSING',
+          'event.scheduled_time': eventData.event?.scheduled_time || 'MISSING',
+          'invitee.event.start_time': eventData.invitee?.event?.start_time || 'MISSING'
+        },
+        eventUriAvailable: !!eventData.payload?.event?.uri
       });
 
       const appointmentData = {
