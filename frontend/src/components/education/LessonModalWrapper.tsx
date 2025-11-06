@@ -135,6 +135,17 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
   giftId,
   onComplete
 }) => {
+  // 🔍 CRITICAL DIAGNOSTIC: Log props on component mount
+  console.error('🔍 LESSON MODAL WRAPPER - PROPS RECEIVED:', {
+    mode,
+    tokenId,
+    giftId,
+    hasTokenId: !!tokenId,
+    hasGiftId: !!giftId,
+    sessionToken: sessionToken?.substring(0, 16) + '...',
+    timestamp: new Date().toISOString()
+  });
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConnectWallet, setShowConnectWallet] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
@@ -373,9 +384,23 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     setVerifiedEmail(email);
     setShowEmailVerification(false);
 
+    // 🔍 CRITICAL DIAGNOSTIC: Check immediate save condition
+    console.error('🔍 IMMEDIATE SAVE CONDITION CHECK:', {
+      mode,
+      hasMode: !!mode,
+      modeValue: mode,
+      tokenId,
+      hasTokenId: !!tokenId,
+      giftId,
+      hasGiftId: !!giftId,
+      willSaveImmediately: mode === 'educational' && !!tokenId,
+      timestamp: new Date().toISOString()
+    });
+
     // CRITICAL FIX: Save email to Redis IMMEDIATELY to avoid timing/props issues
     // Don't wait for approve.ts - save it now with giftId/tokenId
     if (mode === 'educational' && tokenId) {
+      console.error('✅ IMMEDIATE SAVE CONDITION MET - Proceeding with email save');
       try {
         // CRITICAL FIX: Use giftId from props, fallback to tokenId if not available
         // Prefer giftId but don't fail completely if missing - save to tokenId key as last resort
@@ -430,6 +455,14 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
         console.error('❌ EMAIL SAVE ERROR (non-critical):', saveError);
         // Don't fail the verification flow if save fails
       }
+    } else {
+      console.error('❌ IMMEDIATE SAVE SKIPPED - Condition not met:', {
+        reason: !mode ? 'mode is falsy' : mode !== 'educational' ? `mode is ${mode}, expected 'educational'` : !tokenId ? 'tokenId is falsy' : 'unknown',
+        mode,
+        tokenId,
+        giftId,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // CRITICAL FIX: Resolve the Promise directly from ref to avoid stale closure

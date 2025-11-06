@@ -830,21 +830,31 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
       </div>
 
       {/* Educational Module Modal - Using Sales Masterclass with DAO Showcase */}
-      {showEducationalModule && validationState.sessionToken && (
-        <LessonModalWrapper
-          lessonId="sales-masterclass"
-          mode="educational"
-          isOpen={showEducationalModule}
-          onClose={() => {
-            setShowEducationalModule(false);
-            // After completing education, proceed with claim
-            if (validationState.sessionToken) {
-              handleEducationalBypass();
-            }
-          }}
-          tokenId={tokenId}
-          sessionToken={validationState.sessionToken}
-          giftId={validationState.giftId} // Pass giftId for appointment saving
+      {showEducationalModule && validationState.sessionToken && (() => {
+        // 🔍 CRITICAL DIAGNOSTIC: Log what we're passing to LessonModalWrapper
+        console.error('🔍 PRE-CLAIM FLOW - RENDERING LESSON MODAL WITH PROPS:', {
+          tokenId,
+          giftId: validationState.giftId,
+          hasGiftId: !!validationState.giftId,
+          sessionToken: validationState.sessionToken?.substring(0, 16) + '...',
+          mode: 'educational',
+          timestamp: new Date().toISOString()
+        });
+        return (
+          <LessonModalWrapper
+            lessonId="sales-masterclass"
+            mode="educational"
+            isOpen={showEducationalModule}
+            onClose={() => {
+              setShowEducationalModule(false);
+              // After completing education, proceed with claim
+              if (validationState.sessionToken) {
+                handleEducationalBypass();
+              }
+            }}
+            tokenId={tokenId}
+            sessionToken={validationState.sessionToken}
+            giftId={validationState.giftId} // Pass giftId for appointment saving
           onComplete={(gateData) => {
             console.log('Education completed with gate data:', gateData);
             setShowEducationalModule(false);
@@ -853,7 +863,8 @@ export const PreClaimFlow: React.FC<PreClaimFlowProps> = ({
             }
           }}
         />
-      )}
+        );
+      })()}
 
       {/* NFT Image Modal */}
       <NFTImageModal
