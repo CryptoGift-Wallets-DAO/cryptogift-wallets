@@ -333,6 +333,65 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
     setVerifiedEmail(email);
     setShowEmailVerification(false);
 
+    // CRITICAL FIX: Save email to Redis IMMEDIATELY to avoid timing/props issues
+    // Don't wait for approve.ts - save it now with giftId/tokenId
+    if (mode === 'educational' && tokenId) {
+      try {
+        // CRITICAL FIX: Use giftId from props, fallback to tokenId if not available
+        // Prefer giftId but don't fail completely if missing - save to tokenId key as last resort
+        let effectiveGiftId = giftId;
+
+        if (!giftId) {
+          console.warn('⚠️ WARNING: No giftId provided, using tokenId as fallback', {
+            tokenId,
+            mode,
+            hasGiftIdProp: !!giftId,
+            fallbackReason: 'giftId_resolution_failed_or_pending'
+          });
+          effectiveGiftId = tokenId; // Fallback to tokenId - better to save somewhere than lose data
+        }
+
+        console.log('✅ Using giftId for email save:', {
+          giftId: effectiveGiftId,
+          tokenId,
+          source: giftId ? 'parent_component_prop' : 'tokenId_fallback',
+          isOptimal: !!giftId
+        });
+
+        console.error('💾 SAVING EMAIL TO REDIS IMMEDIATELY:', {
+          giftId: effectiveGiftId,
+          tokenId,
+          email: email.substring(0, 3) + '***',
+          timestamp: new Date().toISOString()
+        });
+
+        const saveResponse = await fetch('/api/analytics/save-email-manual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            giftId: effectiveGiftId,
+            tokenId,
+            email
+          })
+        });
+
+        const saveData = await saveResponse.json();
+
+        if (saveData.success) {
+          console.error('✅ EMAIL SAVED TO REDIS SUCCESSFULLY:', {
+            giftId: effectiveGiftId,
+            tokenId,
+            fieldsWritten: Object.keys(saveData.updates || {}).length
+          });
+        } else {
+          console.error('❌ EMAIL SAVE FAILED:', saveData.error);
+        }
+      } catch (saveError) {
+        console.error('❌ EMAIL SAVE ERROR (non-critical):', saveError);
+        // Don't fail the verification flow if save fails
+      }
+    }
+
     // CRITICAL FIX: Resolve the Promise directly from ref to avoid stale closure
     if (emailVerificationResolverRef.current) {
       console.log('✅ Resolving email verification Promise');
