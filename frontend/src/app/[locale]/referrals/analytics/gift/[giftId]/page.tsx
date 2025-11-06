@@ -29,8 +29,17 @@ function generateCSV(gift: CompleteGiftProfile): string {
     rows.push(['Education Email', gift.education.email || '']);
 
     if (gift.education.questions) {
-      rows.push(['Total Questions', String(gift.education.questions.length)]);
-      rows.push(['Correct Answers', String(gift.education.questions.filter(q => q.isCorrect).length)]);
+      // ENTERPRISE: Complete question breakdown
+      const totalQuestions = gift.education.totalQuestions || gift.education.questions.length;
+      const correctAnswers = gift.education.questions.filter(q => q.isCorrect).length;
+      const incorrectAnswers = gift.education.questions.filter(q => !q.isCorrect).length;
+      const skippedQuestions = totalQuestions - gift.education.questions.length;
+
+      rows.push(['Total Questions in Module', String(totalQuestions)]);
+      rows.push(['Questions Answered', String(gift.education.questions.length)]);
+      rows.push(['Correct Answers', String(correctAnswers)]);
+      rows.push(['Incorrect Answers', String(incorrectAnswers)]);
+      rows.push(['Skipped Questions', String(skippedQuestions)]);
     }
   }
 
@@ -115,6 +124,10 @@ interface CompleteGiftProfile {
     score?: number;
     passed?: boolean;
     totalTimeSpent?: number; // seconds
+
+    // ENTERPRISE FIX: Detailed question metrics
+    totalQuestions?: number; // Total questions in module
+    correctAnswers?: number; // Number of correct answers
 
     // Question-by-question breakdown
     questions?: Array<{
@@ -602,26 +615,35 @@ export default function GiftDetailsPage() {
                   </div>
                 </div>
 
-                {/* Time & Performance Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                {/* Time & Performance Metrics - ENTERPRISE ENHANCED */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                   <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
                     <div className="text-xs text-gray-600 dark:text-gray-400">Tiempo Total</div>
                     <div className="font-medium">{Math.floor((gift.education.totalTimeSpent || 0) / 60)}:{String((gift.education.totalTimeSpent || 0) % 60).padStart(2, '0')}</div>
                   </div>
                   {gift.education.questions && (
                     <>
-                      <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Preguntas</div>
-                        <div className="font-medium">{gift.education.questions.length}</div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Total Preguntas</div>
+                        <div className="font-medium text-blue-600 dark:text-blue-400">{gift.education.totalQuestions || gift.education.questions.length}</div>
                       </div>
                       <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Correctas</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">✅ Correctas</div>
                         <div className="font-medium text-green-600 dark:text-green-400">{gift.education.questions.filter(q => q.isCorrect).length}</div>
                       </div>
                       <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Incorrectas</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">❌ Incorrectas</div>
                         <div className="font-medium text-red-600 dark:text-red-400">{gift.education.questions.filter(q => !q.isCorrect).length}</div>
                       </div>
+                      {/* ENTERPRISE FIX: Show skipped questions */}
+                      {gift.education.totalQuestions && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
+                          <div className="text-xs text-gray-600 dark:text-gray-400">⏭️ Saltadas</div>
+                          <div className="font-medium text-yellow-600 dark:text-yellow-400">
+                            {gift.education.totalQuestions - gift.education.questions.length}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>

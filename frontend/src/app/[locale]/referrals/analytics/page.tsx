@@ -178,6 +178,13 @@ export default function GiftAnalyticsPage() {
     if (!silent) setLoading(true);
 
     try {
+      // SECURITY FIX: Always send creator address to filter gifts by owner
+      if (!account?.address) {
+        console.error('No wallet connected, cannot fetch analytics');
+        setLoading(false);
+        return;
+      }
+
       // Fetch REAL data from the unified real-time API
       const response = await fetch('/api/analytics/real-time-stats', {
         method: 'POST',
@@ -185,6 +192,7 @@ export default function GiftAnalyticsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          creatorAddress: account.address.toLowerCase(), // SECURITY: Filter by creator
           campaignIds: filter.campaignIds,
           from: filter.dateRange.from?.toISOString(),
           to: filter.dateRange.to?.toISOString(),

@@ -2049,7 +2049,7 @@ async function mintNFTEscrowGasPaid(
             
             const validationResponse = await fetch(validationUrl, {
               method: 'GET',
-              signal: AbortSignal.timeout(5000) // 5s timeout for validation
+              signal: AbortSignal.timeout(10000) // 10s timeout for validation (IPFS propagation can take 7-10s)
             });
             
             if (!validationResponse.ok) {
@@ -2085,9 +2085,9 @@ async function mintNFTEscrowGasPaid(
               'https://cloudflare-ipfs.com/ipfs/'
             ];
             
-            // Validation with 4 retries and exponential backoff
+            // Validation with 6 retries and exponential backoff (increased for IPFS propagation delays)
             const validateWithRetries = async (cid: string, resourceType: string) => {
-              const maxRetries = 4;
+              const maxRetries = 6;
               let lastError: Error | null = null;
               
               for (let attempt = 1; attempt <= maxRetries; attempt++) {

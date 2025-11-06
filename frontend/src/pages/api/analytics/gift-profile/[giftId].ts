@@ -484,6 +484,10 @@ export default async function handler(
         const hasFase1Education = giftDetails.education_score_percentage || giftDetails.education_score_total;
 
         if (hasLegacyEducation || hasFase1Education) {
+          // ENTERPRISE FIX: Read total questions and correct answers for skipped calculation
+          const totalQuestions = giftDetails.education_score_total ? parseInt(giftDetails.education_score_total as string) : undefined;
+          const correctAnswers = giftDetails.education_score_correct ? parseInt(giftDetails.education_score_correct as string) : undefined;
+
           profile.education = {
             required: true,
             completed: hasLegacyEducation || !!giftDetails.education_completed_at,
@@ -493,7 +497,10 @@ export default async function handler(
             score: giftDetails.educationScore ? parseInt(giftDetails.educationScore as string) :
                    (giftDetails.education_score_percentage ? parseInt(giftDetails.education_score_percentage as string) : undefined),
             passed: true,
-            started: true
+            started: true,
+            // NEW: Add total questions for skipped calculation
+            totalQuestions,
+            correctAnswers
           };
 
           // Parse completed modules (legacy)
@@ -509,24 +516,31 @@ export default async function handler(
           // FASE 2: Parse detailed question answers
           if (giftDetails.education_answers_detail) {
             try {
-              const answersDetail = JSON.parse(giftDetails.education_answers_detail as string);
-              profile.education.questions = answersDetail.map((answer: any, idx: number) => ({
-                questionId: answer.questionId,
-                questionText: answer.questionText,
-                selectedAnswer: answer.selectedAnswer,
-                correctAnswer: answer.correctAnswer,
-                isCorrect: answer.isCorrect,
-                timeSpent: answer.timeSpent,
-                attemptNumber: 1,
-                timestamp: new Date().toISOString()
-              }));
+              const rawData = giftDetails.education_answers_detail as string;
 
-              // Calculate total time from answers
-              if (answersDetail.length > 0) {
-                profile.education.totalTimeSpent = answersDetail.reduce((acc: number, q: any) => acc + (q.timeSpent || 0), 0);
+              // DEFENSIVE: Check if it's legacy malformed data (e.g., "[object Object]")
+              if (rawData.startsWith('[object ') || rawData === '[object Object]') {
+                console.warn(`⚠️ Legacy malformed education data detected for giftId ${giftId}, skipping parse`);
+              } else {
+                const answersDetail = JSON.parse(rawData);
+                profile.education.questions = answersDetail.map((answer: any, idx: number) => ({
+                  questionId: answer.questionId,
+                  questionText: answer.questionText,
+                  selectedAnswer: answer.selectedAnswer,
+                  correctAnswer: answer.correctAnswer,
+                  isCorrect: answer.isCorrect,
+                  timeSpent: answer.timeSpent,
+                  attemptNumber: 1,
+                  timestamp: new Date().toISOString()
+                }));
+
+                // Calculate total time from answers
+                if (answersDetail.length > 0) {
+                  profile.education.totalTimeSpent = answersDetail.reduce((acc: number, q: any) => acc + (q.timeSpent || 0), 0);
+                }
+
+                console.log(`✅ FASE 2: Parsed ${answersDetail.length} question answers for giftId ${giftId}`);
               }
-
-              console.log(`✅ FASE 2: Parsed ${answersDetail.length} question answers for giftId ${giftId}`);
             } catch (parseError) {
               console.error('⚠️ Could not parse education_answers_detail:', parseError);
             }

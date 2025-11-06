@@ -25,6 +25,21 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
+    // SECURITY FIX: Extract and validate creatorAddress from request body
+    const { creatorAddress } = req.body || {};
+
+    if (!creatorAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameter: creatorAddress',
+        message: 'Analytics data requires authentication - please provide creator address'
+      });
+    }
+
+    // Normalize creator address to lowercase for consistent comparison
+    const normalizedCreator = creatorAddress.toLowerCase();
+    console.log(`🔒 SECURITY: Filtering analytics for creator: ${normalizedCreator}`);
+
     // Check Redis configuration
     if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
       console.log('Redis not configured, using local storage fallback');
@@ -109,9 +124,15 @@ export default async function handler(
       const giftDetailKeys = await redis.keys('gift:detail:*');
       console.log(`Found ${giftDetailKeys.length} gift detail keys`);
 
-      for (const key of giftDetailKeys) { // Process ALL gifts - NO LIMIT
+      for (const key of giftDetailKeys) {
         const giftData = await redis.hgetall(key);
         if (giftData) {
+          // SECURITY FIX: Filter by creator - skip gifts not created by this user
+          const giftCreator = (giftData.creator as string || giftData.referrer as string || '').toLowerCase();
+          if (giftCreator !== normalizedCreator) {
+            continue; // Skip gifts not owned by this creator
+          }
+
           // Extract gift ID from the key (e.g., "gift:detail:305" -> "305")
           const giftIdFromKey = key.split(':').pop() || '';
 
@@ -422,6 +443,7 @@ export default async function handler(
 
     console.log(`✅ Real-time stats compiled in ${responseTime}ms`);
     console.log(`📊 Found: ${individualGifts.length} individual gifts, ${stats.claimed} claimed, ${realCampaigns.length} campaigns`);
+    console.log(`🔒 SECURITY: Filtered results for creator ${normalizedCreator}`);
 
     return res.status(200).json({
       success: true,
