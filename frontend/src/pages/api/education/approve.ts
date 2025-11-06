@@ -130,6 +130,18 @@ export default async function handler(
         timeSpent: number;
       }>;
     } = req.body;
+
+    // CRITICAL DEBUG: Log what frontend sent us
+    console.error('🔍 APPROVE ENDPOINT - REQUEST RECEIVED:', {
+      hasEmail: !!email,
+      emailValue: email || 'MISSING/UNDEFINED',
+      hasQuestionsScore: !!questionsScore,
+      questionsScore,
+      hasQuestionsAnswered: !!questionsAnswered,
+      answersCount: questionsAnswered?.length || 0,
+      tokenId,
+      timestamp: new Date().toISOString()
+    });
     
     // Validate required fields
     if (!sessionToken || !tokenId || !claimer) {
