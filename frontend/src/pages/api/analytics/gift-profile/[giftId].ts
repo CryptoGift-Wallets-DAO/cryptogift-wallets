@@ -94,6 +94,10 @@ interface CompleteGiftProfile {
     videoWatched?: boolean;
     videoWatchTime?: number;
     resourcesViewed?: string[];
+
+    // ENTERPRISE FIX: Detailed question metrics
+    totalQuestions?: number;  // Total questions in module
+    correctAnswers?: number;  // Number of correct answers
   };
 
   // Claim Information
