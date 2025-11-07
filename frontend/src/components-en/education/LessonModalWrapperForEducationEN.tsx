@@ -11,7 +11,7 @@
 import React, { useState, useEffect } from 'react';
 import { LessonModalWrapperEN } from './LessonModalWrapperEN';
 import { EducationModuleEN } from './EducationModuleEN';
-import { getModuleMapping, debugPrintMapping } from '../../lib/educationalModuleMapping';
+import { getModuleMapping, debugPrintMapping } from '../../lib/educationalModuleMappingEN';
 import { useNotifications } from '../../components/ui/NotificationSystem';
 
 interface LessonModalWrapperForEducationProps {
