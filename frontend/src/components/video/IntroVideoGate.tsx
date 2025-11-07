@@ -143,44 +143,42 @@ export default function IntroVideoGate({
             )}
           </MuxPlayer>
 
-          {/* Gradient overlays for cinematic effect */}
-          <div className="pointer-events-none absolute inset-0 z-10">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
+        </div>
+
+        {/* Title, description and skip button - OUTSIDE video player for clean viewing */}
+        <div className="mt-6 space-y-4">
+          {/* Title and description card */}
+          <div className="bg-white/10 dark:bg-black/30
+            backdrop-blur-xl backdrop-saturate-150
+            rounded-2xl px-6 py-4
+            border border-white/20 dark:border-gray-700/50
+            shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              {title}
+            </h3>
+            {description && (
+              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                {description}
+              </p>
+            )}
           </div>
 
-          {/* Title and description (top) */}
-          <div className="absolute top-0 left-0 right-0 z-20 p-6 pointer-events-none">
-            <div className="bg-white/10 dark:bg-black/30
-              backdrop-blur-xl backdrop-saturate-150
-              rounded-2xl px-6 py-4
-              border border-white/20 dark:border-gray-700/50
-              shadow-xl max-w-2xl">
-              <h3 className="text-xl font-bold text-white mb-1">
-                {title}
-              </h3>
-              {description && (
-                <p className="text-sm text-white/80 whitespace-pre-line">{description}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Skip button - Top right corner */}
+          {/* Skip intro button */}
           {showSkipButton && (
-            <div className="absolute top-6 right-6 z-20">
+            <div className="flex justify-center">
               <button
                 onClick={handleSkip}
-                className="px-6 py-3 rounded-xl
+                className="px-8 py-4 rounded-xl
                   bg-gradient-to-r from-purple-500 to-pink-500
                   hover:from-purple-600 hover:to-pink-600
-                  text-white font-bold
+                  text-white font-bold text-lg
                   backdrop-blur-xl border border-purple-400/30
                   transition-all hover:scale-105
                   shadow-lg shadow-purple-500/30
-                  flex items-center gap-2"
+                  flex items-center gap-3"
                 aria-label="Saltar introducción"
               >
-                <SkipForward className="w-5 h-5" />
+                <SkipForward className="w-6 h-6" />
                 <span>Saltar intro</span>
               </button>
             </div>
