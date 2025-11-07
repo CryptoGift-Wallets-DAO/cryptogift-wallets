@@ -631,7 +631,10 @@ interface SalesMasterclassProps {
   educationalMode?: boolean;
   giftId?: string; // CRITICAL FIX: Add giftId for appointment tracking
   tokenId?: string; // CRITICAL FIX: Add tokenId for appointment tracking
-  onEducationComplete?: () => void;
+  onEducationComplete?: (data?: {
+    email?: string;
+    questionsScore?: { correct: number; total: number };
+  }) => void;
   onShowEmailVerification?: () => Promise<void>;
   onShowCalendar?: () => Promise<void>;
   verifiedEmail?: string;
