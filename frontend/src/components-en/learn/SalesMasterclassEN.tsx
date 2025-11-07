@@ -2549,7 +2549,7 @@ const CaptureBlock: React.FC<{
           <p className="text-2xl">
             Your score: <span className="font-bold text-yellow-400">
               {questionsScore.correct}/{questionsScore.total}
-            </span> respuestas correctas
+            </span> correct answers
           </p>
           {questionsScore.correct === questionsScore.total && (
             <p className="text-green-400 font-bold mt-2">PERFECT! You're an expert 🏆</p>
@@ -2752,7 +2752,7 @@ const CaptureBlock: React.FC<{
               </div>
               
               {/* REMOVED: Wallet connection check - now handled in LessonModalWrapper after completion */}
-              {/* Connect wallet flow moved to "¡Felicidades!" screen as requested */}
+              {/* Connect wallet flow moved to "Congratulations!" screen as requested */}
               <motion.button
                 type="submit"
                 disabled={!canProceed}

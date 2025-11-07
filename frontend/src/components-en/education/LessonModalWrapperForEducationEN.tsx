@@ -66,7 +66,7 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
           Error de Configuración
         </h2>
         <p className="text-red-600 dark:text-red-400 mb-4">
-          El módulo educativo #{moduleId} no está configurado correctamente.
+          Educational module #{moduleId} is not configured correctly.
         </p>
         <p className="text-sm text-red-500 dark:text-red-500">
           Por favor, contacta al administrador. Error: MODULE_NOT_MAPPED
@@ -105,7 +105,7 @@ export const LessonModalWrapperForEducationEN: React.FC<LessonModalWrapperForEdu
                 {moduleMapping.description}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-500">
-                Tiempo estimado: {moduleMapping.estimatedTime} minutos
+                Estimated time: {moduleMapping.estimatedTime} minutes
               </p>
             </div>
             

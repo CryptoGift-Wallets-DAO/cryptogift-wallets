@@ -275,7 +275,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
       addNotification({
         type: 'success',
         title: '🎉 Module Complete!',
-        message: `Has aprobado con ${score}% de respuestas correctas`,
+        message: `You passed with ${score}% correct answers`,
         duration: 5000
       });
 
@@ -303,8 +303,8 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
       // Failed - need to retry
       addNotification({
         type: 'error',
-        title: '❌ No Aprobado',
-        message: `Necesitas ${module.passingScore}% para aprobar. Obtuviste ${score}%`,
+        title: '❌ Not Passed',
+        message: `You need ${module.passingScore}% to pass. You got ${score}%`,
         duration: 5000
       });
     }
@@ -465,7 +465,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                 {currentSectionData.keyPoints && (
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                     <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-3">
-                      Puntos Clave:
+                      Key Points:
                     </h3>
                     <ul className="space-y-2">
                       {currentSectionData.keyPoints.map((point, index) => (
@@ -530,7 +530,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                   Evaluación del Módulo
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Responde correctamente para completar el módulo
+                  Answer correctly to complete the module
                 </p>
               </div>
 
@@ -570,7 +570,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                              font-semibold rounded-lg hover:shadow-lg transition-all
                              disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Enviar Respuestas
+                    Submit Answers
                   </button>
                 </div>
               ) : (
@@ -585,13 +585,13 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                       {quizScore >= module.passingScore ? '🎉' : '😔'}
                     </div>
                     <h3 className="text-2xl font-bold mb-2">
-                      {quizScore >= module.passingScore ? '¡Aprobado!' : 'No Aprobado'}
+                      {quizScore >= module.passingScore ? 'Passed!' : 'Not Passed'}
                     </h3>
                     <p className="text-lg">
-                      Tu puntuación: <span className="font-bold">{quizScore}%</span>
+                      Your score: <span className="font-bold">{quizScore}%</span>
                     </p>
                     <p className="text-sm mt-2 opacity-75">
-                      Puntuación requerida: {module.passingScore}%
+                      Required score: {module.passingScore}%
                     </p>
                   </div>
 
@@ -599,7 +599,7 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                   {showExplanations && (
                     <div className="space-y-4">
                       <h4 className="font-semibold text-gray-900 dark:text-white">
-                        Revisión de Respuestas:
+                        Answer Review:
                       </h4>
                       {module.quiz.map((question, index) => {
                         const userAnswer = quizAnswers[question.id];
@@ -618,11 +618,11 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                               {index + 1}. {question.question}
                             </p>
                             <p className="text-sm mb-1">
-                              Tu respuesta: {question.options[userAnswer]} {isCorrect ? '✅' : '❌'}
+                              Your answer: {question.options[userAnswer]} {isCorrect ? '✅' : '❌'}
                             </p>
                             {!isCorrect && (
                               <p className="text-sm text-green-600 dark:text-green-400">
-                                Respuesta correcta: {question.options[question.correctAnswer]}
+                                Correct answer: {question.options[question.correctAnswer]}
                               </p>
                             )}
                             <p className="text-sm mt-2 text-gray-600 dark:text-gray-400 italic">
@@ -652,10 +652,10 @@ export const EducationModuleEN: React.FC<EducationModuleProps> = ({
                           <span className="text-2xl mr-3 flex-shrink-0">🎯</span>
                           <div>
                             <h4 className="font-bold text-purple-800 dark:text-purple-300 mb-1">
-                              ¡Felicidades! 🎉
+                              Congratulations! 🎉
                             </h4>
                             <p className="text-sm text-purple-700 dark:text-purple-400">
-                              Tu puntuación: <span className="font-bold">{quizAnswers && Object.keys(quizAnswers).filter(qId => {
+                              Your score: <span className="font-bold">{quizAnswers && Object.keys(quizAnswers).filter(qId => {
                                 const q = module.quiz.find(question => question.id === qId);
                                 return q && quizAnswers[qId] === q.correctAnswer;
                               }).length}/{module.quiz.length}</span> correct answers
