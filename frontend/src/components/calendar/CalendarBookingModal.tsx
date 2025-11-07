@@ -17,6 +17,7 @@ import { CalendlyEmbed } from './CalendlyEmbed';
 interface CalendarBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAppointmentBooked?: () => void; // CRITICAL FIX: Separate callback for successful booking
   userEmail?: string;
   userName?: string;
   source?: string; // 'masterclass' | 'general'
@@ -27,6 +28,7 @@ interface CalendarBookingModalProps {
 export const CalendarBookingModal: React.FC<CalendarBookingModalProps> = ({
   isOpen,
   onClose,
+  onAppointmentBooked,
   userEmail = '',
   userName = '',
   source = 'masterclass',
@@ -122,7 +124,11 @@ export const CalendarBookingModal: React.FC<CalendarBookingModalProps> = ({
                 tokenId={tokenId}
                 onAppointmentScheduled={() => {
                   console.log('✅ Cita agendada y guardada automáticamente');
-                  // Opcionalmente cerrar el modal después de agendar
+                  // CRITICAL FIX: Call onAppointmentBooked to mark checkbox, then close modal
+                  if (onAppointmentBooked) {
+                    onAppointmentBooked();
+                  }
+                  // Close modal after short delay to show success notification
                   setTimeout(() => {
                     onClose();
                   }, 3000);

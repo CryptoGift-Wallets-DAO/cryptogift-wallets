@@ -481,11 +481,10 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     }, 100);
   };
 
-  // Handle calendar booking completion
+  // CRITICAL FIX: Separate handler for successful appointment booking
   const handleCalendarBooked = () => {
     console.log('✅ Calendar booking completed');
     setCalendarBookingSuccess(true);  // Mark as successful
-    setShowCalendar(false);
 
     // CRITICAL FIX: Resolve the Promise directly from ref to avoid stale closure
     if (calendarBookingResolverRef.current) {
@@ -495,6 +494,13 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
     }
     // FIX: NO llamar handleEducationCompletionAfterEmail aquí
     // Solo cerrar el modal, el usuario debe hacer clic en "CONTINUAR AL REGALO"
+  };
+
+  // CRITICAL FIX: Separate handler for closing modal without booking
+  const handleCloseCalendar = () => {
+    console.log('📅 Closing calendar modal');
+    setShowCalendar(false);
+    // Do NOT resolve promise here - let the useEffect handle rejection
   };
 
   // Handle completion showing success overlay and wallet connection
@@ -850,7 +856,8 @@ export const LessonModalWrapper: React.FC<LessonModalWrapperProps> = ({
 
             <CalendarBookingModal
               isOpen={showCalendar}
-              onClose={handleCalendarBooked}
+              onClose={handleCloseCalendar}
+              onAppointmentBooked={handleCalendarBooked}
               userEmail={verifiedEmail || undefined}
               source="educational-masterclass"
               giftId={giftId}

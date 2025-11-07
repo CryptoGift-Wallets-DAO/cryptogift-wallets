@@ -436,11 +436,10 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
     }
   };
 
-  // Handle calendar booking completion
+  // CRITICAL FIX: Separate handler for successful appointment booking
   const handleCalendarBooked = () => {
     console.log('✅ Calendar booking completed');
     setCalendarBookingSuccess(true);  // Mark as successful
-    setShowCalendar(false);
 
     // CRITICAL FIX: Resolve the Promise directly from ref to avoid stale closure
     if (calendarBookingResolverRef.current) {
@@ -450,6 +449,13 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
     }
     // FIX: NO llamar handleEducationCompletionAfterEmail aquí
     // Solo cerrar el modal, el usuario debe hacer clic en "CONTINUAR AL REGALO"
+  };
+
+  // CRITICAL FIX: Separate handler for closing modal without booking
+  const handleCloseCalendar = () => {
+    console.log('📅 Closing calendar modal');
+    setShowCalendar(false);
+    // Do NOT resolve promise here - let the useEffect handle rejection
   };
 
   // Handle completion showing success overlay and wallet connection
@@ -587,12 +593,12 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
                 {mode === 'educational' ? '🎓 Required Educational Module' : '📚 Knowledge Academy'}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                {lessonId === 'sales-masterclass' ? 
-                  (mode === 'educational' ? 
-                    'Complete this module to unlock your crypto gift' : 
-                    'Sales Masterclass - De $0 a $100M en 10 minutos') : 
-                 lessonId === 'claim-first-gift' ? 'Claim Your First Crypto Gift - 7 minutes' : 
-                 'Lección Interactive'}
+                {lessonId === 'sales-masterclass' ?
+                  (mode === 'educational' ?
+                    'Complete this module to unlock your crypto gift' :
+                    'Sales Masterclass - From $0 to $100M in 10 minutes') :
+                 lessonId === 'claim-first-gift' ? 'Claim Your First Crypto Gift - 7 minutes' :
+                 'Interactive Lesson'}
               </p>
             </div>
             
@@ -805,7 +811,8 @@ export const LessonModalWrapperEN: React.FC<LessonModalWrapperProps> = ({
 
             <CalendarBookingModal
               isOpen={showCalendar}
-              onClose={handleCalendarBooked}
+              onClose={handleCloseCalendar}
+              onAppointmentBooked={handleCalendarBooked}
               userEmail={verifiedEmail || undefined}
               source="educational-masterclass"
               giftId={giftId}
