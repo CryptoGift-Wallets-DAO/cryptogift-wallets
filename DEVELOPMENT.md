@@ -2,7 +2,72 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎯 LATEST SESSION UPDATES (Enero 25, 2025) - NFT METADATA DISPLAY FIX DEFINITIVO ✅
+## 🎯 LATEST SESSION UPDATES (Noviembre 6, 2025) - EDUCATIONAL SCORE & TYPESCRIPT FIX ✅
+
+### 🚨 CRITICAL BUG FIX: Missing Educational Score in English Version + TypeScript Build Error
+
+**PROBLEMA CRÍTICO RESUELTO**: Regalo #370 (English version) no guardaba educational score ni tiempo correcto de appointment.
+
+**ROOT CAUSES IDENTIFICADOS**:
+1. **Educational Score Missing**: English `LessonModalWrapperEN.tsx` no tenía data flow completo desde quiz a API
+2. **TypeScript Build Error**: Interface `onEducationComplete` definida sin parámetros pero llamada con argumentos
+3. **Appointment Time '00:00'**: Calendly postMessage event no incluye tiempo en payload (requires API integration)
+
+**SOLUCIONES IMPLEMENTADAS**:
+
+#### Previous Session Fix (Commit `16c3119`): Educational Score Data Flow
+**Files Modified**:
+- `frontend/src/components-en/education/LessonModalWrapperEN.tsx` (Lines 146-157, 290-315, 496-524)
+- `frontend/src/components-en/learn/SalesMasterclassEN.tsx` (Lines 1510-1517)
+- `frontend/src/components/calendar/CalendlyEmbed.tsx` (Lines 82-181)
+
+**Changes**:
+1. Added `completionData` state to store quiz results
+2. Updated `handleLessonComplete` to accept data parameter with email and questionsScore
+3. Modified `/api/education/approve` call to include all educational data
+4. Enhanced Calendly logging with complete payload structure diagnosis
+
+#### Current Session Fix (Commit `7a79f9b`): TypeScript Interface Error
+**File Modified**:
+- `frontend/src/components-en/learn/SalesMasterclassEN.tsx` (Lines 634-637)
+
+**Change**:
+```typescript
+// BEFORE (Line 634):
+onEducationComplete?: () => void;
+
+// AFTER (Lines 634-637):
+onEducationComplete?: (data?: {
+  email?: string;
+  questionsScore?: { correct: number; total: number };
+}) => void;
+```
+
+**Error Resolved**: `error TS2554: Expected 0 arguments, but got 1.` at line 1510
+
+### 🎯 RESULTADO FINAL:
+- ✅ Educational score now saves correctly for English version claims
+- ✅ TypeScript compilation successful, build no longer blocked
+- ✅ Spanish version verified complete (FASE 2 with questionsAnswered array)
+- ✅ English version now at FASE 1 parity (questionsScore only, FASE 2 pending)
+- ⚠️ Appointment time still shows '00:00' (Calendly API integration needed for full fix)
+
+### 📊 PARITY AUDIT RESULTS:
+**FASE 1 (Basic Educational Score)**: ✅ Both versions complete
+- Spanish: questionsScore (correct/total) ✅
+- English: questionsScore (correct/total) ✅
+
+**FASE 2 (Detailed Answer Tracking)**: ⚠️ Only Spanish complete
+- Spanish: `questionsAnswered` array with full details ✅
+- English: TODO pending (documented as future enhancement) ⚠️
+
+**Commits**:
+- `16c3119` - fix: add missing educational score tracking to English version + enhance Calendly logging
+- `7a79f9b` - fix: resolve TypeScript interface error in English SalesMasterclass
+
+---
+
+## 🎯 PREVIOUS SESSION UPDATES (Enero 25, 2025) - NFT METADATA DISPLAY FIX DEFINITIVO ✅
 
 ### 🏆 BREAKTHROUGH: NFT IMAGES FINALLY APPEARING IN METAMASK!
 

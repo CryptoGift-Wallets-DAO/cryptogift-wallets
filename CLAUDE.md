@@ -19,12 +19,12 @@
 - **📊 Estado**: PRODUCTION READY ✅ FUNCIONAL ✅ OPTIMIZADO ✅
 
 ### 🔒 ÚLTIMO COMMIT & CAMBIOS RECIENTES
-- **Commit**: `a1facbb` - "fix: correctly position LanguageToggle in claim pages navbar"
-- **Fecha**: Enero 25, 2025
-- **Problema**: NFT images not displaying in MetaMask after claiming - only placeholders showing
-- **Solución**: 5 critical metadata fixes implementados (path preservation, placeholder rejection, Redis serialization, IPFS normalization, gateway respect)
-- **Files**: `mint-escrow.ts`, `update-metadata-after-claim.ts`, `ClaimEscrowInterface.tsx`, `nft/[...params].ts`, `nft-metadata/[contractAddress]/[tokenId].ts`
-- **Resultado**: ✅ NFT images now appear in MetaMask within 10 seconds!
+- **Commits**: `16c3119`, `7a79f9b` - Educational Score Fix + TypeScript Interface Fix
+- **Fecha**: Noviembre 6, 2025
+- **Problema**: Regalo #370 (English) no guardaba educational score; TypeScript build error blocking deployment
+- **Solución**: Added complete educational data flow in English version + fixed interface definition
+- **Files**: `LessonModalWrapperEN.tsx`, `SalesMasterclassEN.tsx` (interface + callback), `CalendlyEmbed.tsx` (logging)
+- **Resultado**: ✅ Educational score saves correctly in English! ✅ Build successful!
 
 ---
 
