@@ -400,12 +400,15 @@ res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
 ## 🆘 Soporte
 
-- **Documentación**: [docs.cryptogift.gl](https://docs.cryptogift.gl)
-- **Discord**: [discord.gg/cryptogift](https://discord.gg/cryptogift)
-- **Email**: support@cryptogift.gl
-- **Twitter**: [@CryptoGiftWallets](https://twitter.com/CryptoGiftWallets)
+- **Discord**: [CryptoGift_Wallets_DAO](https://discord.gg/4zBvZnQB)
+- **Farcaster**: [cryptogift-w](https://farcaster.xyz/cryptogift-w)
+- **X/Twitter**: [@giftwalletcoin](https://x.com/giftwalletcoin?s=21)
+- **YouTube**: [CryptoGift Channel](https://youtu.be/_CDc7GMVNhg)
+- **Email**: admin@mbxart.com
 
 ## 💎 Créditos
+
+**© 2025 The Moon in a Box, CryptoGift Wallets. All rights reserved.**
 
 Desarrollado con ❤️ por el equipo de CryptoGift Wallets
 
@@ -417,6 +420,6 @@ Desarrollado con ❤️ por el equipo de CryptoGift Wallets
 - [NFT.Storage](https://nft.storage) - IPFS Storage
 - [Vercel](https://vercel.com) - Deployment Platform
 
---- edited for redeploy and no more
+---
 
 ⭐ **¡Dale una estrella si te gusta el proyecto!** ⭐

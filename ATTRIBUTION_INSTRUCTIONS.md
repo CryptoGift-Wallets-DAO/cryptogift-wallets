@@ -166,6 +166,24 @@ This attribution system ensures:
 - Consistent branding across all commits
 - Professional project ownership
 
+## 📞 OFFICIAL CONTACT & SOCIAL CHANNELS
+
+**© 2025 The Moon in a Box, CryptoGift Wallets. All rights reserved.**
+
+### **Official Channels:**
+- **Discord**: [CryptoGift_Wallets_DAO](https://discord.gg/4zBvZnQB)
+- **Farcaster**: [cryptogift-w](https://farcaster.xyz/cryptogift-w)
+- **X/Twitter**: [@giftwalletcoin](https://x.com/giftwalletcoin?s=21)
+- **YouTube**: [CryptoGift Channel](https://youtu.be/_CDc7GMVNhg)
+- **Email**: admin@mbxart.com
+
+### **Usage in Documentation & Footer:**
+Always include the official copyright notice in:
+- Footer component (app footer)
+- README.md (main repository documentation)
+- All public-facing documentation
+- Marketing materials and presentations
+
 ## 📖 IMPLEMENTATION REMINDER
 
 Every time you make a commit, remember:
