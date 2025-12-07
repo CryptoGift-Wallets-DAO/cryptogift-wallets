@@ -68,10 +68,10 @@ export const Footer: React.FC = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Recursos</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href={process.env.NEXT_PUBLIC_DOCS_URL || "#"} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Documentación</a></li>
-              <li><a href="https://crypto-gift-wallets-dao.vercel.app/agent" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">apeX Assistant</a></li>
-              <li><a href="https://x.com/messages/compose?recipient_id=giftwalletcoin" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Chat por Twitter</a></li>
-              <li><a href="mailto:admin@mbxart.com" className="hover:text-white transition-colors">Soporte</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Documentación</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs?tab=whitepaper" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Whitepaper</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs?tab=tokenomics" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Tokenomics</a></li>
+              <li><a href="https://github.com/CryptoGift-Wallets-DAO" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Código Fuente</a></li>
             </ul>
           </div>
 
