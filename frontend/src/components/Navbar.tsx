@@ -23,7 +23,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-bg-primary shadow-lg sticky top-0 z-40 transition-colors duration-300 border-b border-border-primary">
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4 sm:px-6">
         <div className="flex justify-between items-center py-4">
           {/* Logo and Theme Toggle Container */}
           <div className="flex items-center space-x-3">
