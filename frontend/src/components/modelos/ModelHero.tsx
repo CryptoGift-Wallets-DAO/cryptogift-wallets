@@ -55,7 +55,7 @@ const floatAnimation = {
   }
 } as const;
 
-export function ModelHero({ totalModelos, categories }: ModelHeroProps) {
+export function ModelHero({ totalModelos, categories, onCategoryClick }: ModelHeroProps) {
   return (
     <div className="relative py-16 md:py-24 overflow-hidden">
       {/* Background effects */}
@@ -96,19 +96,22 @@ export function ModelHero({ totalModelos, categories }: ModelHeroProps) {
             const colorClass = categoryColors[category.id];
 
             return (
-              <motion.div
+              <motion.button
                 key={category.id}
                 variants={itemVariants}
                 animate={floatAnimation}
                 style={{ animationDelay: `${index * 0.2}s` }}
+                onClick={() => onCategoryClick?.(category.id)}
                 className={`
-                  relative group
+                  relative group cursor-pointer
                   p-4 rounded-2xl
                   bg-gradient-to-br ${colorClass}
                   backdrop-blur-sm border
                   transition-all duration-300
                   hover:scale-110 hover:shadow-lg hover:shadow-current/20
+                  focus:outline-none focus:ring-2 focus:ring-white/30
                 `}
+                aria-label={`Ver categoria ${category.label}`}
               >
                 <IconComponent className="w-7 h-7 md:w-8 md:h-8" />
 
@@ -120,9 +123,10 @@ export function ModelHero({ totalModelos, categories }: ModelHeroProps) {
                                 px-3 py-1.5 rounded-lg whitespace-nowrap
                                 border border-white/10 shadow-xl">
                     {category.label}
+                    <div className="text-[10px] text-gray-400 mt-0.5">Click para ver</div>
                   </div>
                 </div>
-              </motion.div>
+              </motion.button>
             );
           })}
         </motion.div>

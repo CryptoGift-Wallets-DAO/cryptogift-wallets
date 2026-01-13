@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import {
@@ -23,6 +23,9 @@ export default function ModelosPage() {
 
   // State for selected model (modal)
   const [selectedModelo, setSelectedModelo] = useState<Modelo | null>(null);
+
+  // Ref for scrolling to category tabs
+  const categoryTabsRef = useRef<HTMLDivElement>(null);
 
   // Filter models based on all criteria
   const filteredModelos = useMemo(() => {
@@ -58,6 +61,20 @@ export default function ModelosPage() {
     setActiveCategory(category);
   }, []);
 
+  // Handler for hero category icon click - scroll and select
+  const handleHeroCategoryClick = useCallback((category: CategoryType) => {
+    // Set the category filter
+    setActiveCategory(category);
+
+    // Smooth scroll to the category tabs section
+    if (categoryTabsRef.current) {
+      categoryTabsRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, []);
+
   const handleSelectModelo = useCallback((modelo: Modelo) => {
     setSelectedModelo(modelo);
   }, []);
@@ -86,14 +103,20 @@ export default function ModelosPage() {
 
       <div className="relative">
         {/* Hero Section */}
-        <ModelHero totalModelos={TOTAL_MODELOS} categories={CATEGORIES} />
+        <ModelHero
+          totalModelos={TOTAL_MODELOS}
+          categories={CATEGORIES}
+          onCategoryClick={handleHeroCategoryClick}
+        />
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20">
           {/* Search and Filters Bar */}
-          <div className="sticky top-0 z-30 pt-4 pb-6 -mx-4 px-4 sm:-mx-6 sm:px-6
+          <div
+            ref={categoryTabsRef}
+            className="sticky top-0 z-30 pt-4 pb-6 -mx-4 px-4 sm:-mx-6 sm:px-6
                         bg-gradient-to-b from-gray-950 via-gray-950/95 to-transparent
-                        backdrop-blur-xl">
+                        backdrop-blur-xl scroll-mt-4">
             <div className="flex flex-col gap-4">
               {/* Search input */}
               <div className="relative">

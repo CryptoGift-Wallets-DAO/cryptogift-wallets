@@ -181,6 +181,7 @@ export interface ModelGridProps {
 export interface ModelHeroProps {
   totalModelos: number;
   categories: CategoryConfig[];
+  onCategoryClick?: (category: CategoryType) => void;
 }
 
 // ========== CONFIGURATION ==========
