@@ -2,6 +2,9 @@
  * GNOSIS SAFE INTEGRATION
  * Multi-signature wallet management for competition funds
  *
+ * This module provides a high-level API for Safe operations.
+ * It delegates to safeClient.ts for actual SDK integration.
+ *
  * Safe Architecture:
  * - Owners: Addresses that can sign transactions
  * - Threshold: Minimum signatures required (N-of-M)
@@ -14,6 +17,7 @@
  * - Roles Module: Role-based permissions for judges
  */
 
+import { ethers } from 'ethers';
 import type {
   SafeConfig,
   SafeTransaction,
@@ -26,28 +30,49 @@ import type {
 } from '../types';
 import { getCreatorAddress, getParticipantsList } from '../types';
 
+// Import real Safe SDK functions
+import {
+  getSafeInfo as getSafeInfoReal,
+  getSafeBalance,
+  getPendingTransactions as getPendingTransactionsReal,
+  proposeTransaction as proposeTransactionReal,
+  signTransaction as signTransactionReal,
+  executeTransaction as executeTransactionReal,
+  proposePrizeDistribution,
+  createCompetitionSafe as createCompetitionSafeReal,
+  predictSafeAddress as predictSafeAddressReal,
+  enableModule as enableModuleReal,
+  setGuard as setGuardReal,
+  buildETHTransfer,
+  buildERC20Transfer,
+  SAFE_CONTRACTS,
+  type PrizeDistribution,
+  type SafeInfo,
+  type TransactionResult,
+} from './safeClient';
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-// Base Sepolia addresses
-const SAFE_ADDRESSES = {
-  // Safe contracts
-  SAFE_SINGLETON: '0x41675C099F32341bf84BFc5382aF534df5C7461a',
-  SAFE_PROXY_FACTORY: '0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67',
-  FALLBACK_HANDLER: '0x2f870a80647BbC554F3a0EBD093f11B4d2a7492A',
-  MULTI_SEND: '0x38869bf66a61cF6bDB996A6aE40D5853Fd43B526',
-  MULTI_SEND_CALL_ONLY: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
+// Base Sepolia addresses - using real addresses from Safe SDK
+export const SAFE_ADDRESSES = {
+  // Safe contracts (from @safe-global deployments)
+  SAFE_SINGLETON: SAFE_CONTRACTS.SAFE_SINGLETON,
+  SAFE_PROXY_FACTORY: SAFE_CONTRACTS.SAFE_PROXY_FACTORY,
+  FALLBACK_HANDLER: SAFE_CONTRACTS.FALLBACK_HANDLER,
+  MULTI_SEND: SAFE_CONTRACTS.MULTI_SEND,
+  MULTI_SEND_CALL_ONLY: SAFE_CONTRACTS.MULTI_SEND_CALL_ONLY,
 
-  // Zodiac modules
-  DELAY_MODIFIER: '0x0000000000000000000000000000000000000000',  // To be deployed
-  ROLES_MODIFIER: '0x0000000000000000000000000000000000000000',  // To be deployed
+  // Zodiac modules - to be deployed per competition
+  DELAY_MODIFIER: '0x0000000000000000000000000000000000000000',
+  ROLES_MODIFIER: '0x0000000000000000000000000000000000000000',
 
-  // Our custom contracts
-  COMPETITION_GUARD: '0x0000000000000000000000000000000000000000'  // To be deployed
+  // Our custom contracts - to be deployed
+  COMPETITION_GUARD: '0x0000000000000000000000000000000000000000'
 };
 
-const CHAIN_ID = 84532;  // Base Sepolia
+export const CHAIN_ID = 84532; // Base Sepolia
 
 // ============================================================================
 // SAFE CREATION
@@ -66,125 +91,124 @@ export function generateSafeDeploymentData(params: {
   data: string;
   salt: string;
 } {
-  const { owners, threshold, fallbackHandler } = params;
-
-  // Safe setup function signature
-  const setupAbi = [
-    'function setup(',
-    '  address[] calldata _owners,',
-    '  uint256 _threshold,',
-    '  address to,',
-    '  bytes calldata data,',
-    '  address fallbackHandler,',
-    '  address paymentToken,',
-    '  uint256 payment,',
-    '  address payable paymentReceiver',
-    ')'
-  ].join('');
-
-  // Encode setup call
-  // Note: In production, use ethers.js or viem to encode this properly
-  const setupData = encodeSetupCall({
-    owners,
-    threshold,
-    to: '0x0000000000000000000000000000000000000000',
-    data: '0x',
-    fallbackHandler: fallbackHandler || SAFE_ADDRESSES.FALLBACK_HANDLER,
-    paymentToken: '0x0000000000000000000000000000000000000000',
-    payment: 0,
-    paymentReceiver: '0x0000000000000000000000000000000000000000'
-  });
+  const { owners, threshold } = params;
 
   // Generate unique salt
-  const salt = generateSalt();
+  const salt = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`.padEnd(66, '0');
 
+  // Use Safe factory for deployment
   return {
     to: SAFE_ADDRESSES.SAFE_PROXY_FACTORY,
-    data: encodeCreateProxyCall(SAFE_ADDRESSES.SAFE_SINGLETON, setupData, salt),
-    salt
+    data: encodeCreateProxyWithNonce(owners, threshold, salt),
+    salt,
   };
 }
 
 /**
- * Calculate Safe address before deployment (CREATE2)
+ * Predict the address of a Safe before deployment
  */
-export function predictSafeAddress(
-  setupData: string,
-  salt: string
-): string {
-  // CREATE2 address calculation
-  // address = keccak256(0xff + factory + salt + keccak256(initCode))[12:]
-  // This is a simplified version - use actual library in production
-  return `0x${generateHash(`${SAFE_ADDRESSES.SAFE_PROXY_FACTORY}${salt}${setupData}`).slice(-40)}`;
+export async function predictSafeAddress(params: {
+  owners: string[];
+  threshold: number;
+  saltNonce?: string;
+}): Promise<string> {
+  return predictSafeAddressReal({
+    owners: params.owners,
+    threshold: params.threshold,
+    saltNonce: params.saltNonce,
+  });
 }
 
 /**
- * Create a Safe for a competition
+ * Create a new Safe for a competition
  */
 export async function createCompetitionSafe(
   competition: Partial<Competition>,
-  signer: { signTransaction: (tx: SafeTransaction) => Promise<string> }
+  signer: {
+    sendTransaction?: (tx: { to: string; data: string; value?: string }) => Promise<{ hash: string }>;
+    signTransaction?: (tx: SafeTransaction) => Promise<string>;
+  }
 ): Promise<APIResponse<SafeConfig>> {
-  // Determine owners based on resolution method
-  const owners: string[] = [];
+  // Get owners and threshold from competition
+  const creator = getCreatorAddress(competition.creator);
+  const judges = competition.resolution?.judges || competition.arbitration?.judges || [];
 
-  // Always include the competition creator
-  if (competition.creator) {
-    owners.push(getCreatorAddress(competition.creator));
+  const owners = [
+    creator,
+    ...judges.map((j: Judge) => j.address)
+  ].filter((addr): addr is string => !!addr);
+
+  // Default threshold: majority of owners
+  const threshold = Math.ceil(owners.length / 2);
+
+  if (owners.length === 0) {
+    return {
+      success: false,
+      error: {
+        code: 'NO_OWNERS',
+        message: 'At least one owner (creator) is required',
+      },
+    };
   }
 
-  // Add judges as owners for multisig resolution
-  if (competition.resolution?.judges) {
-    for (const judge of competition.resolution.judges) {
-      if (!owners.includes(judge.address)) {
-        owners.push(judge.address);
-      }
+  // If we have a real signer with sendTransaction, use the SDK
+  if (signer.sendTransaction) {
+    try {
+      // Create an ethers signer wrapper
+      const provider = new ethers.JsonRpcProvider(
+        process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org',
+        CHAIN_ID
+      );
+
+      // Use predicted address for now (actual deployment happens on first tx)
+      const predictedAddress = await predictSafeAddressReal({
+        owners,
+        threshold,
+        saltNonce: competition.id,
+      });
+
+      return {
+        success: true,
+        data: {
+          address: predictedAddress,
+          chainId: CHAIN_ID,
+          owners,
+          threshold,
+          modules: [],
+          guards: [],
+          nonce: 0,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'CREATE_SAFE_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to create Safe',
+        },
+      };
     }
   }
 
-  // Calculate threshold
-  const threshold = competition.resolution?.requiredSignatures || Math.ceil(owners.length / 2);
-
-  // Generate deployment data
-  const deploymentData = generateSafeDeploymentData({
+  // Fallback: return predicted address
+  const predictedAddress = await predictSafeAddressReal({
     owners,
-    threshold
+    threshold,
+    saltNonce: competition.id || Date.now().toString(),
   });
 
-  // Predict the Safe address
-  const predictedAddress = predictSafeAddress(deploymentData.data, deploymentData.salt);
-
-  try {
-    // In production, this would actually send the transaction
-    // For now, return the config
-    const safeConfig: SafeConfig = {
+  return {
+    success: true,
+    data: {
       address: predictedAddress,
       chainId: CHAIN_ID,
       owners,
       threshold,
       modules: [],
       guards: [],
-      nonce: 0
-    };
-
-    return {
-      success: true,
-      data: safeConfig,
-      meta: {
-        timestamp: Date.now(),
-        requestId: deploymentData.salt
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: {
-        code: 'SAFE_CREATION_FAILED',
-        message: error instanceof Error ? error.message : 'Failed to create Safe',
-        details: error
-      }
-    };
-  }
+      nonce: 0,
+    },
+  };
 }
 
 // ============================================================================
@@ -192,32 +216,32 @@ export async function createCompetitionSafe(
 // ============================================================================
 
 /**
- * Build a Safe transaction for prize distribution
+ * Build transactions for prize distribution
+ * Supports multiple recipients with ETH or ERC20 tokens
  */
 export function buildPrizeDistributionTx(params: {
-  recipients: Array<{ address: string; amount: string }>;
-  token?: string;  // ETH if not specified
+  recipients: Array<{ address: string; amount: string; token?: string }>;
 }): SafeTransaction[] {
-  const transactions: SafeTransaction[] = [];
-
-  for (const recipient of params.recipients) {
-    if (params.token && params.token !== 'ETH') {
+  return params.recipients.map((recipient) => {
+    if (recipient.token && recipient.token !== ethers.ZeroAddress) {
       // ERC20 transfer
-      transactions.push({
-        to: params.token,
+      const txData = buildERC20Transfer(recipient.token, recipient.address, recipient.amount);
+      return {
+        to: recipient.token,
         value: '0',
-        data: encodeERC20Transfer(recipient.address, recipient.amount),
+        data: txData.data,
         operation: 0,
         safeTxGas: '0',
         baseGas: '0',
         gasPrice: '0',
-        gasToken: '0x0000000000000000000000000000000000000000',
-        refundReceiver: '0x0000000000000000000000000000000000000000',
-        nonce: 0
-      });
+        gasToken: ethers.ZeroAddress,
+        refundReceiver: ethers.ZeroAddress,
+        nonce: 0,
+      };
     } else {
-      // Native ETH transfer
-      transactions.push({
+      // ETH transfer
+      const txData = buildETHTransfer(recipient.address, recipient.amount);
+      return {
         to: recipient.address,
         value: recipient.amount,
         data: '0x',
@@ -225,37 +249,46 @@ export function buildPrizeDistributionTx(params: {
         safeTxGas: '0',
         baseGas: '0',
         gasPrice: '0',
-        gasToken: '0x0000000000000000000000000000000000000000',
-        refundReceiver: '0x0000000000000000000000000000000000000000',
-        nonce: 0
-      });
+        gasToken: ethers.ZeroAddress,
+        refundReceiver: ethers.ZeroAddress,
+        nonce: 0,
+      };
     }
-  }
-
-  return transactions;
+  });
 }
 
 /**
- * Build a multi-send transaction (batch multiple calls)
+ * Build a multiSend transaction for batching multiple operations
  */
-export function buildMultiSendTx(
-  transactions: SafeTransaction[]
-): SafeTransaction {
-  const encodedTransactions = transactions.map(tx =>
-    encodeMultiSendTransaction(tx)
-  ).join('');
+export function buildMultiSendTx(transactions: SafeTransaction[]): SafeTransaction {
+  // Encode all transactions for multiSend
+  const encodedTransactions = transactions.map((tx) => {
+    const operation = (tx.operation || 0).toString(16).padStart(2, '0');
+    const to = tx.to.slice(2).toLowerCase().padStart(40, '0');
+    const value = BigInt(tx.value || '0').toString(16).padStart(64, '0');
+    const data = tx.data.slice(2);
+    const dataLength = (data.length / 2).toString(16).padStart(64, '0');
+    return `${operation}${to}${value}${dataLength}${data}`;
+  }).join('');
+
+  // multiSend(bytes transactions) selector
+  const multiSendData = `0x8d80ff0a` +
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['bytes'],
+      [`0x${encodedTransactions}`]
+    ).slice(2);
 
   return {
     to: SAFE_ADDRESSES.MULTI_SEND,
     value: '0',
-    data: encodeMultiSend(encodedTransactions),
-    operation: 1,  // DelegateCall for MultiSend
+    data: multiSendData,
+    operation: 1, // DelegateCall for multiSend
     safeTxGas: '0',
     baseGas: '0',
     gasPrice: '0',
-    gasToken: '0x0000000000000000000000000000000000000000',
-    refundReceiver: '0x0000000000000000000000000000000000000000',
-    nonce: 0
+    gasToken: ethers.ZeroAddress,
+    refundReceiver: ethers.ZeroAddress,
+    nonce: 0,
   };
 }
 
@@ -264,37 +297,91 @@ export function buildMultiSendTx(
 // ============================================================================
 
 /**
- * Calculate Safe transaction hash
+ * Calculate Safe transaction hash using proper keccak256
  */
 export function calculateSafeTxHash(
   safeAddress: string,
   tx: SafeTransaction,
   chainId: number
 ): string {
-  const domainSeparator = calculateDomainSeparator(safeAddress, chainId);
-  const safeTxHash = calculateSafeTxStructHash(tx);
-
-  // EIP-712 hash
-  return generateHash(`0x1901${domainSeparator}${safeTxHash}`);
-}
-
-/**
- * Collect signatures from judges
- */
-export function collectSignatures(
-  signatures: SafeSignature[]
-): string {
-  // Sort signatures by signer address (required by Safe)
-  const sorted = [...signatures].sort((a, b) =>
-    a.signer.toLowerCase().localeCompare(b.signer.toLowerCase())
+  // EIP-712 domain separator
+  const DOMAIN_SEPARATOR_TYPEHASH = ethers.keccak256(
+    ethers.toUtf8Bytes('EIP712Domain(uint256 chainId,address verifyingContract)')
   );
 
-  // Concatenate signatures
-  return sorted.map(s => s.signature).join('');
+  const domainSeparator = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['bytes32', 'uint256', 'address'],
+      [DOMAIN_SEPARATOR_TYPEHASH, chainId, safeAddress]
+    )
+  );
+
+  // Safe transaction typehash
+  const SAFE_TX_TYPEHASH = ethers.keccak256(
+    ethers.toUtf8Bytes(
+      'SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)'
+    )
+  );
+
+  const dataHash = ethers.keccak256(tx.data);
+
+  const safeTxHash = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['bytes32', 'address', 'uint256', 'bytes32', 'uint8', 'uint256', 'uint256', 'uint256', 'address', 'address', 'uint256'],
+      [
+        SAFE_TX_TYPEHASH,
+        tx.to,
+        tx.value,
+        dataHash,
+        tx.operation,
+        tx.safeTxGas,
+        tx.baseGas,
+        tx.gasPrice,
+        tx.gasToken,
+        tx.refundReceiver,
+        tx.nonce
+      ]
+    )
+  );
+
+  // Final EIP-712 hash
+  return ethers.keccak256(
+    ethers.solidityPacked(
+      ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
+      ['0x19', '0x01', domainSeparator, safeTxHash]
+    )
+  );
 }
 
 /**
- * Verify a signature
+ * Collect signatures from multiple owners
+ */
+export async function collectSignatures(
+  safeAddress: string,
+  tx: SafeTransaction,
+  signers: Array<{ address: string; sign: (hash: string) => Promise<string> }>
+): Promise<SafeSignature[]> {
+  const txHash = calculateSafeTxHash(safeAddress, tx, CHAIN_ID);
+  const signatures: SafeSignature[] = [];
+
+  for (const signer of signers) {
+    try {
+      const signature = await signer.sign(txHash);
+      signatures.push({
+        signer: signer.address,
+        signature,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error(`Failed to get signature from ${signer.address}:`, error);
+    }
+  }
+
+  return signatures;
+}
+
+/**
+ * Verify a signature using ecrecover
  */
 export function verifySignature(
   safeAddress: string,
@@ -302,20 +389,22 @@ export function verifySignature(
   signature: SafeSignature,
   chainId: number
 ): boolean {
-  const txHash = calculateSafeTxHash(safeAddress, tx, chainId);
-  // In production, use ecrecover to verify
-  // This is a placeholder
-  return signature.signature.length === 130;  // 65 bytes hex
+  try {
+    const txHash = calculateSafeTxHash(safeAddress, tx, chainId);
+    const recoveredAddress = ethers.recoverAddress(txHash, signature.signature);
+    return recoveredAddress.toLowerCase() === signature.signer.toLowerCase();
+  } catch {
+    return false;
+  }
 }
 
 /**
- * Check if we have enough signatures
+ * Check if we have enough signatures to execute
  */
 export function hasEnoughSignatures(
   signatures: SafeSignature[],
   threshold: number
 ): boolean {
-  // Get unique signers
   const uniqueSigners = new Set(signatures.map(s => s.signer.toLowerCase()));
   return uniqueSigners.size >= threshold;
 }
@@ -328,17 +417,19 @@ export function hasEnoughSignatures(
  * Enable a module on a Safe
  */
 export function buildEnableModuleTx(moduleAddress: string): SafeTransaction {
+  const data = `0x610b5925${moduleAddress.slice(2).padStart(64, '0')}`;
+
   return {
-    to: '{{SAFE_ADDRESS}}',  // Will be replaced with actual Safe address
+    to: '{{SAFE_ADDRESS}}', // Will be replaced with actual Safe address
     value: '0',
-    data: encodeEnableModule(moduleAddress),
+    data,
     operation: 0,
     safeTxGas: '0',
     baseGas: '0',
     gasPrice: '0',
-    gasToken: '0x0000000000000000000000000000000000000000',
-    refundReceiver: '0x0000000000000000000000000000000000000000',
-    nonce: 0
+    gasToken: ethers.ZeroAddress,
+    refundReceiver: ethers.ZeroAddress,
+    nonce: 0,
   };
 }
 
@@ -346,37 +437,33 @@ export function buildEnableModuleTx(moduleAddress: string): SafeTransaction {
  * Setup Delay Module for time-locked withdrawals
  */
 export function buildDelayModuleSetup(params: {
-  cooldown: number;  // Seconds before execution allowed
-  expiration: number;  // Seconds until transaction expires
+  cooldown: number;
+  expiration: number;
 }): SafeModule {
   return {
     type: 'delay',
     address: SAFE_ADDRESSES.DELAY_MODIFIER,
     config: {
       cooldown: params.cooldown,
-      expiration: params.expiration
-    }
+      expiration: params.expiration,
+    },
   };
 }
 
 /**
  * Setup Roles Module for judge permissions
  */
-export function buildRolesModuleSetup(
-  judges: Judge[]
-): SafeModule {
+export function buildRolesModuleSetup(judges: Judge[]): SafeModule {
   const roles: Record<string, string[]> = {
     'PRIMARY_JUDGE': judges.filter(j => j.role === 'primary').map(j => j.address),
     'BACKUP_JUDGE': judges.filter(j => j.role === 'backup').map(j => j.address),
-    'APPEAL_JUDGE': judges.filter(j => j.role === 'appeal').map(j => j.address)
+    'APPEAL_JUDGE': judges.filter(j => j.role === 'appeal').map(j => j.address),
   };
 
   return {
     type: 'roles',
     address: SAFE_ADDRESSES.ROLES_MODIFIER,
-    config: {
-      roles
-    }
+    config: { roles },
   };
 }
 
@@ -387,10 +474,9 @@ export function buildRolesModuleSetup(
 /**
  * Setup Competition Guard for validating distributions
  */
-export function buildCompetitionGuard(
-  competition: Competition
-): SafeGuard {
+export function buildCompetitionGuard(competition: Competition): SafeGuard {
   const participantsList = getParticipantsList(competition.participants);
+
   return {
     type: 'competition',
     address: SAFE_ADDRESSES.COMPETITION_GUARD,
@@ -398,8 +484,8 @@ export function buildCompetitionGuard(
       competitionId: competition.id,
       prizePool: competition.prizePool,
       allowedRecipients: participantsList.map(p => p.address),
-      maxWithdrawal: competition.prizePool
-    }
+      maxWithdrawal: competition.prizePool,
+    },
   };
 }
 
@@ -407,106 +493,20 @@ export function buildCompetitionGuard(
  * Build transaction to set guard
  */
 export function buildSetGuardTx(guardAddress: string): SafeTransaction {
+  const data = `0xe19a9dd9${guardAddress.slice(2).padStart(64, '0')}`;
+
   return {
     to: '{{SAFE_ADDRESS}}',
     value: '0',
-    data: encodeSetGuard(guardAddress),
+    data,
     operation: 0,
     safeTxGas: '0',
     baseGas: '0',
     gasPrice: '0',
-    gasToken: '0x0000000000000000000000000000000000000000',
-    refundReceiver: '0x0000000000000000000000000000000000000000',
-    nonce: 0
+    gasToken: ethers.ZeroAddress,
+    refundReceiver: ethers.ZeroAddress,
+    nonce: 0,
   };
-}
-
-// ============================================================================
-// HELPER ENCODING FUNCTIONS
-// ============================================================================
-
-// Note: These are placeholder implementations
-// In production, use ethers.js, viem, or the Safe SDK
-
-function encodeSetupCall(params: {
-  owners: string[];
-  threshold: number;
-  to: string;
-  data: string;
-  fallbackHandler: string;
-  paymentToken: string;
-  payment: number;
-  paymentReceiver: string;
-}): string {
-  // Placeholder - use actual ABI encoding in production
-  return `0xb63e800d${JSON.stringify(params)}`;
-}
-
-function encodeCreateProxyCall(
-  singleton: string,
-  setupData: string,
-  salt: string
-): string {
-  // createProxyWithNonce(address singleton, bytes initializer, uint256 saltNonce)
-  return `0x1688f0b9${singleton}${setupData}${salt}`;
-}
-
-function encodeERC20Transfer(to: string, amount: string): string {
-  // transfer(address,uint256)
-  return `0xa9059cbb${to.slice(2).padStart(64, '0')}${BigInt(amount).toString(16).padStart(64, '0')}`;
-}
-
-function encodeMultiSendTransaction(tx: SafeTransaction): string {
-  // Encode single transaction for multiSend
-  const operation = tx.operation.toString(16).padStart(2, '0');
-  const to = tx.to.slice(2).padStart(40, '0');
-  const value = BigInt(tx.value).toString(16).padStart(64, '0');
-  const dataLength = ((tx.data.length - 2) / 2).toString(16).padStart(64, '0');
-  const data = tx.data.slice(2);
-
-  return `${operation}${to}${value}${dataLength}${data}`;
-}
-
-function encodeMultiSend(encodedTransactions: string): string {
-  // multiSend(bytes transactions)
-  return `0x8d80ff0a${encodedTransactions}`;
-}
-
-function encodeEnableModule(moduleAddress: string): string {
-  // enableModule(address module)
-  return `0x610b5925${moduleAddress.slice(2).padStart(64, '0')}`;
-}
-
-function encodeSetGuard(guardAddress: string): string {
-  // setGuard(address guard)
-  return `0xe19a9dd9${guardAddress.slice(2).padStart(64, '0')}`;
-}
-
-function calculateDomainSeparator(safeAddress: string, chainId: number): string {
-  // EIP-712 domain separator
-  // Placeholder implementation
-  return generateHash(`${safeAddress}${chainId}`);
-}
-
-function calculateSafeTxStructHash(tx: SafeTransaction): string {
-  // Safe transaction struct hash
-  // Placeholder implementation
-  return generateHash(JSON.stringify(tx));
-}
-
-function generateSalt(): string {
-  return `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`.padEnd(66, '0');
-}
-
-function generateHash(input: string): string {
-  // Placeholder - use keccak256 in production
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    const char = input.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return `0x${Math.abs(hash).toString(16).padStart(64, '0')}`;
 }
 
 // ============================================================================
@@ -518,39 +518,32 @@ const SAFE_API_BASE = 'https://safe-transaction-base-sepolia.safe.global/api/v1'
 /**
  * Get Safe info from Safe Transaction Service
  */
-export async function getSafeInfo(
-  safeAddress: string
-): Promise<APIResponse<SafeConfig>> {
-  try {
-    const response = await fetch(`${SAFE_API_BASE}/safes/${safeAddress}/`);
+export async function getSafeInfo(safeAddress: string): Promise<APIResponse<SafeConfig>> {
+  const result = await getSafeInfoReal(safeAddress);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      success: true,
-      data: {
-        address: data.address,
-        chainId: CHAIN_ID,
-        owners: data.owners,
-        threshold: data.threshold,
-        modules: data.modules || [],
-        guards: data.guard ? [{ type: 'custom', address: data.guard, config: {} }] : [],
-        nonce: data.nonce
-      }
-    };
-  } catch (error) {
+  if (!result.success || !result.data) {
     return {
       success: false,
-      error: {
-        code: 'SAFE_API_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to fetch Safe info'
-      }
+      error: result.error,
     };
   }
+
+  return {
+    success: true,
+    data: {
+      address: result.data.address,
+      chainId: result.data.chainId,
+      owners: result.data.owners,
+      threshold: result.data.threshold,
+      modules: (result.data.modules || []).map((addr: string) => ({
+        type: 'custom' as const,
+        address: addr,
+        config: {},
+      })),
+      guards: result.data.guard ? [{ type: 'custom' as const, address: result.data.guard, config: {} }] : [],
+      nonce: result.data.nonce,
+    },
+  };
 }
 
 /**
@@ -559,41 +552,30 @@ export async function getSafeInfo(
 export async function getPendingTransactions(
   safeAddress: string
 ): Promise<APIResponse<SafeTransaction[]>> {
-  try {
-    const response = await fetch(
-      `${SAFE_API_BASE}/safes/${safeAddress}/multisig-transactions/?executed=false`
-    );
+  const result = await getPendingTransactionsReal(safeAddress);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      success: true,
-      data: data.results.map((tx: Record<string, unknown>) => ({
-        to: tx.to,
-        value: tx.value,
-        data: tx.data || '0x',
-        operation: tx.operation,
-        safeTxGas: tx.safeTxGas,
-        baseGas: tx.baseGas,
-        gasPrice: tx.gasPrice,
-        gasToken: tx.gasToken,
-        refundReceiver: tx.refundReceiver,
-        nonce: tx.nonce
-      }))
-    };
-  } catch (error) {
+  if (!result.success || !result.data) {
     return {
       success: false,
-      error: {
-        code: 'SAFE_API_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to fetch transactions'
-      }
+      error: result.error,
     };
   }
+
+  return {
+    success: true,
+    data: result.data.map((tx) => ({
+      to: tx.to,
+      value: tx.value,
+      data: tx.data,
+      operation: tx.operation as 0 | 1,
+      safeTxGas: '0',
+      baseGas: '0',
+      gasPrice: '0',
+      gasToken: ethers.ZeroAddress,
+      refundReceiver: ethers.ZeroAddress,
+      nonce: tx.nonce,
+    })),
+  };
 }
 
 /**
@@ -613,15 +595,15 @@ export async function proposeTransaction(
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...tx,
           contractTransactionHash: safeTxHash,
           sender,
           signature: signature.signature,
-          origin: 'CryptoGift Competencias'
-        })
+          origin: 'CryptoGift Competencias',
+        }),
       }
     );
 
@@ -632,15 +614,15 @@ export async function proposeTransaction(
 
     return {
       success: true,
-      data: { safeTxHash }
+      data: { safeTxHash },
     };
   } catch (error) {
     return {
       success: false,
       error: {
         code: 'PROPOSE_FAILED',
-        message: error instanceof Error ? error.message : 'Failed to propose transaction'
-      }
+        message: error instanceof Error ? error.message : 'Failed to propose transaction',
+      },
     };
   }
 }
@@ -659,11 +641,11 @@ export async function addSignature(
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          signature: signature.signature
-        })
+          signature: signature.signature,
+        }),
       }
     );
 
@@ -673,15 +655,15 @@ export async function addSignature(
 
     return {
       success: true,
-      data: { success: true }
+      data: { success: true },
     };
   } catch (error) {
     return {
       success: false,
       error: {
         code: 'SIGNATURE_FAILED',
-        message: error instanceof Error ? error.message : 'Failed to add signature'
-      }
+        message: error instanceof Error ? error.message : 'Failed to add signature',
+      },
     };
   }
 }
@@ -701,7 +683,7 @@ export async function setupCompetitionSafe(
   modules: SafeModule[];
   guard: SafeGuard;
 }>> {
-  // 1. Create the Safe
+  // Create the Safe
   const safeResult = await createCompetitionSafe(competition, signer);
   if (!safeResult.success || !safeResult.data) {
     return { success: false, error: safeResult.error };
@@ -709,14 +691,14 @@ export async function setupCompetitionSafe(
 
   const safeConfig = safeResult.data;
 
-  // 2. Setup modules based on competition type
+  // Setup modules based on competition type
   const modules: SafeModule[] = [];
 
   // Add delay module for dispute period
   if (competition.resolution.disputePeriod > 0) {
     modules.push(buildDelayModuleSetup({
       cooldown: competition.resolution.disputePeriod,
-      expiration: competition.resolution.disputePeriod * 2
+      expiration: competition.resolution.disputePeriod * 2,
     }));
   }
 
@@ -725,7 +707,7 @@ export async function setupCompetitionSafe(
     modules.push(buildRolesModuleSetup(competition.resolution.judges));
   }
 
-  // 3. Setup competition guard
+  // Setup competition guard
   const guard = buildCompetitionGuard(competition);
 
   return {
@@ -733,8 +715,8 @@ export async function setupCompetitionSafe(
     data: {
       safeAddress: safeConfig.address,
       modules,
-      guard
-    }
+      guard,
+    },
   };
 }
 
@@ -744,11 +726,12 @@ export async function setupCompetitionSafe(
 export async function distributePrizes(
   safeAddress: string,
   winners: Array<{ address: string; amount: string }>,
-  signatures: SafeSignature[]
+  signatures: SafeSignature[],
+  signer?: ethers.Signer
 ): Promise<APIResponse<{ txHash: string }>> {
   // Build distribution transaction
   const distributionTxs = buildPrizeDistributionTx({
-    recipients: winners
+    recipients: winners,
   });
 
   // If multiple winners, use multiSend
@@ -767,16 +750,79 @@ export async function distributePrizes(
       success: false,
       error: {
         code: 'INSUFFICIENT_SIGNATURES',
-        message: `Need ${safeInfo.data.threshold} signatures, have ${signatures.length}`
-      }
+        message: `Need ${safeInfo.data.threshold} signatures, have ${signatures.length}`,
+      },
     };
   }
 
-  // In production, this would execute the transaction
+  // If we have a signer, execute via SDK
+  if (signer) {
+    const safeTxHash = calculateSafeTxHash(safeAddress, tx, CHAIN_ID);
+    const executeResult = await executeTransactionReal(safeAddress, safeTxHash, signer);
+
+    if (!executeResult.success || !executeResult.data) {
+      return {
+        success: false,
+        error: executeResult.error,
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        txHash: executeResult.data.txHash || executeResult.data.safeTxHash,
+      },
+    };
+  }
+
+  // Return transaction data for frontend execution
+  // Note: Transaction is pending execution on the frontend
+  // Return calculated safeTxHash as pending txHash for tracking
+  const pendingSafeTxHash = calculateSafeTxHash(safeAddress, tx, CHAIN_ID);
   return {
     success: true,
     data: {
-      txHash: '0x' + 'pending'.padEnd(64, '0')
-    }
+      txHash: `pending:${pendingSafeTxHash}`,
+    },
   };
+}
+
+// ============================================================================
+// HELPER ENCODING FUNCTIONS
+// ============================================================================
+
+function encodeCreateProxyWithNonce(
+  owners: string[],
+  threshold: number,
+  salt: string
+): string {
+  // Encode setup call
+  const setupData = ethers.AbiCoder.defaultAbiCoder().encode(
+    ['address[]', 'uint256', 'address', 'bytes', 'address', 'address', 'uint256', 'address'],
+    [
+      owners,
+      threshold,
+      ethers.ZeroAddress,
+      '0x',
+      SAFE_ADDRESSES.FALLBACK_HANDLER,
+      ethers.ZeroAddress,
+      0,
+      ethers.ZeroAddress,
+    ]
+  );
+
+  // setup(address[],uint256,address,bytes,address,address,uint256,address)
+  const setupSelector = '0xb63e800d';
+  const fullSetupData = setupSelector + setupData.slice(2);
+
+  // createProxyWithNonce(address,bytes,uint256)
+  const createProxySelector = '0x1688f0b9';
+  const saltNonce = BigInt(salt).toString();
+
+  const createProxyData = ethers.AbiCoder.defaultAbiCoder().encode(
+    ['address', 'bytes', 'uint256'],
+    [SAFE_ADDRESSES.SAFE_SINGLETON, fullSetupData, saltNonce]
+  );
+
+  return createProxySelector + createProxyData.slice(2);
 }

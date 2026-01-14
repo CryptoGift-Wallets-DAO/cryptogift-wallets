@@ -65,7 +65,7 @@ export {
   simulateMarket
 } from './lib/manifoldClient';
 
-// Safe Integration
+// Safe Integration (high-level API)
 export {
   generateSafeDeploymentData,
   predictSafeAddress,
@@ -88,6 +88,35 @@ export {
   setupCompetitionSafe,
   distributePrizes
 } from './lib/safeIntegration';
+
+// Safe Client (SDK integration)
+export {
+  initializeSafeApiKit,
+  initializeSafeProtocolKit,
+  getProvider,
+  getSafeBalance,
+  isOwner,
+  getTransactionHistory,
+  getTransaction,
+  signTransaction,
+  executeTransaction,
+  proposeMultiSendTransaction,
+  proposePrizeDistribution,
+  enableModule,
+  setGuard,
+  buildETHTransfer,
+  buildERC20Transfer,
+  buildPrizeDistributionTransactions,
+  getDefaultSafeAddress,
+  isSafeClientConfigured,
+  SAFE_CONTRACTS,
+  type SafeInfo,
+  type SafeBalance,
+  type PendingTransaction,
+  type TransactionResult,
+  type CreateSafeParams,
+  type PrizeDistribution,
+} from './lib/safeClient';
 
 // Kleros Integration
 export {
@@ -229,7 +258,7 @@ export {
   type ExecutionResult,
   type UseCreateSafeOptions,
   type UseCreateSafeReturn,
-  type CreateSafeParams,
+  type CreateSafeParams as UseSafeCreateParams,
   type SafeHistoryEntry,
   type UseSafeHistoryReturn,
 } from './hooks/useSafe';
