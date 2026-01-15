@@ -52,19 +52,20 @@ import {
 } from './safeClient';
 
 // ============================================================================
-// CONFIGURATION
+// CONFIGURATION - BASE MAINNET (8453)
 // ============================================================================
 
-// Base Sepolia addresses - using real addresses from Safe SDK
+// Base Mainnet addresses - using real addresses from Safe SDK v1.3.0 eip155
 export const SAFE_ADDRESSES = {
   // Safe contracts (from @safe-global deployments)
-  SAFE_SINGLETON: SAFE_CONTRACTS.SAFE_SINGLETON,
+  SAFE_L2_SINGLETON: SAFE_CONTRACTS.SAFE_L2_SINGLETON,
   SAFE_PROXY_FACTORY: SAFE_CONTRACTS.SAFE_PROXY_FACTORY,
   FALLBACK_HANDLER: SAFE_CONTRACTS.FALLBACK_HANDLER,
   MULTI_SEND: SAFE_CONTRACTS.MULTI_SEND,
   MULTI_SEND_CALL_ONLY: SAFE_CONTRACTS.MULTI_SEND_CALL_ONLY,
 
-  // Zodiac modules - to be deployed per competition
+  // Zodiac modules - to be deployed per competition (MVP: not using Zodiac)
+  // Per PLAN_ACCION_COMPETENCIAS.md: Safe básico con threshold N-of-M
   DELAY_MODIFIER: '0x0000000000000000000000000000000000000000',
   ROLES_MODIFIER: '0x0000000000000000000000000000000000000000',
 
@@ -72,7 +73,7 @@ export const SAFE_ADDRESSES = {
   COMPETITION_GUARD: '0x0000000000000000000000000000000000000000'
 };
 
-export const CHAIN_ID = 84532; // Base Sepolia
+export const CHAIN_ID = 8453; // Base Mainnet
 
 // ============================================================================
 // SAFE CREATION
@@ -821,7 +822,7 @@ function encodeCreateProxyWithNonce(
 
   const createProxyData = ethers.AbiCoder.defaultAbiCoder().encode(
     ['address', 'bytes', 'uint256'],
-    [SAFE_ADDRESSES.SAFE_SINGLETON, fullSetupData, saltNonce]
+    [SAFE_ADDRESSES.SAFE_L2_SINGLETON, fullSetupData, saltNonce]
   );
 
   return createProxySelector + createProxyData.slice(2);

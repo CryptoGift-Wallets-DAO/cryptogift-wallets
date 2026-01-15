@@ -3,6 +3,7 @@
  * POST /api/competition/create
  *
  * Creates a new competition with Gnosis Safe and optional Manifold market
+ * REQUIERE AUTENTICACIÓN SIWE
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -15,6 +16,7 @@ import {
 } from '../../../competencias/types';
 import { createCompetitionSafe } from '../../../competencias/lib/safeIntegration';
 import { createBinaryMarket, createMultipleChoiceMarket } from '../../../competencias/lib/manifoldClient';
+import { withAuth, getAuthenticatedAddress } from '../../../competencias/lib/authMiddleware';
 
 // Redis client
 const redis = new Redis({
@@ -66,11 +68,10 @@ interface CreateCompetitionRequest {
   safeOwners?: string[];
   safeThreshold?: number;
 
-  // Creator
-  creatorAddress: string;
+  // NOTA: creatorAddress viene del token JWT autenticado, no del body
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -79,6 +80,9 @@ export default async function handler(
   }
 
   try {
+    // Obtener dirección autenticada del token JWT (seguro, no manipulable)
+    const creatorAddress = getAuthenticatedAddress(req);
+
     const data = req.body as CreateCompetitionRequest;
 
     // Validate required fields
@@ -88,9 +92,7 @@ export default async function handler(
     if (!data.category) {
       return res.status(400).json({ error: 'Category is required' });
     }
-    if (!data.creatorAddress) {
-      return res.status(400).json({ error: 'Creator address is required' });
-    }
+    // creatorAddress ya no viene del body - viene del JWT autenticado
     if (!data.resolutionMethod) {
       return res.status(400).json({ error: 'Resolution method is required' });
     }
@@ -106,7 +108,7 @@ export default async function handler(
       category: data.category,
       status: STATUS.DRAFT,
       creator: {
-        address: data.creatorAddress,
+        address: creatorAddress,
         createdAt: new Date().toISOString(),
       },
       prizePool: {
@@ -217,7 +219,7 @@ export default async function handler(
     competition.transparency!.events = [{
       type: 'competition_created',
       timestamp: Date.now(),
-      actor: data.creatorAddress,
+      actor: creatorAddress,
       action: 'Competition created',
       details: {
         category: data.category,
@@ -235,7 +237,7 @@ export default async function handler(
     await redis.sadd(`competitions:${data.category}`, competitionId);
 
     // Add to creator's competitions
-    await redis.sadd(`user:${data.creatorAddress}:competitions`, competitionId);
+    await redis.sadd(`user:${creatorAddress}:competitions`, competitionId);
 
     // Add to all competitions list
     await redis.zadd('competitions:all', {
@@ -259,3 +261,6 @@ export default async function handler(
     });
   }
 }
+
+// Exportar con middleware de autenticación
+export default withAuth(handler);

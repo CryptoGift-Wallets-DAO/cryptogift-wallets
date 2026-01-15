@@ -2,7 +2,99 @@
 
 This file provides development guidance and context for the CryptoGift NFT-Wallet platform.
 
-## 🎯 LATEST SESSION UPDATES (Noviembre 6, 2025) - EDUCATIONAL SCORE & TYPESCRIPT FIX ✅
+## 🎯 LATEST SESSION UPDATES (Enero 14, 2026) - COMPETITIONS SYSTEM PHASE 0 ✅
+
+### 🏆 COMPETITION SYSTEM AUTHENTICATION + BASE MAINNET MIGRATION
+
+**OBJETIVO**: Implementar autenticación en sistema de competencias y migrar a Base Mainnet.
+
+**DESCUBRIMIENTOS CLAVE**:
+- Sistema SIWE completo ya existía (`siweAuth.ts`, `siweClient.ts`)
+- Endpoints `/api/auth/challenge` y `/api/auth/verify` ya funcionales
+- Solo faltaba crear middleware y aplicarlo a APIs de competencias
+
+**CAMBIOS IMPLEMENTADOS**:
+
+#### 1. Plan de Acción Actualizado
+**File**: `frontend/src/competencias/PLAN_ACCION_COMPETENCIAS.md`
+- Documentada infraestructura existente (SIWE, JWT, Redis)
+- Actualizado Chain ID a Base Mainnet (8453)
+- Reducido tiempo estimado de Fase 0 (6-8h → 2-3h)
+- Añadidas direcciones de contratos Safe v1.3.0 eip155
+
+#### 2. Middleware de Autenticación Creado
+**Nuevo file**: `frontend/src/competencias/lib/authMiddleware.ts`
+```typescript
+// Funciones exportadas:
+export function withAuth(handler) // Wrapper que requiere auth
+export function withOptionalAuth(handler) // Wrapper opcional
+export function getAuthenticatedAddress(req) // Obtiene address del JWT
+export function verifyAddressMatch(req, address) // Verifica ownership
+export function getAuthData(req) // Obtiene token data completo
+```
+
+#### 3. APIs de Competencias Protegidas
+**Files modificados**:
+- `frontend/src/pages/api/competition/create.ts`
+- `frontend/src/pages/api/competition/[id]/join.ts`
+- `frontend/src/pages/api/competition/[id]/bet.ts`
+- `frontend/src/pages/api/competition/[id]/safe/distribute.ts`
+
+**Cambio patrón aplicado**:
+```typescript
+// ANTES: Confiaba en body del request (inseguro)
+const { creatorAddress } = req.body;
+
+// DESPUÉS: Obtiene de JWT verificado (seguro)
+const creatorAddress = getAuthenticatedAddress(req);
+export default withAuth(handler);
+```
+
+#### 4. Migración a Base Mainnet (Chain ID: 8453)
+**Files modificados**:
+- `frontend/src/competencias/lib/safeClient.ts`
+- `frontend/src/competencias/lib/safeIntegration.ts`
+
+**Direcciones Safe v1.3.0 eip155 (Base Mainnet)**:
+```
+SAFE_L2_SINGLETON:   0xfb1bffC9d739B8D520DaF37dF666da4C687191EA
+SAFE_PROXY_FACTORY:  0xC22834581EbC8527d974F8a1c97E1bEA4EF910BC
+MULTI_SEND:          0x998739BFdAAdde7C933B942a68053933098f9EDa
+FALLBACK_HANDLER:    0x017062a1dE2FE6b99BE3d9d37841FeD19F573804
+```
+
+**Transaction Service URL**: `https://safe-transaction-base.safe.global`
+
+### 📊 RESULTADO FINAL:
+- ✅ Autenticación SIWE aplicada a 4 APIs de competencias
+- ✅ Middleware reutilizable creado para futuros endpoints
+- ✅ Migración completa a Base Mainnet (8453)
+- ✅ Contratos Safe actualizados a v1.3.0 eip155
+- ✅ Documentación actualizada con infraestructura existente
+
+### 📁 FILES MODIFICADOS (7 archivos):
+```
+frontend/src/competencias/PLAN_ACCION_COMPETENCIAS.md     (updated)
+frontend/src/competencias/lib/authMiddleware.ts           (NEW)
+frontend/src/competencias/lib/safeClient.ts               (updated)
+frontend/src/competencias/lib/safeIntegration.ts          (updated)
+frontend/src/pages/api/competition/create.ts              (updated)
+frontend/src/pages/api/competition/[id]/join.ts           (updated)
+frontend/src/pages/api/competition/[id]/bet.ts            (updated)
+frontend/src/pages/api/competition/[id]/safe/distribute.ts (updated)
+```
+
+### 🔗 PRÓXIMAS FASES (Por implementar):
+- **Fase 1**: Creación de Safe real (eliminar mock)
+- **Fase 2**: APIs faltantes para hook useSafe
+- **Fase 3**: Hook useSafe con signer real ThirdWeb
+- **Fase 4**: Operaciones Redis atómicas (Lua scripts)
+- **Fase 5**: Contratos Zodiac simplificados
+- **Fase 6**: Testing y polish
+
+---
+
+## 🎯 PREVIOUS SESSION (Noviembre 6, 2025) - EDUCATIONAL SCORE & TYPESCRIPT FIX ✅
 
 ### 🚨 CRITICAL BUG FIX: Missing Educational Score in English Version + TypeScript Build Error
 

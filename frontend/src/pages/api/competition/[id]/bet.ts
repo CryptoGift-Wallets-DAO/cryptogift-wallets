@@ -3,6 +3,7 @@
  * POST /api/competition/[id]/bet
  *
  * Places a bet on a prediction market competition
+ * REQUIERE AUTENTICACIÓN SIWE
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -14,6 +15,7 @@ import {
   calculateShares,
   calculateNewProbability,
 } from '../../../../competencias/lib/manifoldClient';
+import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -21,13 +23,13 @@ const redis = new Redis({
 });
 
 interface BetRequest {
-  userAddress: string;
   outcome: 'YES' | 'NO';
   amount: number;
   txHash?: string;
+  // NOTA: userAddress viene del token JWT autenticado
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -41,12 +43,12 @@ export default async function handler(
   }
 
   try {
+    // Obtener dirección autenticada del token JWT (seguro, no manipulable)
+    const userAddress = getAuthenticatedAddress(req);
+
     const data = req.body as BetRequest;
 
     // Validate
-    if (!data.userAddress) {
-      return res.status(400).json({ error: 'User address is required' });
-    }
     if (!data.outcome || !['YES', 'NO'].includes(data.outcome)) {
       return res.status(400).json({ error: 'Valid outcome (YES/NO) is required' });
     }
@@ -103,7 +105,7 @@ export default async function handler(
       probBefore: currentProb,
       probAfter: newProbability,
       createdTime: Date.now(),
-      userId: data.userAddress,
+      userId: userAddress,
     };
 
     // Place bet on Manifold if connected
@@ -149,7 +151,7 @@ export default async function handler(
     const event: TransparencyEvent = {
       type: 'bet_placed',
       timestamp: Date.now(),
-      actor: data.userAddress,
+      actor: userAddress,
       action: `Bet ${data.amount} on ${data.outcome}`,
       details: {
         betId: bet.id,
@@ -179,7 +181,7 @@ export default async function handler(
     await redis.lpush(`competition:${id}:events`, JSON.stringify(event));
 
     // Add to user's bets
-    await redis.lpush(`user:${data.userAddress}:bets`, JSON.stringify({
+    await redis.lpush(`user:${userAddress}:bets`, JSON.stringify({
       competitionId: id,
       ...bet,
     }));
@@ -200,3 +202,6 @@ export default async function handler(
     });
   }
 }
+
+// Exportar con middleware de autenticación
+export default withAuth(handler);

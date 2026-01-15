@@ -3,12 +3,14 @@
  * POST /api/competition/[id]/join
  *
  * Allows a user to join a competition
+ * REQUIERE AUTENTICACIÓN SIWE
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Redis } from '@upstash/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Competition, ParticipantEntry, TransparencyEvent } from '../../../../competencias/types';
+import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -16,14 +18,14 @@ const redis = new Redis({
 });
 
 interface JoinRequest {
-  participantAddress: string;
   position?: string; // For prediction markets
   teamId?: string; // For team competitions
   metadata?: Record<string, unknown>;
   txHash?: string;
+  // NOTA: participantAddress viene del token JWT autenticado
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -37,12 +39,10 @@ export default async function handler(
   }
 
   try {
-    const data = req.body as JoinRequest;
+    // Obtener dirección autenticada del token JWT (seguro, no manipulable)
+    const participantAddress = getAuthenticatedAddress(req);
 
-    // Validate
-    if (!data.participantAddress) {
-      return res.status(400).json({ error: 'Participant address is required' });
-    }
+    const data = req.body as JoinRequest;
 
     // Get competition
     const competitionData = await redis.get(`competition:${id}`);
@@ -61,7 +61,7 @@ export default async function handler(
 
     // Check if already joined
     const existingEntry = competition.participants?.entries?.find(
-      e => e.address === data.participantAddress
+      e => e.address === participantAddress
     );
     if (existingEntry) {
       return res.status(400).json({ error: 'Already joined this competition' });
@@ -78,7 +78,7 @@ export default async function handler(
     // Create participant entry
     const entry: ParticipantEntry = {
       id: uuidv4(),
-      address: data.participantAddress,
+      address: participantAddress,
       position: data.position,
       joinedAt: new Date().toISOString(),
       status: 'active',
@@ -99,7 +99,7 @@ export default async function handler(
     const event: TransparencyEvent = {
       type: 'participant_joined',
       timestamp: Date.now(),
-      actor: data.participantAddress,
+      actor: participantAddress,
       action: 'Joined competition',
       details: {
         participantId: entry.id,
@@ -122,7 +122,7 @@ export default async function handler(
     await redis.lpush(`competition:${id}:events`, JSON.stringify(event));
 
     // Add to user's competitions
-    await redis.sadd(`user:${data.participantAddress}:joined`, id);
+    await redis.sadd(`user:${participantAddress}:joined`, id);
 
     return res.status(200).json({
       success: true,
@@ -138,3 +138,6 @@ export default async function handler(
     });
   }
 }
+
+// Exportar con middleware de autenticación
+export default withAuth(handler);

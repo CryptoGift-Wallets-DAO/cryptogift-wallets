@@ -14,17 +14,35 @@
 - **Gas Gratis**: Todas las transacciones patrocinadas por Paymaster (Account Abstraction)
 
 ### 🌐 DEPLOYMENT & STATUS ACTUAL
-- **🚀 PRODUCTION LIVE**: https://cryptogift-wallets.vercel.app 
-- **🎯 Red**: Base Sepolia (L2) - Chain ID: 84532
+- **🚀 PRODUCTION LIVE**: https://cryptogift-wallets.vercel.app
+- **🎯 Red Principal**: Base Mainnet (L2) - Chain ID: 8453
+- **🎯 Red Testing**: Base Sepolia (L2) - Chain ID: 84532
 - **📊 Estado**: PRODUCTION READY ✅ FUNCIONAL ✅ OPTIMIZADO ✅
 
 ### 🔒 ÚLTIMO COMMIT & CAMBIOS RECIENTES
-- **Commits**: `16c3119`, `7a79f9b` - Educational Score Fix + TypeScript Interface Fix
-- **Fecha**: Noviembre 6, 2025
-- **Problema**: Regalo #370 (English) no guardaba educational score; TypeScript build error blocking deployment
-- **Solución**: Added complete educational data flow in English version + fixed interface definition
-- **Files**: `LessonModalWrapperEN.tsx`, `SalesMasterclassEN.tsx` (interface + callback), `CalendlyEmbed.tsx` (logging)
-- **Resultado**: ✅ Educational score saves correctly in English! ✅ Build successful!
+- **Fecha**: Enero 14, 2026
+- **Cambio Principal**: Sistema Competencias Fase 0 - Auth + Base Mainnet
+- **Solución**: Middleware autenticación SIWE para competencias + migración a Base Mainnet
+- **Files**: `authMiddleware.ts` (NEW), `create.ts`, `join.ts`, `bet.ts`, `distribute.ts`, `safeClient.ts`, `safeIntegration.ts`
+- **Resultado**: ✅ APIs competencias protegidas con JWT! ✅ Contratos Safe en Base Mainnet!
+
+### 🏆 SISTEMA DE COMPETENCIAS (NUEVO)
+**Estado**: Fase 0 completada, Fases 1-6 pendientes
+**Ubicación**: `frontend/src/competencias/`
+**Documentación**: `PLAN_ACCION_COMPETENCIAS.md`
+
+**Infraestructura Reutilizada**:
+- Sistema SIWE existente (`siweAuth.ts`, `siweClient.ts`)
+- Endpoints auth existentes (`/api/auth/challenge`, `/api/auth/verify`)
+- Redis para rate limiting y storage
+
+**Contratos Safe Base Mainnet (8453)**:
+```
+SAFE_L2_SINGLETON:   0xfb1bffC9d739B8D520DaF37dF666da4C687191EA
+SAFE_PROXY_FACTORY:  0xC22834581EbC8527d974F8a1c97E1bEA4EF910BC
+MULTI_SEND:          0x998739BFdAAdde7C933B942a68053933098f9EDa
+FALLBACK_HANDLER:    0x017062a1dE2FE6b99BE3d9d37841FeD19F573804
+```
 
 ---
 
