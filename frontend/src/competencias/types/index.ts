@@ -71,6 +71,19 @@ export interface Competition {
   currency: string;          // Token address (or 'ETH')
   safeAddress: string;       // Gnosis Safe holding funds
 
+  // Safe custody details (optional, for tracking deployment)
+  custody?: {
+    safeAddress: string;
+    owners: string[];
+    threshold: number;
+    deployed: boolean;
+    predictedAt?: string;
+    deployedAt?: string;
+    deploymentTxHash?: string | null;
+    saltNonce?: string;
+    confirmedBy?: string;
+  };
+
   // Resolution
   resolution: ResolutionConfig;
 
@@ -103,6 +116,7 @@ export interface Competition {
 export interface PrizePoolConfig {
   total: number;
   currency: string;
+  platformFee?: number;  // Platform fee percentage (default: 2.5%)
   distribution?: {
     position: number;
     percentage: number;

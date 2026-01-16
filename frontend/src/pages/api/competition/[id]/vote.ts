@@ -3,12 +3,14 @@
  * POST /api/competition/[id]/vote
  *
  * Allows judges to vote on competition resolution
+ * REQUIERE AUTENTICACIÓN SIWE - El juez debe estar autenticado con su wallet
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Redis } from '@upstash/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Competition, Vote, TransparencyEvent } from '../../../../competencias/types';
+import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -16,13 +18,13 @@ const redis = new Redis({
 });
 
 interface VoteRequest {
-  judgeAddress: string;
   vote: string;
   comment?: string;
   signature?: string;
+  // NOTA: judgeAddress viene del token JWT autenticado (no del body)
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -36,12 +38,12 @@ export default async function handler(
   }
 
   try {
+    // Obtener dirección autenticada del token JWT (seguro, no manipulable)
+    const judgeAddress = getAuthenticatedAddress(req);
+
     const data = req.body as VoteRequest;
 
-    // Validate
-    if (!data.judgeAddress) {
-      return res.status(400).json({ error: 'Judge address is required' });
-    }
+    // Validate vote value
     if (!data.vote) {
       return res.status(400).json({ error: 'Vote is required' });
     }
@@ -61,17 +63,21 @@ export default async function handler(
       return res.status(400).json({ error: 'Competition is not in voting phase' });
     }
 
-    // Validate judge authorization
+    // Validate judge authorization - CRÍTICO: verificar que el usuario autenticado es juez
     const judge = competition.arbitration?.judges?.find(
-      j => j.address === data.judgeAddress
+      j => j.address.toLowerCase() === judgeAddress.toLowerCase()
     );
     if (!judge) {
-      return res.status(403).json({ error: 'Not authorized to vote on this competition' });
+      return res.status(403).json({
+        error: 'Not authorized to vote on this competition',
+        code: 'NOT_JUDGE',
+        message: `Address ${judgeAddress} is not a judge for this competition`,
+      });
     }
 
     // Check if already voted
     const existingVote = competition.arbitration?.votes?.find(
-      v => v.judge === data.judgeAddress
+      v => v.judge.toLowerCase() === judgeAddress.toLowerCase()
     );
     if (existingVote) {
       return res.status(400).json({ error: 'Already voted on this competition' });
@@ -81,7 +87,7 @@ export default async function handler(
     const vote: Vote = {
       id: uuidv4(),
       competitionId: id,
-      judge: data.judgeAddress,
+      judge: judgeAddress,
       vote: data.vote,
       comment: data.comment,
       timestamp: new Date().toISOString(),
@@ -143,7 +149,7 @@ export default async function handler(
     const event: TransparencyEvent = {
       type: 'vote_submitted',
       timestamp: Date.now(),
-      actor: data.judgeAddress,
+      actor: judgeAddress,
       action: `Vote: ${data.vote}`,
       details: {
         voteId: vote.id,
@@ -192,3 +198,6 @@ export default async function handler(
     });
   }
 }
+
+// Exportar con middleware de autenticación
+export default withAuth(handler);

@@ -147,7 +147,7 @@ export function initializeSafeApiKit(): SafeApiKit {
 }
 
 /**
- * Get JSON-RPC provider for Base Sepolia
+ * Get JSON-RPC provider for Base Mainnet
  */
 export function getProvider(): ethers.JsonRpcProvider {
   if (provider) {

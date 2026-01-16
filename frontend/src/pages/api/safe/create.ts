@@ -63,7 +63,7 @@ export default async function handler(
         owners,
         threshold,
         saltNonce: finalSaltNonce,
-        chainId: 84532, // Base Sepolia
+        chainId: 8453, // Base Mainnet
         instructions: {
           message: 'Safe address predicted. Deploy by sending first transaction.',
           steps: [
@@ -73,9 +73,9 @@ export default async function handler(
           ],
         },
         deploymentInfo: {
-          network: 'Base Sepolia',
-          singleton: '0x29fcB43b46531BcA003ddC8FCB67FFE91900C762',
-          proxyFactory: '0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67',
+          network: 'Base Mainnet',
+          singleton: '0xfb1bffC9d739B8D520DaF37dF666da4C687191EA', // SafeL2 v1.3.0
+          proxyFactory: '0xC22834581EbC8527d974F8a1c97E1bEA4EF910BC', // ProxyFactory v1.3.0
         },
       },
     });

@@ -130,11 +130,12 @@ async function handler(
     }
 
     // Verify all winners are participants (optional but recommended)
-    const participantsSet = await redis.smembers(`competition:${competitionId}:participants`);
+    // Use competition.participants.entries which is populated by atomicJoinCompetition
+    const participantAddresses = (competition.participants?.entries || [])
+      .map((p: { address: string }) => p.address.toLowerCase());
+
     const nonParticipants = winners.filter(
-      (w) => !participantsSet.some(
-        (p) => p.toLowerCase() === w.address.toLowerCase()
-      )
+      (w) => !participantAddresses.includes(w.address.toLowerCase())
     );
 
     if (nonParticipants.length > 0) {

@@ -64,13 +64,15 @@ export const SAFE_ADDRESSES = {
   MULTI_SEND: SAFE_CONTRACTS.MULTI_SEND,
   MULTI_SEND_CALL_ONLY: SAFE_CONTRACTS.MULTI_SEND_CALL_ONLY,
 
-  // Zodiac modules - to be deployed per competition (MVP: not using Zodiac)
-  // Per PLAN_ACCION_COMPETENCIAS.md: Safe básico con threshold N-of-M
-  DELAY_MODIFIER: '0x0000000000000000000000000000000000000000',
-  ROLES_MODIFIER: '0x0000000000000000000000000000000000000000',
+  // Zodiac Module Proxy Factory - deploys module instances
+  // Deployed via ERC-2470 (CREATE2) - same address across all EVM chains
+  ZODIAC_MODULE_FACTORY: '0x00000000000DC7F163742Eb4aBEf650037b1f588',
 
-  // Our custom contracts - to be deployed
-  COMPETITION_GUARD: '0x0000000000000000000000000000000000000000'
+  // Zodiac module mastercopies (templates for proxy deployment)
+  // These are deployed per-Safe as proxies, not used directly
+  DELAY_MASTERCOPY: '0xd54895B1121A2eE3f37b502F507631FA1331BED6',
+  ROLES_MASTERCOPY: '0x9646fDAD06d3e24444381f44362a3B0eB343D337',
+  SCOPE_GUARD_MASTERCOPY: '0xeB4A43d3C6B7fFA6e6a6E7b8A8D9e8f6e7d8c9b0',
 };
 
 export const CHAIN_ID = 8453; // Base Mainnet
@@ -157,7 +159,7 @@ export async function createCompetitionSafe(
     try {
       // Create an ethers signer wrapper
       const provider = new ethers.JsonRpcProvider(
-        process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org',
+        process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org',
         CHAIN_ID
       );
 
@@ -514,7 +516,8 @@ export function buildSetGuardTx(guardAddress: string): SafeTransaction {
 // SAFE API INTEGRATION
 // ============================================================================
 
-const SAFE_API_BASE = 'https://safe-transaction-base-sepolia.safe.global/api/v1';
+// Base Mainnet Safe Transaction Service
+const SAFE_API_BASE = 'https://safe-transaction-base.safe.global/api/v1';
 
 /**
  * Get Safe info from Safe Transaction Service

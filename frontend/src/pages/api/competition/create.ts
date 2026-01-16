@@ -14,9 +14,10 @@ import {
   CompetitionCategory,
   ResolutionMethod,
 } from '../../../competencias/types';
-import { createCompetitionSafe } from '../../../competencias/lib/safeIntegration';
+import { predictSafeAddress } from '../../../competencias/lib/safeClient';
 import { createBinaryMarket, createMultipleChoiceMarket } from '../../../competencias/lib/manifoldClient';
 import { withAuth, getAuthenticatedAddress } from '../../../competencias/lib/authMiddleware';
+import { SAFE_CONTRACTS } from '../../../competencias/lib/safeClient';
 
 // Redis client
 const redis = new Redis({
@@ -151,24 +152,59 @@ async function handler(
       },
     };
 
-    // Create Gnosis Safe for fund custody (if not a draft)
+    // Predict Gnosis Safe address for fund custody
+    // The Safe will be deployed by the frontend using the user's wallet
     let safeAddress: string | undefined;
-    if (data.safeOwners && data.safeOwners.length > 0) {
+    let safeDeploymentInfo: {
+      predictedAddress: string;
+      owners: string[];
+      threshold: number;
+      saltNonce: string;
+      deployed: boolean;
+    } | undefined;
+
+    // Determine Safe owners: creator + judges
+    const safeOwners = data.safeOwners && data.safeOwners.length > 0
+      ? data.safeOwners
+      : [creatorAddress, ...(data.judges || [])].filter((addr): addr is string => !!addr);
+
+    if (safeOwners.length > 0) {
       try {
-        const safeResult = await createCompetitionSafe(competition, {
-          sendTransaction: async () => {
-            // In real implementation, this would send the transaction
-            // For now, we'll create a pending Safe
-            return { hash: `0x${competitionId.replace(/-/g, '')}` };
-          },
+        // Default threshold: majority of owners, minimum 1
+        const safeThreshold = data.safeThreshold || Math.max(1, Math.ceil(safeOwners.length / 2));
+
+        // Generate unique salt nonce using competition ID
+        const saltNonce = `${competitionId}-${Date.now()}`;
+
+        // Predict Safe address (counterfactual deployment)
+        safeAddress = await predictSafeAddress({
+          owners: safeOwners,
+          threshold: safeThreshold,
+          saltNonce,
         });
 
-        if (safeResult.success && safeResult.data) {
-          safeAddress = safeResult.data.address;
-          competition.safeAddress = safeAddress;
-        }
+        competition.safeAddress = safeAddress;
+
+        // Store deployment info for frontend to use
+        safeDeploymentInfo = {
+          predictedAddress: safeAddress,
+          owners: safeOwners,
+          threshold: safeThreshold,
+          saltNonce,
+          deployed: false, // Will be set to true after frontend deploys
+        };
+
+        // Store Safe info in custody field
+        competition.custody = {
+          safeAddress,
+          owners: safeOwners,
+          threshold: safeThreshold,
+          deployed: false,
+          predictedAt: new Date().toISOString(),
+          saltNonce,
+        };
       } catch (safeError) {
-        console.error('Safe creation failed:', safeError);
+        console.error('Safe address prediction failed:', safeError);
         // Continue without Safe - can be created later
       }
     }
@@ -251,6 +287,24 @@ async function handler(
         competition,
         id: competitionId,
         safeAddress,
+        safeDeploymentInfo: safeDeploymentInfo ? {
+          ...safeDeploymentInfo,
+          chainId: 8453, // Base Mainnet
+          contracts: {
+            singleton: SAFE_CONTRACTS.SAFE_L2_SINGLETON,
+            proxyFactory: SAFE_CONTRACTS.SAFE_PROXY_FACTORY,
+            fallbackHandler: SAFE_CONTRACTS.FALLBACK_HANDLER,
+          },
+          instructions: {
+            message: 'Deploy the Safe using the Safe SDK on the frontend with the user\'s wallet',
+            steps: [
+              '1. Initialize Safe with predictedSafe configuration using saltNonce',
+              '2. Call createSafeDeploymentTransaction()',
+              '3. Send the deployment transaction with user\'s wallet',
+              '4. Call POST /api/safe/deploy to confirm deployment',
+            ],
+          },
+        } : null,
         marketId: competition.market?.manifoldId,
       },
     });

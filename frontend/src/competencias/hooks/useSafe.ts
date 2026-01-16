@@ -13,7 +13,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useActiveAccount } from 'thirdweb/react';
 import { GnosisSafe, SafeTransaction, TransparencyEvent } from '../types';
+import { getAuthHeader, isAuthValid } from '../../lib/siweClient';
+import { signSafeTxHash } from '../lib/safeEIP712';
 
 // =============================================================================
 // TYPES
@@ -145,7 +148,7 @@ async function fetchSafeByCompetition(competitionId: string): Promise<GnosisSafe
 
     return {
       address: competition.custody.safeAddress,
-      chainId: 84532, // Base Sepolia
+      chainId: 8453, // Base Mainnet
       owners: competition.custody.owners || [],
       threshold: competition.custody.threshold || 1,
       nonce: 0,
@@ -215,22 +218,17 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
     onTransactionExecuted,
   } = options;
 
+  // Use ThirdWeb account for wallet integration
+  const account = useActiveAccount();
+  const userAddress = account?.address || null;
+
   const [safe, setSafe] = useState<GnosisSafe | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [userAddress, setUserAddress] = useState<string | null>(null);
   const [pendingTransactions, setPendingTransactions] = useState<SafeTransaction[]>([]);
   const [executedTransactions, setExecutedTransactions] = useState<SafeTransaction[]>([]);
   const [modules, setModules] = useState<SafeModule[]>([]);
   const [previousPending, setPreviousPending] = useState<string[]>([]);
-
-  // Get user address from wallet
-  useEffect(() => {
-    const address = typeof window !== 'undefined'
-      ? (window as unknown as { ethereum?: { selectedAddress?: string } }).ethereum?.selectedAddress
-      : null;
-    setUserAddress(address || null);
-  }, []);
 
   // Fetch safe data
   const refetch = useCallback(async () => {
@@ -330,53 +328,109 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
     return pendingTransactions.some(tx => tx.confirmations.length >= threshold);
   }, [isOwner, pendingTransactions, threshold]);
 
-  // Propose a new transaction
+  // Propose a new transaction (two-step process: prepare -> sign -> propose)
   const proposeTransaction = useCallback(async (
     tx: ProposedTransaction
   ): Promise<SafeTransaction | null> => {
-    if (!safe || !userAddress) return null;
+    if (!safe || !userAddress || !account) return null;
+
+    // Check SIWE authentication
+    if (!isAuthValid()) {
+      const authError = new Error('Please sign in with your wallet first');
+      setError(authError);
+      onError?.(authError);
+      return null;
+    }
 
     try {
-      const response = await fetch(`/api/safe/${safe.address}/propose`, {
+      // Step 1: Prepare transaction and get safeTxHash
+      const prepareResponse = await fetch(`/api/safe/${safe.address}/prepare-transaction`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
         body: JSON.stringify({
-          ...tx,
-          proposer: userAddress,
-          nonce: safe.nonce,
+          to: tx.to,
+          value: tx.value,
+          data: tx.data,
+          operation: tx.operation || 0,
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!prepareResponse.ok) {
+        const errorData = await prepareResponse.json();
+        throw new Error(errorData.error || 'Failed to prepare transaction');
+      }
+
+      const prepareData = await prepareResponse.json();
+      const { safeTxHash, safeTransactionData } = prepareData.data;
+
+      // Step 2: Sign the safeTxHash with user's wallet
+      const signature = await signSafeTxHash(account, safeTxHash);
+
+      // Step 3: Submit the signed transaction
+      const proposeResponse = await fetch(`/api/safe/${safe.address}/propose`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          safeTransactionData,
+          safeTxHash,
+          senderAddress: userAddress,
+          senderSignature: signature,
+          origin: tx.description || 'CryptoGift Competencias',
+        }),
+      });
+
+      if (!proposeResponse.ok) {
+        const errorData = await proposeResponse.json();
         throw new Error(errorData.error || 'Failed to propose transaction');
       }
 
-      const data = await response.json();
+      const data = await proposeResponse.json();
 
       // Refetch to get updated pending transactions
       await refetch();
 
-      return data.data.transaction;
+      return data.data;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to propose');
       setError(error);
       onError?.(error);
       return null;
     }
-  }, [safe, userAddress, refetch, onError]);
+  }, [safe, userAddress, account, refetch, onError]);
 
-  // Confirm a pending transaction
+  // Confirm a pending transaction (sign safeTxHash and submit)
   const confirmTransaction = useCallback(async (safeTxHash: string): Promise<boolean> => {
-    if (!safe || !userAddress) return false;
+    if (!safe || !userAddress || !account) return false;
+
+    // Check SIWE authentication
+    if (!isAuthValid()) {
+      const authError = new Error('Please sign in with your wallet first');
+      setError(authError);
+      onError?.(authError);
+      return false;
+    }
 
     try {
+      // Sign the safeTxHash with user's wallet
+      const signature = await signSafeTxHash(account, safeTxHash);
+
+      // Submit the signature
       const response = await fetch(`/api/safe/${safe.address}/confirm`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
         body: JSON.stringify({
           safeTxHash,
-          signer: userAddress,
+          signature,
+          signerAddress: userAddress,
         }),
       });
 
@@ -395,7 +449,7 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
       onError?.(error);
       return false;
     }
-  }, [safe, userAddress, refetch, onError]);
+  }, [safe, userAddress, account, refetch, onError]);
 
   // Execute a pending transaction
   const executeTransaction = useCallback(async (
@@ -406,7 +460,10 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
     try {
       const response = await fetch(`/api/safe/${safe.address}/execute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
         body: JSON.stringify({
           safeTxHash,
           executor: userAddress,
@@ -439,10 +496,13 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
     try {
       const response = await fetch(`/api/safe/${safe.address}/reject`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
         body: JSON.stringify({
           safeTxHash,
-          rejector: userAddress,
+          rejectorAddress: userAddress,
         }),
       });
 
