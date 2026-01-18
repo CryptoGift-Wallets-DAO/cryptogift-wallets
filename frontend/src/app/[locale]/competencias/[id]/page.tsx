@@ -10,9 +10,10 @@ import {
   AlertCircle, ExternalLink, Copy, Share2, Gavel
 } from 'lucide-react';
 import { useCompetition } from '@/competencias/hooks/useCompetitions';
-import { PredictionMarketView } from '@/competencias/components/PredictionMarketView';
-import { JudgePanel } from '@/competencias/components/JudgePanel';
-import { LiveTransparencyView } from '@/competencias/components/LiveTransparencyView';
+// Components will be integrated when full data is available
+// import { PredictionMarketView } from '@/competencias/components/PredictionMarketView';
+// import { JudgePanel } from '@/competencias/components/JudgePanel';
+// import { LiveTransparencyView } from '@/competencias/components/LiveTransparencyView';
 import { ethers } from 'ethers';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -302,23 +303,90 @@ export default function CompetitionDetailPage() {
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'market' && (
-              <PredictionMarketView
-                competition={competition}
-                onBetPlaced={refetch}
-              />
+              <div className="glass-crystal rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingUp className="w-5 h-5 text-green-400" />
+                  <h3 className="text-lg font-semibold text-white">Mercado de Prediccion</h3>
+                </div>
+                {probability !== undefined ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                      <span className="text-gray-400">Probabilidad SI</span>
+                      <span className="text-2xl font-bold text-green-400">{probability.toFixed(0)}%</span>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                      <span className="text-gray-400">Probabilidad NO</span>
+                      <span className="text-2xl font-bold text-red-400">{(100 - probability).toFixed(0)}%</span>
+                    </div>
+                    <p className="text-sm text-gray-500 text-center">
+                      Conecta tu wallet para participar en el mercado
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-400">
+                    Esta competencia no tiene mercado de prediccion activo.
+                  </p>
+                )}
+              </div>
             )}
 
             {activeTab === 'judges' && (
-              <JudgePanel
-                competition={competition}
-                onVoteSubmitted={refetch}
-              />
+              <div className="glass-crystal rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <Gavel className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-lg font-semibold text-white">Panel de Jueces</h3>
+                </div>
+                {competition.resolution?.judges && competition.resolution.judges.length > 0 ? (
+                  <div className="space-y-3">
+                    {competition.resolution.judges.map((judge, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <div>
+                            <p className="text-white font-mono text-sm">
+                              {judge.address.slice(0, 6)}...{judge.address.slice(-4)}
+                            </p>
+                            <p className="text-xs text-gray-500 capitalize">{judge.role}</p>
+                          </div>
+                        </div>
+                        {judge.hasVoted && (
+                          <CheckCircle2 className="w-5 h-5 text-green-400" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400">No hay jueces asignados a esta competencia.</p>
+                )}
+              </div>
             )}
 
             {activeTab === 'events' && (
-              <LiveTransparencyView
-                competitionId={competition.id}
-              />
+              <div className="glass-crystal rounded-2xl p-6 border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                  <Zap className="w-5 h-5 text-amber-400" />
+                  <h3 className="text-lg font-semibold text-white">Eventos en Vivo</h3>
+                </div>
+                {competition.transparency?.events && competition.transparency.events.length > 0 ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {competition.transparency.events.slice(0, 10).map((event, index) => (
+                      <div key={index} className="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+                        <div className="w-2 h-2 mt-2 rounded-full bg-blue-400" />
+                        <div className="flex-1">
+                          <p className="text-sm text-white">{event.type}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(event.timestamp).toLocaleString('es-ES')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400">No hay eventos registrados aun.</p>
+                )}
+              </div>
             )}
           </motion.div>
         </AnimatePresence>

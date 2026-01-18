@@ -3,9 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Trophy, Target, TrendingUp, Users, Plus, Search,
-  Filter, Zap, Clock, CheckCircle2, AlertCircle,
-  Flame, Star, ArrowRight, Sparkles
+  Trophy, Plus, Search, Zap, Flame, ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { CompetitionHero } from '@/competencias/components/CompetitionHero';
@@ -14,7 +12,7 @@ import { CompetitionFilters } from '@/competencias/components/CompetitionFilters
 import { useCompetitions } from '@/competencias/hooks/useCompetitions';
 import type { Competition, CompetitionCategory, CompetitionStatus } from '@/competencias/types';
 
-// Category configuration with emojis and colors
+// Category configuration for filters
 const CATEGORY_CONFIG: Record<CompetitionCategory, { emoji: string; label: string; color: string }> = {
   prediction: { emoji: '🎯', label: 'Predicciones', color: 'blue' },
   tournament: { emoji: '🏆', label: 'Torneos', color: 'amber' },
@@ -22,20 +20,6 @@ const CATEGORY_CONFIG: Record<CompetitionCategory, { emoji: string; label: strin
   pool: { emoji: '🎱', label: 'Pools', color: 'purple' },
   milestone: { emoji: '🎯', label: 'Milestones', color: 'green' },
   ranking: { emoji: '📊', label: 'Rankings', color: 'cyan' },
-};
-
-// Status configuration
-const STATUS_CONFIG: Record<CompetitionStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  draft: { label: 'Borrador', color: 'gray', icon: <Clock className="w-3 h-3" /> },
-  pending: { label: 'Pendiente', color: 'yellow', icon: <Clock className="w-3 h-3" /> },
-  active: { label: 'En Vivo', color: 'green', icon: <Zap className="w-3 h-3" /> },
-  paused: { label: 'Pausada', color: 'orange', icon: <AlertCircle className="w-3 h-3" /> },
-  resolution: { label: 'Resolución', color: 'blue', icon: <Target className="w-3 h-3" /> },
-  resolving: { label: 'Resolviendo', color: 'blue', icon: <Target className="w-3 h-3" /> },
-  resolved: { label: 'Resuelta', color: 'purple', icon: <CheckCircle2 className="w-3 h-3" /> },
-  disputed: { label: 'Disputada', color: 'red', icon: <AlertCircle className="w-3 h-3" /> },
-  completed: { label: 'Completada', color: 'emerald', icon: <Trophy className="w-3 h-3" /> },
-  cancelled: { label: 'Cancelada', color: 'gray', icon: <AlertCircle className="w-3 h-3" /> },
 };
 
 export default function CompetenciasPage() {
@@ -233,9 +217,7 @@ export default function CompetenciasPage() {
                   >
                     <CompetitionCard
                       competition={competition}
-                      featured
-                      categoryConfig={CATEGORY_CONFIG}
-                      statusConfig={STATUS_CONFIG}
+                      onClick={() => window.location.href = `/competencias/${competition.id}`}
                     />
                   </motion.div>
                 ))}
@@ -303,8 +285,7 @@ export default function CompetenciasPage() {
                     >
                       <CompetitionCard
                         competition={competition}
-                        categoryConfig={CATEGORY_CONFIG}
-                        statusConfig={STATUS_CONFIG}
+                        onClick={() => window.location.href = `/competencias/${competition.id}`}
                       />
                     </motion.div>
                   ))}
