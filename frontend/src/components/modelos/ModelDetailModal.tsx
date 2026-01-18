@@ -10,6 +10,7 @@ import StatusBadge from './StatusBadge';
 import IntegrationChip from './IntegrationChip';
 import ComplexityIndicator from './ComplexityIndicator';
 import { WorkflowWizard } from '@/competencias/components/WorkflowWizard';
+import { AIContextProvider } from '@/competencias/hooks/useAIContext';
 import type { CompetitionCategory } from '@/competencias/types';
 import '@/competencias/workflows'; // Register workflows
 
@@ -393,14 +394,16 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
 
                   {/* Workflow content */}
                   <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-                    <WorkflowWizard
-                      workflowId={workflowId}
-                      category={workflowCategory}
-                      onComplete={handleWorkflowComplete}
-                      onCancel={handleWorkflowCancel}
-                      aiEnabled={true}
-                      className="max-w-xl mx-auto"
-                    />
+                    <AIContextProvider>
+                      <WorkflowWizard
+                        workflowId={workflowId}
+                        category={workflowCategory}
+                        onComplete={handleWorkflowComplete}
+                        onCancel={handleWorkflowCancel}
+                        aiEnabled={true}
+                        className="max-w-xl mx-auto"
+                      />
+                    </AIContextProvider>
                   </div>
                 </motion.div>
               )}
