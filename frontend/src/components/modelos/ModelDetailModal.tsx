@@ -1,14 +1,34 @@
 "use client";
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight, Clock, Zap, ExternalLink } from 'lucide-react';
+import { X, ArrowRight, Clock, Zap, ExternalLink, Play, Loader2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import type { ModelDetailModalProps, CategoryType } from '@/types/modelos';
 import { CATEGORIES } from '@/types/modelos';
 import StatusBadge from './StatusBadge';
 import IntegrationChip from './IntegrationChip';
 import ComplexityIndicator from './ComplexityIndicator';
+import { WorkflowWizard } from '@/competencias/components/WorkflowWizard';
+import type { CompetitionCategory } from '@/competencias/types';
+import '@/competencias/workflows'; // Register workflows
+
+// Map modelo IDs to competition workflow categories
+const MODELO_TO_WORKFLOW: Record<string, CompetitionCategory> = {
+  'apuesta-p2p': 'challenge',
+  'pool-apuestas': 'pool',
+  'prediction-market': 'prediction',
+  'torneo-brackets': 'tournament',
+};
+
+const WORKFLOW_IDS: Record<CompetitionCategory, string> = {
+  'challenge': 'workflow_challenge',
+  'pool': 'workflow_pool',
+  'prediction': 'workflow_prediction',
+  'tournament': 'workflow_tournament',
+  'milestone': 'workflow_milestone',
+  'ranking': 'workflow_ranking',
+};
 
 // Get icon component from string name
 function getIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -63,10 +83,19 @@ const modalVariants = {
 } as const;
 
 export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalProps) {
+  const [showWorkflowWizard, setShowWorkflowWizard] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   // Handle escape key
   const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
-  }, [onClose]);
+    if (e.key === 'Escape') {
+      if (showWorkflowWizard) {
+        setShowWorkflowWizard(false);
+      } else {
+        onClose();
+      }
+    }
+  }, [onClose, showWorkflowWizard]);
 
   useEffect(() => {
     if (isOpen) {
@@ -79,7 +108,42 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
     };
   }, [isOpen, handleEscape]);
 
+  // Reset wizard state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowWorkflowWizard(false);
+    }
+  }, [isOpen]);
+
   if (!modelo) return null;
+
+  // Check if this modelo has a competition workflow
+  const workflowCategory = MODELO_TO_WORKFLOW[modelo.id];
+  const hasCompetitionWorkflow = !!workflowCategory && modelo.category === 'competitions';
+  const workflowId = workflowCategory ? WORKFLOW_IDS[workflowCategory] : null;
+
+  // Handle starting the workflow
+  const handleStartWorkflow = () => {
+    setIsLoading(true);
+    // Small delay for visual feedback
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowWorkflowWizard(true);
+    }, 300);
+  };
+
+  // Handle workflow completion
+  const handleWorkflowComplete = async (data: Record<string, unknown>) => {
+    console.log('Workflow completed with data:', data);
+    // TODO: Call the competition create API
+    setShowWorkflowWizard(false);
+    onClose();
+  };
+
+  // Handle workflow cancel
+  const handleWorkflowCancel = () => {
+    setShowWorkflowWizard(false);
+  };
 
   const IconComponent = getIcon(modelo.icon);
   const category = CATEGORIES.find(c => c.id === modelo.category);
@@ -104,8 +168,9 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
             exit="exit"
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden
-                       bg-gray-900/95 backdrop-blur-xl rounded-3xl
-                       border border-white/10 shadow-2xl"
+                       bg-gray-900/80 backdrop-blur-2xl backdrop-saturate-150 rounded-3xl
+                       border border-white/20 shadow-2xl shadow-black/50
+                       ring-1 ring-white/10"
           >
             {/* Gradient header background */}
             <div className={`absolute top-0 left-0 right-0 h-48 bg-gradient-to-b ${gradientClass}`} />
@@ -241,17 +306,40 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                                bg-gradient-to-r from-amber-500 to-orange-500
                                text-white font-semibold
                                hover:shadow-lg hover:shadow-amber-500/25
-                               transition-all"
+                               transition-all transform hover:scale-[1.02]"
                     >
                       <span>Ir al Modo</span>
                       <ExternalLink className="w-4 h-4" />
+                    </button>
+                  ) : modelo.status === 'ready' && hasCompetitionWorkflow ? (
+                    <button
+                      onClick={handleStartWorkflow}
+                      disabled={isLoading}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl
+                               bg-gradient-to-r from-green-500 to-emerald-500
+                               text-white font-semibold
+                               hover:shadow-lg hover:shadow-green-500/25
+                               transition-all transform hover:scale-[1.02]
+                               disabled:opacity-50 disabled:cursor-wait"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Iniciando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          <span>Iniciar Competencia</span>
+                        </>
+                      )}
                     </button>
                   ) : (
                     <button
                       disabled
                       className="flex items-center gap-2 px-6 py-3 rounded-xl
-                               bg-white/10 text-gray-400 font-semibold
-                               cursor-not-allowed"
+                               bg-white/10 backdrop-blur-sm text-gray-400 font-semibold
+                               cursor-not-allowed border border-white/5"
                     >
                       <span>
                         {modelo.status === 'ready' ? 'Proximamente' :
@@ -262,7 +350,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                   <button
                     onClick={onClose}
                     className="px-6 py-3 rounded-xl
-                             bg-white/5 border border-white/10
+                             bg-white/5 backdrop-blur-sm border border-white/10
                              text-white font-medium
                              hover:bg-white/10 transition-all"
                   >
@@ -271,6 +359,52 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                 </div>
               </div>
             </div>
+
+            {/* Workflow Wizard Overlay */}
+            <AnimatePresence>
+              {showWorkflowWizard && workflowId && workflowCategory && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-10 bg-gray-900/95 backdrop-blur-xl rounded-3xl overflow-hidden"
+                >
+                  {/* Workflow header */}
+                  <div className="sticky top-0 z-20 flex items-center justify-between p-4 bg-gray-900/80 backdrop-blur-xl border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleWorkflowCancel}
+                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <ArrowRight className="w-5 h-5 text-white rotate-180" />
+                      </button>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{modelo.title}</h3>
+                        <p className="text-sm text-gray-400">Configurar competencia</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleWorkflowCancel}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+
+                  {/* Workflow content */}
+                  <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                    <WorkflowWizard
+                      workflowId={workflowId}
+                      category={workflowCategory}
+                      onComplete={handleWorkflowComplete}
+                      onCancel={handleWorkflowCancel}
+                      aiEnabled={true}
+                      className="max-w-xl mx-auto"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}

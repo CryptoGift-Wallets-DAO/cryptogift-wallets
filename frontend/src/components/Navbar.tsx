@@ -90,14 +90,6 @@ export const Navbar: React.FC = () => {
             {/* Separator */}
             <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
 
-            <Link href="/competencias" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold flex items-center gap-1">
-              <span>🏆</span>
-              <span>{t('competitions') || 'Competencias'}</span>
-            </Link>
-
-            {/* Separator */}
-            <div className="w-px h-6 bg-gradient-to-b from-transparent via-text-muted to-transparent opacity-40"></div>
-
             <Link href="/nexuswallet" className="text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors text-base font-bold">
               {t('nexuswallet')}
             </Link>
@@ -165,18 +157,6 @@ export const Navbar: React.FC = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('knowledge')}
-              </Link>
-
-              {/* Mobile Separator */}
-              <div className="mx-4 h-px bg-gradient-to-r from-transparent via-text-muted to-transparent opacity-30"></div>
-
-              <Link
-                href="/competencias"
-                className="flex items-center gap-2 text-text-secondary hover:text-accent-gold dark:hover:text-accent-silver transition-colors px-4 py-3 font-bold text-base"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span>🏆</span>
-                <span>{t('competitions') || 'Competencias'}</span>
               </Link>
 
               {/* Mobile Separator */}
