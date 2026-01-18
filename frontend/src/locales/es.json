@@ -1,8 +1,9 @@
 {
   "navigation": {
     "home": "Inicio",
-    "referrals": "Referidos", 
+    "referrals": "Referidos",
     "knowledge": "Knowledge",
+    "competitions": "Competencias",
     "my-wallets": "Mis Wallets",
     "nexuswallet": "NexusWallet"
   },
