@@ -9,27 +9,15 @@ import { CATEGORIES } from '@/types/modelos';
 import StatusBadge from './StatusBadge';
 import IntegrationChip from './IntegrationChip';
 import ComplexityIndicator from './ComplexityIndicator';
-import { WorkflowWizard } from '@/competencias/components/WorkflowWizard';
-import { AIContextProvider } from '@/competencias/hooks/useAIContext';
-import type { CompetitionCategory } from '@/competencias/types';
-import '@/competencias/workflows'; // Register workflows
+import { CompetitionPanel } from '@/components/competitions/CompetitionPanel';
 
-// Map modelo IDs to competition workflow categories
-const MODELO_TO_WORKFLOW: Record<string, CompetitionCategory> = {
-  'apuesta-p2p': 'challenge',
-  'pool-apuestas': 'pool',
-  'prediction-market': 'prediction',
-  'torneo-brackets': 'tournament',
-};
-
-const WORKFLOW_IDS: Record<CompetitionCategory, string> = {
-  'challenge': 'workflow_challenge',
-  'pool': 'workflow_pool',
-  'prediction': 'workflow_prediction',
-  'tournament': 'workflow_tournament',
-  'milestone': 'workflow_milestone',
-  'ranking': 'workflow_ranking',
-};
+// Modelos que pueden usar el panel de competencias
+const COMPETITION_MODELS = new Set([
+  'apuesta-p2p',
+  'pool-apuestas',
+  'prediction-market',
+  'torneo-brackets',
+]);
 
 // Get icon component from string name
 function getIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -118,10 +106,8 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
 
   if (!modelo) return null;
 
-  // Check if this modelo has a competition workflow
-  const workflowCategory = MODELO_TO_WORKFLOW[modelo.id];
-  const hasCompetitionWorkflow = !!workflowCategory && modelo.category === 'competitions';
-  const workflowId = workflowCategory ? WORKFLOW_IDS[workflowCategory] : null;
+  // Check if this modelo can use the competition panel
+  const isCompetitionModel = COMPETITION_MODELS.has(modelo.id) && modelo.category === 'competitions';
 
   // Handle starting the workflow
   const handleStartWorkflow = () => {
@@ -133,10 +119,11 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
     }, 300);
   };
 
-  // Handle workflow completion
-  const handleWorkflowComplete = async (data: Record<string, unknown>) => {
-    console.log('Workflow completed with data:', data);
-    // TODO: Call the competition create API
+  // Handle competition panel completion
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleCompetitionComplete = async (config: any) => {
+    console.log('Competition created with config:', config);
+    // TODO: Call the competition create API with the config
     setShowWorkflowWizard(false);
     onClose();
   };
@@ -312,7 +299,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                       <span>Ir al Modo</span>
                       <ExternalLink className="w-4 h-4" />
                     </button>
-                  ) : modelo.status === 'ready' && hasCompetitionWorkflow ? (
+                  ) : modelo.status === 'ready' && isCompetitionModel ? (
                     <button
                       onClick={handleStartWorkflow}
                       disabled={isLoading}
@@ -361,16 +348,16 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
               </div>
             </div>
 
-            {/* Workflow Wizard Overlay */}
+            {/* Competition Panel Overlay */}
             <AnimatePresence>
-              {showWorkflowWizard && workflowId && workflowCategory && (
+              {showWorkflowWizard && isCompetitionModel && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="absolute inset-0 z-10 bg-gray-900/95 backdrop-blur-xl rounded-3xl overflow-hidden"
                 >
-                  {/* Workflow header */}
+                  {/* Panel header */}
                   <div className="sticky top-0 z-20 flex items-center justify-between p-4 bg-gray-900/80 backdrop-blur-xl border-b border-white/10">
                     <div className="flex items-center gap-3">
                       <button
@@ -392,18 +379,13 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                     </button>
                   </div>
 
-                  {/* Workflow content */}
-                  <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-                    <AIContextProvider>
-                      <WorkflowWizard
-                        workflowId={workflowId}
-                        category={workflowCategory}
-                        onComplete={handleWorkflowComplete}
-                        onCancel={handleWorkflowCancel}
-                        aiEnabled={true}
-                        className="max-w-xl mx-auto"
-                      />
-                    </AIContextProvider>
+                  {/* Competition Panel content */}
+                  <div className="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+                    <CompetitionPanel
+                      onComplete={handleCompetitionComplete}
+                      onCancel={handleWorkflowCancel}
+                      className="max-w-2xl mx-auto"
+                    />
                   </div>
                 </motion.div>
               )}
