@@ -73,6 +73,12 @@ export const SAFE_ADDRESSES = {
   DELAY_MASTERCOPY: '0xd54895B1121A2eE3f37b502F507631FA1331BED6',
   ROLES_MASTERCOPY: '0x9646fDAD06d3e24444381f44362a3B0eB343D337',
   SCOPE_GUARD_MASTERCOPY: '0xeB4A43d3C6B7fFA6e6a6E7b8A8D9e8f6e7d8c9b0',
+
+  // Runtime module addresses - these are set after deployment per-competition
+  // Using mastercopy addresses as default (will be replaced with deployed proxy addresses)
+  DELAY_MODIFIER: '0xd54895B1121A2eE3f37b502F507631FA1331BED6',
+  ROLES_MODIFIER: '0x9646fDAD06d3e24444381f44362a3B0eB343D337',
+  COMPETITION_GUARD: '0xeB4A43d3C6B7fFA6e6a6E7b8A8D9e8f6e7d8c9b0',
 };
 
 export const CHAIN_ID = 8453; // Base Mainnet

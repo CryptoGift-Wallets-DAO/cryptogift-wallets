@@ -465,7 +465,7 @@ export async function getModuleByAddress(
   const data = await redis.get(`module:${moduleAddress.toLowerCase()}`);
   if (!data) return null;
 
-  return typeof data === 'string' ? JSON.parse(data) : data;
+  return typeof data === 'string' ? JSON.parse(data) as DeployedModule : data as DeployedModule;
 }
 
 // =============================================================================

@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useActiveAccount } from 'thirdweb/react';
 import { GnosisSafe, SafeTransaction, TransparencyEvent } from '../types';
-import { getAuthHeader, isAuthValid } from '../../lib/siweClient';
+import { getAuthHeaderObj, isAuthValid } from '../../lib/siweClient';
 import { signSafeTxHash } from '../lib/safeEIP712';
 
 // =============================================================================
@@ -348,7 +348,7 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
+          ...getAuthHeaderObj(),
         },
         body: JSON.stringify({
           to: tx.to,
@@ -374,7 +374,7 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
+          ...getAuthHeaderObj(),
         },
         body: JSON.stringify({
           safeTransactionData,
@@ -425,7 +425,7 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
+          ...getAuthHeaderObj(),
         },
         body: JSON.stringify({
           safeTxHash,
@@ -462,7 +462,7 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
+          ...getAuthHeaderObj(),
         },
         body: JSON.stringify({
           safeTxHash,
@@ -498,7 +498,7 @@ export function useSafe(options: UseSafeOptions = {}): UseSafeReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...getAuthHeader(),
+          ...getAuthHeaderObj(),
         },
         body: JSON.stringify({
           safeTxHash,

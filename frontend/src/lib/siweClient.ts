@@ -385,14 +385,25 @@ export function clearAuth(): void {
 }
 
 /**
- * Get authorization header for API calls
+ * Get authorization header for API calls (returns string)
  */
 export function getAuthHeader(): string | null {
   if (!isAuthValid() || !authState.token) {
     return null;
   }
-  
+
   return `Bearer ${authState.token}`;
+}
+
+/**
+ * Get authorization header object for spreading into fetch headers
+ */
+export function getAuthHeaderObj(): { Authorization: string } | Record<string, never> {
+  const header = getAuthHeader();
+  if (!header) {
+    return {};
+  }
+  return { Authorization: header };
 }
 
 /**

@@ -102,7 +102,8 @@ async function handler(
     const competitionId = uuidv4();
 
     // Create initial competition object
-    const competition: Partial<Competition> = {
+    // Using Record type to allow flexible structure during creation
+    const competition: Record<string, unknown> = {
       id: competitionId,
       title: data.title,
       description: data.description || '',
@@ -252,7 +253,8 @@ async function handler(
     }
 
     // Add creation event to transparency log
-    competition.transparency!.events = [{
+    const transparency = competition.transparency as { events: unknown[] };
+    transparency.events = [{
       type: 'competition_created',
       timestamp: Date.now(),
       actor: creatorAddress,
@@ -305,7 +307,7 @@ async function handler(
             ],
           },
         } : null,
-        marketId: competition.market?.manifoldId,
+        marketId: (competition.market as { manifoldId?: string } | undefined)?.manifoldId,
       },
     });
   } catch (error) {

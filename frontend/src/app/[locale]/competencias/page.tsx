@@ -11,6 +11,7 @@ import { CompetitionCard } from '@/competencias/components/CompetitionCard';
 import { CompetitionFilters } from '@/competencias/components/CompetitionFilters';
 import { useCompetitions } from '@/competencias/hooks/useCompetitions';
 import type { Competition, CompetitionCategory, CompetitionStatus } from '@/competencias/types';
+import { getParticipantCount } from '@/competencias/types';
 
 // Category configuration for filters
 const CATEGORY_CONFIG: Record<CompetitionCategory, { emoji: string; label: string; color: string }> = {
@@ -64,8 +65,8 @@ export default function CompetenciasPage() {
         break;
       case 'participants':
         result.sort((a, b) => {
-          const countA = Array.isArray(a.participants) ? a.participants.length : a.participants.current;
-          const countB = Array.isArray(b.participants) ? b.participants.length : b.participants.current;
+          const countA = getParticipantCount(a.participants);
+          const countB = getParticipantCount(b.participants);
           return countB - countA;
         });
         break;

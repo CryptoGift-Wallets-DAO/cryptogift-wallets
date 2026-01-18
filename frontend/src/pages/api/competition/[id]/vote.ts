@@ -90,8 +90,8 @@ async function handler(
       judge: judgeAddress,
       vote: data.vote,
       comment: data.comment,
-      timestamp: new Date().toISOString(),
-      weight: judge.weight || 1,
+      timestamp: Date.now(),
+      weight: judge.reputation || 1,
     };
 
     // Update competition
@@ -100,7 +100,6 @@ async function handler(
         method: 'multisig_panel',
         judges: [],
         votingThreshold: 66,
-        disputePeriod: 86400,
         votes: [],
       };
     }
@@ -136,13 +135,10 @@ async function handler(
     // If resolution reached, update status
     if (resolutionReached && outcome) {
       competition.status = 'completed';
-      competition.resolution = {
-        outcome,
-        resolvedAt: new Date().toISOString(),
-        resolvedBy: competition.arbitration.judges.map(j => j.address),
-        winners: [], // Would be determined by resolution logic
-        distribution: [],
-      };
+      // Update resolution through arbitration state
+      if (competition.arbitration) {
+        competition.arbitration.votingStatus = 'completed';
+      }
     }
 
     // Create transparency event
@@ -163,7 +159,7 @@ async function handler(
     };
 
     if (!competition.transparency) {
-      competition.transparency = { events: [], publicData: true, auditLog: true };
+      competition.transparency = { events: [], lastUpdated: Date.now(), verifiedCount: 0 };
     }
     competition.transparency.events.unshift(event);
 

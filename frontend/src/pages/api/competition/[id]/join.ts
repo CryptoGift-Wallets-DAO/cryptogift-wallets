@@ -20,6 +20,7 @@ import { atomicJoinCompetition } from '../../../../competencias/lib/atomicOperat
 interface JoinRequest {
   position?: string; // For prediction markets
   teamId?: string; // For team competitions
+  amount?: string; // Wei amount for entry
   metadata?: Record<string, unknown>;
   txHash?: string;
   // NOTA: participantAddress viene del token JWT autenticado
@@ -46,12 +47,10 @@ async function handler(
 
     // Create participant entry
     const entry: ParticipantEntry = {
-      id: uuidv4(),
       address: participantAddress,
-      position: data.position,
-      joinedAt: new Date().toISOString(),
-      status: 'active',
-      score: 0,
+      position: data.position || 'participant',
+      amount: data.amount || '0',
+      joinedAt: Date.now(),
     };
 
     // Create transparency event
@@ -61,7 +60,7 @@ async function handler(
       actor: participantAddress,
       action: 'Joined competition',
       details: {
-        participantId: entry.id,
+        participantAddress: entry.address,
         position: data.position,
       },
       txHash: data.txHash,

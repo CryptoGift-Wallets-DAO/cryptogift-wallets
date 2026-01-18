@@ -156,7 +156,7 @@ async function syncWithManifold(
 
   try {
     const manifoldResult = await manifoldPlaceBet({
-      contractId: competition.market.manifoldId,
+      marketId: competition.market.manifoldId,
       outcome,
       amount,
     });

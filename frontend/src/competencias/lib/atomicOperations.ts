@@ -12,6 +12,7 @@
 import { Redis } from '@upstash/redis';
 import { getRedisConnection } from '../../lib/redisConfig';
 import type { Competition, ParticipantEntry, ManifoldBet, TransparencyEvent } from '../types';
+import { getParticipantCount as getParticipantsFromType } from '../types';
 
 // =============================================================================
 // LUA SCRIPTS
@@ -412,5 +413,5 @@ export async function getParticipantCount(competitionId: string): Promise<number
     ? JSON.parse(data)
     : data;
 
-  return competition.participants?.current || 0;
+  return competition.participants ? getParticipantsFromType(competition.participants) : 0;
 }
