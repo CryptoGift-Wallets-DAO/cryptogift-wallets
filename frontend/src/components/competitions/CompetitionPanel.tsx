@@ -35,6 +35,7 @@ import {
   Percent,
   AlertCircle,
 } from 'lucide-react';
+import { CompetitionSuccess } from './CompetitionSuccess';
 
 // =============================================================================
 // TIPOS Y CONFIGURACIONES
@@ -242,6 +243,8 @@ export function CompetitionPanel({
     ...initialConfig,
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdCompetitionId, setCreatedCompetitionId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     format: true,
     entry: true,
@@ -324,16 +327,54 @@ export function CompetitionPanel({
 
     try {
       // Aquí se llamará a la API del backend
-      // Por ahora simulamos un delay
+      // Por ahora simulamos la creación
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      onComplete?.(config);
+      // Generar ID temporal (en producción vendría del backend)
+      const newId = `comp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+      setCreatedCompetitionId(newId);
+      setShowSuccess(true);
     } catch (error) {
       console.error('Error creating competition:', error);
     } finally {
       setIsCreating(false);
     }
   };
+
+  // Después de ver los links, cerrar todo
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    onComplete?.(config);
+  };
+
+  // Ver la competencia creada
+  const handleViewCompetition = () => {
+    if (createdCompetitionId) {
+      // Navegar a la página de la competencia
+      window.open(`/competencia/${createdCompetitionId}`, '_blank');
+    }
+  };
+
+  // Si mostramos éxito, mostrar solo esa pantalla
+  if (showSuccess && createdCompetitionId) {
+    return (
+      <div className={className}>
+        <CompetitionSuccess
+          competitionId={createdCompetitionId}
+          title={config.title || 'Nueva Competencia'}
+          hasArbiters={config.resolution === 'singleArbiter' || config.resolution === 'panel'}
+          config={{
+            format: config.format,
+            maxParticipants: config.maxParticipants,
+            stakeAmount: config.stakeAmount,
+            currency: config.currency,
+          }}
+          onClose={handleSuccessClose}
+          onViewCompetition={handleViewCompetition}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-4 ${className}`}>
