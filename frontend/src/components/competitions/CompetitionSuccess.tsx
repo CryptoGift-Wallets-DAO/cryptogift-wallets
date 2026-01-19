@@ -33,6 +33,7 @@ interface CompetitionSuccessProps {
     stakeAmount: string;
     currency: string;
   };
+  code?: string;
   onClose?: () => void;
   onViewCompetition?: () => void;
 }
@@ -187,6 +188,7 @@ export function CompetitionSuccess({
   title,
   hasArbiters,
   config,
+  code,
   onClose,
   onViewCompetition,
 }: CompetitionSuccessProps) {
@@ -223,6 +225,14 @@ export function CompetitionSuccess({
           <p className="text-gray-400 mt-1">
             {title}
           </p>
+          {code && (
+            <p className="text-amber-400 font-mono text-sm mt-2 flex items-center justify-center gap-2">
+              <span className="text-gray-500">Código:</span>
+              <span className="px-2 py-0.5 bg-amber-500/10 rounded border border-amber-500/20">
+                {code}
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Quick stats */}

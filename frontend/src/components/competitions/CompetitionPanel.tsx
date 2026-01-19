@@ -36,6 +36,11 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { CompetitionSuccess } from './CompetitionSuccess';
+import {
+  createCompetitionRecord,
+  logCompetitionRecord,
+  type CompetitionRecord,
+} from '@/lib/competitionRegistry';
 
 // =============================================================================
 // TIPOS Y CONFIGURACIONES
@@ -244,7 +249,7 @@ export function CompetitionPanel({
   });
   const [isCreating, setIsCreating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [createdCompetitionId, setCreatedCompetitionId] = useState<string | null>(null);
+  const [createdRecord, setCreatedRecord] = useState<CompetitionRecord | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     format: true,
     entry: true,
@@ -314,25 +319,50 @@ export function CompetitionPanel({
     return parts.join(' • ');
   }, [config]);
 
-  // Validación
-  const isValid = useMemo(() => {
-    return config.title.trim().length > 0;
-  }, [config.title]);
+  // Siempre válido - título es opcional (se auto-genera)
+  const isValid = true;
 
   // Crear competencia
   const handleCreate = async () => {
-    if (!isValid) return;
-
     setIsCreating(true);
 
     try {
-      // Aquí se llamará a la API del backend
-      // Por ahora simulamos la creación
+      // Crear registro completo usando el sistema de tracking
+      // TODO: Obtener creatorAddress del wallet conectado
+      const creatorAddress = '0x0000000000000000000000000000000000000000';
+
+      const record = createCompetitionRecord({
+        title: config.title,
+        description: config.description,
+        format: config.format,
+        entryType: config.entryType,
+        maxParticipants: config.maxParticipants,
+        stakeType: config.stakeType,
+        stakeAmount: config.stakeAmount,
+        currency: config.currency,
+        distribution: config.distribution,
+        resolution: config.resolution,
+        timing: config.timing,
+        matchType: config.matchType,
+        deadline: config.deadline,
+        forSharing: config.forSharing,
+        creatorAddress,
+      });
+
+      // Log completo del registro para debugging/auditoría
+      logCompetitionRecord(record);
+
+      // Aquí se llamará a la API del backend con todos los datos de tracking
+      // TODO: Implementar llamada a /api/competencias/create
+      // const response = await fetch('/api/competencias/create', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(record),
+      // });
+
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Generar ID temporal (en producción vendría del backend)
-      const newId = `comp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
-      setCreatedCompetitionId(newId);
+      setCreatedRecord(record);
       setShowSuccess(true);
     } catch (error) {
       console.error('Error creating competition:', error);
@@ -349,26 +379,27 @@ export function CompetitionPanel({
 
   // Ver la competencia creada
   const handleViewCompetition = () => {
-    if (createdCompetitionId) {
+    if (createdRecord) {
       // Navegar a la página de la competencia
-      window.open(`/competencia/${createdCompetitionId}`, '_blank');
+      window.open(`/competencia/${createdRecord.id}`, '_blank');
     }
   };
 
   // Si mostramos éxito, mostrar solo esa pantalla
-  if (showSuccess && createdCompetitionId) {
+  if (showSuccess && createdRecord) {
     return (
       <div className={className}>
         <CompetitionSuccess
-          competitionId={createdCompetitionId}
-          title={config.title || 'Nueva Competencia'}
-          hasArbiters={config.resolution === 'singleArbiter' || config.resolution === 'panel'}
+          competitionId={createdRecord.id}
+          title={createdRecord.title}
+          hasArbiters={!!createdRecord.arbiterLink}
           config={{
-            format: config.format,
-            maxParticipants: config.maxParticipants,
-            stakeAmount: config.stakeAmount,
-            currency: config.currency,
+            format: createdRecord.format,
+            maxParticipants: createdRecord.maxParticipants,
+            stakeAmount: createdRecord.stakeAmount,
+            currency: createdRecord.currency,
           }}
+          code={createdRecord.code}
           onClose={handleSuccessClose}
           onViewCompetition={handleViewCompetition}
         />
@@ -413,22 +444,28 @@ export function CompetitionPanel({
       <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 space-y-3">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Título de la competencia *
+            Título de la competencia
+            <span className="text-gray-500 font-normal ml-2">(opcional)</span>
           </label>
           <input
             type="text"
             value={config.title}
             onChange={(e) => updateConfig('title', e.target.value)}
-            placeholder="Ej: Torneo FIFA 2025, Apuesta Super Bowl, etc."
+            placeholder="Se auto-genera si lo dejas vacío"
             className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10
                      text-white placeholder-gray-500
                      focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20
                      transition-all outline-none"
           />
+          <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-amber-400/60" />
+            Si no pones título, se generará automáticamente con el código y fecha
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Descripción (opcional)
+            Descripción
+            <span className="text-gray-500 font-normal ml-2">(opcional)</span>
           </label>
           <textarea
             value={config.description}
@@ -845,18 +882,17 @@ export function CompetitionPanel({
       {/* Botón de crear */}
       <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-gray-900 to-transparent">
         <motion.button
-          whileHover={{ scale: isValid ? 1.02 : 1 }}
-          whileTap={{ scale: isValid ? 0.98 : 1 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={handleCreate}
-          disabled={!isValid || isCreating}
+          disabled={isCreating}
           className={`
             w-full py-4 rounded-2xl font-bold text-lg
             flex items-center justify-center gap-3
             transition-all duration-300
-            ${isValid
-              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:shadow-lg hover:shadow-amber-500/25'
-              : 'bg-white/10 text-gray-500 cursor-not-allowed'
-            }
+            bg-gradient-to-r from-amber-500 to-orange-500 text-black
+            hover:shadow-lg hover:shadow-amber-500/25
+            disabled:opacity-50 disabled:cursor-not-allowed
           `}
         >
           {isCreating ? (
@@ -871,12 +907,6 @@ export function CompetitionPanel({
             </>
           )}
         </motion.button>
-
-        {!isValid && (
-          <p className="text-center text-sm text-gray-500 mt-2">
-            Escribe un título para continuar
-          </p>
-        )}
       </div>
     </div>
   );
