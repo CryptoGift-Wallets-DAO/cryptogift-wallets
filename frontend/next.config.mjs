@@ -73,17 +73,44 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      // PostHog static assets
       {
         source: "/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },
+      // PostHog API endpoints - handle both with and without trailing slash
+      {
+        source: "/ingest/e",
+        destination: "https://us.i.posthog.com/e",
+      },
+      {
+        source: "/ingest/e/",
+        destination: "https://us.i.posthog.com/e/",
+      },
+      {
+        source: "/ingest/flags",
+        destination: "https://us.i.posthog.com/flags",
+      },
+      {
+        source: "/ingest/flags/",
+        destination: "https://us.i.posthog.com/flags/",
+      },
+      {
+        source: "/ingest/decide",
+        destination: "https://us.i.posthog.com/decide",
+      },
+      {
+        source: "/ingest/decide/",
+        destination: "https://us.i.posthog.com/decide/",
+      },
+      // Catch-all for other PostHog endpoints
       {
         source: "/ingest/:path*",
         destination: "https://us.i.posthog.com/:path*",
       },
     ];
   },
-  // This is required to support PostHog trailing slash API requests
+  // Required for PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
 };
 

@@ -430,11 +430,37 @@ export function CompetitionPanel({
 
   // Handler para "Crear Rápido" - crea con config adaptativa inmediatamente
   const handleQuickCreate = async () => {
+    // Primero aplicar config rápida
     setConfig(QUICK_CREATE_CONFIG);
-    // Pequeño delay para que se actualice el estado, luego crear
-    setTimeout(() => {
-      handleCreate();
-    }, 100);
+    setCreateError(null);
+
+    // Verificar si hay wallet conectada
+    if (!walletAddress) {
+      setCreateError('Conecta tu wallet primero para crear una competencia');
+      // Scroll al área de wallet
+      setTimeout(() => {
+        document.querySelector('[data-wallet-section]')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return;
+    }
+
+    // Verificar autenticación - si no está autenticado, iniciar flujo SIWE
+    if (!isAuthenticated) {
+      setCreateError('Verificando identidad...');
+      try {
+        await handleAuthenticate();
+        // Después de autenticar, crear la competencia
+        setTimeout(() => {
+          handleCreate();
+        }, 100);
+      } catch (error) {
+        setCreateError('Error de autenticación. Intenta de nuevo.');
+      }
+      return;
+    }
+
+    // Si ya está autenticado, crear directamente
+    handleCreate();
   };
 
   // Validación: necesita wallet conectada y autenticada
@@ -1050,7 +1076,7 @@ export function CompetitionPanel({
       </Section>
 
       {/* Estado de Wallet y Autenticación */}
-      <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-gray-900 to-transparent space-y-3">
+      <div data-wallet-section className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-gray-900 to-transparent space-y-3">
         {/* Mostrar errores */}
         {(createError || authError) && (
           <motion.div
