@@ -42,8 +42,15 @@ import {
   AlertCircle,
   Wallet,
 } from 'lucide-react';
-import { useActiveAccount } from 'thirdweb/react';
+import { useActiveAccount, ConnectButton } from 'thirdweb/react';
+import { createThirdwebClient } from 'thirdweb';
+import { baseSepolia, base } from 'thirdweb/chains';
 import { CompetitionSuccess } from './CompetitionSuccess';
+
+// ThirdWeb client para ConnectButton
+const client = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || '',
+});
 import {
   authenticateWithSiwe,
   makeAuthenticatedRequest,
@@ -324,6 +331,9 @@ export function CompetitionPanel({
     sharing: true,
   });
 
+  // Estado para mostrar ConnectButton inline cuando se intenta Crear Rápido sin wallet
+  const [showInlineConnect, setShowInlineConnect] = useState(false);
+
   // Check auth state on mount and when wallet changes
   useEffect(() => {
     if (walletAddress) {
@@ -434,19 +444,18 @@ export function CompetitionPanel({
     setConfig(QUICK_CREATE_CONFIG);
     setCreateError(null);
 
-    // Verificar si hay wallet conectada
+    // Verificar si hay wallet conectada - mostrar ConnectButton inline
     if (!walletAddress) {
-      setCreateError('Conecta tu wallet primero para crear una competencia');
-      // Scroll al área de wallet
-      setTimeout(() => {
-        document.querySelector('[data-wallet-section]')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      setShowInlineConnect(true);
       return;
     }
 
+    // Ocultar ConnectButton inline si estaba visible
+    setShowInlineConnect(false);
+
     // Verificar autenticación - si no está autenticado, iniciar flujo SIWE
     if (!isAuthenticated) {
-      setCreateError('Verificando identidad...');
+      setIsAuthenticating(true);
       try {
         await handleAuthenticate();
         // Después de autenticar, crear la competencia
@@ -455,6 +464,7 @@ export function CompetitionPanel({
         }, 100);
       } catch (error) {
         setCreateError('Error de autenticación. Intenta de nuevo.');
+        setIsAuthenticating(false);
       }
       return;
     }
@@ -462,6 +472,15 @@ export function CompetitionPanel({
     // Si ya está autenticado, crear directamente
     handleCreate();
   };
+
+  // Ocultar ConnectButton inline cuando la wallet se conecta
+  useEffect(() => {
+    if (walletAddress && showInlineConnect) {
+      setShowInlineConnect(false);
+      // Auto-continuar con Quick Create después de conectar
+      handleQuickCreate();
+    }
+  }, [walletAddress]);
 
   // Validación: necesita wallet conectada y autenticada
   const canCreate = walletAddress && isAuthenticated;
@@ -614,7 +633,7 @@ export function CompetitionPanel({
         </div>
 
         {/* Explicación del modo adaptativo */}
-        {config.format === 'adaptive' && (
+        {config.format === 'adaptive' && !showInlineConnect && (
           <div className="mt-3 pt-3 border-t border-amber-500/20">
             <p className="text-xs text-amber-200/70 flex items-start gap-2">
               <span className="text-amber-400">🎲</span>
@@ -625,6 +644,44 @@ export function CompetitionPanel({
             </p>
           </div>
         )}
+
+        {/* Panel de Conexión de Wallet Inline */}
+        <AnimatePresence>
+          {showInlineConnect && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 pt-3 border-t border-amber-500/20"
+            >
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-blue-300">
+                  <Wallet className="w-5 h-5" />
+                  <span className="font-medium">Conecta tu wallet para continuar</span>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Necesitas una wallet conectada para crear competencias y gestionar fondos de forma segura.
+                </p>
+                <div className="flex justify-center">
+                  <ConnectButton
+                    client={client}
+                    chains={[baseSepolia, base]}
+                    connectButton={{
+                      label: "Conectar Wallet",
+                      style: {
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        borderRadius: '12px',
+                        padding: '12px 24px',
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Título y descripción */}
