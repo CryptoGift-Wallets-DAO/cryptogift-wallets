@@ -1,40 +1,44 @@
 # ⚠️ CONFIGURACIÓN CRÍTICA - APPROVER_PRIVATE_KEY
 
-## 🔴 ERROR DETECTADO EN TU CONFIGURACIÓN
+## 🔴 ERROR COMÚN DE CONFIGURACIÓN
 
-Has configurado incorrectamente el `APPROVER_PRIVATE_KEY`. Pusiste la **dirección del wallet** en lugar de la **clave privada**.
+Si configuras incorrectamente el `APPROVER_PRIVATE_KEY` poniendo la **dirección del wallet** en lugar de la **clave privada**, el sistema no funcionará.
 
-### ❌ INCORRECTO (Lo que tienes ahora):
+### ❌ INCORRECTO:
 ```env
-APPROVER_PRIVATE_KEY=0x75e32B5BA0817fEF917f21902EC5a84005d00943  # ESTO ES LA DIRECCIÓN, NO LA CLAVE
+APPROVER_PRIVATE_KEY=0xTU_WALLET_ADDRESS_AQUI  # ESTO ES LA DIRECCIÓN, NO LA CLAVE
 ```
 
-### ✅ CORRECTO (Lo que debes poner):
+### ✅ CORRECTO:
 ```env
-APPROVER_PRIVATE_KEY=0xe409aef94880a03b06da632c8fb20136190cc329b684ebe38aa5587be375d514
+APPROVER_PRIVATE_KEY=0xTU_PRIVATE_KEY_64_CARACTERES_HEX
 ```
 
-## 📝 INFORMACIÓN COMPLETA DEL APPROVER WALLET
+## 📝 CÓMO OBTENER LA CLAVE PRIVADA
 
-**Wallet Address**: `0x75e32B5BA0817fEF917f21902EC5a84005d00943`
-**Private Key**: `0xe409aef94880a03b06da632c8fb20136190cc329b684ebe38aa5587be375d514`
-**Mnemonic** (backup): `breeze dream position captain wash east bean siege pelican barely square face`
+1. Genera una nueva wallet dedicada para el Approver
+2. **NUNCA** uses la wallet principal con fondos
+3. Guarda la clave privada en un lugar seguro (NO en el repo)
 
-## 🔧 PASOS PARA CORREGIR
+```bash
+# Generar nueva wallet
+node -e "const {ethers}=require('ethers');const w=ethers.Wallet.createRandom();console.log('Address:',w.address);console.log('PrivateKey:',w.privateKey);"
+```
+
+## 🔧 PASOS PARA CONFIGURAR
 
 ### 1. En Vercel Dashboard:
 1. Ve a tu proyecto en Vercel
 2. Settings → Environment Variables
-3. Busca `APPROVER_PRIVATE_KEY`
-4. **CAMBIA** el valor a: `0xe409aef94880a03b06da632c8fb20136190cc329b684ebe38aa5587be375d514`
-5. Marca como "Sensitive" para que no se muestre en logs
-6. Save
+3. Añade `APPROVER_PRIVATE_KEY` con tu clave privada
+4. **MARCA COMO "Sensitive"** para que no se muestre en logs
+5. Save
 
 ### 2. En tu archivo `.env.local`:
 ```env
 # SimpleApprovalGate Configuration
-NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0x3FEb03368cbF0970D4f29561dA200342D788eD6B
-APPROVER_PRIVATE_KEY=0xe409aef94880a03b06da632c8fb20136190cc329b684ebe38aa5587be375d514
+NEXT_PUBLIC_SIMPLE_APPROVAL_GATE_ADDRESS=0xTU_CONTRACT_ADDRESS
+APPROVER_PRIVATE_KEY=0xTU_PRIVATE_KEY_AQUI
 ```
 
 ## ⚠️ SEGURIDAD IMPORTANTE
@@ -53,18 +57,18 @@ Sin la clave privada correcta:
 
 ## ✅ VERIFICACIÓN
 
-Para verificar que funciona correctamente:
+Para verificar que tu configuración funciona correctamente:
 
 1. **Test local**:
 ```bash
 cd frontend
 node -e "
 const ethers = require('ethers');
-const pk = '0xe409aef94880a03b06da632c8fb20136190cc329b684ebe38aa5587be375d514';
+const pk = process.env.APPROVER_PRIVATE_KEY;
+if (!pk) { console.log('❌ APPROVER_PRIVATE_KEY no configurado'); process.exit(1); }
 const wallet = new ethers.Wallet(pk);
-console.log('Address:', wallet.address);
-console.log('Expected: 0x75e32B5BA0817fEF917f21902EC5a84005d00943');
-console.log('Match:', wallet.address === '0x75e32B5BA0817fEF917f21902EC5a84005d00943' ? '✅' : '❌');
+console.log('Address derivada:', wallet.address);
+console.log('✅ Configuración correcta si la address coincide con tu approver');
 "
 ```
 
@@ -73,24 +77,21 @@ console.log('Match:', wallet.address === '0x75e32B5BA0817fEF917f21902EC5a84005d0
 - Completar los módulos
 - Verificar que se obtiene la firma EIP-712
 
-## 📊 ESTADO ACTUAL DEL SISTEMA
+## 📊 ESTADO DEL SISTEMA
 
 ### ✅ Funcionando:
 - Contrato deployado y verificado
 - APIs de educación desplegadas
 - Sistema de módulos activo
 
-### ⚠️ Pendiente de tu corrección:
-- APPROVER_PRIVATE_KEY con el valor correcto
-
-### 🎯 Una vez corregido:
+### 🎯 Con APPROVER_PRIVATE_KEY correcto:
 - Sistema 100% operativo
 - Firmas EIP-712 activas
 - Gas optimizado (<30k)
 
 ---
 
-**ACCIÓN REQUERIDA**: Actualiza `APPROVER_PRIVATE_KEY` con la clave privada correcta tanto en Vercel como en `.env.local`.
+**ACCIÓN REQUERIDA**: Configura `APPROVER_PRIVATE_KEY` en Vercel y `.env.local` con la clave privada de tu wallet approver.
 
 Made by mbxarts.com The Moon in a Box property
 
