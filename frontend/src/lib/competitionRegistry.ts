@@ -177,6 +177,7 @@ export function formatDateTimeForTitle(date: Date): string {
  */
 export function generateAutoTitle(code: string, format: string): string {
   const formatLabels: Record<string, string> = {
+    'adaptive': 'Competencia',
     '1v1': 'Duelo',
     'teams': 'Equipos',
     'freeForAll': 'Battle Royale',
@@ -246,7 +247,8 @@ export function createCompetitionRecord(params: CreateCompetitionParams): Compet
     : 'https://cryptogift-wallets.vercel.app';
 
   const participantLink = `${baseUrl}/competencia/${id}/join`;
-  const arbiterLink = ['singleArbiter', 'panel'].includes(params.resolution)
+  // En modo voting/adaptive cualquiera puede ser juez, también necesita link
+  const arbiterLink = ['singleArbiter', 'panel', 'voting'].includes(params.resolution)
     ? `${baseUrl}/competencia/${id}/arbiter`
     : undefined;
 

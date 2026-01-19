@@ -46,7 +46,7 @@ import {
 // TIPOS Y CONFIGURACIONES
 // =============================================================================
 
-type CompetitionFormat = '1v1' | 'teams' | 'freeForAll' | 'bracket' | 'league' | 'pool';
+type CompetitionFormat = 'adaptive' | '1v1' | 'teams' | 'freeForAll' | 'bracket' | 'league' | 'pool';
 type EntryType = 'open' | 'invite' | 'fixed' | 'requirements';
 type StakeType = 'equal' | 'flexible' | 'prizeOnly';
 type DistributionType = 'winnerTakesAll' | 'top3' | 'proportional' | 'custom';
@@ -91,27 +91,38 @@ interface CompetitionConfig {
   forSharing: boolean;
 }
 
-// Configuración por defecto - La más común y versátil
+// Configuración por defecto - ADAPTATIVA (se ajusta según participantes)
 const DEFAULT_CONFIG: CompetitionConfig = {
   title: '',
   description: '',
-  format: '1v1',
-  entryType: 'open',
-  maxParticipants: 2,
+  format: 'adaptive',           // El algoritmo decide al cerrar inscripciones
+  entryType: 'open',            // Cualquiera puede entrar
+  maxParticipants: 'unlimited', // Sin límite - el sistema se adapta
   stakeType: 'equal',
   stakeAmount: '0.01',
-  currency: 'ETH',
+  currency: 'USDC',
   distribution: 'winnerTakesAll',
-  resolution: 'singleArbiter',
-  arbiters: [],
-  timing: 'fixedDate',
-  deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
+  resolution: 'voting',         // Cualquiera puede ser juez, todos votan
+  arbiters: [],                 // Se llenan dinámicamente
+  timing: 'manual',             // Se inicia cuando participantes lo deciden
+  deadline: undefined,
   matchType: 'bo1',
-  forSharing: true, // Por defecto para compartir
+  forSharing: true,
+};
+
+// Configuración para "Crear Rápido" - 100% adaptativa
+const QUICK_CREATE_CONFIG: CompetitionConfig = {
+  ...DEFAULT_CONFIG,
+  format: 'adaptive',
+  maxParticipants: 'unlimited',
+  resolution: 'voting',
+  timing: 'manual',
+  forSharing: true,
 };
 
 // Colores por formato
 const FORMAT_COLORS: Record<CompetitionFormat, { bg: string; border: string; text: string; icon: string }> = {
+  'adaptive': { bg: 'bg-gradient-to-r from-amber-500/10 to-purple-500/10', border: 'border-amber-500/30', text: 'text-amber-400', icon: '🎲' },
   '1v1': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', icon: '⚔️' },
   'teams': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', icon: '👥' },
   'freeForAll': { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', icon: '🎯' },
@@ -271,6 +282,13 @@ export function CompetitionPanel({
       // Ajustes automáticos basados en el formato
       if (key === 'format') {
         switch (value) {
+          case 'adaptive':
+            // Modo adaptativo: todo abierto, sistema decide al cerrar
+            newConfig.maxParticipants = 'unlimited';
+            newConfig.entryType = 'open';
+            newConfig.resolution = 'voting';
+            newConfig.timing = 'manual';
+            break;
           case '1v1':
             newConfig.maxParticipants = 2;
             break;
@@ -302,6 +320,7 @@ export function CompetitionPanel({
   // Resumen de configuración
   const configSummary = useMemo(() => {
     const formatLabels: Record<CompetitionFormat, string> = {
+      'adaptive': 'Adaptativo',
       '1v1': '1 vs 1',
       'teams': 'Equipos',
       'freeForAll': 'Todos vs Todos',
@@ -318,6 +337,15 @@ export function CompetitionPanel({
 
     return parts.join(' • ');
   }, [config]);
+
+  // Handler para "Crear Rápido" - crea con config adaptativa inmediatamente
+  const handleQuickCreate = async () => {
+    setConfig(QUICK_CREATE_CONFIG);
+    // Pequeño delay para que se actualice el estado, luego crear
+    setTimeout(() => {
+      handleCreate();
+    }, 100);
+  };
 
   // Siempre válido - título es opcional (se auto-genera)
   const isValid = true;
@@ -420,7 +448,7 @@ export function CompetitionPanel({
         </p>
       </div>
 
-      {/* Resumen visual */}
+      {/* Resumen visual + Botón Crear Rápido */}
       <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10
                       border border-amber-500/20 rounded-xl p-4">
         <div className="flex items-center gap-3">
@@ -431,13 +459,38 @@ export function CompetitionPanel({
             </div>
             <div className="text-sm text-amber-400/80">{configSummary}</div>
           </div>
-          {config.forSharing && (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/20 text-green-400 text-xs">
-              <Share2 className="w-3 h-3" />
-              <span>Compartible</span>
-            </div>
-          )}
+
+          {/* Botón Crear Rápido - Modo Adaptativo */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleQuickCreate}
+            disabled={isCreating}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                     bg-gradient-to-r from-green-500 to-emerald-500
+                     text-white font-semibold text-sm
+                     hover:shadow-lg hover:shadow-green-500/25
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-all"
+          >
+            <Zap className="w-4 h-4" />
+            <span className="hidden sm:inline">Crear Rápido</span>
+            <span className="sm:hidden">⚡</span>
+          </motion.button>
         </div>
+
+        {/* Explicación del modo adaptativo */}
+        {config.format === 'adaptive' && (
+          <div className="mt-3 pt-3 border-t border-amber-500/20">
+            <p className="text-xs text-amber-200/70 flex items-start gap-2">
+              <span className="text-amber-400">🎲</span>
+              <span>
+                <strong className="text-amber-300">Modo Adaptativo:</strong> Cualquiera puede entrar como participante o juez.
+                Al dar "Empezar" el sistema determina el formato (1v1, bracket, etc.) según los participantes.
+              </span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Título y descripción */}
@@ -488,6 +541,15 @@ export function CompetitionPanel({
         onToggle={() => toggleSection('format')}
       >
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {/* Adaptativo - RECOMENDADO */}
+          <OptionChip
+            selected={config.format === 'adaptive'}
+            onClick={() => updateConfig('format', 'adaptive')}
+            emoji="🎲"
+            label="Adaptativo"
+            sublabel="Sistema decide"
+            color="from-amber-500/20 to-purple-500/20"
+          />
           <OptionChip
             selected={config.format === '1v1'}
             onClick={() => updateConfig('format', '1v1')}
