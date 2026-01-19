@@ -164,10 +164,13 @@ function generateCSP(): string {
  */
 function getSecurityHeaders(): HeadersInit {
   const csp = generateCSP();
-  
+
+  // Check if CSP should be enforced (controlled via CSP_ENFORCE env var)
+  const cspEnforce = process.env.CSP_ENFORCE === 'true';
+
   const headers: HeadersInit = {
-    // CSP - Start with Report-Only in production
-    'Content-Security-Policy-Report-Only': csp,
+    // CSP - Enforce mode when CSP_ENFORCE=true, otherwise Report-Only
+    [cspEnforce ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only']: csp,
     
     // Security headers
     'X-Frame-Options': 'DENY',

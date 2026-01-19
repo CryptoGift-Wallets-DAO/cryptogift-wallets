@@ -1,0 +1,83 @@
+# Gitleaks Configuration for CryptoGift Wallets
+# Detects secrets and sensitive data before commits
+
+title = "CryptoGift Secret Scanner"
+
+[extend]
+useDefault = true
+
+# Custom rules for crypto/web3 secrets
+[[rules]]
+id = "ethereum-private-key"
+description = "Ethereum Private Key (64 hex chars)"
+regex = '''(?i)(private[_-]?key|secret[_-]?key|pk)\s*[=:]\s*['"]?(0x)?[a-fA-F0-9]{64}['"]?'''
+tags = ["key", "ethereum", "critical"]
+
+[[rules]]
+id = "ethereum-private-key-raw"
+description = "Raw Ethereum Private Key"
+regex = '''0x[a-fA-F0-9]{64}'''
+tags = ["key", "ethereum"]
+entropy = 4.0
+
+[[rules]]
+id = "mnemonic-phrase"
+description = "Mnemonic/Seed Phrase (12-24 words)"
+regex = '''(?i)(mnemonic|seed|phrase|recovery)\s*[=:]\s*['"]?([a-z]+\s+){11,23}[a-z]+['"]?'''
+tags = ["mnemonic", "critical"]
+
+[[rules]]
+id = "api-key-generic"
+description = "Generic API Key Pattern"
+regex = '''(?i)(api[_-]?key|apikey|api[_-]?secret)\s*[=:]\s*['"]?[a-zA-Z0-9_-]{20,}['"]?'''
+tags = ["api", "key"]
+
+[[rules]]
+id = "thirdweb-key"
+description = "ThirdWeb Client ID or Secret"
+regex = '''(?i)(tw[_-]?(client|secret)[_-]?(id|key))\s*[=:]\s*['"]?[a-zA-Z0-9_-]{20,}['"]?'''
+tags = ["thirdweb", "api"]
+
+[[rules]]
+id = "alchemy-key"
+description = "Alchemy API Key"
+regex = '''(?i)alchemy.*[=:]\s*['"]?[a-zA-Z0-9_-]{32,}['"]?'''
+tags = ["alchemy", "api"]
+
+[[rules]]
+id = "upstash-token"
+description = "Upstash Redis Token"
+regex = '''(?i)upstash.*token\s*[=:]\s*['"]?[A-Za-z0-9=+/]{40,}['"]?'''
+tags = ["upstash", "redis"]
+
+[[rules]]
+id = "biconomy-key"
+description = "Biconomy API Key"
+regex = '''(?i)biconomy.*[=:]\s*['"]?[a-zA-Z0-9_-]{20,}['"]?'''
+tags = ["biconomy", "api"]
+
+[[rules]]
+id = "walletconnect-project"
+description = "WalletConnect Project ID"
+regex = '''(?i)(wc[_-]?project[_-]?id|walletconnect.*project)\s*[=:]\s*['"]?[a-fA-F0-9]{32}['"]?'''
+tags = ["walletconnect"]
+
+# Allowlist - files that should be ignored
+[allowlist]
+paths = [
+  '''\.env\.example''',
+  '''\.env\.template''',
+  '''node_modules''',
+  '''\.next''',
+  '''coverage''',
+  '''\.git''',
+  '''package-lock\.json''',
+  '''pnpm-lock\.yaml''',
+]
+
+# Commits that can be ignored (legacy)
+commits = []
+
+# Files that should never contain secrets
+[extend.allowlist]
+regexTarget = "match"

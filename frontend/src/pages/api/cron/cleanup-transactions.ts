@@ -32,22 +32,36 @@ try {
   console.error('❌ Redis initialization failed for cron cleanup:', error);
 }
 
-// Authenticate cron requests
+// Authenticate cron requests - supports both Vercel cron and manual triggers
 function authenticateCron(req: NextApiRequest): boolean {
-  const authHeader = req.headers.authorization;
+  // Check for Vercel's built-in cron authentication
+  const vercelCron = req.headers['x-vercel-cron'];
+  if (vercelCron) {
+    return true; // Vercel cron jobs are trusted
+  }
+
   const cronSecret = process.env.CRON_SECRET;
-  
   if (!cronSecret) {
     console.error('❌ CRON_SECRET not configured');
     return false;
   }
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
+
+  // Check x-cron-secret header (for GitHub Actions and manual triggers)
+  const xCronSecret = req.headers['x-cron-secret'];
+  if (xCronSecret === cronSecret) {
+    return true;
   }
-  
-  const token = authHeader.replace('Bearer ', '');
-  return token === cronSecret;
+
+  // Check Authorization Bearer token
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    if (token === cronSecret) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // Lightweight cleanup for cron jobs
@@ -93,10 +107,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<CronCleanupResponse>
 ) {
-  // Only allow GET requests for cron jobs
-  if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      success: false, 
+  // Allow GET (Vercel cron) and POST (GitHub Actions) requests
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({
+      success: false,
       message: 'Method not allowed',
       timestamp: new Date().toISOString()
     });
