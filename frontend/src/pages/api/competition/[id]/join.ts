@@ -12,10 +12,10 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { v4 as uuidv4 } from 'uuid';
 import { ParticipantEntry, TransparencyEvent } from '../../../../competencias/types';
 import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
 import { atomicJoinCompetition } from '../../../../competencias/lib/atomicOperations';
+import { emitParticipantJoined } from '../../../../competencias/lib/eventSystem';
 
 interface JoinRequest {
   position?: string; // For prediction markets
@@ -96,6 +96,13 @@ async function handler(
         code: result.code,
       });
     }
+
+    // Emit SSE event for real-time updates
+    emitParticipantJoined(
+      id,
+      participantAddress,
+      data.amount ? Number(data.amount) / 1e18 : undefined
+    );
 
     return res.status(200).json({
       success: true,

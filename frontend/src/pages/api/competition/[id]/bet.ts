@@ -19,6 +19,7 @@ import {
 } from '../../../../competencias/lib/manifoldClient';
 import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
 import { atomicPlaceBet } from '../../../../competencias/lib/atomicOperations';
+import { emitBetPlaced } from '../../../../competencias/lib/eventSystem';
 
 interface BetRequest {
   outcome: 'YES' | 'NO';
@@ -119,6 +120,16 @@ async function handler(
       syncWithManifold(id, data.outcome, data.amount, result.data.bet.id).catch(err => {
         console.warn('Manifold sync failed (non-critical):', err);
       });
+
+      // Emit SSE event for real-time updates
+      emitBetPlaced(
+        id,
+        userAddress,
+        data.outcome,
+        data.amount,
+        result.data.bet.shares || 0,
+        result.data.newProbability || 0.5
+      );
     }
 
     return res.status(200).json({

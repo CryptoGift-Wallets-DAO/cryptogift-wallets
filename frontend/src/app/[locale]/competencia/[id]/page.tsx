@@ -36,6 +36,7 @@ import Link from 'next/link';
 import { useActiveAccount } from 'thirdweb/react';
 import { useAuth } from '../../../../hooks/useAuth';
 import { makeAuthenticatedRequest, isAuthValid } from '../../../../lib/siweClient';
+import SafeDeploymentPanel from '../../../../competencias/components/SafeDeploymentPanel';
 
 // Types from competition system
 interface ParticipantEntry {
@@ -348,21 +349,8 @@ export default function CompetitionPage() {
             <p className="text-gray-400 mb-4">{competition.description}</p>
           )}
 
-          {/* Safe Address if deployed */}
-          {competition.safeAddress && (
-            <div className="mb-4 p-3 bg-green-500/10 rounded-xl border border-green-500/30">
-              <div className="flex items-center gap-2 text-green-400 text-sm">
-                <Shield className="w-4 h-4" />
-                <span>Safe Escrow: {abbreviateAddress(competition.safeAddress)}</span>
-                {competition.custody?.deployed && (
-                  <span className="text-xs bg-green-500/20 px-2 py-0.5 rounded">Desplegado</span>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <div className="bg-white/5 rounded-xl p-3 text-center">
               <div className="text-2xl font-bold text-white">{participantCount}</div>
               <div className="text-xs text-gray-500">Participantes</div>
@@ -387,6 +375,16 @@ export default function CompetitionPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Safe Deployment Panel - Visible para el creador cuando Safe no desplegado */}
+        {competition.safeAddress && (
+          <SafeDeploymentPanel
+            competitionId={competitionId}
+            custody={competition.custody}
+            isCreator={isCreator}
+            onDeploymentComplete={fetchCompetition}
+          />
+        )}
 
         {/* Actions for pending competition */}
         {(competition.status === 'pending' || competition.status === 'draft') && (

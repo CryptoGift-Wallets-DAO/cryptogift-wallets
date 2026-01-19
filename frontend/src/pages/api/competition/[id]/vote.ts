@@ -11,6 +11,7 @@ import { Redis } from '@upstash/redis';
 import { v4 as uuidv4 } from 'uuid';
 import { Competition, Vote, TransparencyEvent } from '../../../../competencias/types';
 import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
+import { emitVoteCast, emitCompetitionResolved } from '../../../../competencias/lib/eventSystem';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -171,6 +172,14 @@ async function handler(
 
     // Store event
     await redis.lpush(`competition:${id}:events`, JSON.stringify(event));
+
+    // Emit SSE events for real-time updates
+    emitVoteCast(id, judgeAddress, data.vote, judge.reputation || 1);
+
+    // If resolution reached, emit resolution event
+    if (resolutionReached && outcome) {
+      emitCompetitionResolved(id, outcome, judgeAddress);
+    }
 
     return res.status(200).json({
       success: true,

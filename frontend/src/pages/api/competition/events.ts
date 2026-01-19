@@ -88,7 +88,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Handle client disconnect
   req.on('close', () => {
     manager.removeClient(clientId);
-    console.log(`[SSE] Client ${clientId} disconnected`);
   });
 
   req.on('error', () => {
@@ -110,10 +109,4 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     clearInterval(keepAliveInterval);
     manager.removeClient(clientId);
   });
-
-  console.log(
-    `[SSE] Client ${clientId} connected${
-      competitionIdStr ? ` for competition ${competitionIdStr}` : ''
-    }`
-  );
 }
