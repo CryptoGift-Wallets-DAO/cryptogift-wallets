@@ -3,17 +3,16 @@
 /**
  * COMPETITION PAGE - Vista principal de una competencia
  *
- * Muestra el estado actual de la competencia:
- * - Info general (título, código, formato)
- * - Participantes registrados
- * - Jueces registrados
- * - Estado (esperando, activa, resuelta)
- * - Acciones disponibles según rol
+ * PRODUCCIÓN REAL:
+ * - Conecta con API real /api/competition/[id]
+ * - Usa ThirdWeb para wallet connection
+ * - Muestra datos reales de Redis
+ * - Permite iniciar competencia si es el creador
  */
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy,
   Users,
@@ -29,40 +28,71 @@ import {
   UserPlus,
   Coins,
   AlertCircle,
+  RefreshCw,
+  ExternalLink,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useActiveAccount } from 'thirdweb/react';
+import { useAuth } from '../../../../hooks/useAuth';
+import { makeAuthenticatedRequest, isAuthValid } from '../../../../lib/siweClient';
 
-// Tipo temporal para la competencia (después vendrá del backend)
-interface Competition {
-  id: string;
-  code: string;
-  title: string;
-  description?: string;
-  format: string;
-  status: 'pending' | 'active' | 'resolving' | 'completed' | 'cancelled';
-  stakeAmount: string;
-  currency: string;
-  participants: Array<{ address: string; joinedAt: string }>;
-  arbiters: Array<{ address: string; joinedAt: string }>;
-  createdAt: string;
-  createdBy: string;
+// Types from competition system
+interface ParticipantEntry {
+  address: string;
+  position?: string;
+  amount?: string;
+  joinedAt: number;
 }
 
-// Mock data para desarrollo (después se reemplaza con API call)
-function getMockCompetition(id: string): Competition {
-  return {
-    id,
-    code: id.includes('COMP-') ? id : `COMP-${id.slice(-8).toUpperCase()}`,
-    title: `Competencia ${id.slice(-6)}`,
-    description: 'Competencia adaptativa - el formato se determina al iniciar',
-    format: 'adaptive',
-    status: 'pending',
-    stakeAmount: '0.01',
-    currency: 'USDC',
-    participants: [],
-    arbiters: [],
-    createdAt: new Date().toISOString(),
-    createdBy: '0x0000...0000',
+interface Judge {
+  address: string;
+  role: string;
+  weight?: number;
+  reputation?: number;
+}
+
+interface Competition {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  status: 'draft' | 'pending' | 'active' | 'paused' | 'resolution' | 'resolved' | 'completed' | 'cancelled';
+  creator?: {
+    address: string;
+    createdAt: string;
+  };
+  prizePool?: {
+    total: number;
+    currency: string;
+    platformFee?: number;
+  };
+  timeline?: {
+    createdAt: string;
+    startsAt?: string;
+    endsAt?: string;
+  };
+  participants?: {
+    current: number;
+    maxParticipants?: number;
+    minParticipants?: number;
+    entries: ParticipantEntry[];
+  };
+  arbitration?: {
+    method: string;
+    judges: Judge[];
+    votingThreshold?: number;
+    votes?: Array<{ judge: string; vote: string; timestamp: number }>;
+  };
+  rules?: {
+    entryFee?: number;
+  };
+  safeAddress?: string;
+  custody?: {
+    safeAddress: string;
+    deployed: boolean;
+    threshold: number;
+    owners: string[];
   };
 }
 
@@ -71,49 +101,146 @@ function abbreviateAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+function formatDate(timestamp: number | string): string {
+  const date = typeof timestamp === 'number' ? new Date(timestamp) : new Date(timestamp);
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default function CompetitionPage() {
   const params = useParams();
+  const router = useRouter();
   const competitionId = params.id as string;
+  const locale = params.locale as string || 'es';
 
+  // Auth state
+  const account = useActiveAccount();
+  const { isAuthenticated, address: authAddress } = useAuth();
+
+  // Competition state
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'participant' | 'arbiter' | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    // TODO: Reemplazar con llamada a API real
-    const fetchCompetition = async () => {
-      setLoading(true);
-      try {
-        // Simular fetch
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const data = getMockCompetition(competitionId);
-        setCompetition(data);
-      } catch (error) {
-        console.error('Error fetching competition:', error);
-      } finally {
-        setLoading(false);
+  // Fetch competition data
+  const fetchCompetition = useCallback(async () => {
+    if (!competitionId) return;
+
+    try {
+      const response = await fetch(`/api/competition/${competitionId}?include=votes,events`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Competencia no encontrada');
+        } else {
+          const data = await response.json();
+          setError(data.error || 'Error al cargar la competencia');
+        }
+        return;
       }
-    };
 
-    if (competitionId) {
-      fetchCompetition();
+      const data = await response.json();
+      if (data.success && data.data?.competition) {
+        setCompetition(data.data.competition);
+        setError(null);
+      } else {
+        setError('Formato de respuesta inválido');
+      }
+    } catch (err) {
+      console.error('Error fetching competition:', err);
+      setError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   }, [competitionId]);
 
-  const handleCopyLink = async () => {
-    const url = window.location.href;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Initial fetch
+  useEffect(() => {
+    fetchCompetition();
+  }, [fetchCompetition]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(fetchCompetition, 30000);
+    return () => clearInterval(interval);
+  }, [fetchCompetition]);
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchCompetition();
   };
 
+  // Handle copy link
+  const handleCopyLink = async (type: 'participant' | 'arbiter') => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const link = type === 'participant'
+      ? `${baseUrl}/${locale}/competencia/${competitionId}/join`
+      : `${baseUrl}/${locale}/competencia/${competitionId}/arbiter`;
+
+    await navigator.clipboard.writeText(link);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  // Handle start competition
+  const handleStartCompetition = async () => {
+    if (!isAuthenticated || !competition) return;
+
+    setStarting(true);
+    try {
+      const response = await makeAuthenticatedRequest(`/api/competition/${competitionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'active',
+          callerAddress: authAddress,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchCompetition();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Error al iniciar la competencia');
+      }
+    } catch (err) {
+      console.error('Error starting competition:', err);
+      alert('Error al iniciar la competencia');
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  // Computed values
+  const isCreator = competition?.creator?.address?.toLowerCase() === authAddress?.toLowerCase();
+  const isJudge = competition?.arbitration?.judges?.some(
+    j => j.address.toLowerCase() === authAddress?.toLowerCase()
+  );
+  const participantCount = competition?.participants?.current || competition?.participants?.entries?.length || 0;
+  const judgeCount = competition?.arbitration?.judges?.length || 0;
+  const minParticipants = competition?.participants?.minParticipants || 2;
+  const canStart = isCreator &&
+    competition?.status === 'pending' &&
+    participantCount >= minParticipants;
+
   const participantLink = typeof window !== 'undefined'
-    ? `${window.location.origin}/competencia/${competitionId}/join`
+    ? `${window.location.origin}/${locale}/competencia/${competitionId}/join`
     : '';
   const arbiterLink = typeof window !== 'undefined'
-    ? `${window.location.origin}/competencia/${competitionId}/arbiter`
+    ? `${window.location.origin}/${locale}/competencia/${competitionId}/arbiter`
     : '';
 
+  // Loading state
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -125,30 +252,49 @@ export default function CompetitionPage() {
     );
   }
 
-  if (!competition) {
+  // Error state
+  if (error || !competition) {
     return (
       <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Competencia no encontrada</h1>
-          <p className="text-gray-400 mb-6">El ID "{competitionId}" no existe</p>
-          <Link href="/modelos" className="text-amber-400 hover:text-amber-300">
-            ← Volver a Modelos
-          </Link>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            {error || 'Competencia no encontrada'}
+          </h1>
+          <p className="text-gray-400 mb-6">
+            {competitionId ? `ID: ${competitionId}` : 'No se proporcionó ID'}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors"
+            >
+              Reintentar
+            </button>
+            <Link
+              href={`/${locale}/modelos`}
+              className="px-4 py-2 bg-amber-500 rounded-lg text-black font-medium hover:bg-amber-400 transition-colors"
+            >
+              Volver a Modelos
+            </Link>
+          </div>
         </div>
       </main>
     );
   }
 
-  const statusConfig = {
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    draft: { label: 'Borrador', color: 'text-gray-400', bg: 'bg-gray-500/20' },
     pending: { label: 'Esperando participantes', color: 'text-amber-400', bg: 'bg-amber-500/20' },
     active: { label: 'En progreso', color: 'text-green-400', bg: 'bg-green-500/20' },
-    resolving: { label: 'Esperando resolución', color: 'text-blue-400', bg: 'bg-blue-500/20' },
+    paused: { label: 'Pausada', color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
+    resolution: { label: 'En resolución', color: 'text-blue-400', bg: 'bg-blue-500/20' },
+    resolved: { label: 'Resuelta', color: 'text-purple-400', bg: 'bg-purple-500/20' },
     completed: { label: 'Finalizada', color: 'text-gray-400', bg: 'bg-gray-500/20' },
     cancelled: { label: 'Cancelada', color: 'text-red-400', bg: 'bg-red-500/20' },
   };
 
-  const status = statusConfig[competition.status];
+  const status = statusConfig[competition.status] || statusConfig.pending;
 
   return (
     <main className="min-h-screen bg-gray-950">
@@ -158,14 +304,24 @@ export default function CompetitionPage() {
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 py-8">
-        {/* Back link */}
-        <Link
-          href="/modelos"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver a Modelos
-        </Link>
+        {/* Back link + Refresh */}
+        <div className="flex items-center justify-between mb-6">
+          <Link
+            href={`/${locale}/modelos`}
+            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver a Modelos
+          </Link>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </button>
+        </div>
 
         {/* Header */}
         <motion.div
@@ -180,7 +336,7 @@ export default function CompetitionPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">{competition.title}</h1>
-                <p className="text-amber-400 font-mono text-sm">{competition.code}</p>
+                <p className="text-amber-400 font-mono text-sm">{competition.id.slice(0, 20)}...</p>
               </div>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.bg} ${status.color}`}>
@@ -192,23 +348,40 @@ export default function CompetitionPage() {
             <p className="text-gray-400 mb-4">{competition.description}</p>
           )}
 
+          {/* Safe Address if deployed */}
+          {competition.safeAddress && (
+            <div className="mb-4 p-3 bg-green-500/10 rounded-xl border border-green-500/30">
+              <div className="flex items-center gap-2 text-green-400 text-sm">
+                <Shield className="w-4 h-4" />
+                <span>Safe Escrow: {abbreviateAddress(competition.safeAddress)}</span>
+                {competition.custody?.deployed && (
+                  <span className="text-xs bg-green-500/20 px-2 py-0.5 rounded">Desplegado</span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-white">{competition.participants.length}</div>
+              <div className="text-2xl font-bold text-white">{participantCount}</div>
               <div className="text-xs text-gray-500">Participantes</div>
             </div>
             <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-white">{competition.arbiters.length}</div>
+              <div className="text-2xl font-bold text-white">{judgeCount}</div>
               <div className="text-xs text-gray-500">Jueces</div>
             </div>
             <div className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-amber-400">{competition.stakeAmount}</div>
-              <div className="text-xs text-gray-500">{competition.currency} / persona</div>
+              <div className="text-2xl font-bold text-amber-400">
+                {competition.prizePool?.total || competition.rules?.entryFee || 0}
+              </div>
+              <div className="text-xs text-gray-500">
+                {competition.prizePool?.currency || 'ETH'} / persona
+              </div>
             </div>
             <div className="bg-white/5 rounded-xl p-3 text-center">
               <div className="text-2xl font-bold text-white">
-                {competition.format === 'adaptive' ? '🎲' : competition.format}
+                {competition.category === 'adaptive' || !competition.category ? '🎲' : competition.category}
               </div>
               <div className="text-xs text-gray-500">Formato</div>
             </div>
@@ -216,7 +389,7 @@ export default function CompetitionPage() {
         </motion.div>
 
         {/* Actions for pending competition */}
-        {competition.status === 'pending' && (
+        {(competition.status === 'pending' || competition.status === 'draft') && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -225,7 +398,7 @@ export default function CompetitionPage() {
           >
             {/* Join as participant */}
             <Link
-              href={`/competencia/${competitionId}/join`}
+              href={`/${locale}/competencia/${competitionId}/join`}
               className="bg-gradient-to-r from-green-600/20 to-emerald-600/20
                        border border-green-500/30 rounded-2xl p-5
                        hover:border-green-500/50 transition-all group"
@@ -246,7 +419,7 @@ export default function CompetitionPage() {
 
             {/* Join as arbiter */}
             <Link
-              href={`/competencia/${competitionId}/arbiter`}
+              href={`/${locale}/competencia/${competitionId}/arbiter`}
               className="bg-gradient-to-r from-purple-600/20 to-pink-600/20
                        border border-purple-500/30 rounded-2xl p-5
                        hover:border-purple-500/50 transition-all group"
@@ -286,10 +459,14 @@ export default function CompetitionPage() {
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-sm text-amber-400 truncate">{participantLink}</code>
                 <button
-                  onClick={() => navigator.clipboard.writeText(participantLink)}
+                  onClick={() => handleCopyLink('participant')}
                   className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                 >
-                  <Copy className="w-4 h-4 text-white" />
+                  {copied === 'participant' ? (
+                    <Check className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-white" />
+                  )}
                 </button>
               </div>
             </div>
@@ -300,10 +477,14 @@ export default function CompetitionPage() {
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-sm text-purple-400 truncate">{arbiterLink}</code>
                 <button
-                  onClick={() => navigator.clipboard.writeText(arbiterLink)}
+                  onClick={() => handleCopyLink('arbiter')}
                   className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                 >
-                  <Copy className="w-4 h-4 text-white" />
+                  {copied === 'arbiter' ? (
+                    <Check className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-white" />
+                  )}
                 </button>
               </div>
             </div>
@@ -319,10 +500,15 @@ export default function CompetitionPage() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Users className="w-5 h-5 text-green-400" />
-            Participantes ({competition.participants.length})
+            Participantes ({participantCount})
+            {competition.participants?.minParticipants && (
+              <span className="text-xs text-gray-500 font-normal">
+                (mínimo {competition.participants.minParticipants})
+              </span>
+            )}
           </h2>
 
-          {competition.participants.length === 0 ? (
+          {!competition.participants?.entries?.length ? (
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
               <p className="text-gray-500">Aún no hay participantes</p>
@@ -330,12 +516,27 @@ export default function CompetitionPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {competition.participants.map((p, i) => (
+              {competition.participants.entries.map((p, i) => (
                 <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl p-3">
-                  <span className="text-white font-mono">{abbreviateAddress(p.address)}</span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(p.joinedAt).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <span className="text-green-400 text-sm font-bold">#{i + 1}</span>
+                    </div>
+                    <span className="text-white font-mono">{abbreviateAddress(p.address)}</span>
+                    {p.address.toLowerCase() === authAddress?.toLowerCase() && (
+                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">Tú</span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    {p.amount && p.amount !== '0' && (
+                      <div className="text-amber-400 text-sm font-medium">
+                        {(Number(p.amount) / 1e18).toFixed(4)} ETH
+                      </div>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {formatDate(p.joinedAt)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -351,10 +552,10 @@ export default function CompetitionPage() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Scale className="w-5 h-5 text-purple-400" />
-            Jueces ({competition.arbiters.length})
+            Jueces ({judgeCount})
           </h2>
 
-          {competition.arbiters.length === 0 ? (
+          {!competition.arbitration?.judges?.length ? (
             <div className="text-center py-8">
               <Scale className="w-12 h-12 text-gray-600 mx-auto mb-3" />
               <p className="text-gray-500">Aún no hay jueces</p>
@@ -362,12 +563,18 @@ export default function CompetitionPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {competition.arbiters.map((a, i) => (
+              {competition.arbitration.judges.map((a, i) => (
                 <div key={i} className="flex items-center justify-between bg-white/5 rounded-xl p-3">
-                  <span className="text-white font-mono">{abbreviateAddress(a.address)}</span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(a.joinedAt).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <Scale className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <span className="text-white font-mono">{abbreviateAddress(a.address)}</span>
+                    {a.address.toLowerCase() === authAddress?.toLowerCase() && (
+                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">Tú</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500 capitalize">{a.role}</span>
                 </div>
               ))}
             </div>
@@ -375,26 +582,61 @@ export default function CompetitionPage() {
         </motion.div>
 
         {/* Start button (only for creator when enough participants) */}
-        {competition.status === 'pending' && competition.participants.length >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6"
-          >
-            <button
-              className="w-full py-4 rounded-2xl font-bold text-lg
-                       bg-gradient-to-r from-amber-500 to-orange-500 text-black
-                       hover:shadow-lg hover:shadow-amber-500/25 transition-all
-                       flex items-center justify-center gap-3"
+        <AnimatePresence>
+          {canStart && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.5 }}
+              className="mt-6"
             >
-              <Play className="w-6 h-6" />
-              Iniciar Competencia
-            </button>
-            <p className="text-center text-sm text-gray-500 mt-2">
-              Al iniciar, se cierra la entrada y el sistema determina el formato
-            </p>
-          </motion.div>
+              <button
+                onClick={handleStartCompetition}
+                disabled={starting}
+                className="w-full py-4 rounded-2xl font-bold text-lg
+                         bg-gradient-to-r from-amber-500 to-orange-500 text-black
+                         hover:shadow-lg hover:shadow-amber-500/25 transition-all
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         flex items-center justify-center gap-3"
+              >
+                {starting ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    Iniciando...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-6 h-6" />
+                    Iniciar Competencia
+                  </>
+                )}
+              </button>
+              <p className="text-center text-sm text-gray-500 mt-2">
+                Al iniciar, se cierra la entrada y el sistema determina el formato
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Creator badge */}
+        {isCreator && (
+          <div className="mt-4 text-center">
+            <span className="inline-flex items-center gap-2 text-amber-400 text-sm">
+              <Sparkles className="w-4 h-4" />
+              Eres el creador de esta competencia
+            </span>
+          </div>
+        )}
+
+        {/* Judge badge */}
+        {isJudge && !isCreator && (
+          <div className="mt-4 text-center">
+            <span className="inline-flex items-center gap-2 text-purple-400 text-sm">
+              <Scale className="w-4 h-4" />
+              Eres juez de esta competencia
+            </span>
+          </div>
         )}
       </div>
     </main>

@@ -3,13 +3,14 @@
 /**
  * ARBITER PAGE - Unirse como juez/árbitro
  *
- * Permite al usuario:
- * - Ver info de la competencia
- * - Conectar wallet
- * - Confirmar rol de juez (sin stake)
+ * PRODUCCIÓN REAL:
+ * - ThirdWeb ConnectButton para wallet real
+ * - Autenticación SIWE completa
+ * - Registro como juez vía API
+ * - Sin stake requerido
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -23,97 +24,219 @@ import {
   Users,
   Eye,
   Vote,
+  LogIn,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useActiveAccount } from 'thirdweb/react';
+import { ConnectButton } from 'thirdweb/react';
+import { createThirdwebClient } from 'thirdweb';
+import { baseSepolia, base } from 'thirdweb/chains';
+import { useAuth } from '../../../../../hooks/useAuth';
+import {
+  authenticateWithSiwe,
+  makeAuthenticatedRequest,
+} from '../../../../../lib/siweClient';
+
+// ThirdWeb client
+const client = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || '',
+});
 
 interface Competition {
   id: string;
-  code: string;
   title: string;
   description?: string;
-  format: string;
-  status: 'pending' | 'active' | 'resolving' | 'completed' | 'cancelled';
-  stakeAmount: string;
-  currency: string;
-  arbiters: Array<{ address: string; joinedAt: string }>;
-  participants: Array<{ address: string; joinedAt: string }>;
+  category: string;
+  status: 'draft' | 'pending' | 'active' | 'paused' | 'resolution' | 'resolved' | 'completed' | 'cancelled';
+  prizePool?: {
+    total: number;
+    currency: string;
+  };
+  participants?: {
+    current: number;
+    entries: Array<{ address: string }>;
+  };
+  arbitration?: {
+    method: string;
+    judges: Array<{ address: string; role: string }>;
+    votingThreshold?: number;
+  };
 }
 
-function getMockCompetition(id: string): Competition {
-  return {
-    id,
-    code: id.includes('COMP-') ? id : `COMP-${id.slice(-8).toUpperCase()}`,
-    title: `Competencia ${id.slice(-6)}`,
-    description: 'Competencia adaptativa - el formato se determina al iniciar',
-    format: 'adaptive',
-    status: 'pending',
-    stakeAmount: '0.01',
-    currency: 'USDC',
-    arbiters: [],
-    participants: [],
-  };
+function abbreviateAddress(address: string): string {
+  if (!address || address.length < 10) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 export default function ArbiterPage() {
   const params = useParams();
   const router = useRouter();
   const competitionId = params.id as string;
+  const locale = params.locale as string || 'es';
 
+  // ThirdWeb account
+  const account = useActiveAccount();
+
+  // Auth state
+  const { isAuthenticated, isConnected, address: authAddress } = useAuth();
+
+  // Component state
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [authenticating, setAuthenticating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [alreadyJudge, setAlreadyJudge] = useState(false);
 
-  useEffect(() => {
-    const fetchCompetition = async () => {
-      setLoading(true);
-      try {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const data = getMockCompetition(competitionId);
-        setCompetition(data);
-      } catch (error) {
-        console.error('Error fetching competition:', error);
-      } finally {
-        setLoading(false);
+  // Fetch competition data
+  const fetchCompetition = useCallback(async () => {
+    if (!competitionId) return;
+
+    try {
+      const response = await fetch(`/api/competition/${competitionId}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Competencia no encontrada');
+        } else {
+          const data = await response.json();
+          setError(data.error || 'Error al cargar la competencia');
+        }
+        return;
       }
-    };
 
-    if (competitionId) {
-      fetchCompetition();
+      const data = await response.json();
+      if (data.success && data.data?.competition) {
+        const comp = data.data.competition;
+        setCompetition(comp);
+        setError(null);
+
+        // Check if current user is already a judge
+        if (authAddress && comp.arbitration?.judges) {
+          const isAlreadyJudge = comp.arbitration.judges.some(
+            (j: { address: string }) => j.address.toLowerCase() === authAddress.toLowerCase()
+          );
+          setAlreadyJudge(isAlreadyJudge);
+        }
+      } else {
+        setError('Formato de respuesta inválido');
+      }
+    } catch (err) {
+      console.error('Error fetching competition:', err);
+      setError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
-  }, [competitionId]);
+  }, [competitionId, authAddress]);
 
-  const handleConnectWallet = async () => {
-    // TODO: Integrar con ThirdWeb/MetaMask
-    setWalletConnected(true);
-    setWalletAddress('0x1234...5678');
+  // Initial fetch
+  useEffect(() => {
+    fetchCompetition();
+  }, [fetchCompetition]);
+
+  // Check if already judge when auth changes
+  useEffect(() => {
+    if (authAddress && competition?.arbitration?.judges) {
+      const isAlreadyJudge = competition.arbitration.judges.some(
+        (j: { address: string }) => j.address.toLowerCase() === authAddress.toLowerCase()
+      );
+      setAlreadyJudge(isAlreadyJudge);
+    }
+  }, [authAddress, competition]);
+
+  // Handle SIWE authentication
+  const handleAuthenticate = async () => {
+    if (!account?.address) {
+      setError('Conecta tu wallet primero');
+      return;
+    }
+
+    setAuthenticating(true);
+    setError(null);
+
+    try {
+      await authenticateWithSiwe(account.address, account);
+      await fetchCompetition();
+    } catch (err: any) {
+      console.error('Authentication error:', err);
+      setError(err.message || 'Error de autenticación');
+    } finally {
+      setAuthenticating(false);
+    }
   };
 
+  // Handle join as arbiter
   const handleJoinAsArbiter = async () => {
-    if (!walletConnected) {
-      await handleConnectWallet();
+    if (!isAuthenticated) {
+      await handleAuthenticate();
+      return;
+    }
+
+    if (alreadyJudge) {
+      router.push(`/${locale}/competencia/${competitionId}`);
       return;
     }
 
     setJoining(true);
-    try {
-      // TODO: Llamar a API para registrarse como juez
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setJoined(true);
+    setError(null);
 
-      // Redirigir a la página principal después de 2 segundos
-      setTimeout(() => {
-        router.push(`/competencia/${competitionId}`);
-      }, 2000);
-    } catch (error) {
-      console.error('Error joining as arbiter:', error);
+    try {
+      // Update competition to add judge
+      // Note: In a full implementation, there would be a dedicated /join-arbiter endpoint
+      // For now, we'll use the PUT endpoint to add the judge
+      const response = await makeAuthenticatedRequest(`/api/competition/${competitionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callerAddress: authAddress,
+          // Add current user as a judge
+          arbitration: {
+            ...competition?.arbitration,
+            judges: [
+              ...(competition?.arbitration?.judges || []),
+              {
+                address: authAddress,
+                role: 'arbiter',
+                weight: 1,
+                addedAt: Date.now(),
+              },
+            ],
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setJoined(true);
+
+        // Redirect to competition page after 2 seconds
+        setTimeout(() => {
+          router.push(`/${locale}/competencia/${competitionId}`);
+        }, 2000);
+      } else {
+        if (data.error?.includes('Not authorized')) {
+          // If not authorized to PUT, the user might need different permissions
+          // For now, just set as joined since the page shows arbiter registration
+          setError('No tienes permisos para registrarte como juez en esta competencia');
+        } else {
+          setError(data.error || 'Error al registrarse como juez');
+        }
+      }
+    } catch (err: any) {
+      console.error('Join as arbiter error:', err);
+      if (err.message?.includes('No valid authentication')) {
+        setError('Tu sesión expiró. Por favor, autentícate de nuevo.');
+      } else {
+        setError(err.message || 'Error al registrarse como juez');
+      }
     } finally {
       setJoining(false);
     }
   };
 
+  // Loading state
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -125,13 +248,17 @@ export default function ArbiterPage() {
     );
   }
 
-  if (!competition) {
+  // Error state (competition not found)
+  if (error && !competition) {
     return (
       <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Competencia no encontrada</h1>
-          <Link href="/modelos" className="text-amber-400 hover:text-amber-300">
+          <h1 className="text-2xl font-bold text-white mb-2">{error}</h1>
+          <Link
+            href={`/${locale}/modelos`}
+            className="text-amber-400 hover:text-amber-300"
+          >
             ← Volver a Modelos
           </Link>
         </div>
@@ -139,14 +266,18 @@ export default function ArbiterPage() {
     );
   }
 
-  if (competition.status !== 'pending') {
+  // Competition not accepting arbiters
+  if (competition && competition.status !== 'pending' && competition.status !== 'draft') {
     return (
       <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <AlertCircle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Registro de jueces cerrado</h1>
           <p className="text-gray-400 mb-6">Esta competencia ya no acepta nuevos jueces</p>
-          <Link href={`/competencia/${competitionId}`} className="text-amber-400 hover:text-amber-300">
+          <Link
+            href={`/${locale}/competencia/${competitionId}`}
+            className="text-amber-400 hover:text-amber-300"
+          >
             Ver competencia →
           </Link>
         </div>
@@ -154,6 +285,7 @@ export default function ArbiterPage() {
     );
   }
 
+  // Success state
   if (joined) {
     return (
       <main className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -171,13 +303,18 @@ export default function ArbiterPage() {
           >
             <Check className="w-10 h-10 text-white" />
           </motion.div>
-          <h1 className="text-2xl font-bold text-white mb-2">Registrado como Juez!</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">¡Registrado como Juez!</h1>
           <p className="text-gray-400 mb-2">Podrás votar cuando la competencia inicie</p>
           <p className="text-sm text-gray-500">Redirigiendo...</p>
         </motion.div>
       </main>
     );
   }
+
+  const participantCount = competition?.participants?.current || competition?.participants?.entries?.length || 0;
+  const judgeCount = competition?.arbitration?.judges?.length || 0;
+  const prizeAmount = competition?.prizePool?.total || 0;
+  const currency = competition?.prizePool?.currency || 'ETH';
 
   return (
     <main className="min-h-screen bg-gray-950">
@@ -189,7 +326,7 @@ export default function ArbiterPage() {
       <div className="relative max-w-lg mx-auto px-4 py-8">
         {/* Back link */}
         <Link
-          href={`/competencia/${competitionId}`}
+          href={`/${locale}/competencia/${competitionId}`}
           className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -207,8 +344,8 @@ export default function ArbiterPage() {
             <Scale className="w-10 h-10 text-purple-400" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Unirse como Juez</h1>
-          <p className="text-gray-400">{competition.title}</p>
-          <p className="text-amber-400 font-mono text-sm mt-1">{competition.code}</p>
+          <p className="text-gray-400">{competition?.title}</p>
+          <p className="text-amber-400 font-mono text-sm mt-1">{competition?.id?.slice(0, 20)}...</p>
         </motion.div>
 
         {/* Competition info */}
@@ -223,15 +360,15 @@ export default function ArbiterPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-500">Participantes</span>
-              <span className="text-white">{competition.participants.length}</span>
+              <span className="text-white">{participantCount}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-500">Jueces actuales</span>
-              <span className="text-white">{competition.arbiters.length}</span>
+              <span className="text-white">{judgeCount}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-500">Premio por persona</span>
-              <span className="text-amber-400">{competition.stakeAmount} {competition.currency}</span>
+              <span className="text-amber-400">{prizeAmount} {currency}</span>
             </div>
           </div>
         </motion.div>
@@ -274,25 +411,111 @@ export default function ArbiterPage() {
           </div>
         </motion.div>
 
-        {/* Wallet connection */}
-        {!walletConnected && (
+        {/* Error message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6"
+          >
+            <div className="flex items-center gap-2 text-red-400">
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Already judge message */}
+        {alreadyJudge && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-6"
+          >
+            <div className="flex items-center gap-2 text-purple-400">
+              <Check className="w-5 h-5" />
+              <span>Ya eres juez de esta competencia</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Wallet connection section */}
+        {!isConnected ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="bg-white/5 rounded-2xl border border-white/10 p-5 mb-6"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-4">
               <Wallet className="w-6 h-6 text-amber-400" />
               <div>
                 <div className="font-medium text-white">Conecta tu wallet</div>
                 <div className="text-sm text-gray-400">Para registrarte como juez</div>
               </div>
             </div>
-          </motion.div>
-        )}
 
-        {walletConnected && (
+            <ConnectButton
+              client={client}
+              chains={[baseSepolia, base]}
+              connectButton={{
+                label: "Conectar Wallet",
+                style: {
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  color: 'white',
+                  fontWeight: 600,
+                },
+              }}
+            />
+          </motion.div>
+        ) : !isAuthenticated ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-amber-500/10 rounded-2xl border border-amber-500/30 p-5 mb-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <LogIn className="w-6 h-6 text-amber-400" />
+              <div>
+                <div className="font-medium text-white">Autenticación requerida</div>
+                <div className="text-sm text-gray-400">
+                  Wallet conectada: {abbreviateAddress(account?.address || '')}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleAuthenticate}
+              disabled={authenticating}
+              className="w-full py-3 rounded-xl font-semibold
+                       bg-gradient-to-r from-amber-500/20 to-orange-500/20
+                       border border-amber-500/30 text-amber-400
+                       hover:border-amber-500/50 transition-all
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       flex items-center justify-center gap-2"
+            >
+              {authenticating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Firmando...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Firmar con Wallet (SIWE)
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Firma un mensaje para verificar que eres el dueño de esta wallet
+            </p>
+          </motion.div>
+        ) : (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -304,8 +527,8 @@ export default function ArbiterPage() {
                 <Check className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <div className="text-sm text-purple-400">Wallet conectada</div>
-                <div className="text-white font-mono">{walletAddress}</div>
+                <div className="text-sm text-purple-400">Wallet conectada y autenticada</div>
+                <div className="text-white font-mono">{abbreviateAddress(authAddress || '')}</div>
               </div>
             </div>
           </motion.div>
@@ -319,7 +542,7 @@ export default function ArbiterPage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleJoinAsArbiter}
-          disabled={joining}
+          disabled={joining || (!isConnected && !isAuthenticated)}
           className="w-full py-4 rounded-2xl font-bold text-lg
                    bg-gradient-to-r from-purple-500 to-pink-500 text-white
                    hover:shadow-lg hover:shadow-purple-500/25 transition-all
@@ -331,15 +554,25 @@ export default function ArbiterPage() {
               <Loader2 className="w-5 h-5 animate-spin" />
               <span>Registrando...</span>
             </>
-          ) : walletConnected ? (
-            <>
-              <Scale className="w-5 h-5" />
-              <span>Registrarse como Juez</span>
-            </>
-          ) : (
+          ) : !isConnected ? (
             <>
               <Wallet className="w-5 h-5" />
               <span>Conectar Wallet</span>
+            </>
+          ) : !isAuthenticated ? (
+            <>
+              <LogIn className="w-5 h-5" />
+              <span>Autenticar Wallet</span>
+            </>
+          ) : alreadyJudge ? (
+            <>
+              <Check className="w-5 h-5" />
+              <span>Ver Competencia</span>
+            </>
+          ) : (
+            <>
+              <Scale className="w-5 h-5" />
+              <span>Registrarse como Juez</span>
             </>
           )}
         </motion.button>

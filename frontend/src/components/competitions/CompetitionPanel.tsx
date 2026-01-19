@@ -9,9 +9,15 @@
  * - INCLUSIÓN: Opción "para compartir" por defecto fomenta colaboración
  * - TRANSPARENCIA: Todas las reglas visibles antes de confirmar
  * - FEEDBACK: Animaciones y colores comunican estado inmediatamente
+ *
+ * INTEGRACIÓN REAL:
+ * - ThirdWeb v5 para wallet connection
+ * - SIWE (Sign-In With Ethereum) para autenticación
+ * - API /api/competition/create para persistencia
+ * - Gnosis Safe para custodia de fondos
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy,
@@ -34,13 +40,17 @@ import {
   Crown,
   Percent,
   AlertCircle,
+  Wallet,
 } from 'lucide-react';
+import { useActiveAccount } from 'thirdweb/react';
 import { CompetitionSuccess } from './CompetitionSuccess';
 import {
-  createCompetitionRecord,
-  logCompetitionRecord,
-  type CompetitionRecord,
-} from '@/lib/competitionRegistry';
+  authenticateWithSiwe,
+  makeAuthenticatedRequest,
+  isAuthValid,
+  getAuthState,
+} from '@/lib/siweClient';
+import type { CompetitionCategory, ResolutionMethod } from '@/competencias/types';
 
 // =============================================================================
 // TIPOS Y CONFIGURACIONES
@@ -129,6 +139,34 @@ const FORMAT_COLORS: Record<CompetitionFormat, { bg: string; border: string; tex
   'bracket': { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', icon: '🏆' },
   'league': { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', icon: '📊' },
   'pool': { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-400', icon: '💰' },
+};
+
+// =============================================================================
+// MAPEOS PANEL → API
+// =============================================================================
+
+/**
+ * Mapea el formato del panel a la categoría del API
+ */
+const formatToCategory: Record<CompetitionFormat, CompetitionCategory> = {
+  'adaptive': 'challenge',
+  '1v1': 'challenge',
+  'teams': 'tournament',
+  'freeForAll': 'tournament',
+  'bracket': 'tournament',
+  'league': 'ranking',
+  'pool': 'pool',
+};
+
+/**
+ * Mapea el tipo de resolución del panel al método del API
+ */
+const resolutionToMethod: Record<ResolutionType, ResolutionMethod> = {
+  'singleArbiter': 'single_arbiter',
+  'panel': 'multisig_panel',
+  'autoReport': 'automatic',
+  'oracle': 'oracle',
+  'voting': 'community_vote',
 };
 
 // =============================================================================
@@ -254,13 +292,28 @@ export function CompetitionPanel({
   initialConfig,
   className = ''
 }: CompetitionPanelProps) {
+  // ThirdWeb wallet connection
+  const account = useActiveAccount();
+  const walletAddress = account?.address;
+
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Competition config
   const [config, setConfig] = useState<CompetitionConfig>({
     ...DEFAULT_CONFIG,
     ...initialConfig,
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [createdRecord, setCreatedRecord] = useState<CompetitionRecord | null>(null);
+  const [createdCompetition, setCreatedCompetition] = useState<{
+    id: string;
+    title: string;
+    safeAddress?: string;
+  } | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     format: true,
     entry: true,
@@ -270,6 +323,43 @@ export function CompetitionPanel({
     match: true,
     sharing: true,
   });
+
+  // Check auth state on mount and when wallet changes
+  useEffect(() => {
+    if (walletAddress) {
+      const authState = getAuthState();
+      if (authState.isAuthenticated && authState.address?.toLowerCase() === walletAddress.toLowerCase() && isAuthValid()) {
+        setIsAuthenticated(true);
+        setAuthError(null);
+      } else {
+        setIsAuthenticated(false);
+      }
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, [walletAddress]);
+
+  // Handle SIWE authentication
+  const handleAuthenticate = async () => {
+    if (!account || !walletAddress) {
+      setAuthError('Conecta tu wallet primero');
+      return;
+    }
+
+    setIsAuthenticating(true);
+    setAuthError(null);
+
+    try {
+      await authenticateWithSiwe(walletAddress, account);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Authentication failed:', error);
+      setAuthError(error instanceof Error ? error.message : 'Error de autenticación');
+      setIsAuthenticated(false);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
 
   // Actualizar configuración
   const updateConfig = useCallback(<K extends keyof CompetitionConfig>(
@@ -347,53 +437,70 @@ export function CompetitionPanel({
     }, 100);
   };
 
-  // Siempre válido - título es opcional (se auto-genera)
-  const isValid = true;
+  // Validación: necesita wallet conectada y autenticada
+  const canCreate = walletAddress && isAuthenticated;
 
-  // Crear competencia
+  // Crear competencia via API real
   const handleCreate = async () => {
+    if (!canCreate) {
+      if (!walletAddress) {
+        setCreateError('Conecta tu wallet primero');
+      } else if (!isAuthenticated) {
+        setCreateError('Firma con tu wallet para verificar tu identidad');
+      }
+      return;
+    }
+
     setIsCreating(true);
+    setCreateError(null);
 
     try {
-      // Crear registro completo usando el sistema de tracking
-      // TODO: Obtener creatorAddress del wallet conectado
-      const creatorAddress = '0x0000000000000000000000000000000000000000';
-
-      const record = createCompetitionRecord({
-        title: config.title,
-        description: config.description,
-        format: config.format,
-        entryType: config.entryType,
-        maxParticipants: config.maxParticipants,
-        stakeType: config.stakeType,
-        stakeAmount: config.stakeAmount,
+      // Mapear configuración del panel al formato del API
+      const apiPayload = {
+        title: config.title || `Competencia ${new Date().toLocaleDateString('es-ES')}`,
+        description: config.description || undefined,
+        category: formatToCategory[config.format],
         currency: config.currency,
-        distribution: config.distribution,
-        resolution: config.resolution,
-        timing: config.timing,
-        matchType: config.matchType,
-        deadline: config.deadline,
-        forSharing: config.forSharing,
-        creatorAddress,
+        initialPrize: config.stakeType === 'prizeOnly' ? parseFloat(config.stakeAmount) : 0,
+        entryFee: config.stakeType !== 'prizeOnly' ? parseFloat(config.stakeAmount) : 0,
+        maxParticipants: config.maxParticipants === 'unlimited' ? undefined : config.maxParticipants,
+        minParticipants: 2,
+        resolutionMethod: resolutionToMethod[config.resolution],
+        judges: config.arbiters.length > 0 ? config.arbiters : undefined,
+        votingThreshold: config.votingThreshold || 66,
+        startsAt: config.deadline?.toISOString(),
+        endsAt: config.deadline ? new Date(config.deadline.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : undefined,
+      };
+
+      console.log('🚀 Creating competition with payload:', apiPayload);
+
+      // Llamar al API real con autenticación
+      const response = await makeAuthenticatedRequest('/api/competition/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiPayload),
       });
 
-      // Log completo del registro para debugging/auditoría
-      logCompetitionRecord(record);
+      const data = await response.json();
 
-      // Aquí se llamará a la API del backend con todos los datos de tracking
-      // TODO: Implementar llamada a /api/competencias/create
-      // const response = await fetch('/api/competencias/create', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(record),
-      // });
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Error al crear competencia');
+      }
 
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('✅ Competition created:', data);
 
-      setCreatedRecord(record);
+      // Guardar datos de la competencia creada
+      setCreatedCompetition({
+        id: data.data.id,
+        title: data.data.competition?.title || config.title,
+        safeAddress: data.data.safeAddress,
+      });
       setShowSuccess(true);
     } catch (error) {
       console.error('Error creating competition:', error);
+      setCreateError(error instanceof Error ? error.message : 'Error al crear competencia');
     } finally {
       setIsCreating(false);
     }
@@ -402,32 +509,33 @@ export function CompetitionPanel({
   // Después de ver los links, cerrar todo
   const handleSuccessClose = () => {
     setShowSuccess(false);
+    setCreatedCompetition(null);
     onComplete?.(config);
   };
 
   // Ver la competencia creada
   const handleViewCompetition = () => {
-    if (createdRecord) {
+    if (createdCompetition) {
       // Navegar a la página de la competencia
-      window.open(`/competencia/${createdRecord.id}`, '_blank');
+      window.open(`/competencia/${createdCompetition.id}`, '_blank');
     }
   };
 
   // Si mostramos éxito, mostrar solo esa pantalla
-  if (showSuccess && createdRecord) {
+  if (showSuccess && createdCompetition) {
     return (
       <div className={className}>
         <CompetitionSuccess
-          competitionId={createdRecord.id}
-          title={createdRecord.title}
-          hasArbiters={!!createdRecord.arbiterLink}
+          competitionId={createdCompetition.id}
+          title={createdCompetition.title}
+          hasArbiters={['singleArbiter', 'panel', 'voting'].includes(config.resolution)}
           config={{
-            format: createdRecord.format,
-            maxParticipants: createdRecord.maxParticipants,
-            stakeAmount: createdRecord.stakeAmount,
-            currency: createdRecord.currency,
+            format: config.format,
+            maxParticipants: config.maxParticipants,
+            stakeAmount: config.stakeAmount,
+            currency: config.currency,
           }}
-          code={createdRecord.code}
+          code={createdCompetition.id.slice(0, 8).toUpperCase()}
           onClose={handleSuccessClose}
           onViewCompetition={handleViewCompetition}
         />
@@ -941,34 +1049,104 @@ export function CompetitionPanel({
         </div>
       </Section>
 
-      {/* Botón de crear */}
-      <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-gray-900 to-transparent">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleCreate}
-          disabled={isCreating}
-          className={`
-            w-full py-4 rounded-2xl font-bold text-lg
-            flex items-center justify-center gap-3
-            transition-all duration-300
-            bg-gradient-to-r from-amber-500 to-orange-500 text-black
-            hover:shadow-lg hover:shadow-amber-500/25
-            disabled:opacity-50 disabled:cursor-not-allowed
-          `}
-        >
-          {isCreating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Creando competencia...</span>
-            </>
-          ) : (
-            <>
-              <Zap className="w-5 h-5" />
-              <span>Crear Competencia</span>
-            </>
-          )}
-        </motion.button>
+      {/* Estado de Wallet y Autenticación */}
+      <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-gray-900 to-transparent space-y-3">
+        {/* Mostrar errores */}
+        {(createError || authError) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2"
+          >
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <span className="text-sm text-red-300">{createError || authError}</span>
+          </motion.div>
+        )}
+
+        {/* Paso 1: Conectar wallet */}
+        {!walletAddress && (
+          <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center space-y-2">
+            <Wallet className="w-8 h-8 mx-auto text-amber-400" />
+            <p className="text-gray-300">Conecta tu wallet para crear competencias</p>
+            <p className="text-xs text-gray-500">
+              Usa el botón de wallet en la esquina superior para conectar
+            </p>
+          </div>
+        )}
+
+        {/* Paso 2: Autenticar con SIWE */}
+        {walletAddress && !isAuthenticated && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleAuthenticate}
+            disabled={isAuthenticating}
+            className={`
+              w-full py-4 rounded-2xl font-bold text-lg
+              flex items-center justify-center gap-3
+              transition-all duration-300
+              bg-gradient-to-r from-blue-500 to-purple-500 text-white
+              hover:shadow-lg hover:shadow-blue-500/25
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+          >
+            {isAuthenticating ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Firmando...</span>
+              </>
+            ) : (
+              <>
+                <Shield className="w-5 h-5" />
+                <span>Verificar identidad</span>
+              </>
+            )}
+          </motion.button>
+        )}
+
+        {/* Paso 3: Crear competencia */}
+        {walletAddress && isAuthenticated && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCreate}
+            disabled={isCreating}
+            className={`
+              w-full py-4 rounded-2xl font-bold text-lg
+              flex items-center justify-center gap-3
+              transition-all duration-300
+              bg-gradient-to-r from-amber-500 to-orange-500 text-black
+              hover:shadow-lg hover:shadow-amber-500/25
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Creando competencia...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-5 h-5" />
+                <span>Crear Competencia</span>
+              </>
+            )}
+          </motion.button>
+        )}
+
+        {/* Indicador de estado */}
+        {walletAddress && (
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${walletAddress ? 'bg-green-500' : 'bg-gray-500'}`} />
+              <span>Wallet</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${isAuthenticated ? 'bg-green-500' : 'bg-gray-500'}`} />
+              <span>Verificado</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
