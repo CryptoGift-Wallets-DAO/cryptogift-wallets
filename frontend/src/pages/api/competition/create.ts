@@ -108,7 +108,7 @@ async function handler(
       title: data.title,
       description: data.description || '',
       category: data.category,
-      status: STATUS.DRAFT,
+      status: STATUS.PENDING, // Pending = accepting participants
       creator: {
         address: creatorAddress,
         createdAt: new Date().toISOString(),
@@ -174,8 +174,9 @@ async function handler(
         // Default threshold: majority of owners, minimum 1
         const safeThreshold = data.safeThreshold || Math.max(1, Math.ceil(safeOwners.length / 2));
 
-        // Generate unique salt nonce using competition ID
-        const saltNonce = `${competitionId}-${Date.now()}`;
+        // Generate unique salt nonce - must be numeric for BigInt conversion
+        // Use timestamp + random number to ensure uniqueness
+        const saltNonce = `${Date.now()}${Math.floor(Math.random() * 1000000)}`;
 
         // Predict Safe address (counterfactual deployment)
         safeAddress = await predictSafeAddress({
