@@ -186,13 +186,23 @@ This is NOT OPTIONAL for production security.
   return getRedisConnection();
 }
 
+// Detect if running in Next.js build context (SSG/ISR generation)
+// During build, Redis vars aren't available but that's expected
+const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build' ||
+                    process.env.npm_lifecycle_event === 'build' ||
+                    process.argv.some(arg => arg.includes('next') && arg.includes('build'));
+
 // Initialize Redis on module load for early detection
+// Silent during build time to avoid noisy logs
 try {
   if (isRedisConfigured()) {
     initializeRedis();
-  } else {
+  } else if (!isNextBuild) {
+    // Only warn in runtime contexts, not during build
     console.warn('⚠️  Redis not configured - some features will be unavailable');
   }
 } catch (error) {
-  console.error('❌ Redis initialization error on module load:', (error as Error).message);
+  if (!isNextBuild) {
+    console.error('❌ Redis initialization error on module load:', (error as Error).message);
+  }
 }
