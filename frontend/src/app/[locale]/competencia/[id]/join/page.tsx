@@ -475,43 +475,85 @@ export default function JoinCompetitionPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-amber-500/10 rounded-2xl border border-amber-500/30 p-5 mb-6"
+            className={`rounded-2xl border p-5 mb-6 transition-all duration-300 ${
+              authenticating
+                ? 'bg-blue-500/10 border-blue-500/50 animate-pulse'
+                : 'bg-amber-500/10 border-amber-500/30'
+            }`}
           >
             <div className="flex items-center gap-3 mb-4">
-              <LogIn className="w-6 h-6 text-amber-400" />
+              {authenticating ? (
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center animate-bounce">
+                  <Wallet className="w-6 h-6 text-blue-400" />
+                </div>
+              ) : (
+                <LogIn className="w-6 h-6 text-amber-400" />
+              )}
               <div>
-                <div className="font-medium text-white">Autenticación requerida</div>
+                <div className="font-medium text-white">
+                  {authenticating ? 'Esperando firma en tu wallet...' : 'Autenticación requerida'}
+                </div>
                 <div className="text-sm text-gray-400">
-                  Wallet conectada: {abbreviateAddress(account?.address || '')}
+                  {authenticating
+                    ? 'Revisa tu wallet y aprueba la firma'
+                    : `Wallet conectada: ${abbreviateAddress(account?.address || '')}`
+                  }
                 </div>
               </div>
             </div>
 
+            {/* Wallet action indicator when authenticating */}
+            {authenticating && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="bg-blue-500/10 rounded-xl p-4 mb-4 border border-blue-500/20"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-blue-300 font-medium text-sm">
+                      Abre tu wallet y firma el mensaje
+                    </p>
+                    <p className="text-blue-400/70 text-xs mt-1">
+                      Si no ves la solicitud, revisa la extensión o app de tu wallet
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             <button
               onClick={handleAuthenticate}
               disabled={authenticating}
-              className="w-full py-3 rounded-xl font-semibold
-                       bg-gradient-to-r from-amber-500/20 to-orange-500/20
-                       border border-amber-500/30 text-amber-400
-                       hover:border-amber-500/50 transition-all
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       flex items-center justify-center gap-2"
+              className={`w-full py-3 rounded-xl font-semibold transition-all
+                       flex items-center justify-center gap-2
+                       ${authenticating
+                         ? 'bg-blue-500/20 border border-blue-500/30 text-blue-400 cursor-wait'
+                         : 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 hover:border-amber-500/50'
+                       }
+                       disabled:cursor-wait`}
             >
               {authenticating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Firmando...
+                  <span>Esperando firma...</span>
                 </>
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  Firmar con Wallet (SIWE)
+                  <span>Firmar con Wallet (SIWE)</span>
                 </>
               )}
             </button>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Firma un mensaje para verificar que eres el dueño de esta wallet
-            </p>
+
+            {!authenticating && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Firma un mensaje para verificar que eres el dueño de esta wallet
+              </p>
+            )}
           </motion.div>
         ) : (
           <motion.div

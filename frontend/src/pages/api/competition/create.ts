@@ -82,7 +82,8 @@ async function handler(
 
   try {
     // Obtener dirección autenticada del token JWT (seguro, no manipulable)
-    const creatorAddress = getAuthenticatedAddress(req);
+    // CRITICAL: Normalize to lowercase for consistent address matching
+    const creatorAddress = getAuthenticatedAddress(req).toLowerCase();
 
     const data = req.body as CreateCompetitionRequest;
 
@@ -134,7 +135,7 @@ async function handler(
       arbitration: {
         method: data.resolutionMethod,
         judges: (data.judges || []).map(address => ({
-          address,
+          address: address.toLowerCase(), // Normalize for consistent matching
           role: 'arbiter' as const,
           weight: 1,
         })),
@@ -164,10 +165,10 @@ async function handler(
       deployed: boolean;
     } | undefined;
 
-    // Determine Safe owners: creator + judges
+    // Determine Safe owners: creator + judges (all normalized to lowercase)
     const safeOwners = data.safeOwners && data.safeOwners.length > 0
-      ? data.safeOwners
-      : [creatorAddress, ...(data.judges || [])].filter((addr): addr is string => !!addr);
+      ? data.safeOwners.map(addr => addr.toLowerCase())
+      : [creatorAddress, ...(data.judges || []).map(j => j.toLowerCase())].filter((addr): addr is string => !!addr);
 
     if (safeOwners.length > 0) {
       try {

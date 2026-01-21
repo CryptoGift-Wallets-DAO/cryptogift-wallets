@@ -60,9 +60,12 @@ async function handler(
 
     const data = req.body as JoinRequest;
 
+    // CRITICAL: Normalize address to lowercase for consistent comparison
+    const normalizedAddress = participantAddress.toLowerCase();
+
     // Create participant entry
     const entry: ParticipantEntry = {
-      address: participantAddress,
+      address: normalizedAddress, // Always lowercase for consistent matching
       position: data.position || 'participant',
       amount: data.amount || '0',
       joinedAt: Date.now(),
@@ -72,10 +75,10 @@ async function handler(
     const event: TransparencyEvent = {
       type: 'participant_joined',
       timestamp: Date.now(),
-      actor: participantAddress,
+      actor: normalizedAddress,
       action: 'Joined competition',
       details: {
-        participantAddress: entry.address,
+        participantAddress: normalizedAddress,
         position: data.position,
       },
       txHash: data.txHash,
@@ -131,16 +134,16 @@ async function handler(
           };
         }
 
-        // Check if already a judge
+        // Check if already a judge (use normalizedAddress for consistent comparison)
         const isAlreadyJudge = competition.arbitration.judges?.some(
-          (j: { address: string }) => j.address.toLowerCase() === participantAddress.toLowerCase()
+          (j: { address: string }) => j.address.toLowerCase() === normalizedAddress
         );
 
         if (!isAlreadyJudge) {
           // Add participant as a judge with 'participant_judge' role
           // This allows all competitors to vote on winners
           const participantJudge = {
-            address: participantAddress,
+            address: normalizedAddress, // Always lowercase for consistent matching
             role: 'participant_judge' as const,
             reputation: 1,
           };
@@ -152,7 +155,7 @@ async function handler(
 
           // Save updated competition
           await redis.set(`competition:${id}`, JSON.stringify(competition));
-          console.log(`Added participant ${participantAddress.slice(0, 10)}... as judge for competition ${id}`);
+          console.log(`Added participant ${normalizedAddress.slice(0, 10)}... as judge for competition ${id}`);
         }
       }
     } catch (judgeError) {
@@ -163,7 +166,7 @@ async function handler(
     // Emit SSE event for real-time updates
     emitParticipantJoined(
       id,
-      participantAddress,
+      normalizedAddress,
       data.amount ? Number(data.amount) / 1e18 : undefined
     );
 
