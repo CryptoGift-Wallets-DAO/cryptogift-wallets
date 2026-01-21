@@ -532,9 +532,9 @@ export default function JoinCompetitionPage() {
           </motion.div>
         )}
 
-        {/* Action button - ONLY shows when wallet is connected */}
-        {/* When not connected, the user uses the ConnectButton in the card above */}
-        {isConnected && (
+        {/* Action button - ONLY shows when authenticated */}
+        {/* When not authenticated, the user uses the SIWE button in the card above */}
+        {isConnected && isAuthenticated && (
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -553,11 +553,6 @@ export default function JoinCompetitionPage() {
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Procesando...</span>
-              </>
-            ) : !isAuthenticated ? (
-              <>
-                <LogIn className="w-5 h-5" />
-                <span>Firmar y Autenticar</span>
               </>
             ) : alreadyJoined ? (
               <>
