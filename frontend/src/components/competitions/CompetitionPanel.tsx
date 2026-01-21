@@ -43,14 +43,11 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
-import { createThirdwebClient } from 'thirdweb';
 import { baseSepolia, base } from 'thirdweb/chains';
 import { CompetitionSuccess } from './CompetitionSuccess';
-
-// ThirdWeb client para ConnectButton
-const client = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID || '',
-});
+// CRITICAL FIX: Import centralized client instead of creating a new one
+// This ensures the client is properly initialized with the correct clientId
+import { client } from '@/app/client';
 import {
   authenticateWithSiwe,
   makeAuthenticatedRequest,
@@ -663,20 +660,28 @@ export function CompetitionPanel({
                   Necesitas una wallet conectada para crear competencias y gestionar fondos de forma segura.
                 </p>
                 <div className="flex justify-center">
-                  <ConnectButton
-                    client={client}
-                    chains={[baseSepolia, base]}
-                    connectButton={{
-                      label: "Conectar Wallet",
-                      style: {
-                        background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        borderRadius: '12px',
-                        padding: '12px 24px',
-                      },
-                    }}
-                  />
+                  {client ? (
+                    <ConnectButton
+                      client={client}
+                      chains={[baseSepolia, base]}
+                      connectButton={{
+                        label: "Conectar Wallet",
+                        style: {
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          borderRadius: '12px',
+                          padding: '12px 24px',
+                        },
+                      }}
+                    />
+                  ) : (
+                    <div className="px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl">
+                      <p className="text-red-300 text-sm">
+                        ⚠️ Configuración de wallet pendiente. Recarga la página.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
