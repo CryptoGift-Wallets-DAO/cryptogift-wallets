@@ -31,7 +31,7 @@ import Link from 'next/link';
 import { useActiveAccount } from 'thirdweb/react';
 import { ConnectButton } from 'thirdweb/react';
 import { createThirdwebClient } from 'thirdweb';
-import { baseSepolia, base } from 'thirdweb/chains';
+import { base } from 'thirdweb/chains';
 import { useAuth } from '../../../../../hooks/useAuth';
 import {
   authenticateWithSiwe,
@@ -455,7 +455,7 @@ export default function JoinCompetitionPage() {
 
             <ConnectButton
               client={client}
-              chains={[baseSepolia, base]}
+              chains={[base]}
               connectButton={{
                 label: "Conectar Wallet",
                 style: {

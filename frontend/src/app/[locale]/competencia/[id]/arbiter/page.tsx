@@ -30,7 +30,7 @@ import Link from 'next/link';
 import { useActiveAccount } from 'thirdweb/react';
 import { ConnectButton } from 'thirdweb/react';
 import { createThirdwebClient } from 'thirdweb';
-import { baseSepolia, base } from 'thirdweb/chains';
+import { base } from 'thirdweb/chains';
 import { useAuth } from '../../../../../hooks/useAuth';
 import {
   authenticateWithSiwe,
@@ -166,13 +166,15 @@ export default function ArbiterPage() {
     }
   };
 
-  // Handle join as arbiter
+  // Handle join as arbiter - uses dedicated endpoint
   const handleJoinAsArbiter = async () => {
+    // If not authenticated, trigger auth first
     if (!isAuthenticated) {
       await handleAuthenticate();
       return;
     }
 
+    // If already a judge, just go to competition
     if (alreadyJudge) {
       router.push(`/${locale}/competencia/${competitionId}`);
       return;
@@ -182,28 +184,11 @@ export default function ArbiterPage() {
     setError(null);
 
     try {
-      // Update competition to add judge
-      // Note: In a full implementation, there would be a dedicated /join-arbiter endpoint
-      // For now, we'll use the PUT endpoint to add the judge
-      const response = await makeAuthenticatedRequest(`/api/competition/${competitionId}`, {
-        method: 'PUT',
+      // Use dedicated join-arbiter endpoint (secured with JWT auth)
+      const response = await makeAuthenticatedRequest(`/api/competition/${competitionId}/join-arbiter`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          callerAddress: authAddress,
-          // Add current user as a judge
-          arbitration: {
-            ...competition?.arbitration,
-            judges: [
-              ...(competition?.arbitration?.judges || []),
-              {
-                address: authAddress,
-                role: 'arbiter',
-                weight: 1,
-                addedAt: Date.now(),
-              },
-            ],
-          },
-        }),
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
@@ -216,20 +201,23 @@ export default function ArbiterPage() {
           router.push(`/${locale}/competencia/${competitionId}`);
         }, 2000);
       } else {
-        if (data.error?.includes('Not authorized')) {
-          // If not authorized to PUT, the user might need different permissions
-          // For now, just set as joined since the page shows arbiter registration
-          setError('No tienes permisos para registrarte como juez en esta competencia');
+        // Handle specific error codes
+        if (data.code === 'ALREADY_JUDGE') {
+          setAlreadyJudge(true);
+          setError(null);
+        } else if (data.code === 'INVALID_STATUS') {
+          setError('Esta competencia ya no acepta nuevos jueces');
         } else {
           setError(data.error || 'Error al registrarse como juez');
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Join as arbiter error:', err);
-      if (err.message?.includes('No valid authentication')) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      if (errorMessage.includes('No valid authentication') || errorMessage.includes('expired')) {
         setError('Tu sesión expiró. Por favor, autentícate de nuevo.');
       } else {
-        setError(err.message || 'Error al registrarse como juez');
+        setError(errorMessage || 'Error al registrarse como juez');
       }
     } finally {
       setJoining(false);
@@ -457,7 +445,7 @@ export default function ArbiterPage() {
 
             <ConnectButton
               client={client}
-              chains={[baseSepolia, base]}
+              chains={[base]}
               connectButton={{
                 label: "Conectar Wallet",
                 style: {

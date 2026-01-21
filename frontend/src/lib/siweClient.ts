@@ -94,8 +94,8 @@ export async function requestChallenge(address: string, chainId?: number): Promi
   try {
     console.log('🎯 Requesting SIWE challenge for:', address.slice(0, 10) + '...');
     
-    // Use provided chainId or default to Base Sepolia
-    const targetChainId = chainId || 84532;
+    // Use provided chainId or default to Base Mainnet
+    const targetChainId = chainId || 8453;
     
     const response = await fetch('/api/auth/challenge', {
       method: 'POST',
@@ -177,8 +177,8 @@ export async function verifySignature(
   try {
     console.log('🔐 Verifying signature for:', address.slice(0, 10) + '...');
     
-    // Use provided chainId or default to Base Sepolia
-    const targetChainId = chainId || 84532;
+    // Use provided chainId or default to Base Mainnet
+    const targetChainId = chainId || 8453;
     
     const response = await fetch('/api/auth/verify', {
       method: 'POST',
@@ -229,7 +229,7 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
     console.log('🚀 Starting SIWE authentication flow for:', address.slice(0, 10) + '...');
     
     // ENHANCED: Better wallet compatibility for TrustWallet and MetaMask
-    let chainId = 84532; // Default to Base Sepolia
+    let chainId = 8453; // Default to Base Mainnet
     
     try {
       // Try multiple methods to detect wallet chain (TrustWallet compatibility)
@@ -254,13 +254,13 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
           // MOBILE FIX: Normalize different chain ID formats
           if (typeof hexChainId === 'string') {
             if (hexChainId.startsWith('eip155:')) {
-              // CAIP format: "eip155:84532" → 84532
+              // CAIP format: "eip155:8453" → 8453
               detectedChainId = parseInt(hexChainId.replace('eip155:', ''), 10);
             } else if (hexChainId.startsWith('0x')) {
-              // Hex format: "0x14a34" → 84532
+              // Hex format: "0x2105" → 8453 (Base Mainnet)
               detectedChainId = parseInt(hexChainId, 16);
             } else {
-              // Already numeric string: "84532" → 84532
+              // Already numeric string: "8453" → 8453
               detectedChainId = parseInt(hexChainId, 10);
             }
           } else if (typeof hexChainId === 'number') {
@@ -305,8 +305,8 @@ export async function authenticateWithSiwe(address: string, account: any): Promi
     
     // Validate chainId is a valid number
     if (isNaN(numericChainId) || numericChainId <= 0) {
-      console.warn('⚠️ Invalid chainId detected, using Base Sepolia default');
-      chainId = 84532;
+      console.warn('⚠️ Invalid chainId detected, using Base Mainnet default');
+      chainId = 8453;
     } else {
       chainId = numericChainId;
     }

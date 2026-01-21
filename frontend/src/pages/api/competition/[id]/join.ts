@@ -9,13 +9,28 @@
  * - Prevents double-join (same user joining twice)
  * - Prevents overselling (joining full competition)
  * - Ensures accurate participant count
+ *
+ * VOTING LOGIC (Issue #1 - Implemented):
+ * ========================================
+ * Participants are automatically added as judges with role 'participant_judge':
+ * - All competitors can vote on winners
+ * - If they don't vote, their vote defaults to themselves (implicit self-vote)
+ * - See /api/competition/[id]/vote.ts for full voting logic
+ *
+ * CHAIN: Base Mainnet (8453) - PRODUCCIÓN
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { ParticipantEntry, TransparencyEvent } from '../../../../competencias/types';
+import { Redis } from '@upstash/redis';
+import { Competition, ParticipantEntry, TransparencyEvent } from '../../../../competencias/types';
 import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
 import { atomicJoinCompetition } from '../../../../competencias/lib/atomicOperations';
 import { emitParticipantJoined } from '../../../../competencias/lib/eventSystem';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 interface JoinRequest {
   position?: string; // For prediction markets
@@ -95,6 +110,54 @@ async function handler(
         error: result.error,
         code: result.code,
       });
+    }
+
+    // VOTING LOGIC: Add participant as judge (participants are judges by default)
+    // This allows all competitors to vote on winners
+    try {
+      const compData = await redis.get(`competition:${id}`);
+      if (compData) {
+        const competition: Competition = typeof compData === 'string'
+          ? JSON.parse(compData)
+          : compData;
+
+        // Initialize arbitration if needed
+        if (!competition.arbitration) {
+          competition.arbitration = {
+            method: 'multisig_panel',
+            judges: [],
+            votingThreshold: 51, // Simple majority for participant voting
+            votes: [],
+          };
+        }
+
+        // Check if already a judge
+        const isAlreadyJudge = competition.arbitration.judges?.some(
+          (j: { address: string }) => j.address.toLowerCase() === participantAddress.toLowerCase()
+        );
+
+        if (!isAlreadyJudge) {
+          // Add participant as a judge with 'participant_judge' role
+          // This allows all competitors to vote on winners
+          const participantJudge = {
+            address: participantAddress,
+            role: 'participant_judge' as const,
+            reputation: 1,
+          };
+
+          competition.arbitration.judges = [
+            ...(competition.arbitration.judges || []),
+            participantJudge,
+          ];
+
+          // Save updated competition
+          await redis.set(`competition:${id}`, JSON.stringify(competition));
+          console.log(`Added participant ${participantAddress.slice(0, 10)}... as judge for competition ${id}`);
+        }
+      }
+    } catch (judgeError) {
+      // Log but don't fail the join if adding as judge fails
+      console.error('Failed to add participant as judge:', judgeError);
     }
 
     // Emit SSE event for real-time updates

@@ -189,7 +189,8 @@ export interface ResolutionConfig {
   oracleConfig?: OracleConfig;
 }
 
-export type JudgeRole = 'primary' | 'backup' | 'appeal' | 'arbiter' | 'reviewer' | 'verifier' | 'observer';
+// participant_judge: Participant who is also a judge by default (can vote on winners)
+export type JudgeRole = 'primary' | 'backup' | 'appeal' | 'arbiter' | 'reviewer' | 'verifier' | 'observer' | 'participant_judge';
 
 export interface Judge {
   address: string;

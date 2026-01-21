@@ -43,7 +43,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useActiveAccount, ConnectButton } from 'thirdweb/react';
-import { baseSepolia, base } from 'thirdweb/chains';
+import { base } from 'thirdweb/chains';
 import { CompetitionSuccess } from './CompetitionSuccess';
 // CRITICAL FIX: Import centralized client instead of creating a new one
 // This ensures the client is properly initialized with the correct clientId
@@ -757,7 +757,7 @@ export function CompetitionPanel({
                   {client ? (
                     <ConnectButton
                       client={client}
-                      chains={[baseSepolia, base]}
+                      chains={[base]}
                       connectButton={{
                         label: "Conectar Wallet",
                         style: {

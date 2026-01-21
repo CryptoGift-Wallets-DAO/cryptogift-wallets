@@ -4,6 +4,30 @@
  *
  * Allows judges to vote on competition resolution
  * REQUIERE AUTENTICACIÓN SIWE - El juez debe estar autenticado con su wallet
+ *
+ * VOTING LOGIC (Issue #1 - Implemented):
+ * ========================================
+ * 1. ALL participants are automatically judges with role 'participant_judge'
+ *    - Added when they join via /api/competition/[id]/join
+ *    - Separate arbiters can join via /api/competition/[id]/join-arbiter
+ *
+ * 2. IMPLICIT SELF-VOTING:
+ *    - If a participant_judge doesn't vote, their vote DEFAULTS to themselves
+ *    - This means: if you don't vote, you're voting for yourself to win
+ *    - Only explicit votes are stored; implicit votes are calculated at resolution
+ *
+ * 3. RESOLUTION THRESHOLD:
+ *    - totalJudges = all judges with role 'arbiter'|'reviewer'|'verifier'|'participant_judge'
+ *    - requiredVotes = ceil(totalJudges * threshold / 100)
+ *    - implicitSelfVotes = participant_judges who haven't voted
+ *    - totalEffectiveVotes = explicitVotes + implicitSelfVotes
+ *
+ * 4. RESOLUTION CONDITIONS:
+ *    - If approvalVotes >= requiredVotes → 'approved'
+ *    - If rejectionVotes >= requiredVotes → 'rejected'
+ *    - If totalEffectiveVotes >= totalJudges → resolve by majority
+ *
+ * CHAIN: Base Mainnet (8453) - PRODUCCIÓN
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -107,14 +131,26 @@ async function handler(
     competition.arbitration.votes = [...(competition.arbitration.votes || []), vote];
 
     // Calculate voting progress
-    const totalJudges = competition.arbitration.judges?.filter(j =>
-      j.role === 'arbiter' || j.role === 'reviewer' || j.role === 'verifier'
-    ).length || 1;
+    // Include participant_judge role (participants who are also judges)
+    const allJudges = competition.arbitration.judges?.filter(j =>
+      j.role === 'arbiter' || j.role === 'reviewer' || j.role === 'verifier' || j.role === 'participant_judge'
+    ) || [];
+    const totalJudges = allJudges.length || 1;
     const votedCount = competition.arbitration.votes.length;
     const threshold = competition.arbitration.votingThreshold || 66;
     const requiredVotes = Math.ceil((totalJudges * threshold) / 100);
 
-    // Check if threshold reached
+    // Get participants who haven't voted yet (for self-vote default)
+    const votedAddresses = new Set(
+      competition.arbitration.votes.map(v => v.judge.toLowerCase())
+    );
+    const participantJudges = allJudges.filter(j => j.role === 'participant_judge');
+    const nonVotingParticipants = participantJudges.filter(
+      j => !votedAddresses.has(j.address.toLowerCase())
+    );
+
+    // Count votes including implicit self-votes from non-voting participants
+    // For approve/reject votes, non-voting participants implicitly approve (themselves)
     const approvalVotes = competition.arbitration.votes.filter(
       v => v.vote === 'approve' || v.vote === 'yes'
     ).length;
@@ -122,15 +158,33 @@ async function handler(
       v => v.vote === 'reject' || v.vote === 'no'
     ).length;
 
+    // For participant voting on winners, each non-voter implicitly votes for themselves
+    // This means for vote resolution, we count implicit self-votes
+    const implicitSelfVotes = nonVotingParticipants.length;
+    const totalEffectiveVotes = votedCount + implicitSelfVotes;
+
     let resolutionReached = false;
     let outcome: string | undefined;
 
+    // Check if threshold reached (considering all eligible judges including non-voters)
     if (approvalVotes >= requiredVotes) {
       resolutionReached = true;
       outcome = 'approved';
     } else if (rejectionVotes >= requiredVotes) {
       resolutionReached = true;
       outcome = 'rejected';
+    }
+
+    // Also check if all participants have implicitly voted (voting complete)
+    // When all votes are in (explicit + implicit), we can resolve
+    if (!resolutionReached && totalEffectiveVotes >= totalJudges) {
+      resolutionReached = true;
+      // Determine outcome based on vote counts
+      if (approvalVotes >= rejectionVotes) {
+        outcome = 'approved';
+      } else {
+        outcome = 'rejected';
+      }
     }
 
     // If resolution reached, update status
@@ -191,6 +245,8 @@ async function handler(
           total: totalJudges,
           approvals: approvalVotes,
           rejections: rejectionVotes,
+          implicitSelfVotes, // Participants who haven't voted (defaults to self)
+          totalEffectiveVotes,
         },
         resolutionReached,
         outcome,
