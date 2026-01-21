@@ -17,7 +17,7 @@
  * - Gnosis Safe para custodia de fondos
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy,
@@ -331,6 +331,27 @@ export function CompetitionPanel({
   // Estado para mostrar ConnectButton inline cuando se intenta Crear Rápido sin wallet
   const [showInlineConnect, setShowInlineConnect] = useState(false);
 
+  // CRITICAL FIX: Track if we're waiting for wallet to sync (prevents race condition)
+  const [isWaitingForWallet, setIsWaitingForWallet] = useState(false);
+  const walletCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper: Check wallet connection from multiple sources
+  const getWalletAddressFromAnySources = useCallback((): string | null => {
+    // Source 1: ThirdWeb hook (primary)
+    if (walletAddress) return walletAddress;
+
+    // Source 2: window.ethereum (fallback for when hook hasn't synced yet)
+    // Using 'any' type assertion because ethereum provider types vary
+    if (typeof window !== 'undefined' && window.ethereum) {
+      const ethereum = window.ethereum as { selectedAddress?: string; };
+      if (ethereum.selectedAddress) {
+        return ethereum.selectedAddress;
+      }
+    }
+
+    return null;
+  }, [walletAddress]);
+
   // Check auth state on mount and when wallet changes
   useEffect(() => {
     if (walletAddress) {
@@ -436,48 +457,110 @@ export function CompetitionPanel({
   }, [config]);
 
   // Handler para "Crear Rápido" - crea con config adaptativa inmediatamente
+  // CRITICAL FIX: Handles race condition where useActiveAccount() returns undefined momentarily
   const handleQuickCreate = async () => {
+    // Clear any pending timeout
+    if (walletCheckTimeoutRef.current) {
+      clearTimeout(walletCheckTimeoutRef.current);
+      walletCheckTimeoutRef.current = null;
+    }
+
     // Primero aplicar config rápida
     setConfig(QUICK_CREATE_CONFIG);
     setCreateError(null);
 
-    // Verificar si hay wallet conectada - mostrar ConnectButton inline
-    if (!walletAddress) {
-      setShowInlineConnect(true);
+    // ROBUST WALLET CHECK: Use multiple sources
+    const detectedWallet = getWalletAddressFromAnySources();
+
+    if (!detectedWallet) {
+      // Don't immediately show connect panel - wait briefly for hook to sync
+      // This prevents the "connect wallet" panel from flashing on mobile
+      setIsWaitingForWallet(true);
+
+      // Wait 500ms for the hook to sync, then check again
+      walletCheckTimeoutRef.current = setTimeout(() => {
+        const walletAfterDelay = getWalletAddressFromAnySources();
+        setIsWaitingForWallet(false);
+
+        if (!walletAfterDelay) {
+          // Still no wallet after delay - show connect panel
+          console.log('⚠️ No wallet detected after delay, showing connect panel');
+          setShowInlineConnect(true);
+        } else {
+          // Wallet synced! Continue with creation
+          console.log('✅ Wallet synced after delay:', walletAfterDelay.slice(0, 10) + '...');
+          setShowInlineConnect(false);
+          proceedWithCreation(walletAfterDelay);
+        }
+      }, 500);
       return;
     }
 
-    // Ocultar ConnectButton inline si estaba visible
+    // Wallet is available - proceed
+    console.log('✅ Wallet detected immediately:', detectedWallet.slice(0, 10) + '...');
     setShowInlineConnect(false);
+    proceedWithCreation(detectedWallet);
+  };
 
-    // Verificar autenticación - si no está autenticado, iniciar flujo SIWE
-    if (!isAuthenticated) {
+  // Helper function to proceed with competition creation
+  const proceedWithCreation = async (walletAddr: string) => {
+    // Check authentication state
+    const authState = getAuthState();
+    const isCurrentlyAuthenticated = authState.isAuthenticated &&
+      authState.address?.toLowerCase() === walletAddr.toLowerCase() &&
+      isAuthValid();
+
+    if (!isCurrentlyAuthenticated) {
+      // Need to authenticate first
       setIsAuthenticating(true);
       try {
-        await handleAuthenticate();
-        // Después de autenticar, crear la competencia
-        setTimeout(() => {
-          handleCreate();
-        }, 100);
+        // Wait for account to be available from hook
+        if (!account) {
+          // If account not in hook yet, wait a bit more
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        if (account) {
+          await authenticateWithSiwe(walletAddr, account);
+          setIsAuthenticated(true);
+          // After auth, create the competition
+          await handleCreate();
+        } else {
+          setCreateError('Error: No se pudo obtener la cuenta. Intenta de nuevo.');
+        }
       } catch (error) {
-        setCreateError('Error de autenticación. Intenta de nuevo.');
+        console.error('Authentication failed:', error);
+        setCreateError(error instanceof Error ? error.message : 'Error de autenticación');
+        setIsAuthenticated(false);
+      } finally {
         setIsAuthenticating(false);
       }
       return;
     }
 
-    // Si ya está autenticado, crear directamente
-    handleCreate();
+    // Already authenticated - create directly
+    await handleCreate();
   };
 
-  // Ocultar ConnectButton inline cuando la wallet se conecta
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (walletCheckTimeoutRef.current) {
+        clearTimeout(walletCheckTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-continue when wallet connects (for users who had to connect)
   useEffect(() => {
     if (walletAddress && showInlineConnect) {
       setShowInlineConnect(false);
-      // Auto-continuar con Quick Create después de conectar
-      handleQuickCreate();
+      // Small delay to ensure state is synced
+      setTimeout(() => {
+        proceedWithCreation(walletAddress);
+      }, 100);
     }
-  }, [walletAddress]);
+  }, [walletAddress, showInlineConnect]);
 
   // Validación: necesita wallet conectada y autenticada
   const canCreate = walletAddress && isAuthenticated;
@@ -612,10 +695,10 @@ export function CompetitionPanel({
 
           {/* Botón Crear Rápido - Modo Adaptativo */}
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: (isCreating || isWaitingForWallet || isAuthenticating) ? 1 : 1.05 }}
+            whileTap={{ scale: (isCreating || isWaitingForWallet || isAuthenticating) ? 1 : 0.95 }}
             onClick={handleQuickCreate}
-            disabled={isCreating}
+            disabled={isCreating || isWaitingForWallet || isAuthenticating}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl
                      bg-gradient-to-r from-green-500 to-emerald-500
                      text-white font-semibold text-sm
@@ -623,9 +706,20 @@ export function CompetitionPanel({
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-all"
           >
-            <Zap className="w-4 h-4" />
-            <span className="hidden sm:inline">Crear Rápido</span>
-            <span className="sm:hidden">⚡</span>
+            {(isWaitingForWallet || isAuthenticating || isCreating) ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="hidden sm:inline">
+                  {isWaitingForWallet ? 'Verificando...' : isAuthenticating ? 'Firmando...' : 'Creando...'}
+                </span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                <span className="hidden sm:inline">Crear Rápido</span>
+                <span className="sm:hidden">⚡</span>
+              </>
+            )}
           </motion.button>
         </div>
 
