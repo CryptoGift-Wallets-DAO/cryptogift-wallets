@@ -532,53 +532,51 @@ export default function JoinCompetitionPage() {
           </motion.div>
         )}
 
-        {/* Join button */}
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleJoin}
-          disabled={joining || (!isConnected && !isAuthenticated)}
-          className="w-full py-4 rounded-2xl font-bold text-lg
-                   bg-gradient-to-r from-green-500 to-emerald-500 text-white
-                   hover:shadow-lg hover:shadow-green-500/25 transition-all
-                   disabled:opacity-50 disabled:cursor-not-allowed
-                   flex items-center justify-center gap-3"
-        >
-          {joining ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Procesando...</span>
-            </>
-          ) : !isConnected ? (
-            <>
-              <Wallet className="w-5 h-5" />
-              <span>Conectar Wallet</span>
-            </>
-          ) : !isAuthenticated ? (
-            <>
-              <LogIn className="w-5 h-5" />
-              <span>Autenticar Wallet</span>
-            </>
-          ) : alreadyJoined ? (
-            <>
-              <Check className="w-5 h-5" />
-              <span>Ver Competencia</span>
-            </>
-          ) : entryFee > 0 ? (
-            <>
-              <Sparkles className="w-5 h-5" />
-              <span>Depositar {entryFee} {currency} y Unirse</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              <span>Unirse a la Competencia</span>
-            </>
-          )}
-        </motion.button>
+        {/* Action button - ONLY shows when wallet is connected */}
+        {/* When not connected, the user uses the ConnectButton in the card above */}
+        {isConnected && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleJoin}
+            disabled={joining}
+            className="w-full py-4 rounded-2xl font-bold text-lg
+                     bg-gradient-to-r from-green-500 to-emerald-500 text-white
+                     hover:shadow-lg hover:shadow-green-500/25 transition-all
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     flex items-center justify-center gap-3"
+          >
+            {joining ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Procesando...</span>
+              </>
+            ) : !isAuthenticated ? (
+              <>
+                <LogIn className="w-5 h-5" />
+                <span>Firmar y Autenticar</span>
+              </>
+            ) : alreadyJoined ? (
+              <>
+                <Check className="w-5 h-5" />
+                <span>Ver Competencia</span>
+              </>
+            ) : entryFee > 0 ? (
+              <>
+                <Sparkles className="w-5 h-5" />
+                <span>Depositar {entryFee} {currency} y Unirse</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                <span>Unirse a la Competencia</span>
+              </>
+            )}
+          </motion.button>
+        )}
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Al unirte, aceptas las reglas de la competencia
