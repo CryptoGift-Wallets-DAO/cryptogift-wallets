@@ -19,7 +19,7 @@ export const AmountSelector: React.FC<AmountSelectorProps> = ({
   referralFee,
   platformFee,
   netAmount
-) => {
+}) => {
   const t = useTranslations('amountSelector');
   const [amount, setAmount] = useState(currentAmount);
   const [customAmount, setCustomAmount] = useState('');
