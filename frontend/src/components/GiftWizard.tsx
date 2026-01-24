@@ -21,6 +21,7 @@ import { DeviceLimitModal } from './DeviceLimitModal';
 import { getAuthState, isAuthValid, makeAuthenticatedRequest, clearAuth } from '../lib/siweClient';
 import { useAuth } from '../hooks/useAuth';
 import { ConnectAndAuthButton } from './ConnectAndAuthButton';
+import { useTranslations } from 'next-intl';
 
 // Image compression utility to prevent HTTP 413 errors
 async function compressImage(file: File, quality: number = 0.8): Promise<File> {
@@ -132,6 +133,7 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
   const [mounted, setMounted] = useState(false);
   const account = useActiveAccount();
   const auth = useAuth();
+  const t = useTranslations('giftWizard');
   const [currentStep, setCurrentStep] = useState<WizardStep>(WizardStep.CONNECT);
 
   useEffect(() => {
@@ -1154,11 +1156,11 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
       case WizardStep.CONNECT:
         return (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-6">Conecta y Autentica tu Wallet</h2>
+            <h2 className="text-2xl font-bold mb-6">{t('connect.title')}</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Necesitamos conectar tu wallet y autenticarte de forma segura para crear el NFT-wallet regalo
+              {t('connect.description')}
             </p>
-            
+
             {mounted && (
               <div className="max-w-md mx-auto">
                 <ConnectAndAuthButton
@@ -1172,11 +1174,11 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
                   }}
                   className="w-full"
                 />
-                
+
                 {/* Additional info */}
                 <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-                  <p>🔒 Tu wallet se conectará de forma segura usando el estándar SIWE (Sign-In With Ethereum)</p>
-                  <p className="mt-2">✅ Todos los datos se mantienen privados y seguros</p>
+                  <p>🔒 {t('connect.securityNote')}</p>
+                  <p className="mt-2">✅ {t('connect.privacyNote')}</p>
                 </div>
               </div>
             )}
@@ -1243,15 +1245,15 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         return (
           <div className="text-center py-12">
             <div className="animate-spin w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold mb-4">Creando tu Regalo...</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('minting.title')}</h2>
             <p className="text-gray-600 mb-4">
-              Esto puede tomar unos segundos. ¡No cierres esta ventana!
+              {t('minting.warning')}
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
               <p className="text-sm text-blue-700">
-                🔄 <strong>Intentando transacción gasless</strong> (gratis)<br/>
-                ⚡ Biconomy paymaster procesando...<br/>
-                💰 Si falla → te pediremos pagar gas (~$0.01)
+                🔄 <strong>{t('minting.gaslessAttempt')}</strong> {t('minting.gaslessFree')}<br/>
+                ⚡ {t('minting.paymasterProcessing')}<br/>
+                💰 {t('minting.gasFallback')}
               </p>
             </div>
           </div>
@@ -1297,10 +1299,10 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
         {/* Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Crear Regalo Cripto</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
             {currentStep !== WizardStep.SUCCESS && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Paso {getStepNumber()} de 7
+                {t('stepProgress', { step: getStepNumber() })}
               </p>
             )}
           </div>
@@ -1322,9 +1324,9 @@ export const GiftWizard: React.FC<GiftWizardProps> = ({ isOpen, onClose, referre
               ></div>
             </div>
             <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>Conectar</span>
-              <span>Filtros</span>
-              <span>Listo</span>
+              <span>{t('progress.connect')}</span>
+              <span>{t('progress.filters')}</span>
+              <span>{t('progress.ready')}</span>
             </div>
           </div>
         )}

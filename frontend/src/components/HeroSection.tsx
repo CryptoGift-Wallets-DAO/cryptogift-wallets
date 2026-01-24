@@ -1,12 +1,16 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import { SmartIcon } from './ui/SmartIcon';
+import { useTranslations } from 'next-intl';
 
 interface HeroSectionProps {
   onCreateGift: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
+  const t = useTranslations('hero');
   return (
     <section className="relative min-h-screen flex items-center justify-center 
                         bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 
@@ -39,9 +43,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
                 </div>
               </div>
               <div className="text-white dark:text-text-primary transition-colors duration-300">
-                <h3 className="font-bold text-lg mb-2">Tu Regalo Cripto</h3>
+                <h3 className="font-bold text-lg mb-2">{t('preview.title')}</h3>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm opacity-75">Balance:</span>
+                  <span className="text-sm opacity-75">{t('preview.balance')}</span>
                   <span className="font-semibold text-accent-gold dark:text-accent-silver">50 USDC</span>
                 </div>
               </div>
@@ -95,33 +99,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
 
         {/* Hero Text */}
         <h1 className="text-3xl md:text-6xl font-bold text-white dark:text-text-primary mb-5 leading-tight transition-colors duration-300">
-          Regala el
-          <span className="block bg-gradient-to-r from-yellow-300 to-pink-300 
+          {t('titlePart1')}
+          <span className="block bg-gradient-to-r from-yellow-300 to-pink-300
                          dark:from-accent-gold dark:to-accent-silver bg-clip-text text-transparent">
-            Futuro
+            {t('titlePart2')}
           </span>
         </h1>
-        
+
         <p className="text-lg md:text-xl text-white/80 dark:text-text-secondary mb-7 max-w-2xl mx-auto leading-relaxed transition-colors duration-300">
-          Crea NFT-wallets únicos con arte IA y criptomonedas reales. 
-          La forma más emotiva de introducir a tus amigos al mundo blockchain.
+          {t('subtitleLong')}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-10">
           <button
             onClick={onCreateGift}
-            className="group relative px-7 py-3 bg-white dark:bg-bg-card text-purple-600 dark:text-accent-gold 
-                     rounded-full font-bold text-base hover:scale-105 transition-all duration-300 
+            className="group relative px-7 py-3 bg-white dark:bg-bg-card text-purple-600 dark:text-accent-gold
+                     rounded-full font-bold text-base hover:scale-105 transition-all duration-300
                      shadow-xl hover:shadow-2xl border dark:border-border-primary"
           >
-            <span className="relative z-10">Crear mi Regalo</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-pink-300 
-                          dark:from-accent-gold dark:to-accent-silver rounded-full opacity-0 
+            <span className="relative z-10">{t('createGiftShort')}</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-pink-300
+                          dark:from-accent-gold dark:to-accent-silver rounded-full opacity-0
                           group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
-          
+
           <div className="flex items-center text-white/60 dark:text-text-muted transition-colors duration-300">
-            <span className="text-sm">Sin comisiones • Gas gratis • 2 min</span>
+            <span className="text-sm">{t('benefits')}</span>
           </div>
         </div>
 
@@ -129,15 +132,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onCreateGift }) => {
         <div className="grid grid-cols-3 gap-6 max-w-xl mx-auto text-white dark:text-text-primary transition-colors duration-300">
           <div className="text-center">
             <div className="text-2xl font-bold text-accent-gold dark:text-accent-silver">$2M+</div>
-            <div className="text-xs opacity-75">Regalado</div>
+            <div className="text-xs opacity-75">{t('stats.gifted')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-accent-gold dark:text-accent-silver">50K+</div>
-            <div className="text-xs opacity-75">NFT-Wallets</div>
+            <div className="text-xs opacity-75">{t('stats.nftWallets')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-accent-gold dark:text-accent-silver">98%</div>
-            <div className="text-xs opacity-75">Satisfacción</div>
+            <div className="text-xs opacity-75">{t('stats.satisfaction')}</div>
           </div>
         </div>
       </div>

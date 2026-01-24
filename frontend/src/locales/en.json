@@ -21,8 +21,22 @@
   },
   "hero": {
     "title": "Gift the future today",
+    "titlePart1": "Gift the",
+    "titlePart2": "Future",
     "subtitle": "Gift the future. Create unique NFT-wallets with AI art and real cryptocurrencies.",
+    "subtitleLong": "Create unique NFT-wallets with AI art and real cryptocurrencies. The most emotional way to introduce your friends to the blockchain world.",
     "createGift": "Create my First Gift",
+    "createGiftShort": "Create my Gift",
+    "benefits": "No fees • Free gas • 2 min",
+    "preview": {
+      "title": "Your Crypto Gift",
+      "balance": "Balance:"
+    },
+    "stats": {
+      "gifted": "Gifted",
+      "nftWallets": "NFT-Wallets",
+      "satisfaction": "Satisfaction"
+    },
     "cta": {
       "title": "Gift the future today",
       "description": "Every gift is an invitation to the crypto ecosystem. Start now and earn commissions for every friend you invite."
@@ -39,7 +53,7 @@
       "description": "Add USDC that will be automatically stored in the NFT's wallet"
     },
     "step3": {
-      "title": "Share the Gift", 
+      "title": "Share the Gift",
       "description": "Send the link or QR to your friend so they can claim their NFT-wallet"
     },
     "gasSponsored": {
@@ -59,8 +73,93 @@
       "description": "Exchange tokens directly in the wallet"
     },
     "totalTransparency": {
-      "title": "Total Transparency", 
+      "title": "Total Transparency",
       "description": "All transactions verifiable on blockchain"
+    }
+  },
+  "featureSection": {
+    "title": "Why CryptoGift Wallets?",
+    "subtitle": "We combine art, technology and emotions to create the most human crypto gift experience in the world.",
+    "viewMore": "View more details",
+    "viewLess": "View less",
+    "comparison": {
+      "title": "Vs. Traditional Methods",
+      "traditional": {
+        "title": "Traditional Methods",
+        "point1": "Complicated and intimidating exchanges",
+        "point2": "High fees and unpredictable gas",
+        "point3": "Risk of losing private keys",
+        "point4": "Cold and technical experience"
+      },
+      "cryptogift": {
+        "title": "CryptoGift Wallets",
+        "point1": "Simple interface, like sending an email",
+        "point2": "Zero fees, sponsored gas",
+        "point3": "Social recovery with guardians",
+        "point4": "Emotional and personal experience"
+      }
+    },
+    "cards": {
+      "aiArt": {
+        "title": "Personalized AI Art",
+        "description": "Turn any photo into unique art with professional artificial intelligence filters.",
+        "subtitle": "PhotoRoom AI Technology + Professional Filters",
+        "feature1": "Over 15 professional artistic filters",
+        "feature2": "Real-time AI processing",
+        "feature3": "Automatic optimization for NFTs",
+        "feature4": "4K resolution for premium quality",
+        "highlight": "Each image is processed with cutting-edge algorithms to guarantee unique and unrepeatable works, perfect for high-quality NFTs."
+      },
+      "nftWallet": {
+        "title": "NFT = Real Wallet",
+        "description": "Each NFT is a functional wallet that stores real cryptocurrencies using ERC-6551 technology.",
+        "subtitle": "ERC-6551 Token Bound Accounts Technology",
+        "feature1": "Fully functional wallet inside the NFT",
+        "feature2": "Compatible with all ERC-20 tokens",
+        "feature3": "Native integration with DeFi protocols",
+        "feature4": "Automatic inheritance of the NFT",
+        "highlight": "We revolutionize the concept of NFT: it's not just digital art, it's a complete wallet that can receive, send and manage real cryptocurrencies."
+      },
+      "gasSponsored": {
+        "title": "Gas Sponsored",
+        "description": "All transactions are free for the end user. We pay the gas.",
+        "subtitle": "Biconomy Paymaster + Gas Optimization",
+        "feature1": "100% free transactions for users",
+        "feature2": "Intelligent route optimization",
+        "feature3": "Full coverage on Base Network",
+        "feature4": "No daily transaction limits",
+        "highlight": "We eliminate the biggest barrier to crypto entry: gas. Users never need to worry about ETH or fees."
+      },
+      "socialRecovery": {
+        "title": "Social Recovery",
+        "description": "Guardian system to recover access without depending on complicated seed phrases.",
+        "subtitle": "Guardians MultiSig + Cryptographic Verification",
+        "feature1": "2-of-3 trusted guardians system",
+        "feature2": "Robust cryptographic verification",
+        "feature3": "Security waiting period (72h)",
+        "feature4": "Complete audit of all actions",
+        "highlight": "Forget about seed phrases. If you lose access, your trusted guardians can help you recover it securely and verifiably."
+      },
+      "integratedSwap": {
+        "title": "Integrated Swap",
+        "description": "Switch between different cryptocurrencies directly from the NFT wallet with one click.",
+        "subtitle": "0x Protocol + Smart Liquidity Aggregation",
+        "feature1": "Best prices aggregating multiple DEXs",
+        "feature2": "Minimal slippage and smart execution",
+        "feature3": "Support for 50+ main tokens",
+        "feature4": "Simplified one-click interface",
+        "highlight": "Direct swap from your NFT-wallet without leaving the platform. Get the best market prices with the convenience of a button."
+      },
+      "transparency": {
+        "title": "Total Transparency",
+        "description": "Open source and developer community. Public dashboard with real-time statistics.",
+        "subtitle": "Open Source + Continuous Public Audit",
+        "feature1": "100% open code on GitHub",
+        "feature2": "Quarterly independent audits",
+        "feature3": "Real-time reserves dashboard",
+        "feature4": "Active developer community",
+        "highlight": "Total transparency: all our code is public, reserves are auditable on-chain and the community can verify every line of code."
+      }
     }
   },
   "footer": {
@@ -425,6 +524,32 @@
       "signToVerify": "Sign with your wallet to verify your identity",
       "accountError": "Error: Could not get account. Try again.",
       "createError": "Error creating competition"
+    }
+  },
+  "giftWizard": {
+    "title": "Create Crypto Gift",
+    "stepProgress": "Step {step} of 7",
+    "connect": {
+      "title": "Connect and Authenticate your Wallet",
+      "description": "We need to connect your wallet and authenticate you securely to create the gift NFT-wallet",
+      "securityNote": "Your wallet will connect securely using the SIWE (Sign-In With Ethereum) standard",
+      "privacyNote": "All data remains private and secure"
+    },
+    "minting": {
+      "title": "Creating your Gift...",
+      "warning": "This may take a few seconds. Don't close this window!",
+      "gaslessAttempt": "Attempting gasless transaction",
+      "gaslessFree": "(free)",
+      "paymasterProcessing": "Biconomy paymaster processing...",
+      "gasFallback": "If it fails → we'll ask you to pay gas (~$0.01)"
+    },
+    "progress": {
+      "connect": "Connect",
+      "filters": "Filters",
+      "ready": "Ready"
+    },
+    "defaults": {
+      "giftMessage": "A unique crypto gift created with love"
     }
   }
 }
