@@ -72,6 +72,8 @@
     "product": {
       "title": "Producto",
       "createGift": "Crear Regalo",
+      "createFirstGift": "Crear mi Primer Regalo",
+      "competitions": "Competencias",
       "referralProgram": "Programa de Referidos",
       "academy": "Academia",
       "verifyBlockchain": "Verificar en Blockchain"
@@ -79,6 +81,9 @@
     "resources": {
       "title": "Recursos",
       "documentation": "Documentación",
+      "whitepaper": "Whitepaper",
+      "tokenomics": "Tokenomics",
+      "sourceCode": "Código Fuente",
       "blog": "Blog",
       "helpCenter": "Centro de Ayuda",
       "support": "Soporte"
@@ -87,16 +92,19 @@
       "title": "Empresa",
       "contact": "Contacto",
       "openSource": "Código Abierto",
+      "dao": "CryptoGift DAO",
       "community": "Comunidad"
     },
     "stats": {
       "totalGifted": "Total Regalado",
-      "nftWallets": "NFT-Wallets", 
+      "nftWallets": "NFT-Wallets",
+      "claimRate": "Tasa de Claim",
+      "network": "Base L2",
       "satisfaction": "Satisfacción",
       "gasSaved": "Ahorrado en Gas"
     },
     "bottom": {
-      "copyright": "Hecho con ❤️ para el futuro.",
+      "copyright": "© 2025 The Moon in a Box, CryptoGift Wallets. Todos los derechos reservados.",
       "builtOn": "Construido en",
       "chain": "Base"
     }

@@ -4,8 +4,11 @@ import React from 'react';
 import { Link } from '../i18n/routing';
 import Image from 'next/image';
 import { SmartIcon } from './ui/SmartIcon';
+import { useTranslations } from 'next-intl';
 
 export const Footer: React.FC = () => {
+  const t = useTranslations('footer');
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
@@ -17,12 +20,12 @@ export const Footer: React.FC = () => {
                 <SmartIcon icon="🎁" size={20} />
               </div>
               <div>
-                <div className="font-bold text-xl">CryptoGift</div>
-                <div className="text-xs text-gray-400">Wallets</div>
+                <div className="font-bold text-xl">{t('brand.name')}</div>
+                <div className="text-xs text-gray-400">{t('brand.tagline')}</div>
               </div>
             </div>
             <p className="text-gray-400 text-sm mb-4">
-              Regala el futuro. Crea NFT-wallets únicos con arte IA y criptomonedas reales.
+              {t('brand.description')}
             </p>
             <div className="flex space-x-4">
               <a href="https://x.com/giftwalletcoin" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors" aria-label="X/Twitter">
@@ -55,34 +58,35 @@ export const Footer: React.FC = () => {
 
           {/* Product */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Producto</h3>
+            <h3 className="font-semibold text-lg mb-4">{t('product.title')}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><Link href="/" className="hover:text-white transition-colors">Crear Regalo</Link></li>
-              <li><Link href="/referrals" className="hover:text-white transition-colors">Programa de Referidos</Link></li>
-              <li><Link href="/knowledge" className="hover:text-white transition-colors">Academia</Link></li>
-              <li><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Verificar en Blockchain</a></li>
+              <li><Link href="/#hero" className="hover:text-white transition-colors">{t('product.createFirstGift')}</Link></li>
+              <li><Link href="/models?category=competitions" className="hover:text-white transition-colors">{t('product.competitions')}</Link></li>
+              <li><Link href="/referrals" className="hover:text-white transition-colors">{t('product.referralProgram')}</Link></li>
+              <li><Link href="/knowledge" className="hover:text-white transition-colors">{t('product.academy')}</Link></li>
+              <li><a href="https://basescan.org" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('product.verifyBlockchain')}</a></li>
             </ul>
           </div>
 
           {/* Resources */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Recursos</h3>
+            <h3 className="font-semibold text-lg mb-4">{t('resources.title')}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Documentación</a></li>
-              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs?tab=whitepaper" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Whitepaper</a></li>
-              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs?tab=tokenomics" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Tokenomics</a></li>
-              <li><a href="https://github.com/CryptoGift-Wallets-DAO" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Código Fuente</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('resources.documentation')}</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs?tab=whitepaper" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('resources.whitepaper')}</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app/docs?tab=tokenomics" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('resources.tokenomics')}</a></li>
+              <li><a href="https://github.com/CryptoGift-Wallets-DAO" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('resources.sourceCode')}</a></li>
             </ul>
           </div>
 
           {/* Company */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Empresa</h3>
+            <h3 className="font-semibold text-lg mb-4">{t('company.title')}</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li><a href="mailto:admin@mbxart.com" className="hover:text-white transition-colors">Contacto</a></li>
-              <li><a href="https://github.com/ElMartidel96/cryptogift-wallets" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Código Abierto</a></li>
-              <li><a href="https://crypto-gift-wallets-dao.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">CryptoGift DAO</a></li>
-              <li><a href="https://discord.gg/4zBvZnQB" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Comunidad</a></li>
+              <li><a href="mailto:admin@mbxart.com" className="hover:text-white transition-colors">{t('company.contact')}</a></li>
+              <li><a href="https://github.com/ElMartidel96/cryptogift-wallets" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('company.openSource')}</a></li>
+              <li><a href="https://crypto-gift-wallets-dao.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('company.dao')}</a></li>
+              <li><a href="https://discord.gg/4zBvZnQB" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">{t('company.community')}</a></li>
             </ul>
           </div>
         </div>
@@ -92,19 +96,19 @@ export const Footer: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-blue-400">380+</div>
-              <div className="text-xs text-gray-500">NFT-Wallets</div>
+              <div className="text-xs text-gray-500">{t('stats.nftWallets')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-400">85%</div>
-              <div className="text-xs text-gray-500">Tasa de Claim</div>
+              <div className="text-xs text-gray-500">{t('stats.claimRate')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-purple-400">Base</div>
-              <div className="text-xs text-gray-500">Sepolia L2</div>
+              <div className="text-xs text-gray-500">{t('stats.network')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-yellow-400">~$380</div>
-              <div className="text-xs text-gray-500">Ahorrado en Gas</div>
+              <div className="text-xs text-gray-500">{t('stats.gasSaved')}</div>
             </div>
           </div>
         </div>
@@ -112,13 +116,13 @@ export const Footer: React.FC = () => {
         {/* Bottom */}
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-gray-400 mb-4 md:mb-0">
-            © 2025 The Moon in a Box, CryptoGift Wallets. All rights reserved.
+            {t('bottom.copyright')}
           </div>
           <div className="flex items-center space-x-4 text-sm text-gray-400">
-            <span>Construido en</span>
+            <span>{t('bottom.builtOn')}</span>
             <div className="flex items-center space-x-2">
               <Image src="/base-logo.svg" alt="Base" width={24} height={24} className="w-6 h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
-              <span>Base</span>
+              <span>{t('bottom.chain')}</span>
             </div>
           </div>
         </div>
