@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
+import { useTranslations } from 'next-intl';
 
 interface ImageUploadProps {
   onImageUpload: (file: File, url: string) => void;
@@ -13,30 +14,31 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const t = useTranslations('imageUpload');
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona un archivo de imagen válido');
+        alert(t('validation.invalidType'));
         return;
       }
 
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo es demasiado grande. Máximo 10MB.');
+        alert(t('validation.tooLarge'));
         return;
       }
 
       setSelectedFile(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = () => setPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [t]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -57,7 +59,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
       onImageUpload(selectedFile, url);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error al subir la imagen. Por favor intenta de nuevo.');
+      alert(t('validation.uploadError'));
     } finally {
       setIsUploading(false);
     }
@@ -71,9 +73,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Sube tu Arte</h2>
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('title')}</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Carga una foto personal que se convertirá en un NFT único
+          {t('subtitle')}
         </p>
       </div>
 
@@ -98,16 +100,16 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
             <div>
               <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
                 {isDragActive
-                  ? 'Suelta la imagen aquí...'
-                  : 'Arrastra una imagen aquí'}
+                  ? t('dropzone.dragActive')
+                  : t('dropzone.dragInactive')}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                o haz clic para seleccionar
+                {t('dropzone.clickToSelect')}
               </p>
             </div>
-            
+
             <div className="text-xs text-gray-400 dark:text-gray-500">
-              PNG, JPG, GIF hasta 10MB
+              {t('dropzone.formats')}
             </div>
           </div>
         </div>
@@ -139,12 +141,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
 
       {/* Pro Tips */}
       <div className="bg-blue-50 dark:bg-gray-800/50 rounded-xl p-4">
-        <h3 className="font-semibold text-blue-800 dark:text-gray-300 mb-2">💡 Tips para mejores resultados:</h3>
+        <h3 className="font-semibold text-blue-800 dark:text-gray-300 mb-2">💡 {t('tips.title')}</h3>
         <ul className="text-sm text-blue-700 dark:text-gray-400 space-y-1">
-          <li>• Usa fotos con buena iluminación</li>
-          <li>• Evita imágenes muy pixeladas</li>
-          <li>• Las fotos verticales funcionan mejor</li>
-          <li>• ¡Rostros y paisajes son perfectos!</li>
+          <li>• {t('tips.tip1')}</li>
+          <li>• {t('tips.tip2')}</li>
+          <li>• {t('tips.tip3')}</li>
+          <li>• {t('tips.tip4')}</li>
         </ul>
       </div>
 
@@ -154,15 +156,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, onBack 
           onClick={onBack}
           className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white"
         >
-          Atrás
+          {t('buttons.back')}
         </button>
-        
+
         <button
           onClick={handleUpload}
           disabled={!selectedFile || isUploading}
           className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
-          {isUploading ? 'Subiendo...' : 'Continuar'}
+          {isUploading ? t('buttons.uploading') : t('buttons.continue')}
         </button>
       </div>
     </div>

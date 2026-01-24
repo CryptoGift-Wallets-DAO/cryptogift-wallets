@@ -526,6 +526,75 @@
       "createError": "Error creating competition"
     }
   },
+  "filterSelector": {
+    "title": "Choose your Style",
+    "subtitle": "Apply cutting-edge AI filters to give your gift a unique touch",
+    "original": {
+      "title": "Original",
+      "description": "No filters"
+    },
+    "freeFilters": {
+      "title": "Free Filters",
+      "badge": "Available now"
+    },
+    "premiumFilters": {
+      "title": "Premium Filters",
+      "badge": "Coming soon",
+      "comingSoon": "Coming soon"
+    },
+    "aiGenerator": {
+      "title": "Don't have a photo?",
+      "description": "Generate unique AI art based on a 1:1 description to get the best NFT quality",
+      "recommendation": "Temporary recommendation:",
+      "recommendationText": "Use your favorite AI provider (ChatGPT, Midjourney, DALL-E) with these specs:",
+      "aspectRatio": "Aspect ratio: 1:1 (square)",
+      "resolution": "Resolution: 1024x1024 or higher",
+      "format": "Format: JPG or PNG",
+      "comingSoon": "Coming soon - Integrated AI Generation"
+    },
+    "buttons": {
+      "back": "Back",
+      "continueWith": "Continue with",
+      "selectFilter": "Select a filter"
+    },
+    "preview": {
+      "title": "Preview:",
+      "originalDescription": "Preview of your original image. Final NFT format for blockchain.",
+      "filteredDescription": "Preview with filter {filter}. Your final NFT on blockchain.",
+      "filterApplied": "Applied Filter",
+      "status": "Status",
+      "statusPreview": "Preview",
+      "nftQuality": "NFT Quality",
+      "blockchainReady": "Blockchain Ready"
+    }
+  },
+  "imageUpload": {
+    "title": "Upload your Art",
+    "subtitle": "Upload a personal photo that will become a unique NFT",
+    "dropzone": {
+      "dragActive": "Drop the image here...",
+      "dragInactive": "Drag an image here",
+      "clickToSelect": "or click to select",
+      "formats": "PNG, JPG, GIF up to 10MB"
+    },
+    "validation": {
+      "invalidType": "Please select a valid image file",
+      "tooLarge": "File is too large. Maximum 10MB.",
+      "uploadError": "Error uploading image. Please try again."
+    },
+    "tips": {
+      "title": "Tips for best results:",
+      "tip1": "Use photos with good lighting",
+      "tip2": "Avoid pixelated images",
+      "tip3": "Vertical photos work better",
+      "tip4": "Faces and landscapes are perfect!"
+    },
+    "buttons": {
+      "back": "Back",
+      "uploading": "Uploading...",
+      "continue": "Continue"
+    }
+  },
   "giftWizard": {
     "title": "Create Crypto Gift",
     "stepProgress": "Step {step} of 7",

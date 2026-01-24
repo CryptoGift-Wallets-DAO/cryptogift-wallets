@@ -526,6 +526,75 @@
       "createError": "Error al crear competencia"
     }
   },
+  "filterSelector": {
+    "title": "Elige tu Estilo",
+    "subtitle": "Aplica filtros IA de última generación para darle un toque único a tu regalo",
+    "original": {
+      "title": "Original",
+      "description": "Sin filtros"
+    },
+    "freeFilters": {
+      "title": "Filtros Gratuitos",
+      "badge": "Disponible ahora"
+    },
+    "premiumFilters": {
+      "title": "Filtros Premium",
+      "badge": "Próximamente",
+      "comingSoon": "Próximamente"
+    },
+    "aiGenerator": {
+      "title": "¿No tienes foto?",
+      "description": "Genera arte único con IA basado en una descripción de 1:1 para obtener la mejor calidad NFT",
+      "recommendation": "Recomendación temporal:",
+      "recommendationText": "Usa tu proveedor de IA favorito (ChatGPT, Midjourney, DALL-E) con estas especificaciones:",
+      "aspectRatio": "Aspect ratio: 1:1 (cuadrado)",
+      "resolution": "Resolución: 1024x1024 o superior",
+      "format": "Formato: JPG o PNG",
+      "comingSoon": "Próximamente - Generación IA Integrada"
+    },
+    "buttons": {
+      "back": "Atrás",
+      "continueWith": "Continuar con",
+      "selectFilter": "Selecciona un filtro"
+    },
+    "preview": {
+      "title": "Vista Previa:",
+      "originalDescription": "Vista previa de tu imagen original. Formato NFT final para blockchain.",
+      "filteredDescription": "Vista previa con filtro {filter}. Tu NFT final en blockchain.",
+      "filterApplied": "Filtro Aplicado",
+      "status": "Estado",
+      "statusPreview": "Vista Previa",
+      "nftQuality": "Calidad NFT",
+      "blockchainReady": "Blockchain Ready"
+    }
+  },
+  "imageUpload": {
+    "title": "Sube tu Arte",
+    "subtitle": "Carga una foto personal que se convertirá en un NFT único",
+    "dropzone": {
+      "dragActive": "Suelta la imagen aquí...",
+      "dragInactive": "Arrastra una imagen aquí",
+      "clickToSelect": "o haz clic para seleccionar",
+      "formats": "PNG, JPG, GIF hasta 10MB"
+    },
+    "validation": {
+      "invalidType": "Por favor selecciona un archivo de imagen válido",
+      "tooLarge": "El archivo es demasiado grande. Máximo 10MB.",
+      "uploadError": "Error al subir la imagen. Por favor intenta de nuevo."
+    },
+    "tips": {
+      "title": "Tips para mejores resultados:",
+      "tip1": "Usa fotos con buena iluminación",
+      "tip2": "Evita imágenes muy pixeladas",
+      "tip3": "Las fotos verticales funcionan mejor",
+      "tip4": "¡Rostros y paisajes son perfectos!"
+    },
+    "buttons": {
+      "back": "Atrás",
+      "uploading": "Subiendo...",
+      "continue": "Continuar"
+    }
+  },
   "giftWizard": {
     "title": "Crear Regalo Cripto",
     "stepProgress": "Paso {step} de 7",

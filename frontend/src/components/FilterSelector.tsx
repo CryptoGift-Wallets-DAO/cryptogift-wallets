@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { PHOTO_FILTERS, AI_GENERATION_PROMPTS } from '../lib/constants';
 import { NFTImageModal } from './ui/NFTImageModal';
+import { useTranslations } from 'next-intl';
 
 interface FilterSelectorProps {
   imageUrl: string;
@@ -11,11 +12,12 @@ interface FilterSelectorProps {
   onBack: () => void;
 }
 
-export const FilterSelector: React.FC<FilterSelectorProps> = ({ 
-  imageUrl, 
-  onFilterSelect, 
-  onBack 
+export const FilterSelector: React.FC<FilterSelectorProps> = ({
+  imageUrl,
+  onFilterSelect,
+  onBack
 }) => {
+  const t = useTranslations('filterSelector');
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [filteredPreviews, setFilteredPreviews] = useState<Record<string, string>>({});
   const [loadingFilters, setLoadingFilters] = useState<Set<string>>(new Set());
@@ -100,9 +102,9 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
   return (
     <div className="space-y-6 max-h-[80vh] overflow-y-auto">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Elige tu Estilo</h2>
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">{t('title')}</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Aplica filtros IA de última generación para darle un toque único a tu regalo
+          {t('subtitle')}
         </p>
       </div>
 
@@ -130,8 +132,8 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 w-full">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Original</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Sin filtros</p>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('original.title')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('original.description')}</p>
           </div>
         </div>
         {selectedFilter === 'original' && (
@@ -148,9 +150,9 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         {/* Free Filters */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-            🆓 Filtros Gratuitos
+            🆓 {t('freeFilters.title')}
             <span className="ml-2 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
-              Disponible ahora
+              {t('freeFilters.badge')}
             </span>
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -227,9 +229,9 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         {/* Premium Filters */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-            ⭐ Filtros Premium
+            ⭐ {t('premiumFilters.title')}
             <span className="ml-2 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full">
-              Próximamente
+              {t('premiumFilters.badge')}
             </span>
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -251,7 +253,7 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
                     <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
                       <span className="text-white text-xl">⭐</span>
                     </div>
-                    <p className="text-white font-medium text-sm">Próximamente</p>
+                    <p className="text-white font-medium text-sm">{t('premiumFilters.comingSoon')}</p>
                   </div>
                 </div>
                 
@@ -270,26 +272,26 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-white text-xl">✨</span>
         </div>
-        <h3 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">¿No tienes foto?</h3>
+        <h3 className="font-semibold text-purple-800 dark:text-purple-300 mb-2">{t('aiGenerator.title')}</h3>
         <p className="text-sm text-purple-600 dark:text-purple-400 mb-4">
-          Genera arte único con IA basado en una descripción de 1:1 para obtener la mejor calidad NFT
+          {t('aiGenerator.description')}
         </p>
-        
+
         <div className="text-xs text-purple-500 dark:text-purple-400 space-y-1 mb-4">
-          <p>💡 <strong>Recomendación temporal:</strong></p>
-          <p>Usa tu proveedor de IA favorito (ChatGPT, Midjourney, DALL-E) con estas especificaciones:</p>
+          <p>💡 <strong>{t('aiGenerator.recommendation')}</strong></p>
+          <p>{t('aiGenerator.recommendationText')}</p>
           <div className="bg-purple-100 dark:bg-purple-800/30 rounded p-2 mt-2">
-            <p className="font-mono text-xs">Aspect ratio: 1:1 (cuadrado)</p>
-            <p className="font-mono text-xs">Resolución: 1024x1024 o superior</p>
-            <p className="font-mono text-xs">Formato: JPG o PNG</p>
+            <p className="font-mono text-xs">{t('aiGenerator.aspectRatio')}</p>
+            <p className="font-mono text-xs">{t('aiGenerator.resolution')}</p>
+            <p className="font-mono text-xs">{t('aiGenerator.format')}</p>
           </div>
         </div>
-        
-        <button 
+
+        <button
           disabled
           className="text-purple-600 dark:text-purple-400 font-medium text-sm cursor-not-allowed opacity-50"
         >
-          🔬 Próximamente - Generación IA Integrada →
+          🔬 {t('aiGenerator.comingSoon')} →
         </button>
       </div>
 
@@ -299,15 +301,15 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
           onClick={onBack}
           className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white"
         >
-          Atrás
+          {t('buttons.back')}
         </button>
-        
+
         <button
           onClick={handleContinue}
           disabled={!selectedFilter}
           className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-gray-600 dark:disabled:to-gray-700 disabled:cursor-not-allowed transition-all duration-300 shadow-lg disabled:shadow-none"
         >
-          {selectedFilter ? '✨ Continuar con ' + (PHOTO_FILTERS.find(f => f.id === selectedFilter)?.name || 'Original') : 'Selecciona un filtro'}
+          {selectedFilter ? `✨ ${t('buttons.continueWith')} ${PHOTO_FILTERS.find(f => f.id === selectedFilter)?.name || t('original.title')}` : t('buttons.selectFilter')}
         </button>
       </div>
 
@@ -316,16 +318,16 @@ export const FilterSelector: React.FC<FilterSelectorProps> = ({
         isOpen={previewModal.isOpen}
         onClose={() => setPreviewModal(prev => ({ ...prev, isOpen: false }))}
         image={previewModal.image}
-        name={`Vista Previa: ${previewModal.filterName}`}
+        name={`${t('preview.title')} ${previewModal.filterName}`}
         tokenId="preview"
         metadata={{
-          description: previewModal.filterId === 'original' 
-            ? "Vista previa de tu imagen original. Formato NFT final para blockchain." 
-            : `Vista previa con filtro ${previewModal.filterName}. Tu NFT final en blockchain.`,
+          description: previewModal.filterId === 'original'
+            ? t('preview.originalDescription')
+            : t('preview.filteredDescription', { filter: previewModal.filterName }),
           attributes: [
-            { trait_type: "Filtro Aplicado", value: previewModal.filterName },
-            { trait_type: "Estado", value: "Vista Previa" },
-            { trait_type: "Calidad NFT", value: "Blockchain Ready" }
+            { trait_type: t('preview.filterApplied'), value: previewModal.filterName },
+            { trait_type: t('preview.status'), value: t('preview.statusPreview') },
+            { trait_type: t('preview.nftQuality'), value: t('preview.blockchainReady') }
           ]
         }}
       />
