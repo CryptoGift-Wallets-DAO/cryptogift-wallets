@@ -620,5 +620,146 @@
     "defaults": {
       "giftMessage": "Un regalo cripto único creado con amor"
     }
+  },
+  "amountSelector": {
+    "title": "Saldo Inicial",
+    "subtitle": "Elige cuántos USDC quieres regalar",
+    "customAmount": "Monto Personalizado",
+    "placeholder": "Ingresa el monto",
+    "minMax": "Mínimo ${min} - Máximo ${max}",
+    "fees": {
+      "title": "Desglose de Costos",
+      "baseAmount": "Monto base:",
+      "creationFee": "Fee de creación (4%):",
+      "forReferrer": "Para referidor:",
+      "forPlatform": "Para plataforma:",
+      "friendReceives": "Tu amigo recibirá:"
+    },
+    "whyFee": {
+      "title": "¿Por qué cobramos un fee?",
+      "point1": "Gas gratuito para todas las transacciones",
+      "point2": "Mantenimiento de servidores y APIs IA",
+      "point3": "Comisiones para referidores (viralidad)",
+      "point4": "Desarrollo continuo de nuevas features"
+    },
+    "popularChoice": "Opción más popular",
+    "buttons": {
+      "back": "Atrás",
+      "continue": "Continuar"
+    }
+  },
+  "giftSummary": {
+    "title": "Resumen del Regalo",
+    "subtitle": "Revisa los detalles antes de crear tu NFT-wallet",
+    "error": {
+      "title": "Error al crear el regalo",
+      "message": "Ocurrió un error al crear tu regalo"
+    },
+    "preview": {
+      "title": "Tu Regalo Cripto",
+      "filterApplied": "Filtro aplicado:",
+      "initialBalance": "Balance inicial:",
+      "fileSize": "Tamaño de archivo:",
+      "original": "Original"
+    },
+    "costs": {
+      "title": "Desglose de Costos",
+      "deposited": "Monto depositado:",
+      "creationFee": "Fee de creación (4%):",
+      "forReferrer": "Para referidor:",
+      "forPlatform": "Para plataforma:",
+      "friendReceives": "Tu amigo recibirá:"
+    },
+    "nextSteps": {
+      "title": "¿Qué pasa después?",
+      "step1": "Se crea tu NFT único con la imagen y filtro seleccionados",
+      "step2": "Se genera automáticamente una wallet ERC-6551 conectada al NFT",
+      "step3": "Los USDC se depositan directamente en esa wallet",
+      "step4": "Recibes un link y QR para compartir con tu amigo",
+      "step5": "¡Tu amigo puede reclamar el NFT y usar la wallet inmediatamente!"
+    },
+    "important": {
+      "title": "Importante:",
+      "point1": "Esta transacción no se puede deshacer",
+      "point2": "El gas está patrocinado (gratis para ti)",
+      "point3": "El NFT se creará en Base blockchain",
+      "point4": "Tu amigo necesitará conectar una wallet para reclamarlo"
+    },
+    "buttons": {
+      "back": "Atrás",
+      "creating": "Creando Regalo...",
+      "create": "Crear Mi Regalo NFT"
+    }
+  },
+  "qrShare": {
+    "shareMessage": {
+      "line1": "¡Te he enviado un regalo cripto especial!",
+      "line2": "Es un NFT único que contiene criptomonedas reales. Solo tienes que:",
+      "step1": "Hacer clic en el link",
+      "step2": "Conectar tu wallet (o crear una nueva)",
+      "step3": "¡Reclamar tu regalo!",
+      "closing": "Bienvenid@ al futuro de los regalos"
+    },
+    "directMint": {
+      "title": "¡NFT Creado Directamente!",
+      "subtitle": "Tu NFT-wallet #{tokenId} fue minteado directamente a tu wallet",
+      "escrowSkipped": "Escrow Omitido",
+      "defaultMessage": "NFT minteado directamente a tu wallet. Token ID: {tokenId}",
+      "whatMeans": "¿Qué significa esto?",
+      "point1": "El NFT está directamente en tu wallet",
+      "point2": "No hay período de espera o password",
+      "point3": "Puedes usarlo inmediatamente",
+      "point4": "No es necesario \"reclamar\" nada"
+    },
+    "success": {
+      "title": "¡Regalo Creado!",
+      "subtitle": "Tu NFT-wallet #{tokenId} está listo para ser compartido"
+    },
+    "qrCode": {
+      "title": "Escanea para Reclamar",
+      "subtitle": "Tu amigo puede escanear este código QR con su teléfono"
+    },
+    "giftLink": {
+      "title": "Link de Regalo",
+      "copied": "¡Copiado!"
+    },
+    "shareMessageSection": {
+      "title": "Mensaje Completo",
+      "copyButton": "Copiar Mensaje"
+    },
+    "socialShare": {
+      "title": "Compartir en Redes"
+    },
+    "nftDetails": {
+      "title": "Detalles del NFT",
+      "tokenId": "Token ID:",
+      "blockchain": "Blockchain:",
+      "blockchainValue": "Base Sepolia",
+      "standard": "Estándar:",
+      "standardValue": "ERC-6551 (Token Bound Account)",
+      "status": "Status:",
+      "statusValue": "Ya en tu wallet",
+      "walletIntegrated": "Wallet integrada:",
+      "walletReady": "Lista para usar",
+      "gasless": "Transacción GASLESS (gratis)",
+      "gasPaid": "Gas pagado (~$0.01)"
+    },
+    "nextSteps": {
+      "title": "Próximos Pasos",
+      "step1": "Comparte el link o QR con tu amigo",
+      "step2": "Tu amigo conecta su wallet y reclama el NFT",
+      "step3": "¡Puede usar la wallet inmediatamente!",
+      "step4": "Puedes ver el progreso en el explorador de blockchain"
+    },
+    "buttons": {
+      "viewBaseScan": "Ver en BaseScan",
+      "perfect": "¡Perfecto!"
+    },
+    "referral": {
+      "title": "¿Sabías que puedes ganar dinero?",
+      "description": "Por cada amigo que cree un regalo usando tu link de referido, ganarás el 20% de las ganancias generadas.",
+      "link": "Ver mi panel de referidos →"
+    },
+    "fallbackCopy": "Copia manualmente:"
   }
 }
