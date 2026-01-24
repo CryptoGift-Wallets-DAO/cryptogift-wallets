@@ -13,3 +13,10 @@ export { CategoryTabs } from './CategoryTabs';
 export { StatusBadge } from './StatusBadge';
 export { IntegrationChip } from './IntegrationChip';
 export { ComplexityIndicator } from './ComplexityIndicator';
+
+// Competition Integration
+export {
+  CompetitionLauncher,
+  canLaunchCompetition,
+  getCompetitionCategory,
+} from './CompetitionLauncher';
