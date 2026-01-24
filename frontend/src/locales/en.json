@@ -814,5 +814,100 @@
     },
     "walletUnavailable": "Wallet unavailable",
     "reAuth": "Re-authenticate"
+  },
+  "errorModal": {
+    "titles": {
+      "network": "Connection Error",
+      "validation": "Invalid Data",
+      "rateLimit": "Too Many Requests",
+      "apiKey": "Configuration Error",
+      "contract": "Blockchain Error",
+      "unknown": "Unexpected Error"
+    },
+    "howToFix": "How to fix it:",
+    "solutions": {
+      "network": {
+        "step1": "Check your internet connection",
+        "step2": "Refresh the page",
+        "step3": "Disable VPN if you have one active",
+        "step4": "Try again in a few minutes"
+      },
+      "validation": {
+        "step1": "Verify that all fields are filled",
+        "step2": "Make sure the file is an image (JPG, PNG)",
+        "step3": "Confirm the file is less than 10MB",
+        "step4": "Try with a different image"
+      },
+      "rateLimit": {
+        "step1": "Wait 1-2 minutes before trying again",
+        "step2": "Don't make multiple quick attempts",
+        "step3": "Check your internet connection",
+        "step4": "If it persists, contact support"
+      },
+      "apiKey": {
+        "step1": "This is a technical server error",
+        "step2": "Refresh the page",
+        "step3": "If it persists, contact technical support",
+        "step4": "Mention the error code when contacting"
+      },
+      "contract": {
+        "step1": "Verify that your wallet is connected",
+        "step2": "Make sure you're on the Base Sepolia network",
+        "step3": "Confirm you have enough balance",
+        "step4": "Try reducing the gift amount"
+      },
+      "unknown": {
+        "step1": "Refresh the page and try again",
+        "step2": "Check your internet connection",
+        "step3": "Clear the browser cache",
+        "step4": "If it persists, contact support"
+      }
+    },
+    "technicalDetails": "Technical details (development only):",
+    "errorCode": "Error code:",
+    "mentionCode": "Mention this code when contacting support",
+    "buttons": {
+      "retry": "Retry",
+      "close": "Close"
+    },
+    "needHelp": "Need additional help?",
+    "contactSupport": "Contact support"
+  },
+  "gasModal": {
+    "title": "Gas Required",
+    "gaslessFailed": "Gasless failed. You'll pay a small gas fee (~$0.04).",
+    "network": "Network:",
+    "cost": "Cost:",
+    "whatHappens": {
+      "title": "What happens:",
+      "point1": "NFT minted + TBA wallet created",
+      "point2": "Metadata stored on IPFS",
+      "point3": "Shareable link generated"
+    },
+    "warning": "Real blockchain transaction. You need testnet ETH. Cannot be reversed.",
+    "understand": "I understand this executes a real transaction and I will pay gas fees.",
+    "buttons": {
+      "cancel": "Cancel",
+      "confirm": "Confirm & Pay"
+    }
+  },
+  "deviceLimitModal": {
+    "title": "Device Limit Reached",
+    "description": "This device already has the maximum allowed 2 registered users.",
+    "options": "Available options:",
+    "newDevice": {
+      "title": "Use a new device",
+      "description": "To create a new account, use another device (phone, tablet, computer)."
+    },
+    "existingAccount": {
+      "title": "Connect existing account",
+      "description": "Select one of the accounts already registered on this device:",
+      "user": "User"
+    },
+    "whyLimit": {
+      "title": "Why this limit?",
+      "description": "We limit to 2 users per device as a security measure to prevent fraud and ensure each account maintains its unique identity."
+    },
+    "understood": "Understood"
   }
 }
