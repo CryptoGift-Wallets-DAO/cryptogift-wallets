@@ -5,6 +5,7 @@ import { client } from '../app/client';
 import { authenticateWithSiwe, getAuthState, isAuthValid } from '../lib/siweClient';
 import { SafeThirdwebWrapper } from './SafeThirdwebWrapper';
 import { MobileWalletRedirect } from './ui/MobileWalletRedirect';
+import { useTranslations } from 'next-intl';
 
 import { isMobileDevice } from '../lib/mobileRpcHandler';
 
@@ -48,6 +49,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
   className = "",
   showAuthStatus = false
 }) => {
+  const t = useTranslations('connectAuth');
   // Always call useActiveAccount - Error Boundary will handle context errors
   const account = useActiveAccount();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -180,7 +182,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         <div className={className}>
           <div className="px-6 py-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-700 text-sm">
-              🔧 Configuración de wallet pendiente. Por favor, contacta al administrador.
+              🔧 {t('configPending')}
             </p>
           </div>
         </div>
@@ -202,15 +204,15 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           }}
           connectModal={{
             size: "wide",
-            title: "Conectar Wallet",
+            title: t('connectModal.title'),
             showThirdwebBranding: false,
             welcomeScreen: {
-              title: "CryptoGift Wallets",
-              subtitle: "Conecta tu wallet para comenzar"
+              title: t('connectModal.welcome'),
+              subtitle: t('connectModal.subtitle')
             }
           }}
           switchButton={{
-            label: "Cambiar Red"
+            label: t('switchNetwork')
           }}
         />
       </div>
@@ -224,8 +226,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         <div className="flex flex-col items-center space-y-4">
           {/* Header with enhanced security emphasis */}
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">🔐 Firma de Seguridad Requerida</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Genera tu token temporal de autenticación para proteger tus transacciones</p>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">🔐 {t('securitySignature.title')}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('securitySignature.description')}</p>
           </div>
           
           {/* Show connected wallet */}
@@ -246,10 +248,10 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
             {isAuthenticating ? (
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Autenticando... (unos segundos)</span>
+                <span>{t('authenticate.authenticating')}</span>
               </div>
             ) : (
-              '✍️ Firmar Mensaje de Autenticación'
+              `✍️ ${t('authenticate.button')}`
             )}
           </button>
           
@@ -259,22 +261,22 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
               <div className="flex items-start space-x-3">
                 <div className="text-yellow-500 dark:text-yellow-400 text-lg">🛡️</div>
                 <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                  <p className="font-medium mb-2">🔐 Su Token de Seguridad está siendo Activado</p>
-                  <p className="mb-2">Estamos creando un token de autenticación que expirará en 30 minutos para proteger todas tus transacciones.</p>
+                  <p className="font-medium mb-2">🔐 {t('tokenActivation.title')}</p>
+                  <p className="mb-2">{t('tokenActivation.description')}</p>
                   <div className="text-xs text-yellow-600 dark:text-yellow-400 space-y-1">
-                    <p>✅ Previene ataques maliciosos</p>
-                    <p>✅ Protege tus fondos</p>
-                    <p>✅ Expira automáticamente por seguridad</p>
+                    <p>✅ {t('tokenActivation.benefit1')}</p>
+                    <p>✅ {t('tokenActivation.benefit2')}</p>
+                    <p>✅ {t('tokenActivation.benefit3')}</p>
                   </div>
                   {isMobile ? (
                     <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-800/30 rounded border">
-                      <p className="font-medium text-yellow-800 dark:text-yellow-200">📱 En móvil:</p>
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200">📱 {t('tokenActivation.mobileTitle')}</p>
                       <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                        Si no aparece automáticamente, abre tu wallet app y busca el mensaje de firma pendiente.
+                        {t('tokenActivation.mobileHint')}
                       </p>
                     </div>
                   ) : (
-                    <p className="mt-2 font-medium">💻 Por favor, firma el mensaje en tu wallet cuando aparezca.</p>
+                    <p className="mt-2 font-medium">💻 {t('tokenActivation.desktopHint')}</p>
                   )}
                 </div>
               </div>
@@ -287,15 +289,15 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
               <div className="flex items-start space-x-3">
                 <div className="text-blue-500 dark:text-blue-400 text-lg">🔒</div>
                 <div className="text-sm text-blue-700 dark:text-blue-300">
-                  <p className="font-medium mb-2">¿Por qué necesitamos esta firma?</p>
-                  <p className="mb-2">Esta firma genera un <strong>token temporal de seguridad</strong> que actúa como una capa adicional de protección contra amenazas.</p>
+                  <p className="font-medium mb-2">{t('whySign.title')}</p>
+                  <p className="mb-2">{t('whySign.description')}</p>
                   <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                    <p>🛡️ <strong>Token Temporal:</strong> Expira en 30 minutos</p>
-                    <p>🔐 <strong>Máxima Seguridad:</strong> Protege contra ataques maliciosos</p>
-                    <p>✅ <strong>Estándar SIWE:</strong> Sign-In With Ethereum certificado</p>
-                    <p>🚀 <strong>Transacciones Seguras:</strong> Todas las operaciones serán firmadas con este token</p>
+                    <p>🛡️ <strong>{t('whySign.tokenInfo')}</strong></p>
+                    <p>🔐 <strong>{t('whySign.securityInfo')}</strong></p>
+                    <p>✅ <strong>{t('whySign.standardInfo')}</strong></p>
+                    <p>🚀 <strong>{t('whySign.transactionInfo')}</strong></p>
                   </div>
-                  <p className="mt-2 text-xs italic">Esta medida de seguridad avanzada garantiza la máxima protección de tus fondos.</p>
+                  <p className="mt-2 text-xs italic">{t('whySign.footer')}</p>
                 </div>
               </div>
             </div>
@@ -325,7 +327,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
             />
             ) : (
               <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-gray-600">
-                Wallet no disponible
+                {t('walletUnavailable')}
               </div>
             )}
           </div>
@@ -358,7 +360,7 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             )}
             <span className="text-sm font-medium">
-              {isAuthenticating ? 'Autenticando...' : 'Autenticado'}
+              {isAuthenticating ? t('authenticated.authenticating') : t('authenticated.authenticated')}
             </span>
           </div>
           
@@ -377,8 +379,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
                 </svg>
               </div>
               <div className="text-center">
-                <p className="font-medium text-green-800 dark:text-green-300">¡Autenticación Exitosa! 🎉</p>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">Puedes continuar con tu operación</p>
+                <p className="font-medium text-green-800 dark:text-green-300">{t('authenticated.success')} 🎉</p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('authenticated.continue')}</p>
               </div>
             </div>
           </div>
@@ -390,8 +392,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
             <div className="flex items-start space-x-2">
               <div className="text-green-500 dark:text-green-400 text-lg">🛡️</div>
               <div className="text-xs text-green-700 dark:text-green-300">
-                <p className="font-medium mb-1">Su Token de Seguridad está siendo Activado</p>
-                <p>Tu token temporal está protegiendo todas las transacciones. Expirará automáticamente en 30 minutos por seguridad.</p>
+                <p className="font-medium mb-1">{t('tokenStatus.title')}</p>
+                <p>{t('tokenStatus.description')}</p>
               </div>
             </div>
           </div>
@@ -400,8 +402,8 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
         {/* Standard info footer - Hidden on mobile to prevent overflow */}
         <div className="hidden sm:block bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2 max-w-sm">
           <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1 text-center">
-            <p>🔒 Tu wallet se conectará de forma segura usando el estándar SIWE (Sign-In With Ethereum)</p>
-            <p>✅ Todos los datos se mantienen privados y seguros</p>
+            <p>🔒 {t('securityInfo.siwe')}</p>
+            <p>✅ {t('securityInfo.privacy')}</p>
           </div>
         </div>
         
@@ -422,17 +424,17 @@ const ConnectAndAuthButtonInner: React.FC<ConnectAndAuthButtonProps> = ({
           />
           ) : (
             <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-gray-600">
-              Wallet no disponible
+              {t('walletUnavailable')}
             </div>
           )}
         </div>
-        
+
         {/* Re-authenticate button if needed */}
         <button
           onClick={handleAuthenticate}
           className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline"
         >
-          Re-autenticar
+          {t('reAuth')}
         </button>
       </div>
 

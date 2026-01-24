@@ -761,5 +761,58 @@
       "link": "Ver mi panel de referidos →"
     },
     "fallbackCopy": "Copia manualmente:"
+  },
+  "connectAuth": {
+    "configPending": "Configuración de wallet pendiente. Por favor, contacta al administrador.",
+    "connectModal": {
+      "title": "Conectar Wallet",
+      "welcome": "CryptoGift Wallets",
+      "subtitle": "Conecta tu wallet para comenzar"
+    },
+    "switchNetwork": "Cambiar Red",
+    "noWalletConnected": "No wallet connected",
+    "securitySignature": {
+      "title": "Firma de Seguridad Requerida",
+      "description": "Genera tu token temporal de autenticación para proteger tus transacciones"
+    },
+    "authenticate": {
+      "button": "Firmar Mensaje de Autenticación",
+      "authenticating": "Autenticando... (unos segundos)"
+    },
+    "tokenActivation": {
+      "title": "Su Token de Seguridad está siendo Activado",
+      "description": "Estamos creando un token de autenticación que expirará en 30 minutos para proteger todas tus transacciones.",
+      "benefit1": "Previene ataques maliciosos",
+      "benefit2": "Protege tus fondos",
+      "benefit3": "Expira automáticamente por seguridad",
+      "mobileTitle": "En móvil:",
+      "mobileHint": "Si no aparece automáticamente, abre tu wallet app y busca el mensaje de firma pendiente.",
+      "desktopHint": "Por favor, firma el mensaje en tu wallet cuando aparezca."
+    },
+    "whySign": {
+      "title": "¿Por qué necesitamos esta firma?",
+      "description": "Esta firma genera un token temporal de seguridad que actúa como una capa adicional de protección contra amenazas.",
+      "tokenInfo": "Token Temporal: Expira en 30 minutos",
+      "securityInfo": "Máxima Seguridad: Protege contra ataques maliciosos",
+      "standardInfo": "Estándar SIWE: Sign-In With Ethereum certificado",
+      "transactionInfo": "Transacciones Seguras: Todas las operaciones serán firmadas con este token",
+      "footer": "Esta medida de seguridad avanzada garantiza la máxima protección de tus fondos."
+    },
+    "authenticated": {
+      "authenticating": "Autenticando...",
+      "authenticated": "Autenticado",
+      "success": "¡Autenticación Exitosa!",
+      "continue": "Puedes continuar con tu operación"
+    },
+    "tokenStatus": {
+      "title": "Su Token de Seguridad está Activo",
+      "description": "Tu token temporal está protegiendo todas las transacciones. Expirará automáticamente en 30 minutos por seguridad."
+    },
+    "securityInfo": {
+      "siwe": "Tu wallet se conectará de forma segura usando el estándar SIWE (Sign-In With Ethereum)",
+      "privacy": "Todos los datos se mantienen privados y seguros"
+    },
+    "walletUnavailable": "Wallet no disponible",
+    "reAuth": "Re-autenticar"
   }
 }
