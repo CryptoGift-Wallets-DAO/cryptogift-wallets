@@ -19,6 +19,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import {
   Trophy,
   Users,
@@ -296,6 +297,9 @@ export function CompetitionPanel({
   initialConfig,
   className = ''
 }: CompetitionPanelProps) {
+  // Translations
+  const t = useTranslations('competition');
+
   // ThirdWeb wallet connection
   const account = useActiveAccount();
   const walletAddress = account?.address;
@@ -370,7 +374,7 @@ export function CompetitionPanel({
   // Handle SIWE authentication
   const handleAuthenticate = async () => {
     if (!account || !walletAddress) {
-      setAuthError('Conecta tu wallet primero');
+      setAuthError(t('errors.connectFirst'));
       return;
     }
 
@@ -382,7 +386,7 @@ export function CompetitionPanel({
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Authentication failed:', error);
-      setAuthError(error instanceof Error ? error.message : 'Error de autenticación');
+      setAuthError(error instanceof Error ? error.message : t('errors.authError'));
       setIsAuthenticated(false);
     } finally {
       setIsAuthenticating(false);
@@ -438,23 +442,23 @@ export function CompetitionPanel({
   // Resumen de configuración
   const configSummary = useMemo(() => {
     const formatLabels: Record<CompetitionFormat, string> = {
-      'adaptive': 'Adaptativo',
-      '1v1': '1 vs 1',
-      'teams': 'Equipos',
-      'freeForAll': 'Todos vs Todos',
-      'bracket': 'Bracket',
-      'league': 'Liga',
-      'pool': 'Pool',
+      'adaptive': t('format.adaptive'),
+      '1v1': t('format.1v1'),
+      'teams': t('format.teams'),
+      'freeForAll': t('format.freeForAll'),
+      'bracket': t('format.bracket'),
+      'league': t('format.league'),
+      'pool': t('format.pool'),
     };
 
     const parts = [
       formatLabels[config.format],
-      config.maxParticipants === 'unlimited' ? '∞ participantes' : `${config.maxParticipants} participantes`,
+      config.maxParticipants === 'unlimited' ? `∞ ${t('participants')}` : `${config.maxParticipants} ${t('participants')}`,
       `${config.stakeAmount} ${config.currency}`,
     ];
 
     return parts.join(' • ');
-  }, [config]);
+  }, [config, t]);
 
   // Handler para "Crear Rápido" - crea con config adaptativa inmediatamente
   // CRITICAL FIX: Handles race condition where useActiveAccount() returns undefined momentarily
@@ -526,11 +530,11 @@ export function CompetitionPanel({
           // After auth, create the competition
           await handleCreate();
         } else {
-          setCreateError('Error: No se pudo obtener la cuenta. Intenta de nuevo.');
+          setCreateError(t('errors.accountError'));
         }
       } catch (error) {
         console.error('Authentication failed:', error);
-        setCreateError(error instanceof Error ? error.message : 'Error de autenticación');
+        setCreateError(error instanceof Error ? error.message : t('errors.authError'));
         setIsAuthenticated(false);
       } finally {
         setIsAuthenticating(false);
@@ -569,9 +573,9 @@ export function CompetitionPanel({
   const handleCreate = async () => {
     if (!canCreate) {
       if (!walletAddress) {
-        setCreateError('Conecta tu wallet primero');
+        setCreateError(t('errors.connectFirst'));
       } else if (!isAuthenticated) {
-        setCreateError('Firma con tu wallet para verificar tu identidad');
+        setCreateError(t('errors.signToVerify'));
       }
       return;
     }
@@ -625,7 +629,7 @@ export function CompetitionPanel({
       setShowSuccess(true);
     } catch (error) {
       console.error('Error creating competition:', error);
-      setCreateError(error instanceof Error ? error.message : 'Error al crear competencia');
+      setCreateError(error instanceof Error ? error.message : t('errors.createError'));
     } finally {
       setIsCreating(false);
     }
@@ -674,10 +678,10 @@ export function CompetitionPanel({
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-8 h-8 text-amber-400" />
-          <h2 className="text-2xl font-bold text-white">Crear Competencia</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
         </div>
         <p className="text-gray-400 text-sm">
-          Configura tu competencia - todos los campos tienen valores por defecto
+          {t('subtitle')}
         </p>
       </div>
 
@@ -688,7 +692,7 @@ export function CompetitionPanel({
           <span className="text-2xl">{FORMAT_COLORS[config.format].icon}</span>
           <div className="flex-1">
             <div className="font-semibold text-white">
-              {config.title || 'Nueva Competencia'}
+              {config.title || t('newCompetition')}
             </div>
             <div className="text-sm text-amber-400/80">{configSummary}</div>
           </div>
@@ -710,13 +714,13 @@ export function CompetitionPanel({
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="hidden sm:inline">
-                  {isWaitingForWallet ? 'Verificando...' : isAuthenticating ? 'Firmando...' : 'Creando...'}
+                  {isWaitingForWallet ? t('verifying') : isAuthenticating ? t('signing') : t('creating')}
                 </span>
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4" />
-                <span className="hidden sm:inline">Crear Rápido</span>
+                <span className="hidden sm:inline">{t('quickCreate')}</span>
                 <span className="sm:hidden">⚡</span>
               </>
             )}
@@ -729,8 +733,7 @@ export function CompetitionPanel({
             <p className="text-xs text-amber-200/70 flex items-start gap-2">
               <span className="text-amber-400">🎲</span>
               <span>
-                <strong className="text-amber-300">Modo Adaptativo:</strong> Cualquiera puede entrar como participante o juez.
-                Al dar "Empezar" el sistema determina el formato (1v1, bracket, etc.) según los participantes.
+                <strong className="text-amber-300">{t('adaptiveMode.title')}</strong> {t('adaptiveMode.description')}
               </span>
             </p>
           </div>
@@ -748,10 +751,10 @@ export function CompetitionPanel({
               <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2 text-blue-300">
                   <Wallet className="w-5 h-5" />
-                  <span className="font-medium">Conecta tu wallet para continuar</span>
+                  <span className="font-medium">{t('wallet.connectToContinue')}</span>
                 </div>
                 <p className="text-xs text-gray-400">
-                  Necesitas una wallet conectada para crear competencias y gestionar fondos de forma segura.
+                  {t('wallet.connectNeeded')}
                 </p>
                 <div className="flex justify-center">
                   {client ? (
@@ -759,7 +762,7 @@ export function CompetitionPanel({
                       client={client}
                       chains={[base]}
                       connectButton={{
-                        label: "Conectar Wallet",
+                        label: t('wallet.connectButton'),
                         style: {
                           background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
                           color: 'white',
@@ -772,7 +775,7 @@ export function CompetitionPanel({
                   ) : (
                     <div className="px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-xl">
                       <p className="text-red-300 text-sm">
-                        ⚠️ Configuración de wallet pendiente. Recarga la página.
+                        ⚠️ {t('wallet.configPending')}
                       </p>
                     </div>
                   )}
@@ -787,14 +790,14 @@ export function CompetitionPanel({
       <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4 space-y-3">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Título de la competencia
-            <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+            {t('form.titleLabel')}
+            <span className="text-gray-500 font-normal ml-2">{t('form.optional')}</span>
           </label>
           <input
             type="text"
             value={config.title}
             onChange={(e) => updateConfig('title', e.target.value)}
-            placeholder="Se auto-genera si lo dejas vacío"
+            placeholder={t('form.titlePlaceholder')}
             className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10
                      text-white placeholder-gray-500
                      focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20
@@ -802,18 +805,18 @@ export function CompetitionPanel({
           />
           <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-400/60" />
-            Si no pones título, se generará automáticamente con el código y fecha
+            {t('form.titleHint')}
           </p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Descripción
-            <span className="text-gray-500 font-normal ml-2">(opcional)</span>
+            {t('form.descriptionLabel')}
+            <span className="text-gray-500 font-normal ml-2">{t('form.optional')}</span>
           </label>
           <textarea
             value={config.description}
             onChange={(e) => updateConfig('description', e.target.value)}
-            placeholder="Añade detalles, reglas específicas, etc."
+            placeholder={t('form.descriptionPlaceholder')}
             rows={2}
             className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10
                      text-white placeholder-gray-500
@@ -825,7 +828,7 @@ export function CompetitionPanel({
 
       {/* Sección: Formato */}
       <Section
-        title="Formato"
+        title={t('sections.format')}
         icon={<Swords className="w-5 h-5" />}
         expanded={expandedSections.format}
         onToggle={() => toggleSection('format')}
@@ -836,57 +839,57 @@ export function CompetitionPanel({
             selected={config.format === 'adaptive'}
             onClick={() => updateConfig('format', 'adaptive')}
             emoji="🎲"
-            label="Adaptativo"
-            sublabel="Sistema decide"
+            label={t('format.adaptive')}
+            sublabel={t('format.adaptiveSub')}
             color="from-amber-500/20 to-purple-500/20"
           />
           <OptionChip
             selected={config.format === '1v1'}
             onClick={() => updateConfig('format', '1v1')}
             emoji="⚔️"
-            label="1 vs 1"
-            sublabel="Duelo directo"
+            label={t('format.1v1')}
+            sublabel={t('format.1v1Sub')}
           />
           <OptionChip
             selected={config.format === 'teams'}
             onClick={() => updateConfig('format', 'teams')}
             emoji="👥"
-            label="Equipos"
-            sublabel="2v2, 3v3..."
+            label={t('format.teams')}
+            sublabel={t('format.teamsSub')}
           />
           <OptionChip
             selected={config.format === 'freeForAll'}
             onClick={() => updateConfig('format', 'freeForAll')}
             emoji="🎯"
-            label="Todos vs Todos"
-            sublabel="Battle Royale"
+            label={t('format.freeForAll')}
+            sublabel={t('format.freeForAllSub')}
           />
           <OptionChip
             selected={config.format === 'bracket'}
             onClick={() => updateConfig('format', 'bracket')}
             emoji="🏆"
-            label="Bracket"
-            sublabel="Eliminatorias"
+            label={t('format.bracket')}
+            sublabel={t('format.bracketSub')}
           />
           <OptionChip
             selected={config.format === 'league'}
             onClick={() => updateConfig('format', 'league')}
             emoji="📊"
-            label="Liga"
-            sublabel="Round Robin"
+            label={t('format.league')}
+            sublabel={t('format.leagueSub')}
           />
           <OptionChip
             selected={config.format === 'pool'}
             onClick={() => updateConfig('format', 'pool')}
             emoji="💰"
-            label="Pool"
-            sublabel="Quiniela"
+            label={t('format.pool')}
+            sublabel={t('format.poolSub')}
           />
         </div>
 
         {config.format === 'teams' && (
           <div className="pt-3 border-t border-white/10">
-            <label className="block text-sm text-gray-400 mb-2">Tamaño de equipo</label>
+            <label className="block text-sm text-gray-400 mb-2">{t('format.teamSize')}</label>
             <div className="flex gap-2">
               {[2, 3, 4, 5].map(size => (
                 <button
@@ -907,7 +910,7 @@ export function CompetitionPanel({
 
       {/* Sección: Entrada */}
       <Section
-        title="Entrada"
+        title={t('sections.entry')}
         icon={<UserPlus className="w-5 h-5" />}
         expanded={expandedSections.entry}
         onToggle={() => toggleSection('entry')}
@@ -917,34 +920,34 @@ export function CompetitionPanel({
             selected={config.entryType === 'open'}
             onClick={() => updateConfig('entryType', 'open')}
             icon={<Users className="w-4 h-4" />}
-            label="Abierta"
-            sublabel="Cualquiera entra"
+            label={t('entry.open')}
+            sublabel={t('entry.openSub')}
           />
           <OptionChip
             selected={config.entryType === 'invite'}
             onClick={() => updateConfig('entryType', 'invite')}
             icon={<Share2 className="w-4 h-4" />}
-            label="Por invitación"
-            sublabel="Solo con link"
+            label={t('entry.invite')}
+            sublabel={t('entry.inviteSub')}
           />
           <OptionChip
             selected={config.entryType === 'fixed'}
             onClick={() => updateConfig('entryType', 'fixed')}
             icon={<Lock className="w-4 h-4" />}
-            label="Cupo fijo"
-            sublabel="Se cierra al llenar"
+            label={t('entry.fixed')}
+            sublabel={t('entry.fixedSub')}
           />
           <OptionChip
             selected={config.entryType === 'requirements'}
             onClick={() => updateConfig('entryType', 'requirements')}
             icon={<Shield className="w-4 h-4" />}
-            label="Con requisitos"
-            sublabel="Tokens, whitelist..."
+            label={t('entry.requirements')}
+            sublabel={t('entry.requirementsSub')}
           />
         </div>
 
         <div className="pt-3 border-t border-white/10">
-          <label className="block text-sm text-gray-400 mb-2">Participantes máximos</label>
+          <label className="block text-sm text-gray-400 mb-2">{t('entry.maxParticipants')}</label>
           <div className="flex flex-wrap gap-2">
             {[2, 4, 8, 16, 32, 64, 'unlimited'].map(num => (
               <button
@@ -964,7 +967,7 @@ export function CompetitionPanel({
 
       {/* Sección: Apuesta */}
       <Section
-        title="Apuesta y Premio"
+        title={t('sections.stake')}
         icon={<Coins className="w-5 h-5" />}
         expanded={expandedSections.stake}
         onToggle={() => toggleSection('stake')}
@@ -974,28 +977,28 @@ export function CompetitionPanel({
             selected={config.stakeType === 'equal'}
             onClick={() => updateConfig('stakeType', 'equal')}
             emoji="⚖️"
-            label="Igual"
-            sublabel="Todos ponen lo mismo"
+            label={t('stake.equal')}
+            sublabel={t('stake.equalSub')}
           />
           <OptionChip
             selected={config.stakeType === 'flexible'}
             onClick={() => updateConfig('stakeType', 'flexible')}
             emoji="📈"
-            label="Flexible"
-            sublabel="Cada quien decide"
+            label={t('stake.flexible')}
+            sublabel={t('stake.flexibleSub')}
           />
           <OptionChip
             selected={config.stakeType === 'prizeOnly'}
             onClick={() => updateConfig('stakeType', 'prizeOnly')}
             emoji="🎁"
-            label="Solo premio"
-            sublabel="Organizador pone"
+            label={t('stake.prizeOnly')}
+            sublabel={t('stake.prizeOnlySub')}
           />
         </div>
 
         <div className="pt-3 border-t border-white/10">
           <label className="block text-sm text-gray-400 mb-2">
-            {config.stakeType === 'prizeOnly' ? 'Premio total' : 'Monto por persona'}
+            {config.stakeType === 'prizeOnly' ? t('stake.totalPrize') : t('stake.amountPerPerson')}
           </label>
           <div className="flex gap-2">
             <input
@@ -1019,35 +1022,35 @@ export function CompetitionPanel({
         </div>
 
         <div className="pt-3 border-t border-white/10">
-          <label className="block text-sm text-gray-400 mb-2">Distribución del premio</label>
+          <label className="block text-sm text-gray-400 mb-2">{t('stake.prizeDistribution')}</label>
           <div className="grid grid-cols-2 gap-2">
             <OptionChip
               selected={config.distribution === 'winnerTakesAll'}
               onClick={() => updateConfig('distribution', 'winnerTakesAll')}
               icon={<Crown className="w-4 h-4" />}
-              label="Winner takes all"
-              sublabel="Todo al ganador"
+              label={t('stake.winnerTakesAll')}
+              sublabel={t('stake.winnerTakesAllSub')}
             />
             <OptionChip
               selected={config.distribution === 'top3'}
               onClick={() => updateConfig('distribution', 'top3')}
               icon={<Trophy className="w-4 h-4" />}
-              label="Top 3"
-              sublabel="60% / 30% / 10%"
+              label={t('stake.top3')}
+              sublabel={t('stake.top3Sub')}
             />
             <OptionChip
               selected={config.distribution === 'proportional'}
               onClick={() => updateConfig('distribution', 'proportional')}
               icon={<Percent className="w-4 h-4" />}
-              label="Proporcional"
-              sublabel="Según aciertos"
+              label={t('stake.proportional')}
+              sublabel={t('stake.proportionalSub')}
             />
             <OptionChip
               selected={config.distribution === 'custom'}
               onClick={() => updateConfig('distribution', 'custom')}
               icon={<Sparkles className="w-4 h-4" />}
-              label="Personalizado"
-              sublabel="Define tus %"
+              label={t('stake.custom')}
+              sublabel={t('stake.customSub')}
             />
           </div>
         </div>
@@ -1055,7 +1058,7 @@ export function CompetitionPanel({
 
       {/* Sección: Resolución */}
       <Section
-        title="Resolución"
+        title={t('sections.resolution')}
         icon={<Scale className="w-5 h-5" />}
         expanded={expandedSections.resolution}
         onToggle={() => toggleSection('resolution')}
@@ -1065,55 +1068,55 @@ export function CompetitionPanel({
             selected={config.resolution === 'singleArbiter'}
             onClick={() => updateConfig('resolution', 'singleArbiter')}
             emoji="👤"
-            label="Árbitro único"
-            sublabel="Una persona decide"
+            label={t('resolution.singleArbiter')}
+            sublabel={t('resolution.singleArbiterSub')}
           />
           <OptionChip
             selected={config.resolution === 'panel'}
             onClick={() => updateConfig('resolution', 'panel')}
             emoji="👥"
-            label="Panel"
-            sublabel="Varios árbitros votan"
+            label={t('resolution.panel')}
+            sublabel={t('resolution.panelSub')}
           />
           <OptionChip
             selected={config.resolution === 'autoReport'}
             onClick={() => updateConfig('resolution', 'autoReport')}
             emoji="✋"
-            label="Auto-reporte"
-            sublabel="Participantes reportan"
+            label={t('resolution.autoReport')}
+            sublabel={t('resolution.autoReportSub')}
           />
           <OptionChip
             selected={config.resolution === 'oracle'}
             onClick={() => updateConfig('resolution', 'oracle')}
             emoji="🤖"
-            label="Oráculo"
-            sublabel="Dato automático"
+            label={t('resolution.oracle')}
+            sublabel={t('resolution.oracleSub')}
           />
           <OptionChip
             selected={config.resolution === 'voting'}
             onClick={() => updateConfig('resolution', 'voting')}
             emoji="🗳️"
-            label="Votación"
-            sublabel="Todos votan"
+            label={t('resolution.voting')}
+            sublabel={t('resolution.votingSub')}
           />
         </div>
 
         {(config.resolution === 'singleArbiter' || config.resolution === 'panel') && (
           <div className="pt-3 border-t border-white/10">
             <label className="block text-sm text-gray-400 mb-2">
-              {config.resolution === 'singleArbiter' ? 'Árbitro' : 'Árbitros (uno por línea)'}
+              {config.resolution === 'singleArbiter' ? t('resolution.arbiter') : t('resolution.arbiters')}
             </label>
             <textarea
               value={config.arbiters.join('\n')}
               onChange={(e) => updateConfig('arbiters', e.target.value.split('\n').filter(a => a.trim()))}
-              placeholder="Dirección de wallet o ENS..."
+              placeholder={t('resolution.arbiterPlaceholder')}
               rows={config.resolution === 'panel' ? 3 : 1}
               className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10
                        text-white placeholder-gray-500 outline-none resize-none
                        focus:border-amber-500/50"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Deja vacío para asignar después o para que lo decidan los participantes
+              {t('resolution.arbiterHint')}
             </p>
           </div>
         )}
@@ -1121,7 +1124,7 @@ export function CompetitionPanel({
 
       {/* Sección: Timing */}
       <Section
-        title="Timing"
+        title={t('sections.timing')}
         icon={<Clock className="w-5 h-5" />}
         expanded={expandedSections.timing}
         onToggle={() => toggleSection('timing')}
@@ -1131,28 +1134,28 @@ export function CompetitionPanel({
             selected={config.timing === 'fixedDate'}
             onClick={() => updateConfig('timing', 'fixedDate')}
             icon={<Calendar className="w-4 h-4" />}
-            label="Fecha fija"
-            sublabel="Cierre programado"
+            label={t('timing.fixedDate')}
+            sublabel={t('timing.fixedDateSub')}
           />
           <OptionChip
             selected={config.timing === 'whenFull'}
             onClick={() => updateConfig('timing', 'whenFull')}
             icon={<Users className="w-4 h-4" />}
-            label="Al llenar"
-            sublabel="Cuando se complete"
+            label={t('timing.whenFull')}
+            sublabel={t('timing.whenFullSub')}
           />
           <OptionChip
             selected={config.timing === 'manual'}
             onClick={() => updateConfig('timing', 'manual')}
             icon={<Lock className="w-4 h-4" />}
-            label="Manual"
-            sublabel="Organizador cierra"
+            label={t('timing.manual')}
+            sublabel={t('timing.manualSub')}
           />
         </div>
 
         {config.timing === 'fixedDate' && (
           <div className="pt-3 border-t border-white/10">
-            <label className="block text-sm text-gray-400 mb-2">Fecha de cierre</label>
+            <label className="block text-sm text-gray-400 mb-2">{t('timing.closingDate')}</label>
             <input
               type="datetime-local"
               value={config.deadline ? new Date(config.deadline).toISOString().slice(0, 16) : ''}
@@ -1166,18 +1169,18 @@ export function CompetitionPanel({
 
       {/* Sección: Tipo de partida */}
       <Section
-        title="Tipo de partida"
+        title={t('sections.matchType')}
         icon={<Target className="w-5 h-5" />}
         expanded={expandedSections.match}
         onToggle={() => toggleSection('match')}
       >
         <div className="flex flex-wrap gap-2">
           {[
-            { value: 'bo1', label: 'Best of 1', sublabel: 'Una partida' },
-            { value: 'bo3', label: 'Best of 3', sublabel: 'Primero en 2' },
-            { value: 'bo5', label: 'Best of 5', sublabel: 'Primero en 3' },
-            { value: 'points', label: 'Puntos', sublabel: 'Acumula más' },
-            { value: 'custom', label: 'Personalizado', sublabel: 'Define reglas' },
+            { value: 'bo1', label: t('match.bo1'), sublabel: t('match.bo1Sub') },
+            { value: 'bo3', label: t('match.bo3'), sublabel: t('match.bo3Sub') },
+            { value: 'bo5', label: t('match.bo5'), sublabel: t('match.bo5Sub') },
+            { value: 'points', label: t('match.points'), sublabel: t('match.pointsSub') },
+            { value: 'custom', label: t('match.custom'), sublabel: t('match.customSub') },
           ].map(option => (
             <OptionChip
               key={option.value}
@@ -1192,11 +1195,11 @@ export function CompetitionPanel({
 
       {/* Sección: Compartir */}
       <Section
-        title="Creación"
+        title={t('sections.creation')}
         icon={<Share2 className="w-5 h-5" />}
         expanded={expandedSections.sharing}
         onToggle={() => toggleSection('sharing')}
-        badge={config.forSharing ? 'Compartible' : 'Solo tú'}
+        badge={config.forSharing ? t('sharing.shareable') : t('sharing.onlyYou')}
       >
         <div className="space-y-3">
           <label className="flex items-start gap-3 p-3 rounded-xl bg-white/5 cursor-pointer
@@ -1211,11 +1214,10 @@ export function CompetitionPanel({
             <div>
               <div className="font-medium text-white flex items-center gap-2">
                 <Share2 className="w-4 h-4 text-green-400" />
-                Para compartir
+                {t('sharing.forSharing')}
               </div>
               <div className="text-sm text-gray-400">
-                Cualquiera con el link puede activar esta competencia.
-                Si la activas tú, solo necesitarás hacer click en el link compartido.
+                {t('sharing.forSharingDesc')}
               </div>
             </div>
           </label>
@@ -1224,7 +1226,7 @@ export function CompetitionPanel({
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
               <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-amber-200">
-                Solo tú podrás activar esta competencia desde tu wallet conectada.
+                {t('sharing.onlyYouDesc')}
               </div>
             </div>
           )}
@@ -1249,9 +1251,9 @@ export function CompetitionPanel({
         {!walletAddress && (
           <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center space-y-2">
             <Wallet className="w-8 h-8 mx-auto text-amber-400" />
-            <p className="text-gray-300">Conecta tu wallet para crear competencias</p>
+            <p className="text-gray-300">{t('wallet.connectTitle')}</p>
             <p className="text-xs text-gray-500">
-              Usa el botón de wallet en la esquina superior para conectar
+              {t('wallet.connectHint')}
             </p>
           </div>
         )}
@@ -1275,12 +1277,12 @@ export function CompetitionPanel({
             {isAuthenticating ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Firmando...</span>
+                <span>{t('signing')}</span>
               </>
             ) : (
               <>
                 <Shield className="w-5 h-5" />
-                <span>Verificar identidad</span>
+                <span>{t('wallet.verifyIdentity')}</span>
               </>
             )}
           </motion.button>
@@ -1305,12 +1307,12 @@ export function CompetitionPanel({
             {isCreating ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Creando competencia...</span>
+                <span>{t('wallet.creatingButton')}</span>
               </>
             ) : (
               <>
                 <Zap className="w-5 h-5" />
-                <span>Crear Competencia</span>
+                <span>{t('wallet.createButton')}</span>
               </>
             )}
           </motion.button>
@@ -1321,11 +1323,11 @@ export function CompetitionPanel({
           <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${walletAddress ? 'bg-green-500' : 'bg-gray-500'}`} />
-              <span>Wallet</span>
+              <span>{t('wallet.wallet')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${isAuthenticated ? 'bg-green-500' : 'bg-gray-500'}`} />
-              <span>Verificado</span>
+              <span>{t('wallet.verified')}</span>
             </div>
           </div>
         )}

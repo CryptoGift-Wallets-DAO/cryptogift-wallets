@@ -270,6 +270,153 @@
     },
     "tooltip": {
       "clickToView": "Click para ver"
+    },
+    "competitionPanel": {
+      "header": "Crear Nueva Competencia",
+      "headerDescription": "Panel unificado para crear apuestas P2P, torneos y prediction markets",
+      "dividerLabel": "Modelos de Competencias Disponibles"
+    }
+  },
+  "competition": {
+    "title": "Crear Competencia",
+    "subtitle": "Configura tu competencia - todos los campos tienen valores por defecto",
+    "newCompetition": "Nueva Competencia",
+    "participants": "participantes",
+    "quickCreate": "Crear Rápido",
+    "verifying": "Verificando...",
+    "signing": "Firmando...",
+    "creating": "Creando...",
+    "adaptiveMode": {
+      "title": "Modo Adaptativo:",
+      "description": "Cualquiera puede entrar como participante o juez. Al dar \"Empezar\" el sistema determina el formato (1v1, bracket, etc.) según los participantes."
+    },
+    "form": {
+      "titleLabel": "Título de la competencia",
+      "optional": "(opcional)",
+      "titlePlaceholder": "Se auto-genera si lo dejas vacío",
+      "titleHint": "Si no pones título, se generará automáticamente con el código y fecha",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Añade detalles, reglas específicas, etc."
+    },
+    "sections": {
+      "format": "Formato",
+      "entry": "Entrada",
+      "stake": "Apuesta y Premio",
+      "resolution": "Resolución",
+      "timing": "Timing",
+      "matchType": "Tipo de partida",
+      "creation": "Creación"
+    },
+    "format": {
+      "adaptive": "Adaptativo",
+      "adaptiveSub": "Sistema decide",
+      "1v1": "1 vs 1",
+      "1v1Sub": "Duelo directo",
+      "teams": "Equipos",
+      "teamsSub": "2v2, 3v3...",
+      "freeForAll": "Todos vs Todos",
+      "freeForAllSub": "Battle Royale",
+      "bracket": "Bracket",
+      "bracketSub": "Eliminatorias",
+      "league": "Liga",
+      "leagueSub": "Round Robin",
+      "pool": "Pool",
+      "poolSub": "Quiniela",
+      "teamSize": "Tamaño de equipo"
+    },
+    "entry": {
+      "open": "Abierta",
+      "openSub": "Cualquiera entra",
+      "invite": "Por invitación",
+      "inviteSub": "Solo con link",
+      "fixed": "Cupo fijo",
+      "fixedSub": "Se cierra al llenar",
+      "requirements": "Con requisitos",
+      "requirementsSub": "Tokens, whitelist...",
+      "maxParticipants": "Participantes máximos"
+    },
+    "stake": {
+      "equal": "Igual",
+      "equalSub": "Todos ponen lo mismo",
+      "flexible": "Flexible",
+      "flexibleSub": "Cada quien decide",
+      "prizeOnly": "Solo premio",
+      "prizeOnlySub": "Organizador pone",
+      "totalPrize": "Premio total",
+      "amountPerPerson": "Monto por persona",
+      "prizeDistribution": "Distribución del premio",
+      "winnerTakesAll": "Winner takes all",
+      "winnerTakesAllSub": "Todo al ganador",
+      "top3": "Top 3",
+      "top3Sub": "60% / 30% / 10%",
+      "proportional": "Proporcional",
+      "proportionalSub": "Según aciertos",
+      "custom": "Personalizado",
+      "customSub": "Define tus %"
+    },
+    "resolution": {
+      "singleArbiter": "Árbitro único",
+      "singleArbiterSub": "Una persona decide",
+      "panel": "Panel",
+      "panelSub": "Varios árbitros votan",
+      "autoReport": "Auto-reporte",
+      "autoReportSub": "Participantes reportan",
+      "oracle": "Oráculo",
+      "oracleSub": "Dato automático",
+      "voting": "Votación",
+      "votingSub": "Todos votan",
+      "arbiter": "Árbitro",
+      "arbiters": "Árbitros (uno por línea)",
+      "arbiterPlaceholder": "Dirección de wallet o ENS...",
+      "arbiterHint": "Deja vacío para asignar después o para que lo decidan los participantes"
+    },
+    "timing": {
+      "fixedDate": "Fecha fija",
+      "fixedDateSub": "Cierre programado",
+      "whenFull": "Al llenar",
+      "whenFullSub": "Cuando se complete",
+      "manual": "Manual",
+      "manualSub": "Organizador cierra",
+      "closingDate": "Fecha de cierre"
+    },
+    "match": {
+      "bo1": "Best of 1",
+      "bo1Sub": "Una partida",
+      "bo3": "Best of 3",
+      "bo3Sub": "Primero en 2",
+      "bo5": "Best of 5",
+      "bo5Sub": "Primero en 3",
+      "points": "Puntos",
+      "pointsSub": "Acumula más",
+      "custom": "Personalizado",
+      "customSub": "Define reglas"
+    },
+    "sharing": {
+      "shareable": "Compartible",
+      "onlyYou": "Solo tú",
+      "forSharing": "Para compartir",
+      "forSharingDesc": "Cualquiera con el link puede activar esta competencia. Si la activas tú, solo necesitarás hacer click en el link compartido.",
+      "onlyYouDesc": "Solo tú podrás activar esta competencia desde tu wallet conectada."
+    },
+    "wallet": {
+      "connectTitle": "Conecta tu wallet para crear competencias",
+      "connectHint": "Usa el botón de wallet en la esquina superior para conectar",
+      "verifyIdentity": "Verificar identidad",
+      "createButton": "Crear Competencia",
+      "creatingButton": "Creando competencia...",
+      "wallet": "Wallet",
+      "verified": "Verificado",
+      "connectToContinue": "Conecta tu wallet para continuar",
+      "connectNeeded": "Necesitas una wallet conectada para crear competencias y gestionar fondos de forma segura.",
+      "connectButton": "Conectar Wallet",
+      "configPending": "Configuración de wallet pendiente. Recarga la página."
+    },
+    "errors": {
+      "connectFirst": "Conecta tu wallet primero",
+      "authError": "Error de autenticación",
+      "signToVerify": "Firma con tu wallet para verificar tu identidad",
+      "accountError": "Error: No se pudo obtener la cuenta. Intenta de nuevo.",
+      "createError": "Error al crear competencia"
     }
   }
 }

@@ -270,6 +270,153 @@
     },
     "tooltip": {
       "clickToView": "Click to view"
+    },
+    "competitionPanel": {
+      "header": "Create New Competition",
+      "headerDescription": "Unified panel to create P2P bets, tournaments and prediction markets",
+      "dividerLabel": "Available Competition Models"
+    }
+  },
+  "competition": {
+    "title": "Create Competition",
+    "subtitle": "Configure your competition - all fields have default values",
+    "newCompetition": "New Competition",
+    "participants": "participants",
+    "quickCreate": "Quick Create",
+    "verifying": "Verifying...",
+    "signing": "Signing...",
+    "creating": "Creating...",
+    "adaptiveMode": {
+      "title": "Adaptive Mode:",
+      "description": "Anyone can join as participant or judge. When you click \"Start\", the system determines the format (1v1, bracket, etc.) based on participants."
+    },
+    "form": {
+      "titleLabel": "Competition title",
+      "optional": "(optional)",
+      "titlePlaceholder": "Auto-generated if left empty",
+      "titleHint": "If you don't add a title, it will be auto-generated with code and date",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Add details, specific rules, etc."
+    },
+    "sections": {
+      "format": "Format",
+      "entry": "Entry",
+      "stake": "Stake & Prize",
+      "resolution": "Resolution",
+      "timing": "Timing",
+      "matchType": "Match Type",
+      "creation": "Creation"
+    },
+    "format": {
+      "adaptive": "Adaptive",
+      "adaptiveSub": "System decides",
+      "1v1": "1 vs 1",
+      "1v1Sub": "Direct duel",
+      "teams": "Teams",
+      "teamsSub": "2v2, 3v3...",
+      "freeForAll": "Free for All",
+      "freeForAllSub": "Battle Royale",
+      "bracket": "Bracket",
+      "bracketSub": "Eliminations",
+      "league": "League",
+      "leagueSub": "Round Robin",
+      "pool": "Pool",
+      "poolSub": "Betting pool",
+      "teamSize": "Team size"
+    },
+    "entry": {
+      "open": "Open",
+      "openSub": "Anyone joins",
+      "invite": "By invitation",
+      "inviteSub": "Link only",
+      "fixed": "Fixed spots",
+      "fixedSub": "Closes when full",
+      "requirements": "With requirements",
+      "requirementsSub": "Tokens, whitelist...",
+      "maxParticipants": "Maximum participants"
+    },
+    "stake": {
+      "equal": "Equal",
+      "equalSub": "Everyone stakes the same",
+      "flexible": "Flexible",
+      "flexibleSub": "Each one decides",
+      "prizeOnly": "Prize only",
+      "prizeOnlySub": "Organizer provides",
+      "totalPrize": "Total prize",
+      "amountPerPerson": "Amount per person",
+      "prizeDistribution": "Prize distribution",
+      "winnerTakesAll": "Winner takes all",
+      "winnerTakesAllSub": "All to winner",
+      "top3": "Top 3",
+      "top3Sub": "60% / 30% / 10%",
+      "proportional": "Proportional",
+      "proportionalSub": "Based on hits",
+      "custom": "Custom",
+      "customSub": "Define your %"
+    },
+    "resolution": {
+      "singleArbiter": "Single arbiter",
+      "singleArbiterSub": "One person decides",
+      "panel": "Panel",
+      "panelSub": "Multiple arbiters vote",
+      "autoReport": "Self-report",
+      "autoReportSub": "Participants report",
+      "oracle": "Oracle",
+      "oracleSub": "Automatic data",
+      "voting": "Voting",
+      "votingSub": "Everyone votes",
+      "arbiter": "Arbiter",
+      "arbiters": "Arbiters (one per line)",
+      "arbiterPlaceholder": "Wallet address or ENS...",
+      "arbiterHint": "Leave empty to assign later or let participants decide"
+    },
+    "timing": {
+      "fixedDate": "Fixed date",
+      "fixedDateSub": "Scheduled close",
+      "whenFull": "When full",
+      "whenFullSub": "When completed",
+      "manual": "Manual",
+      "manualSub": "Organizer closes",
+      "closingDate": "Closing date"
+    },
+    "match": {
+      "bo1": "Best of 1",
+      "bo1Sub": "One game",
+      "bo3": "Best of 3",
+      "bo3Sub": "First to 2",
+      "bo5": "Best of 5",
+      "bo5Sub": "First to 3",
+      "points": "Points",
+      "pointsSub": "Accumulate more",
+      "custom": "Custom",
+      "customSub": "Define rules"
+    },
+    "sharing": {
+      "shareable": "Shareable",
+      "onlyYou": "Only you",
+      "forSharing": "For sharing",
+      "forSharingDesc": "Anyone with the link can activate this competition. If you activate it, you only need to click on the shared link.",
+      "onlyYouDesc": "Only you can activate this competition from your connected wallet."
+    },
+    "wallet": {
+      "connectTitle": "Connect your wallet to create competitions",
+      "connectHint": "Use the wallet button in the top corner to connect",
+      "verifyIdentity": "Verify identity",
+      "createButton": "Create Competition",
+      "creatingButton": "Creating competition...",
+      "wallet": "Wallet",
+      "verified": "Verified",
+      "connectToContinue": "Connect your wallet to continue",
+      "connectNeeded": "You need a connected wallet to create competitions and manage funds securely.",
+      "connectButton": "Connect Wallet",
+      "configPending": "Wallet configuration pending. Reload the page."
+    },
+    "errors": {
+      "connectFirst": "Connect your wallet first",
+      "authError": "Authentication error",
+      "signToVerify": "Sign with your wallet to verify your identity",
+      "accountError": "Error: Could not get account. Try again.",
+      "createError": "Error creating competition"
     }
   }
 }

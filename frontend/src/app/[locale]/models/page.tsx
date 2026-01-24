@@ -311,11 +311,11 @@ export default function ModelosPage() {
                       <div>
                         <h3 className="text-xl font-bold bg-gradient-to-r from-white via-red-100 to-pink-100
                                      bg-clip-text text-transparent flex items-center gap-2">
-                          Crear Nueva Competencia
+                          {t('competitionPanel.header')}
                           <Zap className="w-4 h-4 text-amber-400" />
                         </h3>
                         <p className="text-sm text-gray-400 mt-0.5">
-                          Panel unificado para crear apuestas P2P, torneos y prediction markets
+                          {t('competitionPanel.headerDescription')}
                         </p>
                       </div>
                     </div>
@@ -383,7 +383,7 @@ export default function ModelosPage() {
                   <div className="relative flex justify-center">
                     <span className="px-4 bg-gray-950 text-gray-500 text-sm flex items-center gap-2">
                       <Sparkles className="w-3 h-3 text-amber-400/60" />
-                      Modelos de Competencias Disponibles
+                      {t('competitionPanel.dividerLabel')}
                       <Sparkles className="w-3 h-3 text-amber-400/60" />
                     </span>
                   </div>
