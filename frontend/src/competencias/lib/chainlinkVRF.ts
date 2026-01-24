@@ -45,15 +45,15 @@ export const CHAINLINK_CONFIG = {
   },
 } as const;
 
-// Get current chain config
-export function getChainlinkConfig(chainId: number = 84532) {
+// Get current chain config - PRODUCTION: Base Mainnet (8453)
+export function getChainlinkConfig(chainId: number = 8453) {
   switch (chainId) {
-    case 84532:
-      return CHAINLINK_CONFIG.baseSepolia;
     case 8453:
       return CHAINLINK_CONFIG.baseMainnet;
-    default:
+    case 84532:
       return CHAINLINK_CONFIG.baseSepolia;
+    default:
+      return CHAINLINK_CONFIG.baseMainnet; // Default to mainnet
   }
 }
 
@@ -215,7 +215,7 @@ export class ChainlinkVRFClient {
     subscriptionId: string;
     onEvent?: (event: TransparencyEvent) => void;
   }) {
-    this.chainId = config.chainId || 84532;
+    this.chainId = config.chainId || 8453; // Default to Base Mainnet
     this.consumerAddress = config.consumerAddress;
     this.subscriptionId = config.subscriptionId;
     this.onEvent = config.onEvent;
@@ -790,7 +790,7 @@ export function createMockVRFClient(
   onEvent?: (event: TransparencyEvent) => void
 ): ChainlinkVRFClient {
   const mockClient = new ChainlinkVRFClient({
-    chainId: 84532,
+    chainId: 8453, // Base Mainnet for mock testing
     consumerAddress: '0x0000000000000000000000000000000000000001',
     subscriptionId: 'mock-subscription',
     onEvent,

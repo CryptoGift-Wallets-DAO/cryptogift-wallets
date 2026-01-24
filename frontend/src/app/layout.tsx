@@ -11,8 +11,22 @@ const inter = Inter({
   display: "swap"
 });
 
+// Determinar URL base para metadata de forma robusta
+// Prioridad: NEXT_PUBLIC_SITE_URL > VERCEL_URL > localhost (para build sin vars)
+function getMetadataBaseUrl(): URL {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return new URL(process.env.NEXT_PUBLIC_SITE_URL);
+  }
+  if (process.env.VERCEL_URL) {
+    return new URL(`https://${process.env.VERCEL_URL}`);
+  }
+  // Fallback para build local sin variables configuradas
+  // En producción, VERCEL_URL siempre está disponible durante el build
+  return new URL('http://localhost:3000');
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (() => { throw new Error('NEXT_PUBLIC_SITE_URL or VERCEL_URL is required for metadata base URL'); })())),
+  metadataBase: getMetadataBaseUrl(),
   title: "CryptoGift Wallets - Regala el Futuro",
   description: "Regala NFT-wallets con criptomonedas. La forma más fácil de introducir a tus amigos al mundo cripto.",
   keywords: "crypto, NFT, wallet, gift, regalo, blockchain, Base, USDC",

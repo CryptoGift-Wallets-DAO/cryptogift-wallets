@@ -324,7 +324,7 @@ const EventItem: React.FC<{
                 {truncateAddress(event.txHash)}
               </button>
               <a
-                href={`https://sepolia.basescan.org/tx/${event.txHash}`}
+                href={`https://basescan.org/tx/${event.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-700"
@@ -549,7 +549,7 @@ export const LiveTransparencyView: React.FC<LiveTransparencyViewProps> = ({
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>Competencia: {competition.id}</span>
           <a
-            href={`https://sepolia.basescan.org/address/${competition.safeAddress}`}
+            href={`https://basescan.org/address/${competition.safeAddress}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-blue-600 hover:text-blue-700"

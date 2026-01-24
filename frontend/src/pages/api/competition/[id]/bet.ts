@@ -3,31 +3,32 @@
  * POST /api/competition/[id]/bet
  *
  * Places a bet on a prediction market competition
+ * REQUIERE AUTENTICACIÓN SIWE
+ *
+ * Uses atomic Redis operations to prevent race conditions:
+ * - Ensures probability calculations are based on current state
+ * - Prevents pool manipulation from concurrent bets
+ * - Maintains accurate total volume
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Redis } from '@upstash/redis';
 import { v4 as uuidv4 } from 'uuid';
-import { Competition, ManifoldBet, TransparencyEvent } from '../../../../competencias/types';
+import { ManifoldBet, TransparencyEvent } from '../../../../competencias/types';
 import {
   placeBet as manifoldPlaceBet,
-  calculateShares,
-  calculateNewProbability,
 } from '../../../../competencias/lib/manifoldClient';
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+import { withAuth, getAuthenticatedAddress } from '../../../../competencias/lib/authMiddleware';
+import { atomicPlaceBet } from '../../../../competencias/lib/atomicOperations';
+import { emitBetPlaced } from '../../../../competencias/lib/eventSystem';
 
 interface BetRequest {
-  userAddress: string;
   outcome: 'YES' | 'NO';
   amount: number;
   txHash?: string;
+  // NOTA: userAddress viene del token JWT autenticado
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -41,12 +42,12 @@ export default async function handler(
   }
 
   try {
+    // Obtener dirección autenticada del token JWT (seguro, no manipulable)
+    const userAddress = getAuthenticatedAddress(req);
+
     const data = req.body as BetRequest;
 
-    // Validate
-    if (!data.userAddress) {
-      return res.status(400).json({ error: 'User address is required' });
-    }
+    // Validate input
     if (!data.outcome || !['YES', 'NO'].includes(data.outcome)) {
       return res.status(400).json({ error: 'Valid outcome (YES/NO) is required' });
     }
@@ -54,144 +55,86 @@ export default async function handler(
       return res.status(400).json({ error: 'Valid amount is required' });
     }
 
-    // Get competition
-    const competitionData = await redis.get(`competition:${id}`);
-    if (!competitionData) {
-      return res.status(404).json({ error: 'Competition not found' });
-    }
-
-    const competition: Competition = typeof competitionData === 'string'
-      ? JSON.parse(competitionData)
-      : competitionData;
-
-    // Validate competition
-    if (competition.category !== 'prediction') {
-      return res.status(400).json({ error: 'Competition is not a prediction market' });
-    }
-    if (competition.status !== 'active') {
-      return res.status(400).json({ error: 'Competition is not active' });
-    }
-    if (!competition.market) {
-      return res.status(400).json({ error: 'No market associated with this competition' });
-    }
-
-    // Calculate shares and new probability
-    const pool = competition.market.pool || { yesPool: 100, noPool: 100 };
-    const currentProb = competition.market.probability || 0.5;
-
-    const shares = calculateShares(
-      data.amount,
-      data.outcome,
-      { YES: pool.yesPool, NO: pool.noPool },
-      currentProb
-    );
-
-    const newProbability = calculateNewProbability(
-      data.amount,
-      data.outcome,
-      { YES: pool.yesPool, NO: pool.noPool },
-      currentProb
-    );
-
-    // Create bet record
-    const bet: ManifoldBet = {
-      id: uuidv4(),
-      marketId: competition.market.manifoldId || id,
+    // Create bet template (shares and probabilities will be calculated atomically)
+    const betId = uuidv4();
+    const bet: Omit<ManifoldBet, 'shares' | 'probBefore' | 'probAfter'> = {
+      id: betId,
+      marketId: id, // Will be updated if competition has manifoldId
       outcome: data.outcome,
       amount: data.amount,
-      shares,
-      probBefore: currentProb,
-      probAfter: newProbability,
       createdTime: Date.now(),
-      userId: data.userAddress,
+      userId: userAddress,
     };
 
-    // Place bet on Manifold if connected
-    let manifoldBetId: string | undefined;
-    if (competition.market.manifoldId) {
-      try {
-        const manifoldResult = await manifoldPlaceBet({
-          contractId: competition.market.manifoldId,
-          outcome: data.outcome,
-          amount: data.amount,
-        });
-
-        if (manifoldResult.success && manifoldResult.data) {
-          manifoldBetId = manifoldResult.data.id;
-          bet.id = manifoldBetId;
-        }
-      } catch (manifoldError) {
-        console.error('Manifold bet placement failed:', manifoldError);
-        // Continue with local bet tracking
-      }
-    }
-
-    // Update competition market state
-    competition.market.probability = newProbability;
-    competition.market.pool = {
-      yesPool: data.outcome === 'YES' ? pool.yesPool + data.amount : pool.yesPool,
-      noPool: data.outcome === 'NO' ? pool.noPool + data.amount : pool.noPool,
-    };
-    competition.market.totalVolume = (competition.market.totalVolume || 0) + data.amount;
-
-    if (!competition.market.bets) {
-      competition.market.bets = [];
-    }
-    competition.market.bets.push(bet);
-
-    // Update prize pool
-    if (!competition.prizePool) {
-      competition.prizePool = { total: 0, currency: 'ETH', distribution: [], platformFee: 2.5 };
-    }
-    competition.prizePool.total = (competition.prizePool.total || 0) + data.amount;
-
-    // Create transparency event
-    const event: TransparencyEvent = {
+    // Create transparency event template
+    const event: Omit<TransparencyEvent, 'details'> & { details: Record<string, unknown> } = {
       type: 'bet_placed',
       timestamp: Date.now(),
-      actor: data.userAddress,
+      actor: userAddress,
       action: `Bet ${data.amount} on ${data.outcome}`,
       details: {
-        betId: bet.id,
+        betId,
         outcome: data.outcome,
         amount: data.amount,
-        shares,
-        probBefore: currentProb,
-        probAfter: newProbability,
-        manifoldBetId,
+        // shares, probBefore, probAfter will be added by atomic operation
       },
       txHash: data.txHash,
       verified: !!data.txHash,
     };
 
-    if (!competition.transparency) {
-      competition.transparency = { events: [], publicData: true, auditLog: true };
+    // Execute atomic bet operation
+    // This prevents race conditions by:
+    // 1. Reading current market state
+    // 2. Calculating shares and new probability atomically
+    // 3. Updating pool, volume, and storing bet in one transaction
+    const result = await atomicPlaceBet(
+      id,
+      userAddress,
+      bet,
+      event,
+      data.outcome,
+      data.amount
+    );
+
+    if (!result.success) {
+      // Map error codes to HTTP status codes
+      const statusMap: Record<string, number> = {
+        NOT_FOUND: 404,
+        NOT_PREDICTION: 400,
+        NOT_ACTIVE: 400,
+        NO_MARKET: 400,
+        SCRIPT_ERROR: 500,
+      };
+
+      const status = statusMap[result.code || ''] || 400;
+      return res.status(status).json({
+        error: result.error,
+        code: result.code,
+      });
     }
-    competition.transparency.events.unshift(event);
 
-    // Store updated competition
-    await redis.set(`competition:${id}`, JSON.stringify(competition));
+    // Try to place bet on Manifold if connected (async, non-blocking for local state)
+    // This is a best-effort sync - the atomic operation already recorded the bet locally
+    if (result.data) {
+      // Fire-and-forget Manifold sync
+      syncWithManifold(id, data.outcome, data.amount, result.data.bet.id).catch(err => {
+        console.warn('Manifold sync failed (non-critical):', err);
+      });
 
-    // Store bet separately
-    await redis.lpush(`competition:${id}:bets`, JSON.stringify(bet));
-
-    // Store event
-    await redis.lpush(`competition:${id}:events`, JSON.stringify(event));
-
-    // Add to user's bets
-    await redis.lpush(`user:${data.userAddress}:bets`, JSON.stringify({
-      competitionId: id,
-      ...bet,
-    }));
+      // Emit SSE event for real-time updates
+      emitBetPlaced(
+        id,
+        userAddress,
+        data.outcome,
+        data.amount,
+        result.data.bet.shares || 0,
+        result.data.newProbability || 0.5
+      );
+    }
 
     return res.status(200).json({
       success: true,
-      data: {
-        bet,
-        newProbability,
-        pool: competition.market.pool,
-        totalVolume: competition.market.totalVolume,
-      },
+      data: result.data,
     });
   } catch (error) {
     console.error('Place bet error:', error);
@@ -200,3 +143,52 @@ export default async function handler(
     });
   }
 }
+
+/**
+ * Sync bet with Manifold Markets (best-effort, non-blocking)
+ * This runs after the local bet is already recorded atomically
+ */
+async function syncWithManifold(
+  competitionId: string,
+  outcome: 'YES' | 'NO',
+  amount: number,
+  localBetId: string
+): Promise<void> {
+  // Get competition to check for manifoldId
+  const { getRedisConnection } = await import('../../../../lib/redisConfig');
+  const redis = getRedisConnection();
+  const compData = await redis.get(`competition:${competitionId}`);
+
+  if (!compData) return;
+
+  const competition = typeof compData === 'string' ? JSON.parse(compData) : compData;
+
+  if (!competition.market?.manifoldId) return;
+
+  try {
+    const manifoldResult = await manifoldPlaceBet({
+      marketId: competition.market.manifoldId,
+      outcome,
+      amount,
+    });
+
+    if (manifoldResult.success && manifoldResult.data) {
+      // Update the bet with Manifold ID (non-critical update)
+      const bets = await redis.lrange(`competition:${competitionId}:bets`, 0, 50);
+      for (let i = 0; i < bets.length; i++) {
+        const bet = typeof bets[i] === 'string' ? JSON.parse(bets[i]) : bets[i];
+        if (bet.id === localBetId) {
+          bet.manifoldBetId = manifoldResult.data.id;
+          await redis.lset(`competition:${competitionId}:bets`, i, JSON.stringify(bet));
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Manifold sync error:', error);
+    // Non-critical - local bet is already recorded
+  }
+}
+
+// Exportar con middleware de autenticación
+export default withAuth(handler);

@@ -2,9 +2,12 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useDisconnect, useActiveWallet as useThirdwebWallet } from 'thirdweb/react';
 import { useActiveWallet } from '../hooks/useActiveWallet';
 import { RightSlideWallet } from './TBAWallet/RightSlideWallet';
 import { ImageDebugger } from './ImageDebugger';
+import { clearAuth } from '../lib/siweClient';
+import { LogOut } from 'lucide-react';
 
 interface WalletSwitcherProps {
   className?: string;
@@ -15,17 +18,72 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
   className = "",
   showBalance = false
 }) => {
-  const { 
-    account, 
-    tbaWallet, 
-    getWalletDisplayName, 
-    getWalletType, 
+  const {
+    account,
+    tbaWallet,
+    getWalletDisplayName,
+    getWalletType,
     currentWalletAddress,
-    hasActiveTBAWallet 
+    hasActiveTBAWallet
   } = useActiveWallet();
-  
+
+  // ThirdWeb wallet and disconnect hooks
+  const thirdwebWallet = useThirdwebWallet();
+  const { disconnect } = useDisconnect();
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [showTBAWallet, setShowTBAWallet] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  /**
+   * Complete logout: disconnect wallet + clear SIWE auth
+   */
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      // 1. Clear SIWE authentication state
+      clearAuth();
+      console.log('🔐 SIWE auth cleared');
+
+      // 2. Disconnect ThirdWeb wallet
+      if (thirdwebWallet) {
+        disconnect(thirdwebWallet);
+        console.log('👛 Wallet disconnected');
+      }
+
+      // 3. Clear any localStorage/sessionStorage auth data
+      if (typeof window !== 'undefined') {
+        // Clear ThirdWeb connection data
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (
+            key.includes('thirdweb') ||
+            key.includes('walletconnect') ||
+            key.includes('siwe') ||
+            key.includes('auth')
+          )) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        // Also clear sessionStorage
+        sessionStorage.clear();
+        console.log('🗑️ Local storage cleaned');
+      }
+
+      // 4. Close dropdown
+      setShowDropdown(false);
+
+      // 5. Reload page to ensure clean state
+      window.location.reload();
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   if (!account) {
     return null;
@@ -202,6 +260,30 @@ export const WalletSwitcher: React.FC<WalletSwitcherProps> = ({
                     <div className="text-xs text-text-secondary transition-colors duration-300">Ver todas mis wallets</div>
                   </div>
                 </a>
+
+                {/* Divider before logout */}
+                <div className="border-t border-border-primary my-2 transition-colors duration-300"></div>
+
+                {/* LOGOUT BUTTON */}
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20
+                           transition-colors duration-300 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center
+                               transition-colors duration-300 group-hover:bg-red-200 dark:group-hover:bg-red-900/50">
+                    <LogOut className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-red-600 dark:text-red-400 text-sm transition-colors duration-300">
+                      {isLoggingOut ? 'Desconectando...' : 'Desconectar Wallet'}
+                    </div>
+                    <div className="text-xs text-red-500/70 dark:text-red-400/60 transition-colors duration-300">
+                      Cerrar sesión completamente
+                    </div>
+                  </div>
+                </button>
               </div>
             </div>
           </>

@@ -114,12 +114,14 @@ async function handlePut(
     }
 
     // Apply allowed updates
+    // NOTE: 'arbitration' added to allow adding judges via arbiter registration page
     const allowedFields = [
       'title',
       'description',
       'status',
       'timeline',
       'rules',
+      'arbitration',
     ];
 
     for (const field of allowedFields) {

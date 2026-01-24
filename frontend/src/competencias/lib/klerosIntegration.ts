@@ -121,9 +121,15 @@ const KLEROS_ADDRESSES: Record<number, {
     arbitrable: '0xe08a4027e1021Ca45a6b883e4c94C21F0b30C14f',
     evidenceModule: '0x0000000000000000000000000000000000000000'
   },
-  // Base Sepolia (testnet)
+  // Base Mainnet (production)
+  8453: {
+    court: '0x0000000000000000000000000000000000000000',  // Not deployed yet on Base Mainnet
+    arbitrable: '0x0000000000000000000000000000000000000000',
+    evidenceModule: '0x0000000000000000000000000000000000000000'
+  },
+  // Base Sepolia (testnet - legacy)
   84532: {
-    court: '0x0000000000000000000000000000000000000000',  // Not deployed yet
+    court: '0x0000000000000000000000000000000000000000',  // Not deployed
     arbitrable: '0x0000000000000000000000000000000000000000',
     evidenceModule: '0x0000000000000000000000000000000000000000'
   }
@@ -139,8 +145,8 @@ const COMPETITION_COURTS: Record<string, number> = {
   'ranking': 1        // General Court
 };
 
-// Current chain
-const CHAIN_ID = 84532;  // Base Sepolia
+// Current chain - PRODUCTION: Base Mainnet
+const CHAIN_ID = 8453;  // Base Mainnet
 
 // ============================================================================
 // KLEROS CLIENT

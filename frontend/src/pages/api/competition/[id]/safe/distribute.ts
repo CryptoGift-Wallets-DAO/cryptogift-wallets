@@ -4,6 +4,7 @@
  *
  * Prepares prize distribution transactions for a resolved competition
  * Returns transaction data for frontend execution via Safe SDK
+ * REQUIERE AUTENTICACIÓN SIWE
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -16,6 +17,7 @@ import {
   type PrizeDistribution,
 } from '../../../../../competencias/lib/safeClient';
 import { emitPrizeDistributed } from '../../../../../competencias/lib/eventSystem';
+import { withAuth, getAuthenticatedAddress } from '../../../../../competencias/lib/authMiddleware';
 
 // Redis client
 const redis = new Redis({
@@ -30,15 +32,15 @@ interface DistributeRequest {
     position: number;
     token?: string;
   }>;
-  proposerAddress: string;
   resolution?: {
     method: string;
     proof?: string;
     timestamp?: number;
   };
+  // NOTA: proposerAddress viene del token JWT autenticado
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -52,15 +54,16 @@ export default async function handler(
     return res.status(400).json({ error: 'Competition ID is required' });
   }
 
-  const { winners, proposerAddress, resolution } = req.body as DistributeRequest;
+  // Obtener dirección autenticada del token JWT (seguro, no manipulable)
+  const proposerAddress = getAuthenticatedAddress(req);
+
+  const { winners, resolution } = req.body as DistributeRequest;
 
   // Validate required fields
   if (!winners || !Array.isArray(winners) || winners.length === 0) {
     return res.status(400).json({ error: 'At least one winner is required' });
   }
-  if (!proposerAddress || !/^0x[a-fA-F0-9]{40}$/.test(proposerAddress)) {
-    return res.status(400).json({ error: 'Valid proposer address is required' });
-  }
+  // proposerAddress ya viene validado del JWT
 
   // Validate winners
   for (const winner of winners) {
@@ -127,11 +130,12 @@ export default async function handler(
     }
 
     // Verify all winners are participants (optional but recommended)
-    const participantsSet = await redis.smembers(`competition:${competitionId}:participants`);
+    // Use competition.participants.entries which is populated by atomicJoinCompetition
+    const participantAddresses = (competition.participants?.entries || [])
+      .map((p: { address: string }) => p.address.toLowerCase());
+
     const nonParticipants = winners.filter(
-      (w) => !participantsSet.some(
-        (p) => p.toLowerCase() === w.address.toLowerCase()
-      )
+      (w) => !participantAddresses.includes(w.address.toLowerCase())
     );
 
     if (nonParticipants.length > 0) {
@@ -239,3 +243,6 @@ export default async function handler(
     });
   }
 }
+
+// Exportar con middleware de autenticación
+export default withAuth(handler);

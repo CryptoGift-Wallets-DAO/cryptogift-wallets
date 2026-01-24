@@ -1,0 +1,78 @@
+name: Scheduled Tasks (Cron Jobs)
+
+# This workflow serves as a fallback for Vercel Hobby plan
+# which doesn't support native cron jobs.
+# If using Vercel Pro, the vercel.json crons are preferred.
+
+on:
+  schedule:
+    # Auto-return expired gifts daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task to run'
+        required: true
+        default: 'auto-return'
+        type: choice
+        options:
+          - auto-return
+          - cleanup-transactions
+
+jobs:
+  auto-return:
+    name: Auto Return Expired Gifts
+    runs-on: ubuntu-latest
+    # Only run on schedule or when manually selected
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'auto-return')
+
+    steps:
+      - name: Trigger auto-return endpoint
+        run: |
+          echo "🔄 Triggering auto-return for expired gifts..."
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.SITE_URL }}/api/cron/auto-return" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response code: $HTTP_CODE"
+          echo "Response body: $BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Auto-return failed with status $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Auto-return completed successfully"
+
+  cleanup-transactions:
+    name: Cleanup Old Transactions
+    runs-on: ubuntu-latest
+    # Only run when manually selected
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.task == 'cleanup-transactions'
+
+    steps:
+      - name: Trigger cleanup endpoint
+        run: |
+          echo "🧹 Triggering transaction cleanup..."
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.SITE_URL }}/api/cron/cleanup-transactions" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response code: $HTTP_CODE"
+          echo "Response body: $BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::warning::Cleanup failed with status $HTTP_CODE"
+          fi
+
+          echo "✅ Cleanup task completed"

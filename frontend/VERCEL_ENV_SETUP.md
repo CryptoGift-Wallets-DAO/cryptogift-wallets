@@ -7,23 +7,27 @@ Copy these to your Vercel project settings → Environment Variables
 ### 🔴 REQUIRED - System won't work without these
 
 ```bash
-# ThirdWeb (Already configured)
-NEXT_PUBLIC_TW_CLIENT_ID=e9e9be7c66f8a4fb50b54b5a6f39a0cf
+# ThirdWeb
+# Get from: https://thirdweb.com/dashboard
+NEXT_PUBLIC_TW_CLIENT_ID=your_thirdweb_client_id
 TW_SECRET_KEY=your_thirdweb_secret_key
 
-# Deployer wallet (Already configured) 
+# Deployer wallet
+# Generate a dedicated wallet for deployments - NEVER use main wallet
 PRIVATE_KEY_DEPLOY=your_deployer_private_key
 
-# RPC URLs (Already configured)
-NEXT_PUBLIC_RPC_URL=https://base-sepolia.g.alchemy.com/v2/GJfW9U_S-o-boMw93As3e
+# RPC URLs
+# Get from: https://dashboard.alchemy.com/ (free tier available)
+NEXT_PUBLIC_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY
 
-# Redis/Upstash (Already configured)
-UPSTASH_REDIS_REST_URL=https://exotic-alien-13383.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your_redis_token
+# Redis/Upstash
+# Get from: https://console.upstash.com/
+UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
 
-# Contracts (Already configured)
-NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS=0xE9F316159a0830114252a96a6B7CA6efD874650F
-NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS=0x46175CfC233500DA803841DEef7f2816e7A129E0
+# Contracts (Base Sepolia addresses - update for your deployment)
+NEXT_PUBLIC_CRYPTOGIFT_NFT_ADDRESS=0xYOUR_NFT_CONTRACT
+NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS=0xYOUR_ESCROW_CONTRACT
 NEXT_PUBLIC_USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
 ```
 

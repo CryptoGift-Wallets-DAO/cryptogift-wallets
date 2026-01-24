@@ -161,13 +161,33 @@ function generateCSP(): string {
 
 /**
  * Security headers configuration
+ *
+ * CSP MIGRATION PATH (IMPORTANTE):
+ * ================================
+ * 1. DEFAULT: Content-Security-Policy-Report-Only
+ *    - No bloquea nada, solo reporta violaciones
+ *    - Revisar logs en /api/security/csp-report
+ *
+ * 2. MONITOREAR: Ver Vercel Logs filtrado por "[CSP-REPORT]"
+ *    - Si hay violaciones, añadir dominios a la whitelist
+ *    - Repetir hasta que no haya violaciones
+ *
+ * 3. ACTIVAR ENFORCE: Solo cuando haya 0 violaciones por 24h
+ *    - Set CSP_ENFORCE=true en Vercel Dashboard
+ *    - Monitorear [CSP-ENFORCE] en logs (son críticos)
+ *
+ * 4. ROLLBACK: Si algo se rompe, quitar CSP_ENFORCE o set false
  */
 function getSecurityHeaders(): HeadersInit {
   const csp = generateCSP();
-  
+
+  // CSP Mode: report-only (safe default) vs enforce (blocks violations)
+  // ONLY set CSP_ENFORCE=true after monitoring shows 0 violations
+  const cspEnforce = process.env.CSP_ENFORCE === 'true';
+
   const headers: HeadersInit = {
-    // CSP - Start with Report-Only in production
-    'Content-Security-Policy-Report-Only': csp,
+    // CSP Header: Report-Only by default, Enforce only when explicitly enabled
+    [cspEnforce ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only']: csp,
     
     // Security headers
     'X-Frame-Options': 'DENY',

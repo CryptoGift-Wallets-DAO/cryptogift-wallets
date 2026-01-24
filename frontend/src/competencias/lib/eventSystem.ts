@@ -434,6 +434,25 @@ export function emitParticipantJoined(
 }
 
 /**
+ * Emit a judge registered event
+ */
+export function emitJudgeRegistered(
+  competitionId: string,
+  judge: string
+): string {
+  return getEventEmitter().emitCompetitionEvent({
+    type: 'vote.cast', // Reuse existing type for judge activity
+    competitionId,
+    actor: judge,
+    data: {
+      judge,
+      action: 'registered',
+      timestamp: Date.now(),
+    },
+  });
+}
+
+/**
  * Emit a bet placed event
  */
 export function emitBetPlaced(

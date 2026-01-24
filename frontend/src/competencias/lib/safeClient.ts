@@ -10,7 +10,7 @@
  * - Real-time transaction status
  * - Multi-signature collection
  *
- * Chain: Base Sepolia (84532)
+ * Chain: Base Mainnet (8453) - PRODUCCIÓN
  */
 
 import Safe from '@safe-global/protocol-kit';
@@ -27,31 +27,32 @@ type SignerInput = string | ethers.Signer;
 import type { APIResponse } from '../types';
 
 // ============================================================================
-// CONFIGURATION
+// CONFIGURATION - BASE MAINNET (8453)
 // ============================================================================
 
-const CHAIN_ID = 84532n; // Base Sepolia
-const CHAIN_ID_NUMBER = 84532;
+const CHAIN_ID = 8453n; // Base Mainnet
+const CHAIN_ID_NUMBER = 8453;
 
-// Safe Transaction Service URL for Base Sepolia
-const SAFE_TX_SERVICE_URL = 'https://safe-transaction-base-sepolia.safe.global';
+// Safe Transaction Service URL for Base Mainnet
+const SAFE_TX_SERVICE_URL = 'https://safe-transaction-base.safe.global';
 
-// Safe contract addresses on Base Sepolia (from Safe deployments)
+// Safe contract addresses on Base Mainnet (from safe-global/safe-deployments v1.3.0 eip155)
+// Source: https://github.com/safe-global/safe-deployments
 export const SAFE_CONTRACTS = {
-  SAFE_SINGLETON: '0x29fcB43b46531BcA003ddC8FCB67FFE91900C762',
-  SAFE_PROXY_FACTORY: '0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67',
-  MULTI_SEND: '0x38869bf66a61cF6bDB996A6aE40D5853Fd43B526',
-  MULTI_SEND_CALL_ONLY: '0x9641d764fc13c8B624c04430C7356C1C7C8102e2',
-  FALLBACK_HANDLER: '0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99',
-  SIGN_MESSAGE_LIB: '0xd53cd0aB83D845Ac265BE939c57F53AD838012c9',
-  CREATE_CALL: '0x9b35Af71d77eaf8d7e40252370304687390A1A52',
+  SAFE_L2_SINGLETON: '0xfb1bffC9d739B8D520DaF37dF666da4C687191EA',  // SafeL2.sol v1.3.0
+  SAFE_PROXY_FACTORY: '0xC22834581EbC8527d974F8a1c97E1bEA4EF910BC', // ProxyFactory v1.3.0
+  MULTI_SEND: '0x998739BFdAAdde7C933B942a68053933098f9EDa',          // MultiSend v1.3.0
+  MULTI_SEND_CALL_ONLY: '0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B', // MultiSendCallOnly v1.3.0
+  FALLBACK_HANDLER: '0x017062a1dE2FE6b99BE3d9d37841FeD19F573804',    // CompatibilityFallbackHandler v1.3.0
+  SIGN_MESSAGE_LIB: '0x98FFBBF51bb33A056B08ddf711f289936AafF717',    // SignMessageLib v1.3.0
+  CREATE_CALL: '0xB19D6FFc2182150F8Eb585b79D4ABcd7C5640A9d',         // CreateCall v1.3.0
 } as const;
 
 // Environment configuration
 const getConfig = () => {
   const safeAddress = process.env.SAFE_BASE_ADDRESS || process.env.NEXT_PUBLIC_SAFE_BASE_ADDRESS;
   const apiKey = process.env.SAFE_BASE_API_KEY;
-  const rpcUrl = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
+  const rpcUrl = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
 
   return {
     safeAddress,
@@ -146,7 +147,7 @@ export function initializeSafeApiKit(): SafeApiKit {
 }
 
 /**
- * Get JSON-RPC provider for Base Sepolia
+ * Get JSON-RPC provider for Base Mainnet
  */
 export function getProvider(): ethers.JsonRpcProvider {
   if (provider) {

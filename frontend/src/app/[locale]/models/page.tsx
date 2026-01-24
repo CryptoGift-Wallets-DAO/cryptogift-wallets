@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, SlidersHorizontal, X, Trophy, Sparkles, Zap, ChevronUp } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
   ModelGrid,
@@ -10,6 +10,7 @@ import {
   ModelDetailModal,
   CategoryTabs
 } from '@/components/modelos';
+import { CompetitionPanel } from '@/components/competitions';
 import { MODELOS, searchModelos, TOTAL_MODELOS } from '@/data/modelosData';
 import type { Modelo, CategoryType, ModelStatus, Complexity } from '@/types/modelos';
 import { CATEGORIES } from '@/types/modelos';
@@ -26,6 +27,9 @@ export default function ModelosPage() {
 
   // State for selected model (modal)
   const [selectedModelo, setSelectedModelo] = useState<Modelo | null>(null);
+
+  // State for competition panel
+  const [isCompetitionPanelExpanded, setIsCompetitionPanelExpanded] = useState(true);
 
   // Ref for scrolling to category tabs
   const categoryTabsRef = useRef<HTMLDivElement>(null);
@@ -95,6 +99,16 @@ export default function ModelosPage() {
 
   const hasActiveFilters = activeCategory !== 'all' || statusFilter !== 'all' ||
                            complexityFilter !== 'all' || searchQuery.trim() !== '';
+
+  // Check if we're viewing competitions category
+  const isCompetitionsCategory = activeCategory === 'competitions';
+
+  // Handle competition panel completion
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleCompetitionComplete = async (config: any) => {
+    console.log('Competition created from modelos page:', config);
+    // TODO: Call API to create competition
+  };
 
   return (
     <main className="min-h-screen bg-gray-950">
@@ -245,6 +259,138 @@ export default function ModelosPage() {
               {t('search.of')} {TOTAL_MODELOS} {t('search.models')}
             </p>
           </div>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              COMPETITION PANEL - Futuristic NFT Luxury Panel
+              Only shown when "Competencias" category is selected
+           ═══════════════════════════════════════════════════════════════ */}
+          <AnimatePresence>
+            {isCompetitionsCategory && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                exit={{ opacity: 0, y: -20, height: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="mb-8"
+              >
+                {/* Luxury Header with Toggle */}
+                <div
+                  onClick={() => setIsCompetitionPanelExpanded(!isCompetitionPanelExpanded)}
+                  className="relative mb-4 p-4 rounded-2xl cursor-pointer group
+                             bg-gradient-to-r from-red-950/40 via-pink-950/30 to-purple-950/40
+                             border border-red-500/20 hover:border-red-500/40
+                             backdrop-blur-xl backdrop-saturate-150
+                             shadow-2xl shadow-red-900/20 hover:shadow-red-500/30
+                             transition-all duration-500"
+                >
+                  {/* Animated glow effect */}
+                  <div className="absolute inset-0 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-pink-500/5 to-purple-500/10 rounded-2xl blur-xl" />
+                  </div>
+
+                  {/* Sparkle decorations */}
+                  <div className="absolute top-3 right-16 text-amber-400/60 animate-pulse">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div className="absolute bottom-3 left-8 text-pink-400/40 animate-pulse delay-300">
+                    <Sparkles className="w-3 h-3" />
+                  </div>
+
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Trophy icon with glow */}
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-400/30 to-orange-500/30 rounded-xl blur-lg" />
+                        <div className="relative p-3 rounded-xl
+                                      bg-gradient-to-br from-amber-500/20 to-orange-600/20
+                                      border border-amber-500/30">
+                          <Trophy className="w-6 h-6 text-amber-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-xl font-bold bg-gradient-to-r from-white via-red-100 to-pink-100
+                                     bg-clip-text text-transparent flex items-center gap-2">
+                          Crear Nueva Competencia
+                          <Zap className="w-4 h-4 text-amber-400" />
+                        </h3>
+                        <p className="text-sm text-gray-400 mt-0.5">
+                          Panel unificado para crear apuestas P2P, torneos y prediction markets
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Expand/Collapse toggle */}
+                    <motion.div
+                      animate={{ rotate: isCompetitionPanelExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="p-2 rounded-xl bg-white/5 border border-white/10
+                               group-hover:bg-white/10 transition-colors"
+                    >
+                      <ChevronUp className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* Expandable Panel Content */}
+                <AnimatePresence>
+                  {isCompetitionPanelExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="overflow-hidden"
+                    >
+                      {/* Luxury Container for CompetitionPanel */}
+                      <div className="relative">
+                        {/* Background effects */}
+                        <div className="absolute inset-0 -z-10">
+                          <div className="absolute inset-0 bg-gradient-to-b from-red-950/20 via-gray-950/80 to-gray-950 rounded-3xl" />
+                          <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-red-500/10 blur-3xl" />
+                          <div className="absolute bottom-0 right-1/4 w-1/3 h-24 bg-pink-500/10 blur-3xl" />
+                        </div>
+
+                        {/* Panel wrapper with luxury border */}
+                        <div className="relative p-6 rounded-3xl
+                                      bg-gray-900/60 backdrop-blur-2xl backdrop-saturate-150
+                                      border border-white/10
+                                      shadow-2xl shadow-black/40
+                                      ring-1 ring-inset ring-white/5">
+                          {/* Corner decorations */}
+                          <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-red-500/30 rounded-tl-3xl" />
+                          <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-pink-500/30 rounded-tr-3xl" />
+                          <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-purple-500/30 rounded-bl-3xl" />
+                          <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-amber-500/30 rounded-br-3xl" />
+
+                          {/* The actual CompetitionPanel */}
+                          <CompetitionPanel
+                            onComplete={handleCompetitionComplete}
+                            onCancel={() => setIsCompetitionPanelExpanded(false)}
+                            className="max-w-4xl mx-auto"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Divider with label */}
+                <div className="relative mt-8 mb-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="px-4 bg-gray-950 text-gray-500 text-sm flex items-center gap-2">
+                      <Sparkles className="w-3 h-3 text-amber-400/60" />
+                      Modelos de Competencias Disponibles
+                      <Sparkles className="w-3 h-3 text-amber-400/60" />
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Model Grid */}
           <ModelGrid

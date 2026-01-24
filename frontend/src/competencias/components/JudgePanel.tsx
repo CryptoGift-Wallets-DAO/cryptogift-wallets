@@ -126,6 +126,13 @@ const ROLE_CONFIG: Record<JudgeRole, {
     bgColor: 'bg-gray-100 dark:bg-gray-800',
     permissions: [],
   },
+  participant_judge: {
+    label: 'Participante-Juez',
+    icon: <Users className="w-4 h-4" />,
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
+    permissions: ['vote'], // Participants can vote on winners
+  },
 };
 
 // =============================================================================

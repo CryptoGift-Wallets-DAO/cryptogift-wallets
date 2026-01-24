@@ -48,13 +48,13 @@ const itemVariants = {
 } as const;
 
 const floatAnimation = {
-  y: [0, -8, 0],
+  y: [0, -8, 0] as number[],
   transition: {
     duration: 3,
     repeat: Infinity,
-    ease: "easeInOut"
+    ease: "easeInOut" as const
   }
-} as const;
+};
 
 export function ModelHero({ totalModelos, categories, onCategoryClick, locale = 'es' }: ModelHeroProps) {
   const t = useTranslations('modelos');

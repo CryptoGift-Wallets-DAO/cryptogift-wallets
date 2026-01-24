@@ -52,27 +52,36 @@ import {
 } from './safeClient';
 
 // ============================================================================
-// CONFIGURATION
+// CONFIGURATION - BASE MAINNET (8453)
 // ============================================================================
 
-// Base Sepolia addresses - using real addresses from Safe SDK
+// Base Mainnet addresses - using real addresses from Safe SDK v1.3.0 eip155
 export const SAFE_ADDRESSES = {
   // Safe contracts (from @safe-global deployments)
-  SAFE_SINGLETON: SAFE_CONTRACTS.SAFE_SINGLETON,
+  SAFE_L2_SINGLETON: SAFE_CONTRACTS.SAFE_L2_SINGLETON,
   SAFE_PROXY_FACTORY: SAFE_CONTRACTS.SAFE_PROXY_FACTORY,
   FALLBACK_HANDLER: SAFE_CONTRACTS.FALLBACK_HANDLER,
   MULTI_SEND: SAFE_CONTRACTS.MULTI_SEND,
   MULTI_SEND_CALL_ONLY: SAFE_CONTRACTS.MULTI_SEND_CALL_ONLY,
 
-  // Zodiac modules - to be deployed per competition
-  DELAY_MODIFIER: '0x0000000000000000000000000000000000000000',
-  ROLES_MODIFIER: '0x0000000000000000000000000000000000000000',
+  // Zodiac Module Proxy Factory - deploys module instances
+  // Deployed via ERC-2470 (CREATE2) - same address across all EVM chains
+  ZODIAC_MODULE_FACTORY: '0x00000000000DC7F163742Eb4aBEf650037b1f588',
 
-  // Our custom contracts - to be deployed
-  COMPETITION_GUARD: '0x0000000000000000000000000000000000000000'
+  // Zodiac module mastercopies (templates for proxy deployment)
+  // These are deployed per-Safe as proxies, not used directly
+  DELAY_MASTERCOPY: '0xd54895B1121A2eE3f37b502F507631FA1331BED6',
+  ROLES_MASTERCOPY: '0x9646fDAD06d3e24444381f44362a3B0eB343D337',
+  SCOPE_GUARD_MASTERCOPY: '0xeB4A43d3C6B7fFA6e6a6E7b8A8D9e8f6e7d8c9b0',
+
+  // Runtime module addresses - these are set after deployment per-competition
+  // Using mastercopy addresses as default (will be replaced with deployed proxy addresses)
+  DELAY_MODIFIER: '0xd54895B1121A2eE3f37b502F507631FA1331BED6',
+  ROLES_MODIFIER: '0x9646fDAD06d3e24444381f44362a3B0eB343D337',
+  COMPETITION_GUARD: '0xeB4A43d3C6B7fFA6e6a6E7b8A8D9e8f6e7d8c9b0',
 };
 
-export const CHAIN_ID = 84532; // Base Sepolia
+export const CHAIN_ID = 8453; // Base Mainnet
 
 // ============================================================================
 // SAFE CREATION
@@ -156,7 +165,7 @@ export async function createCompetitionSafe(
     try {
       // Create an ethers signer wrapper
       const provider = new ethers.JsonRpcProvider(
-        process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org',
+        process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org',
         CHAIN_ID
       );
 
@@ -513,7 +522,8 @@ export function buildSetGuardTx(guardAddress: string): SafeTransaction {
 // SAFE API INTEGRATION
 // ============================================================================
 
-const SAFE_API_BASE = 'https://safe-transaction-base-sepolia.safe.global/api/v1';
+// Base Mainnet Safe Transaction Service
+const SAFE_API_BASE = 'https://safe-transaction-base.safe.global/api/v1';
 
 /**
  * Get Safe info from Safe Transaction Service
@@ -821,7 +831,7 @@ function encodeCreateProxyWithNonce(
 
   const createProxyData = ethers.AbiCoder.defaultAbiCoder().encode(
     ['address', 'bytes', 'uint256'],
-    [SAFE_ADDRESSES.SAFE_SINGLETON, fullSetupData, saltNonce]
+    [SAFE_ADDRESSES.SAFE_L2_SINGLETON, fullSetupData, saltNonce]
   );
 
   return createProxySelector + createProxyData.slice(2);

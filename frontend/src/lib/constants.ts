@@ -1,6 +1,8 @@
-import { baseSepolia } from "thirdweb/chains";
+import { base, baseSepolia } from "thirdweb/chains";
 
-export const ACTIVE_CHAIN = baseSepolia;
+// PRODUCTION: Use Base Mainnet (8453) as default chain
+// Fallback to Base Sepolia for testing if needed
+export const ACTIVE_CHAIN = base;
 
 // CRITICAL: Environment validation function - FAIL FAST if required vars missing
 const getRequiredEnvVar = (key: string, description: string): string => {
@@ -25,7 +27,8 @@ export const ERC6551_REGISTRY = process.env.NEXT_PUBLIC_ERC6551_REGISTRY_ADDRESS
 export const TBA_IMPLEMENTATION = process.env.NEXT_PUBLIC_ERC6551_IMPLEMENTATION_ADDRESS || '0x2d25602551487c3f3354dd80d76d54383a243358';
 
 // Chain Configuration - With fallback and validation
-const chainIdStr = process.env.NEXT_PUBLIC_CHAIN_ID || '84532';
+// PRODUCTION: Default to Base Mainnet (8453)
+const chainIdStr = process.env.NEXT_PUBLIC_CHAIN_ID || '8453';
 const parsedChainId = parseInt(chainIdStr);
 if (isNaN(parsedChainId)) {
   throw new Error(`Invalid CHAIN_ID configuration: "${chainIdStr}"`);
@@ -33,9 +36,11 @@ if (isNaN(parsedChainId)) {
 export const CHAIN_ID = parsedChainId;
 
 // OPTIONAL Environment Variables - With reasonable fallbacks
-export const CHAIN_NAME = getOptionalEnvVar('NEXT_PUBLIC_CHAIN_NAME', 'base-sepolia');
+// PRODUCTION: Default to Base Mainnet
+export const CHAIN_NAME = getOptionalEnvVar('NEXT_PUBLIC_CHAIN_NAME', 'base');
 export const REF_TREASURY_ADDRESS = getOptionalEnvVar('NEXT_PUBLIC_REF_TREASURY_ADDRESS', '0x75341Ce1E98c24F33b0AB0e5ABE3AaaC5b0A8f01');
-export const USDC_ADDRESS = getOptionalEnvVar('NEXT_PUBLIC_USDC_ADDRESS', '0x036CbD53842c5426634e7929541eC2318f3dCF7e');
+// PRODUCTION: Base Mainnet USDC
+export const USDC_ADDRESS = getOptionalEnvVar('NEXT_PUBLIC_USDC_ADDRESS', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
 
 // API Endpoints - Optional with fallbacks
 export const ZEROX_ENDPOINT = getOptionalEnvVar('NEXT_PUBLIC_ZEROX_ENDPOINT', 'https://base.api.0x.org/swap/v2');
@@ -84,10 +89,10 @@ export const validateEnvironment = () => {
   }
 };
 
-// Common token addresses on Base Sepolia
+// Common token addresses on Base Mainnet
 export const COMMON_TOKENS = {
-  USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-  WETH: "0x4200000000000000000000000000000000000006", 
+  USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base Mainnet
+  WETH: "0x4200000000000000000000000000000000000006", // Same on L2s
   DAI: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
 } as const;
 

@@ -7,7 +7,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Redis } from '@upstash/redis';
-import { Competition, CompetitionCategory, CompetitionStatus } from '../../../competencias/types';
+import { Competition, CompetitionCategory, CompetitionStatus, getPrizePoolTotal, getParticipantCount } from '../../../competencias/types';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -90,10 +90,10 @@ export default async function handler(
 
       switch (sortBy) {
         case 'prizePool':
-          comparison = (a.prizePool?.total || 0) - (b.prizePool?.total || 0);
+          comparison = getPrizePoolTotal(a.prizePool) - getPrizePoolTotal(b.prizePool);
           break;
         case 'participants':
-          comparison = (a.participants?.current || 0) - (b.participants?.current || 0);
+          comparison = (a.participants ? getParticipantCount(a.participants) : 0) - (b.participants ? getParticipantCount(b.participants) : 0);
           break;
         case 'ending':
           const aEnd = a.timeline?.endsAt ? new Date(a.timeline.endsAt).getTime() : Infinity;
@@ -132,7 +132,7 @@ export default async function handler(
       stats.byCategory[c] = (stats.byCategory[c] || 0) + 1;
 
       // Total prize pool
-      stats.totalPrizePool += comp.prizePool?.total || 0;
+      stats.totalPrizePool += getPrizePoolTotal(comp.prizePool);
     }
 
     return res.status(200).json({

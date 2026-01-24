@@ -70,7 +70,7 @@ export function generateNonce(): string {
 export function createSiweMessage(
   address: string,
   nonce: string,
-  chainId: number = 84532 // Base Sepolia (default)
+  chainId: number = 8453 // Base Mainnet (default)
 ): SiweMessage {
   const now = new Date();
   const domain = getSiweDomain();

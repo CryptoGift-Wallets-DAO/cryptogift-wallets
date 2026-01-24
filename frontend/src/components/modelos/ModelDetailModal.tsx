@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight, Clock, Zap, ExternalLink, Rocket } from 'lucide-react';
+import { X, ArrowRight, Clock, Zap, ExternalLink, Play, Loader2, Rocket } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ModelDetailModalProps, CategoryType } from '@/types/modelos';
@@ -11,6 +11,15 @@ import StatusBadge from './StatusBadge';
 import IntegrationChip from './IntegrationChip';
 import ComplexityIndicator from './ComplexityIndicator';
 import { CompetitionLauncher, canLaunchCompetition } from './CompetitionLauncher';
+import { CompetitionPanel } from '@/components/competitions/CompetitionPanel';
+
+// Modelos que pueden usar el panel de competencias
+const COMPETITION_MODELS = new Set([
+  'apuesta-p2p',
+  'pool-apuestas',
+  'prediction-market',
+  'torneo-brackets',
+]);
 
 // Get icon component from string name
 function getIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -66,13 +75,22 @@ const modalVariants = {
 
 export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: ModelDetailModalProps) {
   const t = useTranslations('modelos');
-  // State for competition launcher
   const [showCompetitionLauncher, setShowCompetitionLauncher] = useState(false);
+  const [showWorkflowWizard, setShowWorkflowWizard] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle escape key
   const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && !showCompetitionLauncher) onClose();
-  }, [onClose, showCompetitionLauncher]);
+    if (e.key === 'Escape') {
+      if (showWorkflowWizard) {
+        setShowWorkflowWizard(false);
+      } else if (showCompetitionLauncher) {
+        setShowCompetitionLauncher(false);
+      } else {
+        onClose();
+      }
+    }
+  }, [onClose, showWorkflowWizard, showCompetitionLauncher]);
 
   useEffect(() => {
     if (isOpen) {
@@ -85,6 +103,20 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
     };
   }, [isOpen, handleEscape]);
 
+  // Reset wizard state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowWorkflowWizard(false);
+      setShowCompetitionLauncher(false);
+    }
+  }, [isOpen]);
+
+  if (!modelo) return null;
+
+  // Check if this model can launch competition
+  const isCompetitionModelLauncher = canLaunchCompetition(modelo.id);
+  const isCompetitionModelPanel = COMPETITION_MODELS.has(modelo.id) && modelo.category === 'competitions';
+
   // Handle launching competition workflow
   const handleLaunchCompetition = useCallback(() => {
     setShowCompetitionLauncher(true);
@@ -95,16 +127,32 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
     setShowCompetitionLauncher(false);
   }, []);
 
-  // Handle competition completion
-  const handleCompetitionComplete = useCallback((competitionId: string) => {
+  // Handle competition completion (launcher)
+  const handleCompetitionLauncherComplete = useCallback((competitionId: string) => {
     console.log('Competition created:', competitionId);
-    // Could show a success toast or redirect
   }, []);
 
-  if (!modelo) return null;
+  // Handle starting the workflow (panel)
+  const handleStartWorkflow = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowWorkflowWizard(true);
+    }, 300);
+  };
 
-  // Check if this model can launch competition workflow
-  const isCompetitionModel = canLaunchCompetition(modelo.id);
+  // Handle competition panel completion
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleCompetitionPanelComplete = async (config: any) => {
+    console.log('Competition created with config:', config);
+    setShowWorkflowWizard(false);
+    onClose();
+  };
+
+  // Handle workflow cancel
+  const handleWorkflowCancel = () => {
+    setShowWorkflowWizard(false);
+  };
 
   const IconComponent = getIcon(modelo.icon);
   const category = CATEGORIES.find(c => c.id === modelo.category);
@@ -129,8 +177,9 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
             exit="exit"
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden
-                       bg-gray-900/95 backdrop-blur-xl rounded-3xl
-                       border border-white/10 shadow-2xl"
+                       bg-gray-900/80 backdrop-blur-2xl backdrop-saturate-150 rounded-3xl
+                       border border-white/20 shadow-2xl shadow-black/50
+                       ring-1 ring-white/10"
           >
             {/* Gradient header background */}
             <div className={`absolute top-0 left-0 right-0 h-48 bg-gradient-to-b ${gradientClass}`} />
@@ -196,10 +245,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
                     {t('modal.processFlow')}
                   </h3>
                   <div className="relative">
-                    {/* Timeline line */}
                     <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-white/30 via-white/10 to-transparent" />
-
-                    {/* Steps */}
                     <div className="space-y-4">
                       {modelo.flow.map((step, index) => (
                         <motion.div
@@ -209,15 +255,12 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
                           transition={{ delay: index * 0.1 }}
                           className="relative flex items-start gap-4 pl-10"
                         >
-                          {/* Step number */}
                           <div className="absolute left-0 w-8 h-8 rounded-full
                                         bg-gradient-to-br from-white/20 to-white/5
                                         border border-white/20 flex items-center justify-center
                                         text-sm font-bold text-white">
                             {step.step}
                           </div>
-
-                          {/* Step content */}
                           <div className="flex-1 bg-white/5 rounded-xl p-4 border border-white/5">
                             <h4 className="font-semibold text-white mb-1">
                               {locale === 'en' ? (step.titleEn || step.title) : step.title}
@@ -226,8 +269,6 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
                               {locale === 'en' ? (step.descriptionEn || step.description) : step.description}
                             </p>
                           </div>
-
-                          {/* Arrow to next */}
                           {index < modelo.flow.length - 1 && (
                             <ArrowRight className="absolute -bottom-3 left-3 w-4 h-4 text-white/20" />
                           )}
@@ -269,8 +310,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
 
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-3 pt-6 border-t border-white/10">
-                  {/* Competition models get special launcher button */}
-                  {isCompetitionModel && (modelo.status === 'deployed' || modelo.status === 'ready' || modelo.status === 'building') ? (
+                  {isCompetitionModelLauncher && (modelo.status === 'deployed' || modelo.status === 'ready' || modelo.status === 'building') ? (
                     <button
                       onClick={handleLaunchCompetition}
                       className="flex items-center gap-2 px-6 py-3 rounded-xl
@@ -288,17 +328,40 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
                                bg-gradient-to-r from-amber-500 to-orange-500
                                text-white font-semibold
                                hover:shadow-lg hover:shadow-amber-500/25
-                               transition-all"
+                               transition-all transform hover:scale-[1.02]"
                     >
                       <span>{t('modal.goToMode')}</span>
                       <ExternalLink className="w-4 h-4" />
+                    </button>
+                  ) : modelo.status === 'ready' && isCompetitionModelPanel ? (
+                    <button
+                      onClick={handleStartWorkflow}
+                      disabled={isLoading}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl
+                               bg-gradient-to-r from-green-500 to-emerald-500
+                               text-white font-semibold
+                               hover:shadow-lg hover:shadow-green-500/25
+                               transition-all transform hover:scale-[1.02]
+                               disabled:opacity-50 disabled:cursor-wait"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>{locale === 'en' ? 'Starting...' : 'Iniciando...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          <span>{locale === 'en' ? 'Start Competition' : 'Iniciar Competencia'}</span>
+                        </>
+                      )}
                     </button>
                   ) : (
                     <button
                       disabled
                       className="flex items-center gap-2 px-6 py-3 rounded-xl
-                               bg-white/10 text-gray-400 font-semibold
-                               cursor-not-allowed"
+                               bg-white/10 backdrop-blur-sm text-gray-400 font-semibold
+                               cursor-not-allowed border border-white/5"
                     >
                       <span>
                         {modelo.status === 'ready' ? t('modal.comingSoon') :
@@ -309,7 +372,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
                   <button
                     onClick={onClose}
                     className="px-6 py-3 rounded-xl
-                             bg-white/5 border border-white/10
+                             bg-white/5 backdrop-blur-sm border border-white/10
                              text-white font-medium
                              hover:bg-white/10 transition-all"
                   >
@@ -318,17 +381,61 @@ export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: Mod
                 </div>
               </div>
             </div>
+
+            {/* Competition Panel Overlay */}
+            <AnimatePresence>
+              {showWorkflowWizard && isCompetitionModelPanel && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-10 bg-gray-900/95 backdrop-blur-xl rounded-3xl overflow-hidden"
+                >
+                  <div className="sticky top-0 z-20 flex items-center justify-between p-4 bg-gray-900/80 backdrop-blur-xl border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleWorkflowCancel}
+                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <ArrowRight className="w-5 h-5 text-white rotate-180" />
+                      </button>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">
+                          {locale === 'en' ? modelo.titleEn : modelo.title}
+                        </h3>
+                        <p className="text-sm text-gray-400">
+                          {locale === 'en' ? 'Configure competition' : 'Configurar competencia'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleWorkflowCancel}
+                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                  <div className="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+                    <CompetitionPanel
+                      onComplete={handleCompetitionPanelComplete}
+                      onCancel={handleWorkflowCancel}
+                      className="max-w-2xl mx-auto"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}
 
       {/* Competition Launcher Modal */}
-      {isCompetitionModel && (
+      {isCompetitionModelLauncher && (
         <CompetitionLauncher
           modelo={modelo}
           isOpen={showCompetitionLauncher}
           onClose={handleCompetitionClose}
-          onComplete={handleCompetitionComplete}
+          onComplete={handleCompetitionLauncherComplete}
         />
       )}
     </AnimatePresence>

@@ -40,11 +40,36 @@ const client = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_TW_CLIENT_ID!
 });
 
-// Cron authentication middleware
+// Cron authentication middleware - supports Vercel cron and manual triggers
 function authenticateCron(req: NextApiRequest): boolean {
-  // Check for cron secret in headers
-  const cronSecret = req.headers['x-cron-secret'] || req.headers.authorization?.replace('Bearer ', '');
-  return cronSecret === process.env.CRON_SECRET;
+  // Check for Vercel's built-in cron authentication
+  const vercelCron = req.headers['x-vercel-cron'];
+  if (vercelCron) {
+    return true; // Vercel cron jobs are trusted
+  }
+
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error('❌ CRON_SECRET not configured');
+    return false;
+  }
+
+  // Check x-cron-secret header (for GitHub Actions and manual triggers)
+  const xCronSecret = req.headers['x-cron-secret'];
+  if (xCronSecret === cronSecret) {
+    return true;
+  }
+
+  // Check Authorization Bearer token
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    if (token === cronSecret) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // Get all expired gifts that haven't been returned

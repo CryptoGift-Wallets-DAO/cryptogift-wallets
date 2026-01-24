@@ -60,14 +60,15 @@ export function ModelCard({ modelo, onClick, isSelected, locale = 'es' }: ModelC
       onClick={() => onClick(modelo)}
       className={`
         relative group cursor-pointer
-        bg-white/5 dark:bg-gray-900/50
-        backdrop-blur-xl
+        bg-white/5 dark:bg-gray-900/60
+        backdrop-blur-2xl backdrop-saturate-150
         border rounded-2xl overflow-hidden
-        shadow-xl shadow-black/10
-        transition-colors duration-300
+        shadow-xl shadow-black/20
+        ring-1 ring-inset ring-white/5
+        transition-all duration-300
         ${isSelected
-          ? 'border-white/30 ring-2 ring-white/20'
-          : 'border-white/10 hover:border-white/20'
+          ? 'border-white/30 ring-2 ring-white/20 shadow-2xl'
+          : 'border-white/10 hover:border-white/20 hover:shadow-2xl hover:ring-white/10'
         }
       `}
     >

@@ -239,7 +239,7 @@ const SafeStatus: React.FC<SafeStatusProps> = ({
           Gnosis Safe
         </h3>
         <a
-          href={`https://app.safe.global/basesep:${safeAddress}`}
+          href={`https://app.safe.global/base:${safeAddress}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
@@ -656,7 +656,7 @@ export const TransparencyDashboard: React.FC<TransparencyDashboardProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <a
-            href={`https://sepolia.basescan.org/address/${competition.safeAddress}`}
+            href={`https://basescan.org/address/${competition.safeAddress}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
