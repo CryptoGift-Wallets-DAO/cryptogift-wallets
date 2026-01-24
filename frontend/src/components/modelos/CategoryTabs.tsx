@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { CategoryTabsProps, CategoryType } from '@/types/modelos';
 
 // Get icon component from string name
@@ -26,7 +27,8 @@ const categoryActiveColors: Record<CategoryType, string> = {
   enterprise: 'from-slate-500 to-gray-500'
 };
 
-export function CategoryTabs({ activeCategory, onCategoryChange, categories }: CategoryTabsProps) {
+export function CategoryTabs({ activeCategory, onCategoryChange, categories, locale = 'es' }: CategoryTabsProps) {
+  const t = useTranslations('modelos');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -59,13 +61,13 @@ export function CategoryTabs({ activeCategory, onCategoryChange, categories }: C
   const allCategories = [
     {
       id: 'all' as const,
-      label: 'Todos',
-      labelEn: 'All',
+      label: t('categories.all'),
+      labelEn: t('categories.all'),
       icon: 'LayoutGrid',
       colorFrom: 'white',
       colorTo: 'gray-300',
-      description: 'Ver todos los modelos',
-      descriptionEn: 'View all models'
+      description: t('categories.allDescription'),
+      descriptionEn: t('categories.allDescription')
     },
     ...categories
   ];
@@ -129,7 +131,7 @@ export function CategoryTabs({ activeCategory, onCategoryChange, categories }: C
               {/* Content */}
               <span className="relative flex items-center gap-2">
                 <IconComponent className="w-4 h-4" />
-                <span>{category.label}</span>
+                <span>{locale === 'en' ? category.labelEn : category.label}</span>
               </span>
             </motion.button>
           );

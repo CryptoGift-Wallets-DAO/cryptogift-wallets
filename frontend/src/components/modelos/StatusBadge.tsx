@@ -50,11 +50,14 @@ const sizeClasses = {
   }
 };
 
-export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
+export function StatusBadge({ status, size = 'md', locale = 'es' }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status];
   const colors = colorClasses[config.color];
   const sizes = sizeClasses[size];
   const IconComponent = iconMap[config.icon as keyof typeof iconMap];
+
+  // Get localized label
+  const label = locale === 'en' ? config.labelEn : config.label;
 
   return (
     <div
@@ -66,7 +69,7 @@ export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
       `}
     >
       {IconComponent && <IconComponent className={sizes.icon} />}
-      <span>{config.label}</span>
+      <span>{label}</span>
     </div>
   );
 }

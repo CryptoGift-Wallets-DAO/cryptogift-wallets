@@ -201,5 +201,74 @@
         "educationCompleted": "Education Done"
       }
     }
+  },
+  "modelos": {
+    "hero": {
+      "title": "Use Cases",
+      "subtitle": "Explore the infinite possibilities of CryptoGift.",
+      "subtitleModels": "models",
+      "subtitleEnd": "to transform the way you gift, share, and build value."
+    },
+    "stats": {
+      "models": "Models",
+      "categories": "Categories",
+      "deployed": "Deployed",
+      "ready": "Ready"
+    },
+    "search": {
+      "placeholder": "Search models...",
+      "showing": "Showing",
+      "of": "of",
+      "models": "models"
+    },
+    "filters": {
+      "button": "Filters",
+      "status": "Status:",
+      "complexity": "Complexity:",
+      "all": "All",
+      "clear": "Clear filters"
+    },
+    "complexity": {
+      "1": "1 - Very easy",
+      "2": "2 - Easy",
+      "3": "3 - Intermediate",
+      "4": "4 - Advanced",
+      "5": "5 - Expert"
+    },
+    "status": {
+      "deployed": "Deployed",
+      "ready": "Ready",
+      "building": "Building",
+      "planned": "Planned"
+    },
+    "categories": {
+      "all": "All",
+      "allDescription": "View all models",
+      "onboarding": "Crypto Onboarding",
+      "campaigns": "Marketing Campaigns",
+      "competitions": "Competitions",
+      "governance": "DAO Governance",
+      "finance": "Finance",
+      "gaming": "Gaming",
+      "social": "Social",
+      "enterprise": "Enterprise"
+    },
+    "card": {
+      "view": "View"
+    },
+    "modal": {
+      "complexity": "Complexity:",
+      "processFlow": "Process Flow",
+      "requiredIntegrations": "Required Integrations",
+      "useCases": "Use Cases",
+      "launchCompetition": "Launch Competition",
+      "goToMode": "Go to Mode",
+      "comingSoon": "Coming Soon",
+      "inConstruction": "In Construction",
+      "close": "Close"
+    },
+    "tooltip": {
+      "clickToView": "Click to view"
+    }
   }
 }

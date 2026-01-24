@@ -5,6 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { ModelGridProps } from '@/types/modelos';
 import ModelCard from './ModelCard';
 
+// Localized empty state messages
+const emptyStateMessages = {
+  en: {
+    title: 'No models found',
+    description: 'Try adjusting the filters or search for another term'
+  },
+  es: {
+    title: 'No se encontraron modelos',
+    description: 'Intenta ajustar los filtros o buscar otro término'
+  }
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -63,8 +75,11 @@ export function ModelGrid({
   modelos,
   onSelectModelo,
   selectedModeloId,
-  isLoading
+  isLoading,
+  locale = 'es'
 }: ModelGridProps) {
+  const messages = emptyStateMessages[locale as keyof typeof emptyStateMessages] || emptyStateMessages.es;
+
   // Show skeletons while loading
   if (isLoading) {
     return (
@@ -86,10 +101,10 @@ export function ModelGrid({
       >
         <div className="text-6xl mb-4">🔍</div>
         <h3 className="text-xl font-semibold text-white mb-2">
-          No se encontraron modelos
+          {messages.title}
         </h3>
         <p className="text-gray-400">
-          Intenta ajustar los filtros o buscar otro termino
+          {messages.description}
         </p>
       </motion.div>
     );
@@ -109,6 +124,7 @@ export function ModelGrid({
             modelo={modelo}
             onClick={onSelectModelo}
             isSelected={selectedModeloId === modelo.id}
+            locale={locale}
           />
         ))}
       </AnimatePresence>

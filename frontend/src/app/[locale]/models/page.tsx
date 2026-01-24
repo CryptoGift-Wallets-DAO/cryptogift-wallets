@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   ModelGrid,
   ModelHero,
@@ -11,9 +12,11 @@ import {
 } from '@/components/modelos';
 import { MODELOS, searchModelos, TOTAL_MODELOS } from '@/data/modelosData';
 import type { Modelo, CategoryType, ModelStatus, Complexity } from '@/types/modelos';
-import { CATEGORIES, STATUS_CONFIG } from '@/types/modelos';
+import { CATEGORIES } from '@/types/modelos';
 
 export default function ModelosPage() {
+  const t = useTranslations('modelos');
+  const locale = useLocale();
   // State for filters
   const [activeCategory, setActiveCategory] = useState<CategoryType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,6 +110,7 @@ export default function ModelosPage() {
           totalModelos={TOTAL_MODELOS}
           categories={CATEGORIES}
           onCategoryClick={handleHeroCategoryClick}
+          locale={locale}
         />
 
         {/* Main Content */}
@@ -125,7 +129,7 @@ export default function ModelosPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar modelos..."
+                  placeholder={t('search.placeholder')}
                   className="w-full pl-12 pr-12 py-3 rounded-xl
                            bg-white/5 border border-white/10
                            text-white placeholder-gray-500
@@ -150,6 +154,7 @@ export default function ModelosPage() {
                     activeCategory={activeCategory}
                     onCategoryChange={handleCategoryChange}
                     categories={CATEGORIES}
+                    locale={locale}
                   />
                 </div>
 
@@ -167,7 +172,7 @@ export default function ModelosPage() {
                   `}
                 >
                   <SlidersHorizontal className="w-4 h-4" />
-                  <span className="hidden sm:inline">Filtros</span>
+                  <span className="hidden sm:inline">{t('filters.button')}</span>
                   {hasActiveFilters && (
                     <span className="w-2 h-2 rounded-full bg-amber-400" />
                   )}
@@ -184,37 +189,36 @@ export default function ModelosPage() {
                 <div className="flex flex-wrap items-center gap-4 pt-2">
                   {/* Status Filter */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Estado:</span>
+                    <span className="text-sm text-gray-500">{t('filters.status')}</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value as ModelStatus | 'all')}
                       className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10
                                text-white text-sm focus:outline-none focus:border-white/20"
                     >
-                      <option value="all">Todos</option>
-                      {Object.values(STATUS_CONFIG).map((config) => (
-                        <option key={config.status} value={config.status}>
-                          {config.label}
-                        </option>
-                      ))}
+                      <option value="all">{t('filters.all')}</option>
+                      <option value="deployed">{t('status.deployed')}</option>
+                      <option value="ready">{t('status.ready')}</option>
+                      <option value="building">{t('status.building')}</option>
+                      <option value="planned">{t('status.planned')}</option>
                     </select>
                   </div>
 
                   {/* Complexity Filter */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Complejidad:</span>
+                    <span className="text-sm text-gray-500">{t('filters.complexity')}</span>
                     <select
                       value={complexityFilter}
                       onChange={(e) => setComplexityFilter(e.target.value === 'all' ? 'all' : Number(e.target.value) as Complexity)}
                       className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10
                                text-white text-sm focus:outline-none focus:border-white/20"
                     >
-                      <option value="all">Todas</option>
-                      <option value="1">1 - Muy facil</option>
-                      <option value="2">2 - Facil</option>
-                      <option value="3">3 - Intermedio</option>
-                      <option value="4">4 - Avanzado</option>
-                      <option value="5">5 - Experto</option>
+                      <option value="all">{t('filters.all')}</option>
+                      <option value="1">{t('complexity.1')}</option>
+                      <option value="2">{t('complexity.2')}</option>
+                      <option value="3">{t('complexity.3')}</option>
+                      <option value="4">{t('complexity.4')}</option>
+                      <option value="5">{t('complexity.5')}</option>
                     </select>
                   </div>
 
@@ -225,7 +229,7 @@ export default function ModelosPage() {
                       className="text-sm text-gray-400 hover:text-white
                                underline underline-offset-2 transition-colors"
                     >
-                      Limpiar filtros
+                      {t('filters.clear')}
                     </button>
                   )}
                 </div>
@@ -236,9 +240,9 @@ export default function ModelosPage() {
           {/* Results count */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-gray-500">
-              Mostrando{' '}
+              {t('search.showing')}{' '}
               <span className="text-white font-medium">{filteredModelos.length}</span>{' '}
-              de {TOTAL_MODELOS} modelos
+              {t('search.of')} {TOTAL_MODELOS} {t('search.models')}
             </p>
           </div>
 
@@ -247,6 +251,7 @@ export default function ModelosPage() {
             modelos={filteredModelos}
             onSelectModelo={handleSelectModelo}
             selectedModeloId={selectedModelo?.id}
+            locale={locale}
           />
         </div>
       </div>
@@ -256,6 +261,7 @@ export default function ModelosPage() {
         modelo={selectedModelo}
         isOpen={!!selectedModelo}
         onClose={handleCloseModal}
+        locale={locale}
       />
     </main>
   );

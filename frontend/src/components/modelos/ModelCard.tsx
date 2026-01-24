@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ModelCardProps, CategoryType } from '@/types/modelos';
 import { CATEGORIES } from '@/types/modelos';
 import StatusBadge from './StatusBadge';
@@ -38,9 +39,14 @@ const categoryIconColors: Record<CategoryType, string> = {
   enterprise: 'from-slate-500/30 to-gray-500/20 text-slate-400'
 };
 
-export function ModelCard({ modelo, onClick, isSelected }: ModelCardProps) {
+export function ModelCard({ modelo, onClick, isSelected, locale = 'es' }: ModelCardProps) {
+  const t = useTranslations('modelos');
   const IconComponent = getIcon(modelo.icon);
   const iconColorClass = categoryIconColors[modelo.category];
+
+  // Get localized content
+  const title = locale === 'en' ? modelo.titleEn : modelo.title;
+  const description = locale === 'en' ? modelo.descriptionEn : modelo.description;
 
   return (
     <motion.div
@@ -83,7 +89,7 @@ export function ModelCard({ modelo, onClick, isSelected }: ModelCardProps) {
 
         {/* Title */}
         <h3 className="text-lg font-semibold text-white mb-2 line-clamp-1">
-          {modelo.title}
+          {title}
         </h3>
 
         {/* Divider */}
@@ -91,7 +97,7 @@ export function ModelCard({ modelo, onClick, isSelected }: ModelCardProps) {
 
         {/* Description */}
         <p className="text-sm text-gray-400 mb-4 line-clamp-2 min-h-[2.5rem]">
-          {modelo.description}
+          {description}
         </p>
 
         {/* Integrations */}
@@ -108,13 +114,13 @@ export function ModelCard({ modelo, onClick, isSelected }: ModelCardProps) {
 
         {/* Footer: Status + CTA */}
         <div className="flex items-center justify-between pt-3 border-t border-white/5">
-          <StatusBadge status={modelo.status} size="sm" />
+          <StatusBadge status={modelo.status} size="sm" locale={locale} />
 
           <motion.div
             className="flex items-center gap-1 text-sm text-white/70 group-hover:text-white transition-colors"
             whileHover={{ x: 4 }}
           >
-            <span>Ver</span>
+            <span>{t('card.view')}</span>
             <ArrowRight className="w-4 h-4" />
           </motion.div>
         </div>

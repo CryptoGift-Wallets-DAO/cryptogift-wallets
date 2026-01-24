@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowRight, Clock, Zap, ExternalLink } from 'lucide-react';
+import { X, ArrowRight, Clock, Zap, ExternalLink, Rocket } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ModelDetailModalProps, CategoryType } from '@/types/modelos';
 import { CATEGORIES } from '@/types/modelos';
 import StatusBadge from './StatusBadge';
 import IntegrationChip from './IntegrationChip';
 import ComplexityIndicator from './ComplexityIndicator';
+import { CompetitionLauncher, canLaunchCompetition } from './CompetitionLauncher';
 
 // Get icon component from string name
 function getIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -62,11 +64,15 @@ const modalVariants = {
   }
 } as const;
 
-export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalProps) {
+export function ModelDetailModal({ modelo, isOpen, onClose, locale = 'es' }: ModelDetailModalProps) {
+  const t = useTranslations('modelos');
+  // State for competition launcher
+  const [showCompetitionLauncher, setShowCompetitionLauncher] = useState(false);
+
   // Handle escape key
   const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
-  }, [onClose]);
+    if (e.key === 'Escape' && !showCompetitionLauncher) onClose();
+  }, [onClose, showCompetitionLauncher]);
 
   useEffect(() => {
     if (isOpen) {
@@ -79,7 +85,26 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
     };
   }, [isOpen, handleEscape]);
 
+  // Handle launching competition workflow
+  const handleLaunchCompetition = useCallback(() => {
+    setShowCompetitionLauncher(true);
+  }, []);
+
+  // Handle competition launcher close
+  const handleCompetitionClose = useCallback(() => {
+    setShowCompetitionLauncher(false);
+  }, []);
+
+  // Handle competition completion
+  const handleCompetitionComplete = useCallback((competitionId: string) => {
+    console.log('Competition created:', competitionId);
+    // Could show a success toast or redirect
+  }, []);
+
   if (!modelo) return null;
+
+  // Check if this model can launch competition workflow
+  const isCompetitionModel = canLaunchCompetition(modelo.id);
 
   const IconComponent = getIcon(modelo.icon);
   const category = CATEGORIES.find(c => c.id === modelo.category);
@@ -131,24 +156,29 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="text-sm text-gray-400">{category?.label}</span>
-                      <StatusBadge status={modelo.status} size="sm" />
+                      <span className="text-sm text-gray-400">
+                        {locale === 'en' ? category?.labelEn : category?.label}
+                      </span>
+                      <StatusBadge status={modelo.status} size="sm" locale={locale} />
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-white">
-                      {modelo.title}
+                      {locale === 'en' ? modelo.titleEn : modelo.title}
                     </h2>
                   </div>
                 </div>
 
                 {/* Description */}
                 <p className="text-gray-300 text-lg mb-6 leading-relaxed">
-                  {modelo.longDescription || modelo.description}
+                  {locale === 'en'
+                    ? (modelo.longDescriptionEn || modelo.descriptionEn)
+                    : (modelo.longDescription || modelo.description)
+                  }
                 </p>
 
                 {/* Meta info */}
                 <div className="flex flex-wrap items-center gap-6 mb-8 pb-6 border-b border-white/10">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Complejidad:</span>
+                    <span className="text-sm text-gray-500">{t('modal.complexity')}</span>
                     <ComplexityIndicator complexity={modelo.complexity} size="md" />
                   </div>
                   {modelo.estimatedTime && (
@@ -163,7 +193,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Zap className="w-5 h-5 text-amber-400" />
-                    Flujo del Proceso
+                    {t('modal.processFlow')}
                   </h3>
                   <div className="relative">
                     {/* Timeline line */}
@@ -189,8 +219,12 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
 
                           {/* Step content */}
                           <div className="flex-1 bg-white/5 rounded-xl p-4 border border-white/5">
-                            <h4 className="font-semibold text-white mb-1">{step.title}</h4>
-                            <p className="text-sm text-gray-400">{step.description}</p>
+                            <h4 className="font-semibold text-white mb-1">
+                              {locale === 'en' ? (step.titleEn || step.title) : step.title}
+                            </h4>
+                            <p className="text-sm text-gray-400">
+                              {locale === 'en' ? (step.descriptionEn || step.description) : step.description}
+                            </p>
                           </div>
 
                           {/* Arrow to next */}
@@ -206,7 +240,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                 {/* Integrations */}
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-white mb-4">
-                    Integraciones Requeridas
+                    {t('modal.requiredIntegrations')}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {modelo.integrations.map((integration) => (
@@ -218,10 +252,10 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                 {/* Use Cases */}
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-white mb-4">
-                    Casos de Uso
+                    {t('modal.useCases')}
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {modelo.useCases.map((useCase, index) => (
+                    {(locale === 'en' ? (modelo.useCasesEn || modelo.useCases) : modelo.useCases).map((useCase, index) => (
                       <span
                         key={index}
                         className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10
@@ -235,7 +269,20 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
 
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-3 pt-6 border-t border-white/10">
-                  {modelo.status === 'deployed' ? (
+                  {/* Competition models get special launcher button */}
+                  {isCompetitionModel && (modelo.status === 'deployed' || modelo.status === 'ready' || modelo.status === 'building') ? (
+                    <button
+                      onClick={handleLaunchCompetition}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl
+                               bg-gradient-to-r from-red-500 to-pink-500
+                               text-white font-semibold
+                               hover:shadow-lg hover:shadow-red-500/25
+                               transition-all"
+                    >
+                      <Rocket className="w-4 h-4" />
+                      <span>{t('modal.launchCompetition')}</span>
+                    </button>
+                  ) : modelo.status === 'deployed' ? (
                     <button
                       className="flex items-center gap-2 px-6 py-3 rounded-xl
                                bg-gradient-to-r from-amber-500 to-orange-500
@@ -243,7 +290,7 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                                hover:shadow-lg hover:shadow-amber-500/25
                                transition-all"
                     >
-                      <span>Ir al Modo</span>
+                      <span>{t('modal.goToMode')}</span>
                       <ExternalLink className="w-4 h-4" />
                     </button>
                   ) : (
@@ -254,8 +301,8 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                                cursor-not-allowed"
                     >
                       <span>
-                        {modelo.status === 'ready' ? 'Proximamente' :
-                         modelo.status === 'building' ? 'En Construccion' : 'Planificado'}
+                        {modelo.status === 'ready' ? t('modal.comingSoon') :
+                         modelo.status === 'building' ? t('modal.inConstruction') : t('status.planned')}
                       </span>
                     </button>
                   )}
@@ -266,13 +313,23 @@ export function ModelDetailModal({ modelo, isOpen, onClose }: ModelDetailModalPr
                              text-white font-medium
                              hover:bg-white/10 transition-all"
                   >
-                    Cerrar
+                    {t('modal.close')}
                   </button>
                 </div>
               </div>
             </div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Competition Launcher Modal */}
+      {isCompetitionModel && (
+        <CompetitionLauncher
+          modelo={modelo}
+          isOpen={showCompetitionLauncher}
+          onClose={handleCompetitionClose}
+          onComplete={handleCompetitionComplete}
+        />
       )}
     </AnimatePresence>
   );

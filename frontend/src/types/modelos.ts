@@ -142,23 +142,27 @@ export interface ModelCardProps {
   modelo: Modelo;
   onClick: (modelo: Modelo) => void;
   isSelected?: boolean;
+  locale?: string;
 }
 
 export interface ModelDetailModalProps {
   modelo: Modelo | null;
   isOpen: boolean;
   onClose: () => void;
+  locale?: string;
 }
 
 export interface CategoryTabsProps {
   activeCategory: CategoryType | 'all';
   onCategoryChange: (category: CategoryType | 'all') => void;
   categories: CategoryConfig[];
+  locale?: string;
 }
 
 export interface StatusBadgeProps {
   status: ModelStatus;
   size?: 'sm' | 'md' | 'lg';
+  locale?: string;
 }
 
 export interface IntegrationChipProps {
@@ -176,12 +180,14 @@ export interface ModelGridProps {
   onSelectModelo: (modelo: Modelo) => void;
   selectedModeloId?: string;
   isLoading?: boolean;
+  locale?: string;
 }
 
 export interface ModelHeroProps {
   totalModelos: number;
   categories: CategoryConfig[];
   onCategoryClick?: (category: CategoryType) => void;
+  locale?: string;
 }
 
 // ========== CONFIGURATION ==========

@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ModelHeroProps, CategoryType } from '@/types/modelos';
 
 // Get icon component from string name
@@ -55,7 +56,9 @@ const floatAnimation = {
   }
 } as const;
 
-export function ModelHero({ totalModelos, categories, onCategoryClick }: ModelHeroProps) {
+export function ModelHero({ totalModelos, categories, onCategoryClick, locale = 'es' }: ModelHeroProps) {
+  const t = useTranslations('modelos');
+
   return (
     <div className="relative py-16 md:py-24 overflow-hidden">
       {/* Background effects */}
@@ -74,13 +77,13 @@ export function ModelHero({ totalModelos, categories, onCategoryClick }: ModelHe
         >
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             <span className="bg-gradient-to-r from-white via-white to-gray-400 bg-clip-text text-transparent">
-              Modelos de Uso
+              {t('hero.title')}
             </span>
           </h1>
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8">
-            Explora las infinitas posibilidades de CryptoGift.{' '}
-            <span className="text-white font-medium">{totalModelos} modelos</span>{' '}
-            para transformar la manera en que regalas, compartes y construyes valor.
+            {t('hero.subtitle')}{' '}
+            <span className="text-white font-medium">{totalModelos} {t('hero.subtitleModels')}</span>{' '}
+            {t('hero.subtitleEnd')}
           </p>
         </motion.div>
 
@@ -111,7 +114,7 @@ export function ModelHero({ totalModelos, categories, onCategoryClick }: ModelHe
                   hover:scale-110 hover:shadow-lg hover:shadow-current/20
                   focus:outline-none focus:ring-2 focus:ring-white/30
                 `}
-                aria-label={`Ver categoria ${category.label}`}
+                aria-label={`${locale === 'en' ? 'View category' : 'Ver categoria'} ${locale === 'en' ? category.labelEn : category.label}`}
               >
                 <IconComponent className="w-7 h-7 md:w-8 md:h-8" />
 
@@ -122,8 +125,8 @@ export function ModelHero({ totalModelos, categories, onCategoryClick }: ModelHe
                   <div className="bg-gray-900/95 backdrop-blur-sm text-white text-xs
                                 px-3 py-1.5 rounded-lg whitespace-nowrap
                                 border border-white/10 shadow-xl">
-                    {category.label}
-                    <div className="text-[10px] text-gray-400 mt-0.5">Click para ver</div>
+                    {locale === 'en' ? category.labelEn : category.label}
+                    <div className="text-[10px] text-gray-400 mt-0.5">{t('tooltip.clickToView')}</div>
                   </div>
                 </div>
               </motion.button>
@@ -140,19 +143,19 @@ export function ModelHero({ totalModelos, categories, onCategoryClick }: ModelHe
         >
           <div className="text-center">
             <div className="text-3xl font-bold text-white">{totalModelos}</div>
-            <div className="text-sm text-gray-500">Modelos</div>
+            <div className="text-sm text-gray-500">{t('stats.models')}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-white">{categories.length}</div>
-            <div className="text-sm text-gray-500">Categorias</div>
+            <div className="text-sm text-gray-500">{t('stats.categories')}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-green-400">14</div>
-            <div className="text-sm text-gray-500">Desplegados</div>
+            <div className="text-sm text-gray-500">{t('stats.deployed')}</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-blue-400">8</div>
-            <div className="text-sm text-gray-500">Listos</div>
+            <div className="text-sm text-gray-500">{t('stats.ready')}</div>
           </div>
         </motion.div>
       </div>
