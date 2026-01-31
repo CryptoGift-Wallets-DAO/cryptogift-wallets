@@ -54,7 +54,7 @@ function calculateBackoff(attempt: number): number {
 }
 
 function isRetryableError(status: number): boolean {
-  return RETRY_CONFIG.retryableStatuses.includes(status);
+  return (RETRY_CONFIG.retryableStatuses as readonly number[]).includes(status);
 }
 
 // =============================================================================
