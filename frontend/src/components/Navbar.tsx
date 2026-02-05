@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useActiveAccount } from 'thirdweb/react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../i18n/routing';
-import { DAOProfileCard } from './DAOProfileCard';
+import { WalletSwitcher } from './WalletSwitcher';
 import { ConnectAndAuthButton } from './ConnectAndAuthButton';
 import { ThemeToggle } from './ui/ThemeToggle';
 import { LanguageToggle } from './ui/LanguageToggle';
@@ -96,7 +96,7 @@ export const Navbar: React.FC = () => {
             
             {mounted && (
               account ? (
-                <DAOProfileCard className="scale-90" />
+                <WalletSwitcher className="min-w-[160px] scale-90" />
               ) : (
                 <ConnectAndAuthButton className="scale-90" />
               )
@@ -170,9 +170,9 @@ export const Navbar: React.FC = () => {
                 {t('nexuswallet')}
               </Link>
               
-              <div className="pt-4 px-4">
+              <div className="pt-4">
                 {account ? (
-                  <DAOProfileCard className="w-full" />
+                  <WalletSwitcher className="w-full" />
                 ) : (
                   <ConnectAndAuthButton className="w-full" />
                 )}
